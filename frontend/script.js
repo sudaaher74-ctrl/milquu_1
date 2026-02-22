@@ -12,35 +12,220 @@ const DB = {
 };
 
 // ===================================================
-//  PRODUCTS DATA
+//  📁 IMAGE FOLDER SETTING
+//  All product images must be inside the "images" folder.
+//  Your folder structure should look like this:
+//
+//  milqu-fresh/
+//  ├── index.html
+//  ├── script.js
+//  ├── style.css
+//  └── images/
+//      ├── logo.png
+//      ├── cow_milk.png
+//      ├── buffalo_milk.png
+//      ├── dahi.png
+//      ├── lassi.png
+//      └── (add any new product image here)
+//
+//  To add an image to a product:
+//  1. Put your photo inside the "images" folder
+//  2. Find the product below by its name
+//  3. Set  img: 'your_filename.png'
+//  4. If a product has no photo yet, keep  img: null
+//     (it will show an emoji automatically as fallback)
 // ===================================================
+const IMG = 'images/'; // ← change this if you rename your folder
+
+// ===================================================
+//  PRODUCTS LIST
+//  ┌─────────────────────────────────────────────────┐
+//  │  HOW TO ADD A NEW PRODUCT:                      │
+//  │  Copy any line below and change these fields:   │
+//  │                                                 │
+//  │  id       — unique code (e.g. 'm4', 'v6')      │
+//  │  name     — product name shown on website       │
+//  │  e        — emoji shown if no image             │
+//  │  img      — filename in images/ folder          │
+//  │             use null if no photo yet            │
+//  │  price    — price in rupees                     │
+//  │  unit     — '/L', '/kg', '/500g' etc.           │
+//  │  cat      — milk | vegetables | dairy | fruits  │
+//  │  badge    — small label like 'New','Fresh',null │
+//  │  desc     — one line description                │
+//  └─────────────────────────────────────────────────┘
 const P = [
-  {id:'m1',name:'Cow Milk',e:'🥛',price:60,unit:'/L',cat:'milk',badge:'Fresh',desc:'Pure A2 cow milk, collected fresh each morning.',nut:[['Calories','62 kcal'],['Protein','3.2g'],['Fat','3.7g'],['Carbs','4.8g'],['Calcium','120mg'],['Vit D','40 IU']]},
-  {id:'m2',name:'Buffalo Milk',e:'🍼',price:75,unit:'/L',cat:'milk',badge:'Popular',desc:'Rich, creamy buffalo milk — perfect for curd & sweets.',nut:[['Calories','97 kcal'],['Protein','3.7g'],['Fat','6.9g'],['Carbs','5.2g'],['Calcium','195mg'],['Phosphorus','130mg']]},
-  {id:'m3',name:'Organic Milk',e:'🌿',price:90,unit:'/L',cat:'milk',badge:'Organic',desc:'Certified organic milk from free-range cows on pesticide-free pastures.',nut:[['Calories','64 kcal'],['Protein','3.4g'],['Fat','3.9g'],['Carbs','4.9g'],['Omega-3','0.3g'],['Vit B12','1.1µg']]},
-  {id:'v1',name:'Fresh Tomatoes',e:'🍅',price:40,unit:'/kg',cat:'vegetables',badge:null,desc:'Sun-ripened tomatoes from Karnataka farms.',nut:[['Calories','18 kcal'],['Fiber','1.2g'],['Vit C','14mg'],['Lycopene','3.0mg'],['Potassium','237mg'],['Folate','15µg']]},
-  {id:'v2',name:'Potatoes',e:'🥔',price:30,unit:'/kg',cat:'vegetables',badge:null,desc:'Fresh farm potatoes, versatile and nutritious.',nut:[['Calories','77 kcal'],['Carbs','17g'],['Fiber','2.2g'],['Vit C','19.7mg'],['Potassium','421mg'],['Protein','2g']]},
-  {id:'v3',name:'Red Onions',e:'🧅',price:35,unit:'/kg',cat:'vegetables',badge:null,desc:'Pungent, full-flavored red onions from Nashik.',nut:[['Calories','40 kcal'],['Fiber','1.7g'],['Vit C','7mg'],['Quercetin','22mg'],['Folate','19µg'],['Potassium','146mg']]},
-  {id:'v4',name:'Spinach',e:'🥬',price:30,unit:'/bunch',cat:'vegetables',badge:null,desc:'Tender, nutrient-rich spinach leaves.',nut:[['Calories','23 kcal'],['Iron','2.7mg'],['Calcium','99mg'],['Vit A','469µg'],['Vit K','483µg'],['Folate','194µg']]},
-  {id:'v5',name:'Carrots',e:'🥕',price:45,unit:'/kg',cat:'vegetables',badge:'Fresh',desc:'Sweet crunchy carrots loaded with beta-carotene.',nut:[['Calories','41 kcal'],['Beta-Carotene','8285µg'],['Fiber','2.8g'],['Vit K','13.2µg'],['Potassium','320mg'],['Vit C','5.9mg']]},
-  {id:'d1',name:'Pure Ghee',e:'🫙',price:580,unit:'/500g',cat:'dairy',badge:'Best Seller',desc:'Traditional cultured desi ghee from pure cow milk.',nut:[['Calories','900 kcal'],['Fat','100g'],['Vit A','3069 IU'],['Butyric Acid','3.5g'],['CLA','1.5g'],['Vit D','15 IU']]},
-  {id:'d2',name:'Fresh Paneer',e:'🧀',price:90,unit:'/200g',cat:'dairy',badge:null,desc:'Soft fresh paneer from full-fat milk — delivered chilled.',nut:[['Calories','321 kcal'],['Protein','25g'],['Fat','23g'],['Calcium','480mg'],['Phosphorus','340mg'],['Riboflavin','0.5mg']]},
-  {id:'d3',name:'White Butter',e:'🧈',price:120,unit:'/200g',cat:'dairy',badge:null,desc:'Hand-churned unsalted white butter, creamy and mildly tangy.',nut:[['Calories','717 kcal'],['Fat','81g'],['Sat Fat','51g'],['Cholesterol','215mg'],['Vit A','684µg'],['Vit E','2.3mg']]},
-  {id:'d4',name:'Curd',e:'🥣',price:50,unit:'/500g',cat:'dairy',badge:'Probiotic',desc:'Thick set curd with live probiotic cultures.',nut:[['Calories','98 kcal'],['Protein','11g'],['Fat','5g'],['Calcium','340mg'],['Probiotics','~10⁹ CFU'],['Riboflavin','0.3mg']]},
-  {id:'d5',name:'Cheese',e:'🫕',price:160,unit:'/200g',cat:'dairy',badge:null,desc:'Fresh mild farm cheese — soft, creamy, melts beautifully.',nut:[['Calories','300 kcal'],['Protein','24g'],['Fat','21g'],['Calcium','510mg'],['Sodium','620mg'],['Phosphorus','400mg']]},
-  {id:'f1',name:'Apples',e:'🍎',price:180,unit:'/kg',cat:'fruits',badge:'Imported',desc:'Crisp Shimla apples from Himachal Pradesh.',nut:[['Calories','52 kcal'],['Fiber','2.4g'],['Vit C','4.6mg'],['Potassium','107mg'],['Quercetin','4.4mg'],['Sugar','10g']]},
-  {id:'f2',name:'Bananas',e:'🍌',price:50,unit:'/dozen',cat:'fruits',badge:null,desc:'Naturally ripened Robusta bananas — energy-packed.',nut:[['Calories','89 kcal'],['Carbs','23g'],['Fiber','2.6g'],['Potassium','358mg'],['Vit B6','0.4mg'],['Magnesium','27mg']]},
-  {id:'f3',name:'Alphonso Mango',e:'🥭',price:120,unit:'/kg',cat:'fruits',badge:'Seasonal',desc:'The king of mangoes — saffron-hued and exquisitely aromatic.',nut:[['Calories','60 kcal'],['Fiber','1.6g'],['Vit C','36mg'],['Vit A','765 IU'],['Folate','43µg'],['Sugar','13.7g']]},
-  {id:'f4',name:'Oranges',e:'🍊',price:80,unit:'/kg',cat:'fruits',badge:null,desc:'Juicy Nagpur oranges bursting with Vitamin C.',nut:[['Calories','47 kcal'],['Vit C','53mg'],['Fiber','2.4g'],['Folate','30µg'],['Thiamine','0.1mg'],['Potassium','181mg']]},
-  {id:'f5',name:'Papaya',e:'🍈',price:60,unit:'/kg',cat:'fruits',badge:null,desc:'Ripe, sweet papaya loaded with antioxidants and enzymes.',nut:[['Calories','43 kcal'],['Vit C','62mg'],['Folate','37µg'],['Potassium','182mg'],['Lycopene','1828µg'],['Fiber','1.7g']]},
+
+  // ── 🥛 MILK ──────────────────────────────────────
+  {
+    id:'m1', name:'Cow Milk', e:'🥛',
+    img:'cow_milk.png',          // ← put cow_milk.png inside images/ folder
+    price:60, unit:'/L', cat:'milk', badge:'Fresh',
+    desc:'Pure A2 cow milk, collected fresh each morning.',
+    nut:[['Calories','62 kcal'],['Protein','3.2g'],['Fat','3.7g'],['Carbs','4.8g'],['Calcium','120mg'],['Vit D','40 IU']]
+  },
+  {
+    id:'m2', name:'Buffalo Milk', e:'🍼',
+    img:'buffalo_milk.png',      // ← put buffalo_milk.png inside images/ folder
+    price:75, unit:'/L', cat:'milk', badge:'Popular',
+    desc:'Rich, creamy buffalo milk — perfect for curd & sweets.',
+    nut:[['Calories','97 kcal'],['Protein','3.7g'],['Fat','6.9g'],['Carbs','5.2g'],['Calcium','195mg'],['Phosphorus','130mg']]
+  },
+  {
+    id:'m3', name:'Organic Milk', e:'🌿',
+    img:'organic_milk.png',      // ← add organic_milk.png to images/ folder (or use null)
+    price:90, unit:'/L', cat:'milk', badge:'Organic',
+    desc:'Certified organic milk from free-range cows on pesticide-free pastures.',
+    nut:[['Calories','64 kcal'],['Protein','3.4g'],['Fat','3.9g'],['Carbs','4.9g'],['Omega-3','0.3g'],['Vit B12','1.1µg']]
+  },
+
+  // ── 🥦 VEGETABLES ────────────────────────────────
+  {
+    id:'v1', name:'Fresh Tomatoes', e:'🍅',
+    img:null,                    // ← add tomatoes.png to images/ and write 'tomatoes.png' here
+    price:40, unit:'/kg', cat:'vegetables', badge:null,
+    desc:'Sun-ripened tomatoes from Karnataka farms.',
+    nut:[['Calories','18 kcal'],['Fiber','1.2g'],['Vit C','14mg'],['Lycopene','3.0mg'],['Potassium','237mg'],['Folate','15µg']]
+  },
+  {
+    id:'v2', name:'Potatoes', e:'🥔',
+    img:null,                    // ← add potatoes.png to images/ and write 'potatoes.png' here
+    price:30, unit:'/kg', cat:'vegetables', badge:null,
+    desc:'Fresh farm potatoes, versatile and nutritious.',
+    nut:[['Calories','77 kcal'],['Carbs','17g'],['Fiber','2.2g'],['Vit C','19.7mg'],['Potassium','421mg'],['Protein','2g']]
+  },
+  {
+    id:'v3', name:'Red Onions', e:'🧅',
+    img:null,                    // ← add onions.png to images/ and write 'onions.png' here
+    price:35, unit:'/kg', cat:'vegetables', badge:null,
+    desc:'Pungent, full-flavored red onions from Nashik.',
+    nut:[['Calories','40 kcal'],['Fiber','1.7g'],['Vit C','7mg'],['Quercetin','22mg'],['Folate','19µg'],['Potassium','146mg']]
+  },
+  {
+    id:'v4', name:'Spinach', e:'🥬',
+    img:null,                    // ← add spinach.png to images/ and write 'spinach.png' here
+    price:30, unit:'/bunch', cat:'vegetables', badge:null,
+    desc:'Tender, nutrient-rich spinach leaves.',
+    nut:[['Calories','23 kcal'],['Iron','2.7mg'],['Calcium','99mg'],['Vit A','469µg'],['Vit K','483µg'],['Folate','194µg']]
+  },
+  {
+    id:'v5', name:'Carrots', e:'🥕',
+    img:null,                    // ← add carrots.png to images/ and write 'carrots.png' here
+    price:45, unit:'/kg', cat:'vegetables', badge:'Fresh',
+    desc:'Sweet crunchy carrots loaded with beta-carotene.',
+    nut:[['Calories','41 kcal'],['Beta-Carotene','8285µg'],['Fiber','2.8g'],['Vit K','13.2µg'],['Potassium','320mg'],['Vit C','5.9mg']]
+  },
+
+  // ── 🧀 DAIRY BY-PRODUCTS ─────────────────────────
+  {
+    id:'d1', name:'Pure Ghee', e:'🫙',
+    img:null,                    // ← add ghee.png to images/ and write 'ghee.png' here
+    price:580, unit:'/500g', cat:'dairy', badge:'Best Seller',
+    desc:'Traditional cultured desi ghee from pure cow milk.',
+    nut:[['Calories','900 kcal'],['Fat','100g'],['Vit A','3069 IU'],['Butyric Acid','3.5g'],['CLA','1.5g'],['Vit D','15 IU']]
+  },
+  {
+    id:'d2', name:'Fresh Paneer', e:'🧀',
+    img:null,                    // ← add paneer.png to images/ and write 'paneer.png' here
+    price:90, unit:'/200g', cat:'dairy', badge:null,
+    desc:'Soft fresh paneer from full-fat milk — delivered chilled.',
+    nut:[['Calories','321 kcal'],['Protein','25g'],['Fat','23g'],['Calcium','480mg'],['Phosphorus','340mg'],['Riboflavin','0.5mg']]
+  },
+  {
+    id:'d3', name:'White Butter', e:'🧈',
+    img:null,                    // ← add butter.png to images/ and write 'butter.png' here
+    price:120, unit:'/200g', cat:'dairy', badge:null,
+    desc:'Hand-churned unsalted white butter, creamy and mildly tangy.',
+    nut:[['Calories','717 kcal'],['Fat','81g'],['Sat Fat','51g'],['Cholesterol','215mg'],['Vit A','684µg'],['Vit E','2.3mg']]
+  },
+  {
+    id:'d4', name:'Curd / Dahi', e:'🥣',
+    img:'dahi.png',              // ← put dahi.png inside images/ folder
+    price:50, unit:'/500g', cat:'dairy', badge:'Probiotic',
+    desc:'Thick set curd with live probiotic cultures.',
+    nut:[['Calories','98 kcal'],['Protein','11g'],['Fat','5g'],['Calcium','340mg'],['Probiotics','~10⁹ CFU'],['Riboflavin','0.3mg']]
+  },
+  {
+    id:'d5', name:'Sweet Lassi', e:'🥛',
+    img:'lassi.png',             // ← put lassi.png inside images/ folder
+    price:60, unit:'/500ml', cat:'dairy', badge:'New',
+    desc:'Thick & refreshing sweet lassi made from fresh dahi.',
+    nut:[['Calories','150 kcal'],['Protein','5g'],['Fat','4g'],['Calcium','200mg'],['Sugar','18g'],['Probiotics','~10⁸ CFU']]
+  },
+
+  // ── 🍎 FRUITS ────────────────────────────────────
+  {
+    id:'f1', name:'Apples', e:'🍎',
+    img:null,                    // ← add apples.png to images/ and write 'apples.png' here
+    price:180, unit:'/kg', cat:'fruits', badge:'Imported',
+    desc:'Crisp Shimla apples from Himachal Pradesh.',
+    nut:[['Calories','52 kcal'],['Fiber','2.4g'],['Vit C','4.6mg'],['Potassium','107mg'],['Quercetin','4.4mg'],['Sugar','10g']]
+  },
+  {
+    id:'f2', name:'Bananas', e:'🍌',
+    img:null,                    // ← add bananas.png to images/ and write 'bananas.png' here
+    price:50, unit:'/dozen', cat:'fruits', badge:null,
+    desc:'Naturally ripened Robusta bananas — energy-packed.',
+    nut:[['Calories','89 kcal'],['Carbs','23g'],['Fiber','2.6g'],['Potassium','358mg'],['Vit B6','0.4mg'],['Magnesium','27mg']]
+  },
+  {
+    id:'f3', name:'Alphonso Mango', e:'🥭',
+    img:null,                    // ← add mango.png to images/ and write 'mango.png' here
+    price:120, unit:'/kg', cat:'fruits', badge:'Seasonal',
+    desc:'The king of mangoes — saffron-hued and exquisitely aromatic.',
+    nut:[['Calories','60 kcal'],['Fiber','1.6g'],['Vit C','36mg'],['Vit A','765 IU'],['Folate','43µg'],['Sugar','13.7g']]
+  },
+  {
+    id:'f4', name:'Oranges', e:'🍊',
+    img:null,                    // ← add oranges.png to images/ and write 'oranges.png' here
+    price:80, unit:'/kg', cat:'fruits', badge:null,
+    desc:'Juicy Nagpur oranges bursting with Vitamin C.',
+    nut:[['Calories','47 kcal'],['Vit C','53mg'],['Fiber','2.4g'],['Folate','30µg'],['Thiamine','0.1mg'],['Potassium','181mg']]
+  },
+  {
+    id:'f5', name:'Papaya', e:'🍈',
+    img:null,                    // ← add papaya.png to images/ and write 'papaya.png' here
+    price:60, unit:'/kg', cat:'fruits', badge:null,
+    desc:'Ripe, sweet papaya loaded with antioxidants and enzymes.',
+    nut:[['Calories','43 kcal'],['Vit C','62mg'],['Folate','37µg'],['Potassium','182mg'],['Lycopene','1828µg'],['Fiber','1.7g']]
+  },
+
+  // ── ➕ ADD YOUR NEW PRODUCT BELOW ─────────────────
+  // {
+  //   id:'m4', name:'Goat Milk', e:'🐐',
+  //   img:'goat_milk.png',       // ← filename inside images/ folder
+  //   price:120, unit:'/L', cat:'milk', badge:'New',
+  //   desc:'Fresh goat milk, easy to digest.',
+  //   nut:[['Calories','69 kcal'],['Protein','3.6g'],['Fat','4.1g'],['Calcium','134mg']]
+  // },
+
 ];
 
 // ===================================================
-//  PRODUCT CARD & GRID
+//  IMAGE HELPER  (reads from images/ folder)
 // ===================================================
+function productImg(p, size='card'){
+  const h   = size === 'card' ? '160px' : '320px';
+  const fz  = size === 'card' ? '72px'  : '120px';
+  const src = p.img ? (IMG + p.img) : null;   // ← builds path: images/filename.png
+
+  if(src){
+    return `
+      <img src="${src}" alt="${p.name}"
+           style="width:100%;height:${h};object-fit:contain;padding:12px;"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div style="display:none;font-size:${fz};align-items:center;justify-content:center;height:${h};">${p.e}</div>`;
+  }
+  // No image set → show emoji
+  return `<div style="font-size:${fz};display:flex;align-items:center;justify-content:center;height:${h};">${p.e}</div>`;
+}
+
 function card(p){
   return `<div class="product-card fade-in" data-cat="${p.cat}">
-  <div class="product-img" onclick="detail('${p.id}')">${p.badge?`<span class="product-badge">${p.badge}</span>`:''} ${p.e}</div>
+  <div class="product-img" onclick="detail('${p.id}')" style="padding:0;overflow:hidden;background:#f8fdf8;position:relative;">
+    ${p.badge?`<span class="product-badge" style="position:absolute;top:10px;left:10px;z-index:2;">${p.badge}</span>`:''}
+    ${productImg(p,'card')}
+  </div>
   <div class="product-info">
     <div class="product-cat">${p.cat}</div>
     <div class="product-name" onclick="detail('${p.id}')">${p.name}</div>
@@ -91,9 +276,11 @@ function detail(id){
   const rows=p.nut.map(([n,v])=>`<tr><td>${n}</td><td><strong>${v}</strong></td></tr>`).join('');
   document.getElementById('detail-grid').innerHTML=`
     <div>
-      <div class="product-main-img" id="main-img">${p.e}</div>
+      <div class="product-main-img" id="main-img" style="background:#f8fdf8;border-radius:16px;display:flex;align-items:center;justify-content:center;min-height:300px;overflow:hidden;">
+        ${p.img ? `<img src="${p.img}" alt="${p.name}" style="width:100%;max-height:320px;object-fit:contain;padding:16px;" onerror="this.style.display='none'">` : `<span style='font-size:100px'>${p.e}</span>`}
+      </div>
       <div class="product-thumbs">
-        <div class="thumb active">${p.e}</div>
+        <div class="thumb active" style="background:#f8fdf8;overflow:hidden;">${p.img ? `<img src="${p.img}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none'">` : p.e}</div>
         <div class="thumb">🌾</div>
         <div class="thumb">✅</div>
         <div class="thumb">🚚</div>
