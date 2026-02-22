@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Milqu Fresh – Premium farm-fresh milk, vegetables, fruits & dairy products delivered daily to your doorstep.">
+  <title>Milqu Fresh | Farm-to-Home Delivery</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="#" class="logo" onclick="return nav('home')">
+        <div class="logo-icon">🌿</div>
+        <span class="logo-text">Milqu<span> Fresh</span></span>
+      </a>
+      <div class="nav-links">
+        <a href="#" onclick="return nav('home')" class="nl active" data-p="home">Home</a>
+        <div class="nav-dropdown">
+          <a href="#" onclick="return nav('products')">Products</a>
+          <div class="dropdown-menu">
+            <a href="#" onclick="return nav('products','milk')">🥛 Milk</a>
+            <a href="#" onclick="return nav('products','vegetables')">🥦 Vegetables</a>
+            <a href="#" onclick="return nav('products','dairy')">🧀 By-Products</a>
+            <a href="#" onclick="return nav('products','fruits')">🍎 Fruits</a>
+          </div>
+        </div>
+        <a href="#" onclick="return nav('subscription')" class="nl" data-p="subscription">Subscribe</a>
+        <a href="#" onclick="return nav('about')" class="nl" data-p="about">About</a>
+        <a href="#" onclick="return nav('contact')" class="nl" data-p="contact">Contact</a>
+      </div>
+      <div class="nav-actions">
+        <button class="cart-btn" id="cart-btn" aria-label="Cart">🛒<span class="cart-count" id="cart-count">0</span></button>
+        <a href="#" class="btn btn-primary" onclick="return nav('subscription')">Subscribe Now</a>
+        <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#" onclick="return nav('home',null,true)">🏠 Home</a>
+  <a href="#" onclick="return nav('products',null,true)">🛍 Products</a>
+  <a href="#" onclick="return nav('subscription',null,true)">📦 Subscribe</a>
+  <a href="#" onclick="return nav('about',null,true)">🌾 About</a>
+  <a href="#" onclick="return nav('contact',null,true)">📞 Contact</a>
+</div>
+
+<!-- CART SIDEBAR -->
+<div class="cart-overlay" id="cart-overlay"></div>
+<div class="cart-sidebar" id="cart-sidebar">
+  <div class="cart-head">
+    <h3>Your Cart 🛒</h3>
+    <button class="cart-close" id="cart-close">✕</button>
+  </div>
+  <div class="cart-items" id="cart-items-list"></div>
+  <div class="cart-footer">
+    <div class="cart-total">
+      <span>Total</span>
+      <strong id="cart-total-val">₹0</strong>
+    </div>
+    <button class="checkout-btn" id="checkout-btn">Proceed to Checkout →</button>
+  </div>
+</div>
+<div class="notification" id="notification"></div>
+
+<!-- ========== PAYMENT MODAL ========== -->
+<div class="modal-overlay" id="pay-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>🛒 Checkout</h3>
+      <button class="modal-close-btn" onclick="closePayModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Steps -->
+      <div class="pay-steps">
+        <div class="pay-step active" id="step-tab-1">1. Details</div>
+        <div class="pay-step" id="step-tab-2">2. Payment</div>
+        <div class="pay-step" id="step-tab-3">3. Confirm</div>
+      </div>
+
+      <!-- STEP 1: Customer Details -->
+      <div class="pay-panel active" id="pay-panel-1">
+        <h4 style="margin-bottom:16px;font-size:16px;">Delivery Details</h4>
+        <div class="cust-form">
+          <div class="two-col">
+            <div class="form-group">
+              <label>First Name *</label>
+              <input type="text" id="pay-fname" placeholder="Priya" required>
+            </div>
+            <div class="form-group">
+              <label>Last Name *</label>
+              <input type="text" id="pay-lname" placeholder="Sharma" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Phone Number *</label>
+            <input type="tel" id="pay-phone" placeholder="10-digit mobile number" required>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="pay-email" placeholder="priya@email.com">
+          </div>
+          <div class="form-group">
+            <label>Delivery Address *</label>
+            <input type="text" id="pay-address" placeholder="Flat no, Street, Area" required>
+          </div>
+          <div class="two-col">
+            <div class="form-group">
+              <label>City *</label>
+              <input type="text" id="pay-city" placeholder="Bangalore" required>
+            </div>
+            <div class="form-group">
+              <label>Pincode *</label>
+              <input type="text" id="pay-pin" placeholder="560001" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Delivery Notes</label>
+            <textarea id="pay-notes" rows="2" placeholder="e.g. Leave at door, Ring bell twice..."></textarea>
+          </div>
+        </div>
+        <!-- Order Summary -->
+        <div class="order-items" id="pay-order-summary"></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:15px;margin-top:8px;" onclick="goPayStep(2)">Continue to Payment →</button>
+      </div>
+
+      <!-- STEP 2: Payment Method -->
+      <div class="pay-panel" id="pay-panel-2">
+        <h4 style="margin-bottom:16px;font-size:16px;">Select Payment Method</h4>
+        <div class="pay-methods" id="pay-methods">
+          <div class="pay-method selected" data-m="upi" onclick="selectPayMethod(this,'upi')"><span class="pm-icon">📱</span>UPI</div>
+          <div class="pay-method" data-m="card" onclick="selectPayMethod(this,'card')"><span class="pm-icon">💳</span>Card</div>
+          <div class="pay-method" data-m="netbanking" onclick="selectPayMethod(this,'netbanking')"><span class="pm-icon">🏦</span>Net Banking</div>
+          <div class="pay-method" data-m="cod" onclick="selectPayMethod(this,'cod')"><span class="pm-icon">💵</span>Cash on Delivery</div>
+        </div>
+
+        <!-- UPI Section -->
+        <div id="pm-upi">
+          <div class="form-group">
+            <label>UPI ID</label>
+            <div class="upi-input-wrap">
+              <input type="text" id="upi-id" style="padding-right:90px;" placeholder="yourname@upi" class="form-input">
+              <button class="upi-verify-btn" onclick="verifyUPI()">Verify</button>
+            </div>
+          </div>
+          <p style="font-size:13px;color:var(--gray);margin-bottom:12px;">Or pay with:</p>
+          <div class="upi-apps">
+            <div class="upi-app" onclick="selectUPIApp(this,'GPay')">🟢 GPay</div>
+            <div class="upi-app" onclick="selectUPIApp(this,'PhonePe')">🟣 PhonePe</div>
+            <div class="upi-app" onclick="selectUPIApp(this,'Paytm')">🔵 Paytm</div>
+            <div class="upi-app" onclick="selectUPIApp(this,'BHIM')">🟠 BHIM</div>
+          </div>
+        </div>
+
+        <!-- Card Section -->
+        <div id="pm-card" style="display:none;">
+          <div class="card-preview">
+            <div class="card-chip">💳</div>
+            <div class="card-num-display" id="card-display">•••• •••• •••• ••••</div>
+            <div class="card-info-row">
+              <span id="card-name-display">CARD HOLDER</span>
+              <span id="card-exp-display">MM/YY</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Card Number</label>
+            <input type="text" id="card-num" maxlength="19" placeholder="1234 5678 9012 3456" oninput="fmtCard(this)" class="form-input" style="width:100%;border:2px solid var(--border);border-radius:10px;padding:13px 16px;font-size:15px;">
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;">
+            <div class="form-group">
+              <label>Cardholder Name</label>
+              <input type="text" id="card-name" placeholder="PRIYA SHARMA" oninput="document.getElementById('card-name-display').textContent=this.value.toUpperCase()||'CARD HOLDER'" class="form-input" style="width:100%;border:2px solid var(--border);border-radius:10px;padding:13px 16px;font-size:15px;">
+            </div>
+            <div class="form-group">
+              <label>Expiry</label>
+              <input type="text" id="card-exp" maxlength="5" placeholder="MM/YY" oninput="fmtExp(this)" class="form-input" style="width:100%;border:2px solid var(--border);border-radius:10px;padding:13px 16px;font-size:15px;">
+            </div>
+            <div class="form-group">
+              <label>CVV</label>
+              <input type="password" id="card-cvv" maxlength="3" placeholder="•••" class="form-input" style="width:100%;border:2px solid var(--border);border-radius:10px;padding:13px 16px;font-size:15px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Net Banking -->
+        <div id="pm-netbanking" style="display:none;">
+          <div class="form-group">
+            <label>Select Bank</label>
+            <select id="bank-select" style="width:100%;padding:13px 16px;border:2px solid var(--border);border-radius:10px;font-size:15px;background:var(--white);">
+              <option value="">-- Choose your bank --</option>
+              <option>State Bank of India</option>
+              <option>HDFC Bank</option>
+              <option>ICICI Bank</option>
+              <option>Axis Bank</option>
+              <option>Kotak Mahindra</option>
+              <option>Punjab National Bank</option>
+              <option>Bank of Baroda</option>
+              <option>Yes Bank</option>
+              <option>IndusInd Bank</option>
+            </select>
+          </div>
+          <p style="font-size:13px;color:var(--gray);background:var(--light-gray);padding:12px;border-radius:8px;">You will be redirected to your bank's secure portal to complete the payment.</p>
+        </div>
+
+        <!-- COD -->
+        <div id="pm-cod" style="display:none;">
+          <div class="cod-info">
+            <h4>💵 Cash on Delivery</h4>
+            <p>Pay cash when your order arrives at your doorstep. Our delivery partner will collect the payment. Please keep exact change ready.</p>
+          </div>
+          <p style="font-size:13px;color:var(--gray);">COD is available for orders above ₹100. A ₹20 handling fee applies.</p>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:24px;">
+          <button class="btn btn-outline" onclick="goPayStep(1)" style="flex:1;justify-content:center;">← Back</button>
+          <button class="btn btn-primary" onclick="goPayStep(3)" style="flex:2;justify-content:center;" id="pay-confirm-btn">Review Order →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Review & Confirm -->
+      <div class="pay-panel" id="pay-panel-3">
+        <div id="review-content"></div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:16px;font-size:16px;margin-top:8px;" onclick="placeOrder()" id="place-order-btn">
+          🔒 Place Order & Pay
+        </button>
+        <button class="btn btn-outline" onclick="goPayStep(2)" style="width:100%;justify-content:center;margin-top:10px;">← Change Payment</button>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="pay-panel" id="pay-panel-success">
+        <div class="pay-success">
+          <div class="success-anim">✅</div>
+          <h2 style="font-size:26px;margin-bottom:10px;">Order Placed! 🎉</h2>
+          <p style="color:var(--gray);font-size:15px;">Your order has been confirmed. We'll deliver it fresh tomorrow morning.</p>
+          <div class="order-id">Order ID: <strong id="final-order-id">#MQ-000000</strong></div>
+          <p style="font-size:13px;color:var(--gray);margin-bottom:24px;">A confirmation will be sent to your phone number. Track your delivery via WhatsApp.</p>
+          <button class="btn btn-primary" style="margin:0 auto;" onclick="closePayModal()">Continue Shopping →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOME PAGE -->
+<div id="page-home" class="page active">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-inner">
+        <div class="hero-content">
+          <div class="hero-badge"><span class="dot"></span> Free delivery on first order</div>
+          <h1>Fresh Milk, Vegetables & <em>Fruits</em> Delivered Daily To Your Doorstep</h1>
+          <p>Pure farm-to-home goodness. No middlemen, no preservatives — just fresh organic produce delivered every morning.</p>
+          <div class="hero-btns">
+            <button class="btn btn-primary" onclick="nav('products')">🛍 Order Now</button>
+            <button class="btn btn-outline" onclick="nav('subscription')">📦 Subscribe</button>
+          </div>
+          <div class="hero-stats">
+            <div class="hero-stat"><strong>500+</strong><span>Happy Customers</span></div>
+            <div class="hero-stat"><strong>50+</strong><span>Farm Partners</span></div>
+            <div class="hero-stat"><strong>100%</strong><span>Organic</span></div>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="hero-img-main">🥛</div>
+          <div class="hero-float"><span class="fi">⭐</span><span>4.9 Rating</span></div>
+          <div class="hero-float"><span class="fi">🚚</span><span>Daily Delivery</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="categories">
+    <div class="container">
+      <div class="section-header">
+        <div class="tag">Browse by Category</div>
+        <h2>What We Offer</h2>
+        <p>Farm-fresh products across four categories, sourced daily from trusted partners.</p>
+      </div>
+      <div class="cat-grid">
+        <div class="cat-card fade-in" onclick="nav('products','milk')">
+          <div class="cat-icon">🥛</div>
+          <h3>Milk</h3>
+          <p>Cow, Buffalo & Organic</p>
+        </div>
+        <div class="cat-card fade-in" onclick="nav('products','vegetables')">
+          <div class="cat-icon">🥦</div>
+          <h3>Vegetables</h3>
+          <p>Fresh & Farm-picked daily</p>
+        </div>
+        <div class="cat-card fade-in" onclick="nav('products','dairy')">
+          <div class="cat-icon">🧈</div>
+          <h3>Milk By-Products</h3>
+          <p>Ghee, Paneer, Butter & more</p>
+        </div>
+        <div class="cat-card fade-in" onclick="nav('products','fruits')">
+          <div class="cat-icon">🍎</div>
+          <h3>Fruits</h3>
+          <p>Seasonal & tropical varieties</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Products -->
+  <section class="section products-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="tag">Best Sellers</div>
+        <h2>Featured Products</h2>
+        <p>Our most loved farm-fresh picks, delivered with care every single day.</p>
+      </div>
+      <div class="filter-tabs" id="home-tabs">
+        <button class="filter-tab active" data-cat="all">All</button>
+        <button class="filter-tab" data-cat="milk">🥛 Milk</button>
+        <button class="filter-tab" data-cat="vegetables">🥦 Vegetables</button>
+        <button class="filter-tab" data-cat="dairy">🧀 Dairy</button>
+        <button class="filter-tab" data-cat="fruits">🍎 Fruits</button>
+      </div>
+      <div class="products-grid" id="home-grid"></div>
+      <div style="text-align:center;margin-top:40px;">
+        <button class="btn btn-outline" onclick="nav('products')">View All Products →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Choose Us -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <div class="tag">Our Promise</div>
+        <h2>Why Choose Milqu Fresh?</h2>
+        <p>We go the extra mile to bring you the freshest produce with full transparency.</p>
+      </div>
+      <div class="why-grid">
+        <div class="why-card fade-in">
+          <div class="why-icon">🌾</div>
+          <h3>Direct from Farms</h3>
+          <p>We source directly from local partner farms, cutting out middlemen so you get the freshest produce at fair prices.</p>
+        </div>
+        <div class="why-card fade-in">
+          <div class="why-icon">⏰</div>
+          <h3>Daily Fresh Delivery</h3>
+          <p>Milk is collected every morning and delivered to your doorstep by 7 AM — fresher than your local store.</p>
+        </div>
+        <div class="why-card fade-in">
+          <div class="why-icon">🌿</div>
+          <h3>100% Organic</h3>
+          <p>No artificial hormones, no preservatives. Pure, natural goodness from ethically raised animals and chemical-free farms.</p>
+        </div>
+        <div class="why-card fade-in">
+          <div class="why-icon">💰</div>
+          <h3>Affordable Pricing</h3>
+          <p>By working directly with farmers, we keep prices fair for families while paying farmers properly.</p>
+        </div>
+        <div class="why-card fade-in">
+          <div class="why-icon">📦</div>
+          <h3>Flexible Subscription</h3>
+          <p>Subscribe for daily, alternate-day, or weekday delivery. Pause, cancel, or change quantities anytime.</p>
+        </div>
+        <div class="why-card fade-in">
+          <div class="why-icon">🔬</div>
+          <h3>Quality Tested</h3>
+          <p>Every batch is tested for purity. Products are processed in certified hygienic facilities for your safety.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Subscription Plans -->
+  <section class="section subscription-section">
+    <div class="container">
+      <div style="text-align:center;margin-bottom:52px;">
+        <div class="stag">Subscribe & Save</div>
+        <h2 style="font-size:clamp(28px,4vw,42px);color:var(--white);margin:14px 0;">Milk Subscription Plans</h2>
+        <p style="color:rgba(255,255,255,.7);font-size:17px;max-width:520px;margin:0 auto;">Get fresh milk delivered every day. Choose a plan that works for you.</p>
+      </div>
+      <div class="plans-grid">
+        <div class="plan-card fade-in">
+          <div class="plan-name">Basic</div>
+          <div class="plan-price"><sup>₹</sup>1,800<sub>/mo</sub></div>
+          <div class="plan-desc">Cow Milk · 1 Litre/day</div>
+          <ul class="plan-features">
+            <li>1 L Cow Milk daily</li>
+            <li>Morning delivery by 7 AM</li>
+            <li>Free delivery</li>
+            <li>Pause anytime</li>
+          </ul>
+          <button class="btn btn-outline" style="width:100%;justify-content:center;" onclick="nav('subscription')">Get Started</button>
+        </div>
+        <div class="plan-card featured fade-in">
+          <div class="plan-name">Popular ⭐</div>
+          <div class="plan-price"><sup>₹</sup>4,500<sub>/mo</sub></div>
+          <div class="plan-desc">Buffalo Milk · 2 Litres/day</div>
+          <ul class="plan-features">
+            <li>2 L Buffalo Milk daily</li>
+            <li>Morning delivery by 6 AM</li>
+            <li>Free delivery</li>
+            <li>Pause or skip anytime</li>
+            <li>Monthly quality report</li>
+          </ul>
+          <button class="btn btn-white" style="width:100%;justify-content:center;" onclick="nav('subscription')">Get Started</button>
+        </div>
+        <div class="plan-card fade-in">
+          <div class="plan-name">Premium</div>
+          <div class="plan-price"><sup>₹</sup>5,400<sub>/mo</sub></div>
+          <div class="plan-desc">Organic Milk · 2 Litres/day</div>
+          <ul class="plan-features">
+            <li>2 L Organic Milk daily</li>
+            <li>Priority delivery by 6 AM</li>
+            <li>Free delivery</li>
+            <li>Flexible schedule</li>
+            <li>Monthly quality report</li>
+            <li>Dedicated support</li>
+          </ul>
+          <button class="btn btn-outline" style="width:100%;justify-content:center;" onclick="nav('subscription')">Get Started</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="section testimonials-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="tag">Happy Customers</div>
+        <h2>What Our Customers Say</h2>
+        <p>Real reviews from families who trust Milqu Fresh every day.</p>
+      </div>
+      <div class="testimonials-slider">
+        <div class="testimonials-track" id="t-track">
+          <div class="testimonial-slide">
+            <div class="testimonials-grid">
+              <div class="testimonial-card">
+                <div class="stars">★★★★★</div>
+                <p class="testimonial-text">"The milk quality is absolutely amazing. You can taste the difference — no powdery smell, just pure creamy goodness. My kids love it!"</p>
+                <div class="testimonial-author">
+                  <div class="author-avatar">👩</div>
+                  <div>
+                    <div class="author-name">Priya Sharma</div>
+                    <div class="author-loc">Bangalore, Karnataka</div>
+                  </div>
+                </div>
+              </div>
+              <div class="testimonial-card">
+                <div class="stars">★★★★★</div>
+                <p class="testimonial-text">"Switching to Milqu Fresh was the best decision. Vegetables are so fresh they last much longer than supermarket ones. Always on time!"</p>
+                <div class="testimonial-author">
+                  <div class="author-avatar">👨</div>
+                  <div>
+                    <div class="author-name">Ravi Kumar</div>
+                    <div class="author-loc">Hyderabad, Telangana</div>
+                  </div>
+                </div>
+              </div>
+              <div class="testimonial-card">
+                <div class="stars">★★★★★</div>
+                <p class="testimonial-text">"The ghee and paneer are top-notch. I can tell it's made from quality milk. Subscription is very flexible and easy to manage."</p>
+                <div class="testimonial-author">
+                  <div class="author-avatar">👩</div>
+                  <div>
+                    <div class="author-name">Anita Patel</div>
+                    <div class="author-loc">Ahmedabad, Gujarat</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="testimonial-slide">
+            <div class="testimonials-grid">
+              <div class="testimonial-card">
+                <div class="stars">★★★★★</div>
+                <p class="testimonial-text">"Five stars for the buffalo milk! The cream layer on top every morning is a testament to its purity. Subscribing for 6 months now."</p>
+                <div class="testimonial-author">
+                  <div class="author-avatar">👨</div>
+                  <div>
+                    <div class="author-name">Suresh Iyer</div>
+                    <div class="author-loc">Chennai, Tamil Nadu</div>
+                  </div>
+                </div>
+              </div>
+              <div class="testimonial-card">
+                <div class="stars">★★★★⭐</div>
+                <p class="testimonial-text">"Fruits are always ripe and sweet. The seasonal fruit box is a great addition. Would love more variety, but overall fantastic!"</p>
+                <div class="testimonial-author">
+                  <div class="author-avatar">👩</div>
+                  <div>
+                    <div class="author-name">Meena Reddy</div>
+                    <div class="author-loc">Pune, Maharashtra</div>
+                  </div>
+                </div>
+              </div>
+              <div class="testimonial-card">
+                <div class="stars">★★★★★</div>
+                <p class="testimonial-text">"Ordered organic milk for my newborn and the doctor was impressed by its quality. Milqu Fresh is now a permanent household staple."</p>
+                <div class="testimonial-author">
+                  <div class="author-avatar">👩</div>
+                  <div>
+                    <div class="author-name">Lakshmi Nair</div>
+                    <div class="author-loc">Kochi, Kerala</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="slider-controls">
+        <div class="slider-dot active" data-i="0"></div>
+        <div class="slider-dot" data-i="1"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <div class="container">
+      <h2>Start Your Farm-Fresh Journey Today</h2>
+      <p>Join hundreds of families enjoying pure, fresh produce delivered to their doorstep every morning.</p>
+      <div class="cta-btns">
+        <button class="btn btn-white" onclick="nav('products')">🛍 Shop Now</button>
+        <button class="btn" style="background:rgba(255,255,255,.2);color:#fff;border:2px solid rgba(255,255,255,.5);" onclick="nav('subscription')">📦 Subscribe</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- PRODUCTS PAGE -->
+<div id="page-products" class="page">
+  <div class="page-hero">
+    <div class="container">
+      <div class="itag">Our Products</div>
+      <h1>Farm-Fresh Products</h1>
+      <p>All sourced directly from farms — pure, fresh, and delivered with care.</p>
+    </div>
+  </div>
+  <section style="padding:60px 0;">
+    <div class="container">
+      <div class="filter-tabs" id="prod-tabs">
+        <button class="filter-tab active" data-cat="all">All Products</button>
+        <button class="filter-tab" data-cat="milk">🥛 Milk</button>
+        <button class="filter-tab" data-cat="vegetables">🥦 Vegetables</button>
+        <button class="filter-tab" data-cat="dairy">🧀 Dairy By-Products</button>
+        <button class="filter-tab" data-cat="fruits">🍎 Fruits</button>
+      </div>
+      <div class="products-grid" id="prod-grid"></div>
+    </div>
+  </section>
+</div>
+
+<!-- PRODUCT DETAIL PAGE -->
+<div id="page-detail" class="page">
+  <div class="breadcrumb-bar">
+    <div class="container">
+      <a href="#" onclick="return nav('home')">Home</a> › <a href="#" onclick="return nav('products')">Products</a> › <span id="bc-name">Product</span>
+    </div>
+  </div>
+  <section style="padding:60px 0;">
+    <div class="container">
+      <div class="product-detail-grid" id="detail-grid"></div>
+    </div>
+  </section>
+  <section class="section" style="background:var(--light-gray);">
+    <div class="container">
+      <div class="section-header">
+        <div class="tag">Related</div>
+        <h2>You May Also Like</h2>
+      </div>
+      <div class="products-grid" id="related-grid"></div>
+    </div>
+  </section>
+</div>
+
+<!-- SUBSCRIPTION PAGE -->
+<div id="page-subscription" class="page">
+  <div class="page-hero">
+    <div class="container">
+      <div class="itag">Daily Delivery</div>
+      <h1>Subscribe for Daily Fresh Milk</h1>
+      <p>Never run out of fresh milk again. Get it at your door every morning.</p>
+    </div>
+  </div>
+  <section style="padding:60px 0;">
+    <div class="container">
+      <div class="sub-grid">
+        <div class="card-box">
+          <h2>Set Up Your Subscription</h2>
+          <form id="sub-form">
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input type="text" id="sub-name" placeholder="e.g. Priya Sharma" required>
+            </div>
+            <div class="form-group">
+              <label>Phone Number *</label>
+              <input type="tel" id="sub-phone" placeholder="10-digit mobile number" required>
+            </div>
+            <div class="form-group">
+              <label>Delivery Address *</label>
+              <input type="text" id="sub-address" placeholder="Flat no, Street, City, Pincode" required>
+            </div>
+            <div class="form-group">
+              <label>Milk Type</label>
+              <select id="milk-type">
+                <option value="cow">🥛 Cow Milk — ₹60/L</option>
+                <option value="buffalo">🍼 Buffalo Milk — ₹75/L</option>
+                <option value="organic">🌿 Organic Milk — ₹90/L</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Quantity (Litres per day)</label>
+              <input type="number" id="milk-qty" value="1" min="0.5" max="20" step="0.5">
+            </div>
+            <div class="form-group">
+              <label>Delivery Schedule</label>
+              <div class="schedule-grid">
+                <div class="schedule-opt active" data-s="daily">📅 Daily<br><small>30 deliveries/month</small></div>
+                <div class="schedule-opt" data-s="alternate">📆 Alternate Days<br><small>~15/month</small></div>
+                <div class="schedule-opt" data-s="weekdays">🗓 Weekdays<br><small>~22/month</small></div>
+                <div class="schedule-opt" data-s="custom">✏️ Custom<br><small>Contact us</small></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Start Date</label>
+              <input type="date" id="sub-start">
+            </div>
+            <div class="form-group">
+              <label>Special Instructions</label>
+              <input type="text" id="sub-note" placeholder="e.g. Leave at doorstep">
+            </div>
+
+            <!-- PAYMENT METHOD FOR SUBSCRIPTION -->
+            <div class="form-group">
+              <label style="font-weight:700;margin-bottom:12px;display:block;">&#x1F4B3; Payment Method *</label>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;">
+                <div class="sub-pay-method selected" data-m="upi" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border:2px solid var(--green);border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;background:var(--green-light);color:var(--green-dark);text-align:center;transition:all .2s;"><span style="font-size:20px;">&#x1F4F1;</span>UPI</div>
+                <div class="sub-pay-method" data-m="card" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border:2px solid var(--border);border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--gray);text-align:center;transition:all .2s;"><span style="font-size:20px;">&#x1F4B3;</span>Card</div>
+                <div class="sub-pay-method" data-m="netbanking" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border:2px solid var(--border);border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--gray);text-align:center;transition:all .2s;"><span style="font-size:20px;">&#x1F3E6;</span>Net Banking</div>
+                <div class="sub-pay-method" data-m="cod" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border:2px solid var(--border);border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--gray);text-align:center;transition:all .2s;"><span style="font-size:20px;">&#x1F4B5;</span>COD</div>
+              </div>
+              <div id="sub-pm-upi" class="sub-pm-panel">
+                <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+                  <div class="sub-upi-app" data-app="GPay" style="padding:8px 14px;border:2px solid transparent;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;background:var(--light-gray);">GPay</div>
+                  <div class="sub-upi-app" data-app="PhonePe" style="padding:8px 14px;border:2px solid transparent;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;background:var(--light-gray);">PhonePe</div>
+                  <div class="sub-upi-app" data-app="Paytm" style="padding:8px 14px;border:2px solid transparent;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;background:var(--light-gray);">Paytm</div>
+                  <div class="sub-upi-app" data-app="BHIM" style="padding:8px 14px;border:2px solid transparent;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;background:var(--light-gray);">BHIM</div>
+                </div>
+                <input type="text" id="sub-upi-id" placeholder="Enter UPI ID (e.g. name@upi)" style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;">
+              </div>
+              <div id="sub-pm-card" class="sub-pm-panel" style="display:none;">
+                <input type="text" id="sub-card-num" maxlength="19" placeholder="1234 5678 9012 3456" style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;margin-bottom:8px;">
+                <input type="text" id="sub-card-name" placeholder="Cardholder Name" style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;margin-bottom:8px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                  <input type="text" id="sub-card-exp" maxlength="5" placeholder="MM/YY" style="padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;">
+                  <input type="password" id="sub-card-cvv" maxlength="3" placeholder="CVV" style="padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;">
+                </div>
+              </div>
+              <div id="sub-pm-netbanking" class="sub-pm-panel" style="display:none;">
+                <select id="sub-bank-select" style="width:100%;padding:12px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;background:var(--white);">
+                  <option value="">-- Choose your bank --</option>
+                  <option>State Bank of India</option><option>HDFC Bank</option><option>ICICI Bank</option>
+                  <option>Axis Bank</option><option>Kotak Mahindra</option><option>Punjab National Bank</option>
+                  <option>Bank of Baroda</option><option>Yes Bank</option>
+                </select>
+              </div>
+              <div id="sub-pm-cod" class="sub-pm-panel" style="display:none;">
+                <div style="background:var(--light-gray);border-radius:10px;padding:14px;font-size:13px;color:var(--gray);">Cash on Delivery - Pay monthly when our agent visits. Available above Rs.500/month.</div>
+              </div>
+            </div>
+            <!-- END PAYMENT METHOD -->
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:16px;">&#x2705; Confirm &amp; Pay</button>
+          </form>
+        </div>
+        <div>
+          <div class="card-box" style="position:sticky;top:90px;">
+            <h3>Price Summary</h3>
+            <div class="sub-breakdown">
+              <div class="sub-row">
+                <span>Rate</span>
+                <strong id="s-rate">₹60/L</strong>
+              </div>
+              <div class="sub-row">
+                <span>Quantity</span>
+                <strong id="s-qty">1 L/day</strong>
+              </div>
+              <div class="sub-row">
+                <span>Delivery Days</span>
+                <strong id="s-days">30 days</strong>
+              </div>
+              <div class="sub-row">
+                <span>Subtotal</span>
+                <strong id="s-sub">₹1,800</strong>
+              </div>
+              <div class="sub-row">
+                <span>Delivery</span>
+                <strong id="s-del">₹0 (Free)</strong>
+              </div>
+            </div>
+            <div class="sub-total">
+              <span>Monthly Total</span>
+              <strong id="s-total" style="color:var(--green);font-size:24px;font-family:'Playfair Display',serif;">₹1,800</strong>
+            </div>
+            <div style="margin-top:24px;background:var(--green-light);border-radius:10px;padding:16px;">
+              <div style="font-weight:700;font-size:14px;color:var(--green-dark);margin-bottom:10px;">📦 What's Included:</div>
+              <ul style="display:flex;flex-direction:column;gap:8px;font-size:13px;">
+                <li>✅ Morning delivery before 7 AM</li>
+                <li>✅ Free delivery always</li>
+                <li>✅ Pause or skip any day</li>
+                <li>✅ Cancel anytime</li>
+                <li>✅ Dedicated support</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ABOUT PAGE -->
+<div id="page-about" class="page">
+  <div class="page-hero">
+    <div class="container">
+      <div class="itag">Our Story</div>
+      <h1>About Milqu Fresh</h1>
+      <p>A passion project born on a farm, built to bring purity back to your table.</p>
+    </div>
+  </div>
+  <section style="padding:60px 0;">
+    <div class="container">
+      <div class="about-hero-grid fade-in">
+        <div class="about-img">🌾</div>
+        <div class="about-text">
+          <div class="sm-tag">Our Story</div>
+          <h2>From One Farm to Thousands of Homes</h2>
+          <p>Milqu Fresh was founded in 2021 by Vikram Nair, a third-generation dairy farmer from Karnataka who grew up watching his family's pure milk get adulterated before reaching city consumers.</p>
+          <p>Frustrated by the broken supply chain, Vikram went direct — partnering with 50+ trusted local farms and building a cold-chain logistics network that delivers within 6 hours of milking.</p>
+          <p>Today, Milqu Fresh serves 500+ families across Bangalore, delivering milk, vegetables, fruits and dairy by-products with the same commitment to purity.</p>
+          <div class="mv-grid">
+            <div class="mv-card">
+              <h4>🎯 Our Mission</h4>
+              <p>Make farm-fresh produce accessible for every household, while ensuring fair wages for farmers.</p>
+            </div>
+            <div class="mv-card">
+              <h4>🌟 Our Vision</h4>
+              <p>A future where every family knows exactly where their food comes from — and trusts it completely.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="background:linear-gradient(135deg,#f0fdf4,#fefce8);border-radius:24px;padding:48px;margin:60px 0;">
+        <div class="section-header">
+          <div class="tag">Quality Promise</div>
+          <h2>Our Commitment to Purity</h2>
+          <p>Every product passes our 5-point quality check before reaching your door.</p>
+        </div>
+        <div class="why-grid" style="margin-top:0;">
+          <div class="why-card" style="background:var(--white);">
+            <div class="why-icon">🧪</div>
+            <h3>Lab Tested</h3>
+            <p>Each batch tested for fat, SNF, adulteration, and microbial safety every morning before dispatch.</p>
+          </div>
+          <div class="why-card" style="background:var(--white);">
+            <div class="why-icon">❄️</div>
+            <h3>Cold Chain Delivery</h3>
+            <p>Milk kept below 4°C from farm to door. Insulated bags maintain freshness even in summer.</p>
+          </div>
+          <div class="why-card" style="background:var(--white);">
+            <div class="why-icon">🌾</div>
+            <h3>Traceable Farms</h3>
+            <p>Every product has farm traceability. Scan the QR to see which farm your milk came from.</p>
+          </div>
+        </div>
+      </div>
+      <div class="stat-boxes fade-in">
+        <div class="stat-box" style="background:var(--green-light);">
+          <div class="num" style="color:var(--green-dark);">500+</div>
+          <div class="lbl">Happy Families</div>
+        </div>
+        <div class="stat-box" style="background:var(--cream);">
+          <div class="num">50+</div>
+          <div class="lbl">Farm Partners</div>
+        </div>
+        <div class="stat-box" style="background:var(--green-light);">
+          <div class="num" style="color:var(--green-dark);">4+</div>
+          <div class="lbl">Years Delivering</div>
+        </div>
+        <div class="stat-box" style="background:var(--cream);">
+          <div class="num">99%</div>
+          <div class="lbl">On-time Delivery</div>
+        </div>
+      </div>
+      <div style="margin-top:60px;">
+        <div class="section-header">
+          <div class="tag">Our Partners</div>
+          <h2>Farmer Partnerships</h2>
+          <p>We partner with ethical farmers who share our commitment to quality and animal welfare.</p>
+        </div>
+        <div class="partners-grid fade-in">
+          <div class="partner-card">
+            <span class="big-icon">🐄</span>
+            <h4>Green Acres Farm</h4>
+            <p>Mysore, Karnataka · Cow & Organic Milk</p>
+          </div>
+          <div class="partner-card">
+            <span class="big-icon">🌾</span>
+            <h4>Nandi Dairy</h4>
+            <p>Tumkur, Karnataka · Buffalo Milk</p>
+          </div>
+          <div class="partner-card">
+            <span class="big-icon">🥦</span>
+            <h4>Krishna Agri Farms</h4>
+            <p>Hosur, Tamil Nadu · Vegetables</p>
+          </div>
+          <div class="partner-card">
+            <span class="big-icon">🍎</span>
+            <h4>Sahyadri Orchards</h4>
+            <p>Nashik, Maharashtra · Fruits</p>
+          </div>
+        </div>
+      </div>
+      <div style="background:var(--green);border-radius:24px;padding:52px 40px;text-align:center;color:var(--white);margin-top:60px;">
+        <h2 style="font-size:32px;margin-bottom:14px;">Ready to Taste the Difference?</h2>
+        <p style="opacity:.9;margin-bottom:28px;font-size:16px;">Join the Milqu Fresh family and experience what real farm-fresh tastes like.</p>
+        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+          <button class="btn btn-white" onclick="nav('products')">🛍 Shop Now</button>
+          <button class="btn" style="background:rgba(255,255,255,.2);color:var(--white);border:2px solid rgba(255,255,255,.5);" onclick="nav('subscription')">📦 Subscribe</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- CONTACT PAGE -->
+<div id="page-contact" class="page">
+  <div class="page-hero">
+    <div class="container">
+      <div class="itag">Get In Touch</div>
+      <h1>Contact Us</h1>
+      <p>Have a question? We're here every day from 5 AM to 9 PM.</p>
+    </div>
+  </div>
+  <section style="padding:60px 0;">
+    <div class="container">
+      <div class="contact-grid">
+        <div class="contact-info fade-in">
+          <h2>Let's Talk</h2>
+          <p class="desc">Whether it's about your order, subscription, or feedback — our team is just a message away. We respond within 1 hour during working hours.</p>
+          <div class="contact-items">
+            <div class="contact-item">
+              <div class="contact-item-icon">📞</div>
+              <div class="contact-item-text">
+                <h4>Phone</h4>
+                <p>+91 98765 43210</p>
+                <p>+91 87654 32109</p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-item-icon">📧</div>
+              <div class="contact-item-text">
+                <h4>Email</h4>
+                <p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bcd4d9d0d0d3fcd1d5d0cdc9daced9cfd492d5d2">[email&#160;protected]</a></p>
+                <p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="deadabaeaeb1acaa9eb3b7b2afabb8acbbadb6f0b7b0">[email&#160;protected]</a></p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-item-icon">📍</div>
+              <div class="contact-item-text">
+                <h4>Address</h4>
+                <p>12, Farm Road, Whitefield,</p>
+                <p>Bangalore, Karnataka – 560066</p>
+              </div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-item-icon">⏰</div>
+              <div class="contact-item-text">
+                <h4>Working Hours</h4>
+                <p>Every day: 5:00 AM – 9:00 PM</p>
+                <p>Deliveries: 5:00 AM – 8:00 AM</p>
+              </div>
+            </div>
+          </div>
+          <a href="https://wa.me/919876543210" target="_blank" class="whatsapp-btn">💬 Chat on WhatsApp</a>
+        </div>
+        <div class="contact-form-card fade-in">
+          <h3>Send Us a Message</h3>
+          <form id="contact-form">
+            <div class="two-col">
+              <div class="form-group">
+                <label>First Name *</label>
+                <input type="text" id="c-name" class="form-input" placeholder="Priya" required>
+              </div>
+              <div class="form-group">
+                <label>Last Name</label>
+                <input type="text" class="form-input" placeholder="Sharma">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Email *</label>
+              <input type="email" id="c-email" class="form-input" placeholder="priya@email.com" required>
+            </div>
+            <div class="form-group">
+              <label>Phone</label>
+              <input type="tel" id="c-phone" class="form-input" placeholder="10-digit mobile">
+            </div>
+            <div class="form-group">
+              <label>Subject *</label>
+              <select id="c-subject" class="form-input" required>
+                <option value="">Select a topic</option>
+                <option>Order Inquiry</option>
+                <option>Subscription Management</option>
+                <option>Product Quality</option>
+                <option>Delivery Issue</option>
+                <option>Feedback</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Message *</label>
+              <textarea id="c-msg" class="form-input" placeholder="Tell us how we can help..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:16px;">📤 Send Message</button>
+          </form>
+        </div>
+      </div>
+      <div class="map-container">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.2043843505835!2d77.71120287573774!3d13.00516498734897!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae11e23e60b45b%3A0x9dd64ec8ba4f5965!2sWhitefield%2C%20Bengaluru%2C%20Karnataka!5e0!3m2!1sen!2sin!4v1721000000000!5m2!1sen!2sin" width="100%" height="360" style="border:0;" allowfullscreen loading="lazy" title="Milqu Fresh Location"></iframe>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="logo" onclick="return nav('home')">
+          <div class="logo-icon">🌿</div>
+          <span class="logo-text">Milqu<span style="color:var(--green)"> Fresh</span></span>
+        </a>
+        <p>From farm to your table — fresh, pure, and delivered with love. Partnering with local farmers to bring you the best nature has to offer.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="#" onclick="return nav('home')">Home</a></li>
+          <li><a href="#" onclick="return nav('products')">Products</a></li>
+          <li><a href="#" onclick="return nav('subscription')">Subscribe</a></li>
+          <li><a href="#" onclick="return nav('about')">About Us</a></li>
+          <li><a href="#" onclick="return nav('contact')">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Categories</h4>
+        <ul>
+          <li><a href="#" onclick="return nav('products','milk')">🥛 Milk</a></li>
+          <li><a href="#" onclick="return nav('products','vegetables')">🥦 Vegetables</a></li>
+          <li><a href="#" onclick="return nav('products','dairy')">🧀 Dairy Products</a></li>
+          <li><a href="#" onclick="return nav('products','fruits')">🍎 Fruits</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact Us</h4>
+        <ul class="footer-contact-list">
+          <li>📞 +91 98765 43210</li>
+          <li>📧 <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e68e838a8a89a68b8f8a9793809483958ec88f88">[email&#160;protected]</a></li>
+          <li>📍 Bangalore, Karnataka 560001</li>
+          <li>⏰ 5:00 AM – 9:00 PM daily</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 Milqu Fresh. All rights reserved. Made with �ð in Karnataka.</p>
+      <div class="footer-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Refund Policy</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
