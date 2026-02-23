@@ -15,20 +15,43 @@
   <div class="container">
     <div class="nav-inner">
       <a href="#" class="logo" onclick="return nav('home')">
-        <img src="images/milquuu3.png" alt="Milqu Fresh Logo" style="height:38px;width:38px;object-fit:contain;border-radius:8px;">
+    
+        <img src="images/milquuu-3.png" alt="Milqu Fresh Logo" style="height:50px;width:50px;object-fit:contain;border-radius:8px;">
         <span class="logo-text">Milqu<span> Fresh</span></span>
       </a>
       <div class="nav-links">
         <a href="#" onclick="return nav('home')" class="nl active" data-p="home">Home</a>
+        
         <div class="nav-dropdown">
-          <a href="#" onclick="return nav('products')">Products</a>
-          <div class="dropdown-menu">
-            <a href="#" onclick="return nav('products','milk')">🥛 Milk</a>
-            <a href="#" onclick="return nav('products','vegetables')">🥦 Vegetables</a>
-            <a href="#" onclick="return nav('products','dairy')">🧀 By-Products</a>
-            <a href="#" onclick="return nav('products','fruits')">🍎 Fruits</a>
-          </div>
-        </div>
+
+  <a href="#" onclick="return nav('products')">Products</a>
+
+      <div class="dropdown-menu">
+
+  <a href="#" onclick="return nav('products','milk')" class="dropdown-item">
+    <img src="images/milk-products.png" alt="Milk">
+    <span>Milk</span>
+  </a>
+
+  <a href="#" onclick="return nav('products','vegetables')" class="dropdown-item">
+    <img src="images/vegetables.png" alt="Vegetables">
+    <span>Vegetables</span>
+  </a>
+
+  <a href="#" onclick="return nav('products','dairy')" class="dropdown-item">
+    <img src="images/milk-by-products.png" alt="By Products">
+    <span>By-Products</span>
+  </a>
+
+  <a href="#" onclick="return nav('products','fruits')" class="dropdown-item">
+    <img src="images/fruits.png" alt="Fruits">
+    <span>Fruits</span>
+  </a>
+  
+
+</div>
+      
+  
         <a href="#" onclick="return nav('subscription')" class="nl" data-p="subscription">Subscribe</a>
         <a href="#" onclick="return nav('about')" class="nl" data-p="about">About</a>
         <a href="#" onclick="return nav('contact')" class="nl" data-p="contact">Contact</a>
