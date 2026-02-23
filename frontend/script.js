@@ -66,7 +66,7 @@ const P = [
   },
   {
     id:'m2', name:'Buffalo Milk', e:'🍼',
-    img:'buffalo_milk.png',      // ← put buffalo_milk.png inside images/ folder
+    img:'images/buffalo milk.png',      // ← put buffalo_milk.png inside images/ folder
     price:75, unit:'/L', cat:'milk', badge:'Popular',
     desc:'Rich, creamy buffalo milk — perfect for curd & sweets.',
     nut:[['Calories','97 kcal'],['Protein','3.7g'],['Fat','6.9g'],['Carbs','5.2g'],['Calcium','195mg'],['Phosphorus','130mg']]
