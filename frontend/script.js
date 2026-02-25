@@ -250,7 +250,7 @@ const closeCart = () => { document.getElementById('cart-overlay').classList.remo
 // ============================================================
 //  CHECKOUT PAYMENT MODAL
 // ============================================================
-let curPayStep = 1, selPayMethod = 'upi', selUPIApp = '';
+let curPayStep = 1, selPayMethod = 'cod', selUPIApp = '';
 
 function openPayModal() {
   const c = getCart();
@@ -275,13 +275,6 @@ function goPayStep(n) {
     if (!/^\d{6}$/.test(pi)) { notif('Enter valid 6-digit pincode ⚠️'); return; }
   }
   if (n === 3) {
-    if (selPayMethod === 'card') {
-      const num = document.getElementById('card-num').value.replace(/\s/g,'');
-      const cvv = document.getElementById('card-cvv').value;
-      const exp = document.getElementById('card-exp').value;
-      if (num.length < 16 || !exp || cvv.length < 3) { notif('Please fill all card details ⚠️'); return; }
-    }
-    if (selPayMethod === 'netbanking' && !document.getElementById('bank-select').value) { notif('Please select a bank ⚠️'); return; }
     renderReview();
   }
   curPayStep = n;
@@ -298,45 +291,14 @@ function renderOrderSummary() {
      <div class="order-total-row"><span>Total</span><span style="color:var(--green)">₹${sum.toFixed(0)}</span></div>`;
 }
 
-function selectPayMethod(el, m) {
-  document.querySelectorAll('.pay-method').forEach(x => x.classList.remove('selected'));
-  el.classList.add('selected'); selPayMethod = m;
-  ['upi','card','netbanking','cod'].forEach(x => { const pnl=document.getElementById('pm-'+x); if(pnl)pnl.style.display=x===m?'block':'none'; });
-}
-
-function selectUPIApp(el, app) {
-  document.querySelectorAll('.upi-app').forEach(x => { x.style.border='2px solid transparent'; x.style.background=''; });
-  el.style.border='2px solid var(--green)'; el.style.background='var(--green-light)';
-  selUPIApp = app;
-  document.getElementById('upi-id').value = app.toLowerCase()+'@'+app.toLowerCase();
-}
-
-function verifyUPI() {
-  const v = document.getElementById('upi-id').value;
-  if (!v.includes('@')) { notif('Enter a valid UPI ID ⚠️'); return; }
-  notif('UPI ID verified ✅');
-}
-
-function fmtCard(el) {
-  let v = el.value.replace(/\D/g,'').substring(0,16);
-  el.value = v.replace(/(.{4})/g,'$1 ').trim();
-  const d = document.getElementById('card-display'); if(d)d.textContent=el.value||'•••• •••• •••• ••••';
-}
-
-function fmtExp(el) {
-  let v = el.value.replace(/\D/g,'');
-  if(v.length>=2)v=v.substring(0,2)+'/'+v.substring(2,4);
-  el.value=v;
-  const d=document.getElementById('card-exp-display'); if(d)d.textContent=el.value||'MM/YY';
-}
+// Payment is COD only — no method selection needed
 
 function renderReview() {
   const c=getCart(), sum=c.reduce((s,i)=>s+i.price*i.qty,0);
   const nm=document.getElementById('pay-fname').value+' '+document.getElementById('pay-lname').value;
   const ph=document.getElementById('pay-phone').value;
   const ad=`${document.getElementById('pay-address').value}, ${document.getElementById('pay-city').value} - ${document.getElementById('pay-pin').value}`;
-  const pmL={upi:'UPI Payment',card:'Credit/Debit Card',netbanking:'Net Banking',cod:'Cash on Delivery'};
-  const isCOD=selPayMethod==='cod', total=sum+(isCOD?20:0);
+  const total = sum + 20; // COD fee
   document.getElementById('review-content').innerHTML=`
     <div style="background:var(--light-gray);border-radius:12px;padding:16px;margin-bottom:14px;">
       <h4 style="font-size:14px;margin-bottom:8px;">📦 Delivering To</h4>
@@ -344,16 +306,14 @@ function renderReview() {
       <p style="font-size:13px;color:var(--gray);">${ph}</p>
       <p style="font-size:13px;color:var(--gray);">${ad}</p>
     </div>
-    <div style="background:var(--light-gray);border-radius:12px;padding:16px;margin-bottom:14px;">
-      <h4 style="font-size:14px;margin-bottom:6px;">💳 Payment: ${pmL[selPayMethod]||'UPI'}</h4>
-      ${selPayMethod==='upi'?`<p style="font-size:13px;color:var(--gray);">${document.getElementById('upi-id').value||selUPIApp}</p>`:''}
-      ${selPayMethod==='card'?`<p style="font-size:13px;color:var(--gray);">Card ending ••••${document.getElementById('card-num').value.replace(/\s/g,'').slice(-4)||'xxxx'}</p>`:''}
-      ${selPayMethod==='netbanking'?`<p style="font-size:13px;color:var(--gray);">${document.getElementById('bank-select').value}</p>`:''}
-      ${isCOD?`<p style="font-size:13px;color:var(--gray);">Pay ₹${total.toFixed(0)} (incl. ₹20 COD fee) on delivery</p>`:''}
+    <div style="background:var(--green-light);border:1.5px solid var(--green);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <h4 style="font-size:14px;margin-bottom:6px;color:var(--green-dark);">💵 Cash on Delivery</h4>
+      <p style="font-size:13px;color:var(--green-dark);">Pay ₹${total.toFixed(0)} in cash when your order arrives. (Incl. ₹20 handling fee)</p>
     </div>
     <div>
       ${c.map(i=>`<div class="order-item-row"><span>${i.e} ${i.name} × ${i.qty}</span><span>₹${(i.price*i.qty).toFixed(0)}</span></div>`).join('')}
-      <div class="order-total-row"><span>Total to Pay</span><span style="color:var(--green)">₹${total.toFixed(0)}</span></div>
+      <div class="order-item-row"><span>COD Handling Fee</span><span>₹20</span></div>
+      <div class="order-total-row"><span>Total to Pay (Cash)</span><span style="color:var(--green)">₹${total.toFixed(0)}</span></div>
     </div>`;
 }
 
@@ -369,12 +329,12 @@ async function placeOrder() {
       address:`${document.getElementById('pay-address').value}, ${document.getElementById('pay-city').value} - ${document.getElementById('pay-pin').value}`,
       notes:  document.getElementById('pay-notes').value
     },
-    items:c, total:sum, paymentMethod:selPayMethod
+    items:c, total:sum+20, paymentMethod:'cod'
   };
   try {
     const res=await fetch(`${API_BASE}/orders`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderData)});
     const result=await res.json();
-    btn.disabled=false; btn.textContent='🔒 Place Order & Pay';
+    btn.disabled=false; btn.textContent='💵 Confirm & Place Order';
     if(result.success){
       document.getElementById('final-order-id').textContent='#'+result.orderId;
       document.querySelectorAll('.pay-panel').forEach(p=>p.classList.remove('active'));
@@ -384,7 +344,7 @@ async function placeOrder() {
     } else { notif('❌ '+(result.message||'Order failed. Try again.')); }
   } catch(err) {
     console.error(err);
-    btn.disabled=false; btn.textContent='🔒 Place Order & Pay';
+    btn.disabled=false; btn.textContent='💵 Confirm & Place Order';
     notif('❌ Server offline. Please try again.');
   }
 }
@@ -398,7 +358,7 @@ function notif(msg) { const n=document.getElementById('notification'); n.textCon
 //  SUBSCRIPTION
 // ============================================================
 const RATES={cow:60,buffalo:75,organic:90}, DAYS={daily:30,alternate:15,weekdays:22,custom:30};
-let sSched='daily', subPayMethod='upi', subUPIApp='';
+let sSched='daily', subPayMethod='cod', subUPIApp='';
 
 function initSub() {
   const mt=document.getElementById('milk-type'), mq=document.getElementById('milk-qty');
@@ -411,23 +371,7 @@ function initSub() {
   const sd=document.getElementById('sub-start');
   if(sd){sd.min=t.toISOString().split('T')[0]; sd.value=sd.min;}
   calcSub();
-  document.querySelectorAll('.sub-pay-method').forEach(el=>{
-    el.onclick=()=>{
-      document.querySelectorAll('.sub-pay-method').forEach(x=>x.classList.remove('selected'));
-      el.classList.add('selected'); subPayMethod=el.dataset.m;
-      document.querySelectorAll('.sub-pm-panel').forEach(p=>p.style.display='none');
-      const panel=document.getElementById('sub-pm-'+subPayMethod);
-      if(panel)panel.style.display='block';
-    };
-  });
-  document.querySelectorAll('.sub-upi-app').forEach(el=>{
-    el.onclick=()=>{
-      document.querySelectorAll('.sub-upi-app').forEach(x=>{x.style.border='2px solid transparent';x.style.background='';});
-      el.style.border='2px solid var(--green)'; el.style.background='var(--green-light)';
-      subUPIApp=el.dataset.app;
-      const inp=document.getElementById('sub-upi-id'); if(inp)inp.value=subUPIApp.toLowerCase()+'@'+subUPIApp.toLowerCase();
-    };
-  });
+  // Payment is always COD — no listener setup needed
 }
 
 function calcSub() {
@@ -446,9 +390,6 @@ document.getElementById('sub-form')?.addEventListener('submit', async e => {
   const ad=document.getElementById('sub-address').value.trim();
   if(!nm||!ph||!ad){notif('Please fill all required fields ⚠️');return;}
   if(!/^[6-9]\d{9}$/.test(ph)){notif('Enter a valid 10-digit phone number ⚠️');return;}
-  if(subPayMethod==='upi'){const v=document.getElementById('sub-upi-id')?.value?.trim()||subUPIApp;if(!v||!v.includes('@')){notif('Please enter or select a UPI ID ⚠️');return;}}
-  if(subPayMethod==='card'){const n=document.getElementById('sub-card-num')?.value?.replace(/\s/g,'')||'',ex=document.getElementById('sub-card-exp')?.value||'',cv=document.getElementById('sub-card-cvv')?.value||'';if(n.length<16||!ex||cv.length<3){notif('Please fill all card details ⚠️');return;}}
-  if(subPayMethod==='netbanking'){if(!document.getElementById('sub-bank-select')?.value){notif('Please select a bank ⚠️');return;}}
   calcSub();
   const total=document.getElementById('s-total').textContent;
   const subData={
@@ -458,7 +399,7 @@ document.getElementById('sub-form')?.addEventListener('submit', async e => {
     schedule:sSched,
     startDate:document.getElementById('sub-start').value,
     notes:document.getElementById('sub-note').value,
-    monthlyTotal:total,paymentMethod:subPayMethod,status:'active'
+    monthlyTotal:total,paymentMethod:'cod',status:'active'
   };
   const btn=e.target.querySelector('button[type=submit]');
   btn.disabled=true; btn.textContent='⏳ Processing...';
@@ -467,15 +408,11 @@ document.getElementById('sub-form')?.addEventListener('submit', async e => {
     const result=await res.json();
     if(result.success){
       notif(`🎉 Subscription #${result.subscriptionId} confirmed! ${total}/month`);
-      e.target.reset(); subPayMethod='upi'; subUPIApp='';
-      document.querySelectorAll('.sub-pay-method').forEach(x=>x.classList.remove('selected'));
-      const first=document.querySelector('.sub-pay-method'); if(first)first.classList.add('selected');
-      document.querySelectorAll('.sub-pm-panel').forEach(p=>p.style.display='none');
-      const up=document.getElementById('sub-pm-upi'); if(up)up.style.display='block';
+      e.target.reset(); subPayMethod='cod';
       calcSub();
     } else { notif('❌ '+(result.message||'Subscription failed.')); }
   } catch(err){console.error(err);notif('❌ Server offline. Try again.');}
-  btn.disabled=false; btn.textContent='✅ Confirm & Pay';
+  btn.disabled=false; btn.textContent='💵 Confirm Subscription';
 });
 
 document.getElementById('contact-form')?.addEventListener('submit', async e => {
