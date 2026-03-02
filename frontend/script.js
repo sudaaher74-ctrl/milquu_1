@@ -9,8 +9,8 @@ const API_BASE = 'http://localhost:5000/api';
 
 // ── Cart uses localStorage (browser only) ───────────────────
 const DB = {
-  get: k => { try { return JSON.parse(localStorage.getItem('mq_'+k)) || []; } catch { return []; } },
-  set: (k,v) => localStorage.setItem('mq_'+k, JSON.stringify(v)),
+  get: k => { try { return JSON.parse(localStorage.getItem('mq_' + k)) || []; } catch { return []; } },
+  set: (k, v) => localStorage.setItem('mq_' + k, JSON.stringify(v)),
 };
 
 // ============================================================
@@ -38,30 +38,30 @@ const IMG = 'images/';
 const P = [
 
   // MILK
-  { id:'m1', name:'Cow Milk',       e:'🥛', img:'cow-milk.png', price:60,  unit:'/L',     cat:'milk',       badge:'Fresh',       desc:'Pure A2 cow milk, collected fresh each morning.',                           nut:[['Calories','62 kcal'],['Protein','3.2g'],['Fat','3.7g'],['Carbs','4.8g'],['Calcium','120mg'],['Vit D','40 IU']] },
-  { id:'m2', name:'Buffalo Milk',   e:'🍼', img:'buffalo-milk.png', price:75,  unit:'/L',     cat:'milk',       badge:'Popular',     desc:'Rich, creamy buffalo milk — perfect for curd and sweets.',                 nut:[['Calories','97 kcal'],['Protein','3.7g'],['Fat','6.9g'],['Carbs','5.2g'],['Calcium','195mg'],['Phosphorus','130mg']] },
-  { id:'m3', name:'Organic Milk',   e:'🌿', img: 'buffalo-milk.png', price:90,  unit:'/L',     cat:'milk',       badge:'Organic',     desc:'Certified organic milk from free-range cows on pesticide-free pastures.', nut:[['Calories','64 kcal'],['Protein','3.4g'],['Fat','3.9g'],['Carbs','4.9g'],['Omega-3','0.3g'],['Vit B12','1.1µg']] },
+  { id: 'm1', name: 'Cow Milk', e: '🥛', img: 'cow-milk.png', price: 60, unit: '/L', cat: 'milk', badge: 'Fresh', desc: 'Pure A2 cow milk, collected fresh each morning.', nut: [['Calories', '62 kcal'], ['Protein', '3.2g'], ['Fat', '3.7g'], ['Carbs', '4.8g'], ['Calcium', '120mg'], ['Vit D', '40 IU']] },
+  { id: 'm2', name: 'Buffalo Milk', e: '🍼', img: 'buffalo-milk.png', price: 75, unit: '/L', cat: 'milk', badge: 'Popular', desc: 'Rich, creamy buffalo milk — perfect for curd and sweets.', nut: [['Calories', '97 kcal'], ['Protein', '3.7g'], ['Fat', '6.9g'], ['Carbs', '5.2g'], ['Calcium', '195mg'], ['Phosphorus', '130mg']] },
+  { id: 'm3', name: 'Organic Milk', e: '🌿', img: 'buffalo-milk.png', price: 90, unit: '/L', cat: 'milk', badge: 'Organic', desc: 'Certified organic milk from free-range cows on pesticide-free pastures.', nut: [['Calories', '64 kcal'], ['Protein', '3.4g'], ['Fat', '3.9g'], ['Carbs', '4.9g'], ['Omega-3', '0.3g'], ['Vit B12', '1.1µg']] },
 
   // VEGETABLES
-  { id:'v1', name:'Fresh Tomatoes', e:'🍅', img:'fresh tomato.png', price:40,  unit:'/kg',    cat:'vegetables', badge:null,          desc:'Sun-ripened tomatoes from Karnataka farms.',                                nut:[['Calories','18 kcal'],['Fiber','1.2g'],['Vit C','14mg'],['Lycopene','3.0mg'],['Potassium','237mg'],['Folate','15µg']] },
-  { id:'v2', name:'Potatoes',       e:'🥔', img:'potatos.png', price:30,  unit:'/kg',    cat:'vegetables', badge:null,          desc:'Fresh farm potatoes, versatile and nutritious.',                            nut:[['Calories','77 kcal'],['Carbs','17g'],['Fiber','2.2g'],['Vit C','19.7mg'],['Potassium','421mg'],['Protein','2g']] },
-  { id:'v3', name:'Red Onions',     e:'🧅', img:'red onions.png', price:35,  unit:'/kg',    cat:'vegetables', badge:null,          desc:'Pungent, full-flavored red onions from Nashik.',                            nut:[['Calories','40 kcal'],['Fiber','1.7g'],['Vit C','7mg'],['Quercetin','22mg'],['Folate','19µg'],['Potassium','146mg']] },
- 
-  { id:'v5', name:'Carrots',        e:'🥕', img:'carrots.png', price:45,  unit:'/kg',    cat:'vegetables', badge:'Fresh',       desc:'Sweet crunchy carrots loaded with beta-carotene.',                          nut:[['Calories','41 kcal'],['Beta-Carotene','8285µg'],['Fiber','2.8g'],['Vit K','13.2µg'],['Potassium','320mg'],['Vit C','5.9mg']] },
+  { id: 'v1', name: 'Fresh Tomatoes', e: '🍅', img: 'fresh tomato.png', price: 40, unit: '/kg', cat: 'vegetables', badge: null, desc: 'Sun-ripened tomatoes from Karnataka farms.', nut: [['Calories', '18 kcal'], ['Fiber', '1.2g'], ['Vit C', '14mg'], ['Lycopene', '3.0mg'], ['Potassium', '237mg'], ['Folate', '15µg']] },
+  { id: 'v2', name: 'Potatoes', e: '🥔', img: 'potatos.png', price: 30, unit: '/kg', cat: 'vegetables', badge: null, desc: 'Fresh farm potatoes, versatile and nutritious.', nut: [['Calories', '77 kcal'], ['Carbs', '17g'], ['Fiber', '2.2g'], ['Vit C', '19.7mg'], ['Potassium', '421mg'], ['Protein', '2g']] },
+  { id: 'v3', name: 'Red Onions', e: '🧅', img: 'red onions.png', price: 35, unit: '/kg', cat: 'vegetables', badge: null, desc: 'Pungent, full-flavored red onions from Nashik.', nut: [['Calories', '40 kcal'], ['Fiber', '1.7g'], ['Vit C', '7mg'], ['Quercetin', '22mg'], ['Folate', '19µg'], ['Potassium', '146mg']] },
+
+  { id: 'v5', name: 'Carrots', e: '🥕', img: 'carrots.png', price: 45, unit: '/kg', cat: 'vegetables', badge: 'Fresh', desc: 'Sweet crunchy carrots loaded with beta-carotene.', nut: [['Calories', '41 kcal'], ['Beta-Carotene', '8285µg'], ['Fiber', '2.8g'], ['Vit K', '13.2µg'], ['Potassium', '320mg'], ['Vit C', '5.9mg']] },
 
   // DAIRY
-  { id:'d1', name:'Pure Ghee',      e:'🫙', img:'pure ghee.png',price:580, unit:'/500g',  cat:'dairy',      badge:'Best Seller', desc:'Traditional cultured desi ghee from pure cow milk.',                        nut:[['Calories','900 kcal'],['Fat','100g'],['Vit A','3069 IU'],['Butyric Acid','3.5g'],['CLA','1.5g'],['Vit D','15 IU']] },
-  { id:'d2', name:'Fresh Paneer',   e:'🧀', img:'panner.png',price:90,  unit:'/200g',  cat:'dairy',      badge:null,          desc:'Soft fresh paneer from full-fat milk, delivered chilled.',                  nut:[['Calories','321 kcal'],['Protein','25g'],['Fat','23g'],['Calcium','480mg'],['Phosphorus','340mg'],['Riboflavin','0.5mg']] },
- 
-  { id:'d4', name:'Curd / Dahi',    e:'🥣', img:'dahi.png',   price:50,  unit:'/500g',  cat:'dairy',      badge:'Probiotic',   desc:'Thick set curd with live probiotic cultures.',                              nut:[['Calories','98 kcal'],['Protein','11g'],['Fat','5g'],['Calcium','340mg'],['Probiotics','~10⁹ CFU'],['Riboflavin','0.3mg']] },
-  { id:'d5', name:'Sweet Lassi',    e:'🥛', img:'lassi.png',  price:60,  unit:'/500ml', cat:'dairy',      badge:'New',         desc:'Thick and refreshing sweet lassi made from fresh dahi.',                    nut:[['Calories','150 kcal'],['Protein','5g'],['Fat','4g'],['Calcium','200mg'],['Sugar','18g'],['Probiotics','~10⁸ CFU']] },
+  { id: 'd1', name: 'Pure Ghee', e: '🫙', img: 'pure ghee.png', price: 580, unit: '/500g', cat: 'dairy', badge: 'Best Seller', desc: 'Traditional cultured desi ghee from pure cow milk.', nut: [['Calories', '900 kcal'], ['Fat', '100g'], ['Vit A', '3069 IU'], ['Butyric Acid', '3.5g'], ['CLA', '1.5g'], ['Vit D', '15 IU']] },
+  { id: 'd2', name: 'Fresh Paneer', e: '🧀', img: 'panner.png', price: 90, unit: '/200g', cat: 'dairy', badge: null, desc: 'Soft fresh paneer from full-fat milk, delivered chilled.', nut: [['Calories', '321 kcal'], ['Protein', '25g'], ['Fat', '23g'], ['Calcium', '480mg'], ['Phosphorus', '340mg'], ['Riboflavin', '0.5mg']] },
+
+  { id: 'd4', name: 'Curd / Dahi', e: '🥣', img: 'dahi.png', price: 50, unit: '/500g', cat: 'dairy', badge: 'Probiotic', desc: 'Thick set curd with live probiotic cultures.', nut: [['Calories', '98 kcal'], ['Protein', '11g'], ['Fat', '5g'], ['Calcium', '340mg'], ['Probiotics', '~10⁹ CFU'], ['Riboflavin', '0.3mg']] },
+  { id: 'd5', name: 'Sweet Lassi', e: '🥛', img: 'lassi.png', price: 60, unit: '/500ml', cat: 'dairy', badge: 'New', desc: 'Thick and refreshing sweet lassi made from fresh dahi.', nut: [['Calories', '150 kcal'], ['Protein', '5g'], ['Fat', '4g'], ['Calcium', '200mg'], ['Sugar', '18g'], ['Probiotics', '~10⁸ CFU']] },
 
   // FRUITS
-  { id:'f1', name:'Apples',         e:'🍎', img:'apple.png',price:180, unit:'/kg',    cat:'fruits',     badge:'Imported',    desc:'Crisp Shimla apples from Himachal Pradesh.',                                nut:[['Calories','52 kcal'],['Fiber','2.4g'],['Vit C','4.6mg'],['Potassium','107mg'],['Quercetin','4.4mg'],['Sugar','10g']] },
-  { id:'f2', name:'Bananas',        e:'🍌', img:'banana.png',price:50,  unit:'/dozen', cat:'fruits',     badge:null,          desc:'Naturally ripened Robusta bananas — energy-packed.',                        nut:[['Calories','89 kcal'],['Carbs','23g'],['Fiber','2.6g'],['Potassium','358mg'],['Vit B6','0.4mg'],['Magnesium','27mg']] },
-  { id:'f3', name:'Alphonso Mango', e:'🥭', img:'mangos.png',price:120, unit:'/kg',    cat:'fruits',     badge:'Seasonal',    desc:'The king of mangoes — saffron-hued and exquisitely aromatic.',              nut:[['Calories','60 kcal'],['Fiber','1.6g'],['Vit C','36mg'],['Vit A','765 IU'],['Folate','43µg'],['Sugar','13.7g']] },
-  { id:'f4', name:'Oranges',        e:'🍊', img:'oranges.png',price:80,  unit:'/kg',    cat:'fruits',     badge:null,          desc:'Juicy Nagpur oranges bursting with Vitamin C.',                             nut:[['Calories','47 kcal'],['Vit C','53mg'],['Fiber','2.4g'],['Folate','30µg'],['Thiamine','0.1mg'],['Potassium','181mg']] },
-  { id:'f5', name:'Papaya',         e:'🍈', img:'papays.png',price:60,  unit:'/kg',    cat:'fruits',     badge:null,          desc:'Ripe, sweet papaya loaded with antioxidants and enzymes.',                  nut:[['Calories','43 kcal'],['Vit C','62mg'],['Folate','37µg'],['Potassium','182mg'],['Lycopene','1828µg'],['Fiber','1.7g']] },
+  { id: 'f1', name: 'Apples', e: '🍎', img: 'apple.png', price: 180, unit: '/kg', cat: 'fruits', badge: 'Imported', desc: 'Crisp Shimla apples from Himachal Pradesh.', nut: [['Calories', '52 kcal'], ['Fiber', '2.4g'], ['Vit C', '4.6mg'], ['Potassium', '107mg'], ['Quercetin', '4.4mg'], ['Sugar', '10g']] },
+  { id: 'f2', name: 'Bananas', e: '🍌', img: 'banana.png', price: 50, unit: '/dozen', cat: 'fruits', badge: null, desc: 'Naturally ripened Robusta bananas — energy-packed.', nut: [['Calories', '89 kcal'], ['Carbs', '23g'], ['Fiber', '2.6g'], ['Potassium', '358mg'], ['Vit B6', '0.4mg'], ['Magnesium', '27mg']] },
+  { id: 'f3', name: 'Alphonso Mango', e: '🥭', img: 'mangos.png', price: 120, unit: '/kg', cat: 'fruits', badge: 'Seasonal', desc: 'The king of mangoes — saffron-hued and exquisitely aromatic.', nut: [['Calories', '60 kcal'], ['Fiber', '1.6g'], ['Vit C', '36mg'], ['Vit A', '765 IU'], ['Folate', '43µg'], ['Sugar', '13.7g']] },
+  { id: 'f4', name: 'Oranges', e: '🍊', img: 'oranges.png', price: 80, unit: '/kg', cat: 'fruits', badge: null, desc: 'Juicy Nagpur oranges bursting with Vitamin C.', nut: [['Calories', '47 kcal'], ['Vit C', '53mg'], ['Fiber', '2.4g'], ['Folate', '30µg'], ['Thiamine', '0.1mg'], ['Potassium', '181mg']] },
+  { id: 'f5', name: 'Papaya', e: '🍈', img: 'papays.png', price: 60, unit: '/kg', cat: 'fruits', badge: null, desc: 'Ripe, sweet papaya loaded with antioxidants and enzymes.', nut: [['Calories', '43 kcal'], ['Vit C', '62mg'], ['Folate', '37µg'], ['Potassium', '182mg'], ['Lycopene', '1828µg'], ['Fiber', '1.7g']] },
 
   // ADD NEW PRODUCTS HERE — copy and paste a block above and change the values
 
@@ -71,7 +71,7 @@ const P = [
 //  IMAGE HELPER — builds img tag from images/ folder
 // ============================================================
 function productImg(p, size) {
-  const h  = size === 'detail' ? '320px' : '170px';
+  const h = size === 'detail' ? '320px' : '170px';
   const fz = size === 'detail' ? '110px' : '76px';
   if (p.img) {
     return `
@@ -150,7 +150,7 @@ function detail(id) {
   if (!p) return;
   dQty = 1;
   document.getElementById('bc-name').textContent = p.name;
-  const rows = p.nut.map(([n,v]) => `<tr><td>${n}</td><td><strong>${v}</strong></td></tr>`).join('');
+  const rows = p.nut.map(([n, v]) => `<tr><td>${n}</td><td><strong>${v}</strong></td></tr>`).join('');
   document.getElementById('detail-grid').innerHTML = `
     <div>
       <div style="background:#f0fdf4;border-radius:16px;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:300px;">
@@ -196,8 +196,8 @@ function detail(id) {
 // ============================================================
 //  CART
 // ============================================================
-const getCart  = () => DB.get('cart');
-const saveCart = c  => DB.set('cart', c);
+const getCart = () => DB.get('cart');
+const saveCart = c => DB.set('cart', c);
 
 function addToCart(item) {
   const c = getCart(), ex = c.find(i => i.id === item.id);
@@ -214,9 +214,11 @@ function upQty(id, d) {
 }
 
 function updateCart() {
-  const c = getCart(), tot = c.reduce((s,i) => s + i.qty, 0);
+  const c = getCart(), tot = c.reduce((s, i) => s + i.qty, 0);
   const el = document.getElementById('cart-count');
   el.textContent = tot; el.classList.toggle('show', tot > 0);
+  const mobileCount = document.getElementById('mobile-cart-count');
+  if (mobileCount) mobileCount.textContent = tot;
   renderCart();
 }
 
@@ -226,7 +228,7 @@ function renderCart() {
     list.innerHTML = `<div class="cart-empty"><span>🛒</span><p>Your cart is empty</p><button class="btn btn-primary" style="margin-top:16px;" onclick="nav('products');closeCart()">Shop Now</button></div>`;
     if (tv) tv.textContent = '₹0'; return;
   }
-  const sum = c.reduce((s,i) => s + i.price * i.qty, 0);
+  const sum = c.reduce((s, i) => s + i.price * i.qty, 0);
   list.innerHTML = c.map(i => `
     <div class="cart-item">
       <div class="cart-item-img">${i.e}</div>
@@ -244,7 +246,7 @@ function renderCart() {
   if (tv) tv.textContent = `₹${sum.toFixed(0)}`;
 }
 
-const openCart  = () => { document.getElementById('cart-overlay').classList.add('open'); document.getElementById('cart-sidebar').classList.add('open'); document.body.style.overflow = 'hidden'; };
+const openCart = () => { document.getElementById('cart-overlay').classList.add('open'); document.getElementById('cart-sidebar').classList.add('open'); document.body.style.overflow = 'hidden'; };
 const closeCart = () => { document.getElementById('cart-overlay').classList.remove('open'); document.getElementById('cart-sidebar').classList.remove('open'); document.body.style.overflow = ''; };
 
 // ============================================================
@@ -270,7 +272,7 @@ function goPayStep(n) {
     const ad = document.getElementById('pay-address').value.trim();
     const cy = document.getElementById('pay-city').value.trim();
     const pi = document.getElementById('pay-pin').value.trim();
-    if (!fn||!ln||!ph||!ad||!cy||!pi) { notif('Please fill all required fields ⚠️'); return; }
+    if (!fn || !ln || !ph || !ad || !cy || !pi) { notif('Please fill all required fields ⚠️'); return; }
     if (!/^[6-9]\d{9}$/.test(ph)) { notif('Enter valid 10-digit phone number ⚠️'); return; }
     if (!/^\d{6}$/.test(pi)) { notif('Enter valid 6-digit pincode ⚠️'); return; }
   }
@@ -279,14 +281,14 @@ function goPayStep(n) {
   }
   curPayStep = n;
   document.querySelectorAll('.pay-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.pay-step').forEach((s,i) => { s.classList.remove('active','done'); if(i+1===n)s.classList.add('active'); else if(i+1<n)s.classList.add('done'); });
-  if (n <= 3) document.getElementById('pay-panel-'+n).classList.add('active');
+  document.querySelectorAll('.pay-step').forEach((s, i) => { s.classList.remove('active', 'done'); if (i + 1 === n) s.classList.add('active'); else if (i + 1 < n) s.classList.add('done'); });
+  if (n <= 3) document.getElementById('pay-panel-' + n).classList.add('active');
 }
 
 function renderOrderSummary() {
-  const c = getCart(), sum = c.reduce((s,i) => s+i.price*i.qty, 0);
+  const c = getCart(), sum = c.reduce((s, i) => s + i.price * i.qty, 0);
   document.getElementById('pay-order-summary').innerHTML =
-    c.map(i=>`<div class="order-item-row"><span>${i.e} ${i.name} × ${i.qty}</span><span>₹${(i.price*i.qty).toFixed(0)}</span></div>`).join('') +
+    c.map(i => `<div class="order-item-row"><span>${i.e} ${i.name} × ${i.qty}</span><span>₹${(i.price * i.qty).toFixed(0)}</span></div>`).join('') +
     `<div class="order-item-row"><span>Delivery</span><span style="color:var(--green)">FREE</span></div>
      <div class="order-total-row"><span>Total</span><span style="color:var(--green)">₹${sum.toFixed(0)}</span></div>`;
 }
@@ -294,12 +296,12 @@ function renderOrderSummary() {
 // Payment is COD only — no method selection needed
 
 function renderReview() {
-  const c=getCart(), sum=c.reduce((s,i)=>s+i.price*i.qty,0);
-  const nm=document.getElementById('pay-fname').value+' '+document.getElementById('pay-lname').value;
-  const ph=document.getElementById('pay-phone').value;
-  const ad=`${document.getElementById('pay-address').value}, ${document.getElementById('pay-city').value} - ${document.getElementById('pay-pin').value}`;
+  const c = getCart(), sum = c.reduce((s, i) => s + i.price * i.qty, 0);
+  const nm = document.getElementById('pay-fname').value + ' ' + document.getElementById('pay-lname').value;
+  const ph = document.getElementById('pay-phone').value;
+  const ad = `${document.getElementById('pay-address').value}, ${document.getElementById('pay-city').value} - ${document.getElementById('pay-pin').value}`;
   const total = sum + 20; // COD fee
-  document.getElementById('review-content').innerHTML=`
+  document.getElementById('review-content').innerHTML = `
     <div style="background:var(--light-gray);border-radius:12px;padding:16px;margin-bottom:14px;">
       <h4 style="font-size:14px;margin-bottom:8px;">📦 Delivering To</h4>
       <p style="font-size:14px;font-weight:600;">${nm}</p>
@@ -311,40 +313,40 @@ function renderReview() {
       <p style="font-size:13px;color:var(--green-dark);">Pay ₹${total.toFixed(0)} in cash when your order arrives. (Incl. ₹20 handling fee)</p>
     </div>
     <div>
-      ${c.map(i=>`<div class="order-item-row"><span>${i.e} ${i.name} × ${i.qty}</span><span>₹${(i.price*i.qty).toFixed(0)}</span></div>`).join('')}
+      ${c.map(i => `<div class="order-item-row"><span>${i.e} ${i.name} × ${i.qty}</span><span>₹${(i.price * i.qty).toFixed(0)}</span></div>`).join('')}
       <div class="order-item-row"><span>COD Handling Fee</span><span>₹20</span></div>
       <div class="order-total-row"><span>Total to Pay (Cash)</span><span style="color:var(--green)">₹${total.toFixed(0)}</span></div>
     </div>`;
 }
 
 async function placeOrder() {
-  const btn=document.getElementById('place-order-btn');
-  btn.disabled=true; btn.textContent='⏳ Processing...';
-  const c=getCart(), sum=c.reduce((s,i)=>s+i.price*i.qty,0);
-  const orderData={
-    customer:{
-      name:   document.getElementById('pay-fname').value.trim()+' '+document.getElementById('pay-lname').value.trim(),
-      phone:  document.getElementById('pay-phone').value.trim(),
-      email:  document.getElementById('pay-email').value.trim(),
-      address:`${document.getElementById('pay-address').value}, ${document.getElementById('pay-city').value} - ${document.getElementById('pay-pin').value}`,
-      notes:  document.getElementById('pay-notes').value
+  const btn = document.getElementById('place-order-btn');
+  btn.disabled = true; btn.textContent = '⏳ Processing...';
+  const c = getCart(), sum = c.reduce((s, i) => s + i.price * i.qty, 0);
+  const orderData = {
+    customer: {
+      name: document.getElementById('pay-fname').value.trim() + ' ' + document.getElementById('pay-lname').value.trim(),
+      phone: document.getElementById('pay-phone').value.trim(),
+      email: document.getElementById('pay-email').value.trim(),
+      address: `${document.getElementById('pay-address').value}, ${document.getElementById('pay-city').value} - ${document.getElementById('pay-pin').value}`,
+      notes: document.getElementById('pay-notes').value
     },
-    items:c, total:sum+20, paymentMethod:'cod'
+    items: c, total: sum + 20, paymentMethod: 'cod'
   };
   try {
-    const res=await fetch(`${API_BASE}/orders`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderData)});
-    const result=await res.json();
-    btn.disabled=false; btn.textContent='💵 Confirm & Place Order';
-    if(result.success){
-      document.getElementById('final-order-id').textContent='#'+result.orderId;
-      document.querySelectorAll('.pay-panel').forEach(p=>p.classList.remove('active'));
-      document.querySelectorAll('.pay-step').forEach(s=>{s.classList.remove('active');s.classList.add('done');});
+    const res = await fetch(`${API_BASE}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderData) });
+    const result = await res.json();
+    btn.disabled = false; btn.textContent = '💵 Confirm & Place Order';
+    if (result.success) {
+      document.getElementById('final-order-id').textContent = '#' + result.orderId;
+      document.querySelectorAll('.pay-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.pay-step').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
       document.getElementById('pay-panel-success').classList.add('active');
       saveCart([]); updateCart();
-    } else { notif('❌ '+(result.message||'Order failed. Try again.')); }
-  } catch(err) {
+    } else { notif('❌ ' + (result.message || 'Order failed. Try again.')); }
+  } catch (err) {
     console.error(err);
-    btn.disabled=false; btn.textContent='💵 Confirm & Place Order';
+    btn.disabled = false; btn.textContent = '💵 Confirm & Place Order';
     notif('❌ Server offline. Please try again.');
   }
 }
@@ -352,120 +354,120 @@ async function placeOrder() {
 // ============================================================
 //  NOTIFICATION
 // ============================================================
-function notif(msg) { const n=document.getElementById('notification'); n.textContent=msg; n.classList.add('show'); setTimeout(()=>n.classList.remove('show'),3000); }
+function notif(msg) { const n = document.getElementById('notification'); n.textContent = msg; n.classList.add('show'); setTimeout(() => n.classList.remove('show'), 3000); }
 
 // ============================================================
 //  SUBSCRIPTION
 // ============================================================
-const RATES={cow:60,buffalo:75,organic:90}, DAYS={daily:30,alternate:15,weekdays:22,custom:30};
-let sSched='daily', subPayMethod='cod', subUPIApp='';
+const RATES = { cow: 60, buffalo: 75, organic: 90 }, DAYS = { daily: 30, alternate: 15, weekdays: 22, custom: 30 };
+let sSched = 'daily', subPayMethod = 'cod', subUPIApp = '';
 
 function initSub() {
-  const mt=document.getElementById('milk-type'), mq=document.getElementById('milk-qty');
-  if(mt)mt.addEventListener('change',calcSub);
-  if(mq)mq.addEventListener('input',calcSub);
-  document.querySelectorAll('.schedule-opt').forEach(o=>{
-    o.onclick=()=>{ document.querySelectorAll('.schedule-opt').forEach(x=>x.classList.remove('active')); o.classList.add('active'); sSched=o.dataset.s; calcSub(); };
+  const mt = document.getElementById('milk-type'), mq = document.getElementById('milk-qty');
+  if (mt) mt.addEventListener('change', calcSub);
+  if (mq) mq.addEventListener('input', calcSub);
+  document.querySelectorAll('.schedule-opt').forEach(o => {
+    o.onclick = () => { document.querySelectorAll('.schedule-opt').forEach(x => x.classList.remove('active')); o.classList.add('active'); sSched = o.dataset.s; calcSub(); };
   });
-  const t=new Date(); t.setDate(t.getDate()+1);
-  const sd=document.getElementById('sub-start');
-  if(sd){sd.min=t.toISOString().split('T')[0]; sd.value=sd.min;}
+  const t = new Date(); t.setDate(t.getDate() + 1);
+  const sd = document.getElementById('sub-start');
+  if (sd) { sd.min = t.toISOString().split('T')[0]; sd.value = sd.min; }
   calcSub();
   // Payment is always COD — no listener setup needed
 }
 
 function calcSub() {
-  const type=document.getElementById('milk-type')?.value||'cow';
-  const qty=parseFloat(document.getElementById('milk-qty')?.value)||1;
-  const rate=RATES[type]||60, days=DAYS[sSched]||30, sub=qty*days*rate;
-  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  set('s-rate',`₹${rate}/L`); set('s-qty',`${qty} L/day`); set('s-days',`${days} days`);
-  set('s-sub',`₹${sub.toFixed(0)}`); set('s-del','₹0 (Free)'); set('s-total',`₹${sub.toFixed(0)}`);
+  const type = document.getElementById('milk-type')?.value || 'cow';
+  const qty = parseFloat(document.getElementById('milk-qty')?.value) || 1;
+  const rate = RATES[type] || 60, days = DAYS[sSched] || 30, sub = qty * days * rate;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('s-rate', `₹${rate}/L`); set('s-qty', `${qty} L/day`); set('s-days', `${days} days`);
+  set('s-sub', `₹${sub.toFixed(0)}`); set('s-del', '₹0 (Free)'); set('s-total', `₹${sub.toFixed(0)}`);
 }
 
 document.getElementById('sub-form')?.addEventListener('submit', async e => {
   e.preventDefault();
-  const nm=document.getElementById('sub-name').value.trim();
-  const ph=document.getElementById('sub-phone').value.trim();
-  const ad=document.getElementById('sub-address').value.trim();
-  if(!nm||!ph||!ad){notif('Please fill all required fields ⚠️');return;}
-  if(!/^[6-9]\d{9}$/.test(ph)){notif('Enter a valid 10-digit phone number ⚠️');return;}
+  const nm = document.getElementById('sub-name').value.trim();
+  const ph = document.getElementById('sub-phone').value.trim();
+  const ad = document.getElementById('sub-address').value.trim();
+  if (!nm || !ph || !ad) { notif('Please fill all required fields ⚠️'); return; }
+  if (!/^[6-9]\d{9}$/.test(ph)) { notif('Enter a valid 10-digit phone number ⚠️'); return; }
   calcSub();
-  const total=document.getElementById('s-total').textContent;
-  const subData={
-    name:nm,phone:ph,address:ad,
-    milkType:document.getElementById('milk-type').value,
-    qty:document.getElementById('milk-qty').value,
-    schedule:sSched,
-    startDate:document.getElementById('sub-start').value,
-    notes:document.getElementById('sub-note').value,
-    monthlyTotal:total,paymentMethod:'cod',status:'active'
+  const total = document.getElementById('s-total').textContent;
+  const subData = {
+    name: nm, phone: ph, address: ad,
+    milkType: document.getElementById('milk-type').value,
+    qty: document.getElementById('milk-qty').value,
+    schedule: sSched,
+    startDate: document.getElementById('sub-start').value,
+    notes: document.getElementById('sub-note').value,
+    monthlyTotal: total, paymentMethod: 'cod', status: 'active'
   };
-  const btn=e.target.querySelector('button[type=submit]');
-  btn.disabled=true; btn.textContent='⏳ Processing...';
+  const btn = e.target.querySelector('button[type=submit]');
+  btn.disabled = true; btn.textContent = '⏳ Processing...';
   try {
-    const res=await fetch(`${API_BASE}/subscriptions`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(subData)});
-    const result=await res.json();
-    if(result.success){
+    const res = await fetch(`${API_BASE}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(subData) });
+    const result = await res.json();
+    if (result.success) {
       notif(`🎉 Subscription #${result.subscriptionId} confirmed! ${total}/month`);
-      e.target.reset(); subPayMethod='cod';
+      e.target.reset(); subPayMethod = 'cod';
       calcSub();
-    } else { notif('❌ '+(result.message||'Subscription failed.')); }
-  } catch(err){console.error(err);notif('❌ Server offline. Try again.');}
-  btn.disabled=false; btn.textContent='💵 Confirm Subscription';
+    } else { notif('❌ ' + (result.message || 'Subscription failed.')); }
+  } catch (err) { console.error(err); notif('❌ Server offline. Try again.'); }
+  btn.disabled = false; btn.textContent = '💵 Confirm Subscription';
 });
 
 document.getElementById('contact-form')?.addEventListener('submit', async e => {
   e.preventDefault();
-  const nm=document.getElementById('c-name').value.trim();
-  const em=document.getElementById('c-email').value.trim();
-  const sj=document.getElementById('c-subject').value;
-  const mg=document.getElementById('c-msg').value.trim();
-  if(!nm||!em||!sj||!mg){notif('Please fill all required fields ⚠️');return;}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){notif('Enter a valid email ⚠️');return;}
+  const nm = document.getElementById('c-name').value.trim();
+  const em = document.getElementById('c-email').value.trim();
+  const sj = document.getElementById('c-subject').value;
+  const mg = document.getElementById('c-msg').value.trim();
+  if (!nm || !em || !sj || !mg) { notif('Please fill all required fields ⚠️'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { notif('Enter a valid email ⚠️'); return; }
   try {
-    const res=await fetch(`${API_BASE}/messages`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:nm,email:em,phone:document.getElementById('c-phone')?.value||'',subject:sj,message:mg})});
-    const result=await res.json();
-    if(result.success){notif("Message sent! We'll reply soon 💚");e.target.reset();}
-    else notif('❌ '+result.message);
-  } catch{notif('❌ Server offline. Try again.');}
+    const res = await fetch(`${API_BASE}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: nm, email: em, phone: document.getElementById('c-phone')?.value || '', subject: sj, message: mg }) });
+    const result = await res.json();
+    if (result.success) { notif("Message sent! We'll reply soon 💚"); e.target.reset(); }
+    else notif('❌ ' + result.message);
+  } catch { notif('❌ Server offline. Try again.'); }
 });
 
 // ============================================================
 //  TESTIMONIAL SLIDER
 // ============================================================
-(function(){
-  const track=document.getElementById('t-track'), dots=document.querySelectorAll('.slider-dot');
-  if(!track)return;
-  let cur=0, tot=track.querySelectorAll('.testimonial-slide').length;
-  function go(n){cur=(n+tot)%tot;track.style.transform=`translateX(-${cur*100}%)`;dots.forEach((d,i)=>d.classList.toggle('active',i===cur));}
-  dots.forEach(d=>d.addEventListener('click',()=>go(parseInt(d.dataset.i))));
-  setInterval(()=>go(cur+1),5000);
+(function () {
+  const track = document.getElementById('t-track'), dots = document.querySelectorAll('.slider-dot');
+  if (!track) return;
+  let cur = 0, tot = track.querySelectorAll('.testimonial-slide').length;
+  function go(n) { cur = (n + tot) % tot; track.style.transform = `translateX(-${cur * 100}%)`; dots.forEach((d, i) => d.classList.toggle('active', i === cur)); }
+  dots.forEach(d => d.addEventListener('click', () => go(parseInt(d.dataset.i))));
+  setInterval(() => go(cur + 1), 5000);
 })();
 
 // ============================================================
 //  FADE IN ANIMATION
 // ============================================================
-function initFade(){
-  const obs=new IntersectionObserver((entries)=>{entries.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('visible'),i*80);obs.unobserve(e.target);}});},{threshold:.12});
-  document.querySelectorAll('.fade-in:not(.visible)').forEach(el=>obs.observe(el));
+function initFade() {
+  const obs = new IntersectionObserver((entries) => { entries.forEach((e, i) => { if (e.isIntersecting) { setTimeout(() => e.target.classList.add('visible'), i * 80); obs.unobserve(e.target); } }); }, { threshold: .12 });
+  document.querySelectorAll('.fade-in:not(.visible)').forEach(el => obs.observe(el));
 }
 
 // ============================================================
 //  EVENTS
 // ============================================================
-window.addEventListener('scroll',()=>document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>20));
-document.getElementById('hamburger').addEventListener('click',()=>{const m=document.getElementById('mobile-menu');m.classList.toggle('open');document.body.style.overflow=m.classList.contains('open')?'hidden':'';});
-document.getElementById('cart-btn').addEventListener('click',openCart);
-document.getElementById('cart-overlay').addEventListener('click',closeCart);
-document.getElementById('cart-close').addEventListener('click',closeCart);
-document.getElementById('checkout-btn').addEventListener('click',openPayModal);
-document.getElementById('pay-modal').addEventListener('click',function(e){if(e.target===this)closePayModal();});
+window.addEventListener('scroll', () => document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20));
+document.getElementById('hamburger').addEventListener('click', () => { const m = document.getElementById('mobile-menu'); m.classList.toggle('open'); document.body.style.overflow = m.classList.contains('open') ? 'hidden' : ''; });
+document.getElementById('cart-btn').addEventListener('click', openCart);
+document.getElementById('cart-overlay').addEventListener('click', closeCart);
+document.getElementById('cart-close').addEventListener('click', closeCart);
+document.getElementById('checkout-btn').addEventListener('click', openPayModal);
+document.getElementById('pay-modal').addEventListener('click', function (e) { if (e.target === this) closePayModal(); });
 
 // ============================================================
 //  INIT
 // ============================================================
 renderGrid('home-grid');
-initTabs('home-tabs','home-grid');
+initTabs('home-tabs', 'home-grid');
 updateCart();
 initFade();
