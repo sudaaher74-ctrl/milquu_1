@@ -1,1040 +1,543 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Milqu Fresh — Admin Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      /* ── Core Palette ── */
-      --bg:       #f1f5f9;       /* slate-100 page bg */
-      --bg2:      #e9eef5;       /* slightly deeper for inputs / table heads */
-      --bg3:      #dde4ed;       /* hover tints */
-      --card:     #ffffff;       /* white cards */
-      --border:   #dde3ec;       /* soft slate border */
-      --border2:  #c8d2df;       /* slightly stronger border */
-
-      /* ── Brand / Accent — Indigo ── */
-      --accent:   #4f46e5;       /* indigo-600 */
-      --accent2:  #4338ca;       /* indigo-700 (hover) */
-      --accent-light: rgba(79,70,229,.08);
-      --accent-mid:   rgba(79,70,229,.15);
-
-      /* ── Semantic colours ── */
-      --green:    #16a34a;
-      --green-lt: rgba(22,163,74,.1);
-      --amber:    #d97706;
-      --amber-lt: rgba(217,119,6,.1);
-      --red:      #dc2626;
-      --red-lt:   rgba(220,38,38,.1);
-      --blue:     #2563eb;
-      --blue-lt:  rgba(37,99,235,.1);
-
-      /* ── Text ── */
-      --text:     #0f172a;       /* slate-900 */
-      --text2:    #64748b;       /* slate-500 */
-      --text3:    #94a3b8;       /* slate-400 */
-
-      /* ── Misc ── */
-      --radius:   12px;
-      --shadow-sm: 0 1px 3px rgba(15,23,42,.07), 0 1px 2px rgba(15,23,42,.05);
-      --shadow:    0 4px 16px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.05);
-      --mono:     'JetBrains Mono', monospace;
-      --font:     'Inter', sans-serif;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; overflow: hidden; }
-
-    /* ─────────────────────────────────
-       SIDEBAR
-    ───────────────────────────────── */
-    .sidebar {
-      width: 224px; flex-shrink: 0;
-      background: var(--card);
-      border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      height: 100vh; position: sticky; top: 0;
-      box-shadow: var(--shadow-sm);
-    }
-    .sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-    .logo-mark { width: 36px; height: 36px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 8px rgba(79,70,229,.3); }
-    .logo-name { font-size: 15px; font-weight: 800; letter-spacing: -.4px; color: var(--text); }
-    .logo-name span { color: var(--accent); }
-    .logo-sub { font-size: 10px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
-
-    .nav { flex: 1; padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
-    .nav-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 9px 12px; border-radius: 9px; cursor: pointer;
-      font-size: 13.5px; font-weight: 500; color: var(--text2);
-      transition: all .18s ease; border: none; background: none; width: 100%; text-align: left;
-      font-family: var(--font);
-    }
-    .nav-item:hover { background: var(--bg2); color: var(--text); }
-    .nav-item.active {
-      background: var(--accent-light);
-      color: var(--accent);
-      font-weight: 600;
-      box-shadow: inset 3px 0 0 var(--accent);
-    }
-    .nav-item .ni { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
-    .nav-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 100px; font-family: var(--mono); display: none; }
-    .nav-sep { height: 1px; background: var(--border); margin: 6px 4px; }
-
-    .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
-    .admin-chip {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 12px; background: var(--accent-light);
-      border: 1px solid var(--accent-mid); border-radius: 10px;
-    }
-    .admin-avatar { width: 32px; height: 32px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
-    .admin-name { font-size: 13px; font-weight: 700; color: var(--text); }
-    .admin-role { font-size: 10px; color: var(--accent); font-family: var(--mono); font-weight: 600; }
-
-    /* ─────────────────────────────────
-       TOPBAR
-    ───────────────────────────────── */
-    .main { flex: 1; overflow-y: auto; height: 100vh; display: flex; flex-direction: column; }
-    .topbar {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(255,255,255,.92);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border);
-      padding: 13px 26px;
-      display: flex; align-items: center; justify-content: space-between;
-      box-shadow: var(--shadow-sm);
-    }
-    .topbar-title { font-size: 17px; font-weight: 700; letter-spacing: -.3px; color: var(--text); }
-    .topbar-right { display: flex; align-items: center; gap: 12px; }
-    .refresh-btn {
-      background: var(--accent); border: none; color: #fff;
-      padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
-      cursor: pointer; font-family: var(--font); transition: all .18s;
-      box-shadow: 0 2px 8px rgba(79,70,229,.25);
-    }
-    .refresh-btn:hover { background: var(--accent2); box-shadow: 0 4px 12px rgba(79,70,229,.35); }
-    .refresh-btn.loading { opacity: .6; pointer-events: none; }
-    .live-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse2 2s infinite; }
-    .live-label { font-size: 12px; color: var(--text2); font-family: var(--mono); display: flex; align-items: center; gap: 6px; }
-    @keyframes pulse2 { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.4)} 50%{opacity:.8;box-shadow:0 0 0 5px transparent} }
-    .content { padding: 26px; flex: 1; }
-
-    /* ─────────────────────────────────
-       PANELS
-    ───────────────────────────────── */
-    .panel { display: none; }
-    .panel.active { display: block; }
-
-    /* ─────────────────────────────────
-       STAT CARDS
-    ───────────────────────────────── */
-    .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 22px; }
-    .stat-card {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 20px 20px 16px;
-      position: relative; overflow: hidden;
-      box-shadow: var(--shadow-sm);
-      transition: box-shadow .2s, transform .2s;
-    }
-    .stat-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
-    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent); border-radius: var(--radius) var(--radius) 0 0; }
-    .stat-card.amber::before { background: var(--amber); }
-    .stat-card.red::before   { background: var(--red); }
-    .stat-card.blue::before  { background: var(--blue); }
-    .stat-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px; font-family: var(--mono); }
-    .stat-val { font-size: 30px; font-weight: 800; line-height: 1; margin-bottom: 5px; letter-spacing: -.5px; }
-    .stat-sub { font-size: 12px; color: var(--text2); }
-    .stat-icon { position: absolute; top: 16px; right: 16px; font-size: 22px; opacity: .18; }
-
-    /* ─────────────────────────────────
-       GRID LAYOUTS
-    ───────────────────────────────── */
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-    .grid3 { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; }
-
-    /* ─────────────────────────────────
-       PANEL CARD
-    ───────────────────────────────── */
-    .pcard { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
-    .pcard-head { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--card); }
-    .pcard-head h3 { font-size: 14.5px; font-weight: 700; letter-spacing: -.2px; }
-    .pcard-body { padding: 0; }
-    .pcard-actions { display: flex; gap: 8px; align-items: center; }
-
-    /* ─────────────────────────────────
-       TABLE
-    ───────────────────────────────── */
-    .data-table { width: 100%; border-collapse: collapse; }
-    .data-table th {
-      text-align: left; padding: 11px 16px;
-      font-size: 10.5px; font-weight: 600; color: var(--text3);
-      text-transform: uppercase; letter-spacing: 1.1px;
-      border-bottom: 1px solid var(--border);
-      font-family: var(--mono); background: var(--bg);
-    }
-    .data-table td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text); }
-    .data-table tr:last-child td { border-bottom: none; }
-    .data-table tbody tr:hover td { background: var(--accent-light); }
-
-    /* ─────────────────────────────────
-       BADGES
-    ───────────────────────────────── */
-    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 700; font-family: var(--mono); text-transform: uppercase; letter-spacing: .2px; }
-    .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-    .badge-green { background: var(--green-lt);  color: var(--green); border: 1px solid rgba(22,163,74,.2); }
-    .badge-amber { background: var(--amber-lt); color: var(--amber); border: 1px solid rgba(217,119,6,.2); }
-    .badge-red   { background: var(--red-lt);   color: var(--red);   border: 1px solid rgba(220,38,38,.2); }
-    .badge-blue  { background: var(--blue-lt);  color: var(--blue);  border: 1px solid rgba(37,99,235,.2); }
-    .badge-gray  { background: var(--bg2); color: var(--text2); border: 1px solid var(--border); }
-
-    /* ─────────────────────────────────
-       SEARCH / FILTER
-    ───────────────────────────────── */
-    .table-controls { padding: 13px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--card); }
-    .search-input { flex: 1; min-width: 200px; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 9px 14px; border-radius: 8px; font-family: var(--font); font-size: 13px; transition: border-color .18s; }
-    .search-input::placeholder { color: var(--text3); }
-    .search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,.1); }
-    .filter-sel { background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 9px 12px; border-radius: 8px; font-family: var(--font); font-size: 13px; cursor: pointer; transition: border-color .18s; }
-    .filter-sel:focus { outline: none; border-color: var(--accent); }
-
-    /* ─────────────────────────────────
-       ORDER DETAIL MODAL
-    ───────────────────────────────── */
-    .detail-modal { position: fixed; inset: 0; background: rgba(15,23,42,.5); backdrop-filter: blur(4px); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity .22s; }
-    .detail-modal.open { opacity: 1; pointer-events: all; }
-    .detail-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 600px; max-height: 88vh; overflow-y: auto; transform: scale(.96) translateY(8px); transition: transform .22s; box-shadow: 0 24px 60px rgba(15,23,42,.18); }
-    .detail-modal.open .detail-box { transform: scale(1) translateY(0); }
-    .detail-box-head { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--card); z-index: 10; }
-    .detail-close { width: 32px; height: 32px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text2); font-size: 15px; transition: all .18s; }
-    .detail-close:hover { background: var(--red-lt); color: var(--red); border-color: rgba(220,38,38,.3); }
-    .detail-body { padding: 22px; }
-    .detail-section { margin-bottom: 20px; }
-    .detail-section h4 { font-size: 10.5px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 10px; font-family: var(--mono); }
-    .detail-row { display: flex; justify-content: space-between; font-size: 13px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-    .detail-row:last-child { border: none; }
-    .detail-row span:first-child { color: var(--text2); }
-    .status-update-row { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
-    .status-btn { padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); cursor: pointer; font-family: var(--font); transition: all .18s; background: var(--bg); color: var(--text2); text-transform: capitalize; }
-    .status-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
-    .status-btn.active-status { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 2px 8px rgba(79,70,229,.3); }
-
-    /* ─────────────────────────────────
-       CHARTS
-    ───────────────────────────────── */
-    .rev-chart-area { padding: 20px; }
-    .rev-bars { display: flex; align-items: flex-end; gap: 7px; height: 140px; margin-bottom: 8px; }
-    .rev-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
-    .rev-bar { width: 100%; border-radius: 5px 5px 0 0; min-height: 4px; cursor: pointer; position: relative; transition: all .25s; }
-    .rev-bar.order-bar { background: linear-gradient(to top, var(--accent2), var(--accent)); }
-    .rev-bar.sub-bar   { background: linear-gradient(to top, var(--blue), #93c5fd); }
-    .rev-bar:hover { filter: brightness(1.1); }
-    .rev-bar:hover::after { content: attr(data-val); position: absolute; top: -26px; left: 50%; transform: translateX(-50%); background: var(--text); color: #fff; padding: 3px 8px; border-radius: 5px; font-size: 10px; white-space: nowrap; font-family: var(--mono); z-index: 10; }
-    .rev-labels { display: flex; gap: 7px; }
-    .rev-label { flex: 1; text-align: center; font-size: 10px; color: var(--text3); font-family: var(--mono); }
-    .chart-legend { display: flex; gap: 16px; margin-top: 14px; }
-    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
-    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
-
-    /* ─────────────────────────────────
-       TOP PRODUCTS
-    ───────────────────────────────── */
-    .top-prod-item { padding: 12px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); }
-    .top-prod-item:last-child { border-bottom: none; }
-    .top-prod-icon { width: 36px; height: 36px; background: var(--accent-light); border: 1px solid var(--accent-mid); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-    .top-prod-info { flex: 1; }
-    .top-prod-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; color: var(--text); }
-    .top-prod-cat { font-size: 10.5px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; }
-    .top-prod-rev { font-size: 14px; font-weight: 700; color: var(--accent); font-family: var(--mono); }
-
-    /* ─────────────────────────────────
-       MESSAGES
-    ───────────────────────────────── */
-    .msg-item { padding: 15px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .16s; border-left: 3px solid transparent; }
-    .msg-item:hover { background: var(--accent-light); }
-    .msg-item.unread  { border-left-color: var(--accent); }
-    .msg-item.replied { border-left-color: var(--blue); }
-    .msg-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .msg-name    { font-size: 14px; font-weight: 700; color: var(--text); }
-    .msg-date    { font-size: 11px; color: var(--text3); font-family: var(--mono); }
-    .msg-subject { font-size: 12px; color: var(--accent); margin-bottom: 3px; font-weight: 600; }
-    .msg-preview { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; }
-
-    /* ─────────────────────────────────
-       PAGINATION
-    ───────────────────────────────── */
-    .pagination { padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); background: var(--card); }
-    .pg-info { font-size: 12px; color: var(--text3); font-family: var(--mono); }
-    .pg-btns { display: flex; gap: 6px; }
-    .pg-btn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text2); font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .18s; font-family: var(--font); }
-    .pg-btn:hover, .pg-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 2px 8px rgba(79,70,229,.25); }
-
-    /* ─────────────────────────────────
-       QUICK ACTIONS
-    ───────────────────────────────── */
-    .quick-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-    .qa-btn { display: flex; align-items: center; gap: 8px; padding: 9px 15px; background: var(--card); border: 1px solid var(--border); border-radius: 9px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text2); transition: all .18s; font-family: var(--font); box-shadow: var(--shadow-sm); }
-    .qa-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 4px 12px rgba(79,70,229,.25); transform: translateY(-1px); }
-
-    /* ─────────────────────────────────
-       EMPTY & LOADING
-    ───────────────────────────────── */
-    .empty-state { text-align: center; padding: 48px 20px; color: var(--text3); }
-    .empty-state .es-icon { font-size: 44px; display: block; margin-bottom: 12px; opacity: .45; }
-    .empty-state p { font-size: 14px; }
-    .loading-row td { text-align: center; padding: 40px; color: var(--text3); font-family: var(--mono); font-size: 13px; }
-    .skeleton { background: linear-gradient(90deg, var(--bg2) 25%, var(--bg3) 50%, var(--bg2) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; height: 14px; }
-    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-
-    /* ─────────────────────────────────
-       TOAST
-    ───────────────────────────────── */
-    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 13px 18px; font-size: 13px; font-weight: 600; z-index: 999; transform: translateY(80px); opacity: 0; transition: all .28s; max-width: 320px; box-shadow: var(--shadow); }
-    .toast.show { transform: translateY(0); opacity: 1; }
-    .toast.success { border-left: 4px solid var(--green); color: var(--text); }
-    .toast.error   { border-left: 4px solid var(--red);   color: var(--text); }
-
-    /* ─────────────────────────────────
-       COUNT TAG
-    ───────────────────────────────── */
-    .count-tag { font-size: 11px; color: var(--text3); font-family: var(--mono); background: var(--bg2); border: 1px solid var(--border); padding: 3px 9px; border-radius: 100px; }
-
-    /* ─────────────────────────────────
-       API STATUS
-    ───────────────────────────────── */
-    .api-status { display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: var(--mono); padding: 5px 11px; border-radius: 7px; border: 1px solid var(--border); }
-    .api-status.ok  { color: var(--green); border-color: rgba(22,163,74,.3); background: var(--green-lt); }
-    .api-status.err { color: var(--red);   border-color: rgba(220,38,38,.3); background: var(--red-lt); }
-    .api-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-
-    /* ─────────────────────────────────
-       VIEW BTN
-    ───────────────────────────────── */
-    .view-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text2); padding: 5px 12px; border-radius: 7px; font-size: 12px; cursor: pointer; font-family: var(--font); font-weight: 600; transition: all .18s; }
-    .view-btn:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
-
-    @media(max-width:1100px) { .stats-grid{grid-template-columns:repeat(2,1fr);} .grid3{grid-template-columns:1fr;} }
-    @media(max-width:768px)  { .sidebar{display:none;} .stats-grid{grid-template-columns:1fr 1fr;} .grid2{grid-template-columns:1fr;} }
-  </style>
+  <meta name="description" content="Milqu Fresh Admin Business Management Dashboard">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="admin.css">
 </head>
+
 <body>
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="logo-mark">🌿</div>
-    <div>
-      <div class="logo-name">Milqu<span> Fresh</span></div>
-      <div class="logo-sub">Admin Panel</div>
+  <!-- ══ LOGIN SCREEN ══ -->
+  <div class="login-screen" id="login-screen">
+    <div class="login-box">
+      <h1>Milqu<span> Fresh</span></h1>
+      <div class="sub">Admin Dashboard Login</div>
+      <input type="email" id="login-email" placeholder="Email address">
+      <input type="password" id="login-pass" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="btn-login" onclick="doLogin()">🔐 Login</button>
+      <div class="login-err" id="login-error"></div>
+      <div class="login-hint">First time? <a href="#" onclick="doRegister();return false"
+          style="color:var(--accent);font-weight:600;">Create Admin Account</a></div>
     </div>
   </div>
-  <nav class="nav">
-    <button class="nav-item active" onclick="showPanel('overview',this)"><span class="ni">📊</span> Overview</button>
-    <button class="nav-item" onclick="showPanel('orders',this)"><span class="ni">🛒</span> Orders <span class="nav-badge" id="nb-orders">0</span></button>
-    <button class="nav-item" onclick="showPanel('subscriptions',this)"><span class="ni">📦</span> Subscriptions <span class="nav-badge" id="nb-subs">0</span></button>
-    <button class="nav-item" onclick="showPanel('messages',this)"><span class="ni">💬</span> Messages <span class="nav-badge" id="nb-msgs">0</span></button>
-    <button class="nav-item" onclick="showPanel('products',this)"><span class="ni">🥛</span> Products</button>
-    <div style="height:1px;background:var(--border);margin:8px 0;"></div>
-    <a href="index.html" target="_blank" class="nav-item" style="color:var(--text2);text-decoration:none;"><span class="ni">🌐</span> View Website</a>
-  </nav>
-  <div class="sidebar-footer">
-    <div class="admin-chip">
-      <div class="admin-avatar">👨‍💼</div>
+
+  <!-- ══ SIDEBAR ══ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">🌿</div>
       <div>
-        <div class="admin-name">Admin</div>
-        <div class="admin-role">super admin</div>
+        <div class="logo-name">Milqu<span> Fresh</span></div>
+        <div class="logo-sub">Admin Panel</div>
       </div>
     </div>
-  </div>
-</aside>
-
-<!-- MAIN -->
-<div class="main">
-  <div class="topbar">
-    <div class="topbar-title" id="panel-title">📊 Overview</div>
-    <div class="topbar-right">
-      <div class="api-status" id="api-status"><div class="api-dot"></div><span id="api-status-text">Connecting…</span></div>
-      <div class="live-label"><div class="live-dot"></div> Live</div>
-      <button class="refresh-btn" id="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+    <nav class="nav">
+      <button class="nav-item active" data-panel="overview" onclick="showPanel('overview',this)"><span
+          class="ni">📊</span> Overview</button>
+      <button class="nav-item" data-panel="orders" onclick="showPanel('orders',this)"><span class="ni">🛒</span> Orders
+        <span class="nav-badge" id="nb-orders">0</span></button>
+      <button class="nav-item" data-panel="products" onclick="showPanel('products',this)"><span class="ni">🥛</span>
+        Products</button>
+      <button class="nav-item" data-panel="customers" onclick="showPanel('customers',this)"><span class="ni">👥</span>
+        Customers</button>
+      <button class="nav-item" data-panel="subscriptions" onclick="showPanel('subscriptions',this)"><span
+          class="ni">📦</span> Subscriptions <span class="nav-badge" id="nb-subs">0</span></button>
+      <button class="nav-item" data-panel="inventory" onclick="showPanel('inventory',this)"><span class="ni">📋</span>
+        Inventory</button>
+      <button class="nav-item" data-panel="messages" onclick="showPanel('messages',this)"><span class="ni">💬</span>
+        Messages <span class="nav-badge" id="nb-msgs">0</span></button>
+      <button class="nav-item" data-panel="cms" onclick="showPanel('cms',this)"><span class="ni">🎨</span> CMS</button>
+      <div class="nav-sep"></div>
+      <a href="index.html" target="_blank" class="nav-item" style="color:var(--text2);text-decoration:none;"><span
+          class="ni">🌐</span> View Website</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="admin-chip">
+        <div class="admin-avatar">👨‍💼</div>
+        <div>
+          <div class="admin-name" id="admin-disp-name">Admin</div>
+          <div class="admin-role" id="admin-disp-role">super admin</div>
+        </div>
+      </div>
     </div>
-  </div>
+  </aside>
 
-  <div class="content">
-
-    <!-- ══ OVERVIEW PANEL ══ -->
-    <div class="panel active" id="panel-overview">
-      <div class="stats-grid" id="overview-stats">
-        <!-- skeleton -->
-        <div class="stat-card"><div class="stat-label">Loading…</div><div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div><div class="skeleton" style="width:120px;"></div></div>
-        <div class="stat-card amber"><div class="stat-label">Loading…</div><div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div><div class="skeleton" style="width:120px;"></div></div>
-        <div class="stat-card red"><div class="stat-label">Loading…</div><div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div><div class="skeleton" style="width:120px;"></div></div>
-        <div class="stat-card blue"><div class="stat-label">Loading…</div><div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div><div class="skeleton" style="width:120px;"></div></div>
-      </div>
-      <div class="quick-actions">
-        <button class="qa-btn" onclick="showPanel('orders',document.querySelector('[onclick*=orders]'))">🛒 Manage Orders</button>
-        <button class="qa-btn" onclick="showPanel('messages',document.querySelector('[onclick*=messages]'))">💬 View Messages</button>
-        <button class="qa-btn" onclick="showPanel('subscriptions',document.querySelector('[onclick*=subscriptions]'))">📦 Subscriptions</button>
-        <button class="qa-btn" onclick="loadAll()">🔄 Refresh All Data</button>
-      </div>
-      <div class="grid3" style="margin-bottom:20px;">
-        <div class="pcard">
-          <div class="pcard-head">
-            <h3>Revenue (7 days)</h3>
-            <div class="chart-legend">
-              <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Orders</div>
-              <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Subscriptions</div>
+  <!-- ══ MAIN ══ -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="panel-title">📊 Overview</div>
+      <div class="topbar-right">
+        <div class="api-status" id="api-status">
+          <div class="api-dot"></div><span id="api-status-text">Connecting…</span>
+        </div>
+        <!-- NOTIFICATION BELL -->
+        <div class="notif-bell" onclick="toggleNotifDropdown()">
+          🔔 <span class="notif-count" id="notif-total">0</span>
+          <div class="notif-dropdown" id="notif-dropdown">
+            <h4>🔔 Notifications</h4>
+            <div id="notif-dropdown-body">
+              <div class="notif-item">Loading…</div>
             </div>
           </div>
-          <div class="rev-chart-area" id="rev-chart"><div class="empty-state"><span class="es-icon">📈</span><p>Loading chart…</p></div></div>
         </div>
-        <div class="pcard">
-          <div class="pcard-head"><h3>Top Products</h3></div>
-          <div id="top-products-list"><div class="empty-state"><span class="es-icon">📊</span><p>Loading…</p></div></div>
+        <div class="live-label">
+          <div class="live-dot"></div> Live
         </div>
-      </div>
-      <div class="grid2">
-        <div class="pcard">
-          <div class="pcard-head"><h3>Recent Orders</h3><span class="count-tag" id="recent-orders-count">—</span></div>
-          <table class="data-table">
-            <thead><tr><th>Order ID</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead>
-            <tbody id="recent-orders-body"><tr class="loading-row"><td colspan="4">⏳ Loading orders…</td></tr></tbody>
-          </table>
-        </div>
-        <div class="pcard">
-          <div class="pcard-head"><h3>Recent Messages</h3><span class="count-tag" id="recent-msgs-count">—</span></div>
-          <div id="recent-msgs-list"><div class="empty-state"><span class="es-icon">💬</span><p>Loading…</p></div></div>
-        </div>
+        <button class="refresh-btn" id="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+        <button class="logout-btn" onclick="doLogout()">🚪 Logout</button>
       </div>
     </div>
 
-    <!-- ══ ORDERS PANEL ══ -->
-    <div class="panel" id="panel-orders">
-      <div class="pcard">
-        <div class="table-controls">
-          <input type="text" class="search-input" id="order-search" placeholder="Search by order ID, name, phone…" oninput="filterOrders()">
-          <select class="filter-sel" id="order-status-filter" onchange="filterOrders()">
-            <option value="">All Status</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="pending">Pending</option>
-            <option value="out_for_delivery">Out for Delivery</option>
-            <option value="delivered">Delivered</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-          <select class="filter-sel" id="order-pay-filter" onchange="filterOrders()">
-            <option value="">All Payments</option>
-            <option value="upi">UPI</option>
-            <option value="card">Card</option>
-            <option value="netbanking">Net Banking</option>
-            <option value="cod">COD</option>
-          </select>
+    <div class="content">
+
+      <!-- ══ OVERVIEW PANEL ══ -->
+      <div class="panel active" id="panel-overview">
+        <div class="stats-grid" id="overview-stats">
+          <div class="stat-card">
+            <div class="stat-label">Loading…</div>
+            <div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div>
+            <div class="skeleton" style="width:120px;"></div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-label">Loading…</div>
+            <div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div>
+            <div class="skeleton" style="width:120px;"></div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">Loading…</div>
+            <div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div>
+            <div class="skeleton" style="width:120px;"></div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">Loading…</div>
+            <div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div>
+            <div class="skeleton" style="width:120px;"></div>
+          </div>
         </div>
-        <table class="data-table">
-          <thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
-          <tbody id="orders-body"><tr class="loading-row"><td colspan="8">⏳ Loading orders…</td></tr></tbody>
-        </table>
-        <div class="pagination">
-          <div class="pg-info" id="orders-pg-info">—</div>
-          <div class="pg-btns" id="orders-pg-btns"></div>
+        <div class="quick-actions">
+          <button class="qa-btn" onclick="showPanel('orders',document.querySelector('[data-panel=orders]'))">🛒 Manage
+            Orders</button>
+          <button class="qa-btn" onclick="showPanel('products',document.querySelector('[data-panel=products]'))">🥛
+            Products</button>
+          <button class="qa-btn" onclick="showPanel('customers',document.querySelector('[data-panel=customers]'))">👥
+            Customers</button>
+          <button class="qa-btn" onclick="loadAll()">🔄 Refresh All</button>
+        </div>
+        <div class="grid3" style="margin-bottom:20px;">
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>Revenue Analytics</h3>
+              <div class="chart-tabs">
+                <button class="chart-tab active" data-period="daily" onclick="loadRevenueChart('daily')">Daily</button>
+                <button class="chart-tab" data-period="weekly" onclick="loadRevenueChart('weekly')">Weekly</button>
+                <button class="chart-tab" data-period="monthly" onclick="loadRevenueChart('monthly')">Monthly</button>
+              </div>
+            </div>
+            <div class="chart-container"><canvas id="revenue-chart-canvas"></canvas></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>Top 5 Products</h3>
+            </div>
+            <div id="top-products-list">
+              <div class="empty-state"><span class="es-icon">📊</span>
+                <p>Loading…</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>Recent Orders</h3><span class="count-tag" id="recent-orders-count">—</span>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="recent-orders-body">
+                <tr class="loading-row">
+                  <td colspan="4">⏳ Loading…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>Recent Messages</h3><span class="count-tag" id="recent-msgs-count">—</span>
+            </div>
+            <div id="recent-msgs-list">
+              <div class="empty-state"><span class="es-icon">💬</span>
+                <p>Loading…</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- ══ SUBSCRIPTIONS PANEL ══ -->
-    <div class="panel" id="panel-subscriptions">
-      <div class="pcard">
-        <div class="table-controls">
-          <input type="text" class="search-input" id="sub-search" placeholder="Search subscriptions by name, phone…" oninput="filterSubs()">
-          <select class="filter-sel" id="sub-status-filter" onchange="filterSubs()">
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="paused">Paused</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-        </div>
-        <table class="data-table">
-          <thead><tr><th>Sub ID</th><th>Customer</th><th>Milk Type</th><th>Qty/Day</th><th>Schedule</th><th>Monthly</th><th>Payment</th><th>Status</th><th>Start Date</th><th>Action</th></tr></thead>
-          <tbody id="subs-body"><tr class="loading-row"><td colspan="9">⏳ Loading subscriptions…</td></tr></tbody>
-        </table>
-        <div class="pagination"><div class="pg-info" id="subs-pg-info">—</div></div>
-      </div>
-    </div>
-
-    <!-- ══ MESSAGES PANEL ══ -->
-    <div class="panel" id="panel-messages">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <!-- ══ ORDERS PANEL ══ -->
+      <div class="panel" id="panel-orders">
         <div class="pcard">
-          <div class="pcard-head">
-            <h3>Inbox</h3>
-            <select class="filter-sel" id="msg-filter" onchange="filterMsgs()" style="font-size:12px;padding:6px 10px;">
-              <option value="">All</option>
-              <option value="unread">Unread</option>
-              <option value="read">Read</option>
-              <option value="replied">Replied</option>
+          <div class="table-controls">
+            <input type="text" class="search-input" id="order-search" placeholder="Search by order ID, name, phone…"
+              oninput="filterOrders()">
+            <select class="filter-sel" id="order-status-filter" onchange="filterOrders()">
+              <option value="">All Status</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="pending">Pending</option>
+              <option value="out_for_delivery">Out for Delivery</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <select class="filter-sel" id="order-pay-filter" onchange="filterOrders()">
+              <option value="">All Payments</option>
+              <option value="upi">UPI</option>
+              <option value="card">Card</option>
+              <option value="netbanking">Net Banking</option>
+              <option value="cod">COD</option>
             </select>
           </div>
-          <div id="messages-list"><div class="empty-state"><span class="es-icon">💬</span><p>Loading…</p></div></div>
-        </div>
-        <div class="pcard" id="msg-detail-panel">
-          <div class="pcard-head"><h3>Message Detail</h3></div>
-          <div style="padding:40px 20px;text-align:center;color:var(--text3);">
-            <div style="font-size:40px;margin-bottom:12px;">💬</div>
-            <p style="font-size:14px;">Select a message to view details</p>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Payment</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="orders-body">
+              <tr class="loading-row">
+                <td colspan="8">⏳ Loading…</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <div class="pg-info" id="orders-pg-info">—</div>
+            <div class="pg-btns" id="orders-pg-btns"></div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ══ PRODUCTS PANEL ══ -->
-    <div class="panel" id="panel-products">
-      <div class="pcard">
-        <div class="pcard-head"><h3>🥛 Product Catalog</h3><span class="count-tag">18 products</span></div>
-        <table class="data-table">
-          <thead><tr><th>Icon</th><th>Name</th><th>Category</th><th>Price</th><th>Unit</th><th>Badge</th></tr></thead>
-          <tbody id="products-body"></tbody>
-        </table>
-      </div>
-    </div>
-
-  </div><!-- /content -->
-</div><!-- /main -->
-
-<!-- ORDER DETAIL MODAL -->
-<div class="detail-modal" id="order-modal">
-  <div class="detail-box">
-    <div class="detail-box-head">
-      <div>
-        <div style="font-size:16px;font-weight:800;" id="modal-order-id">Order #</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="modal-order-date"></div>
-      </div>
-      <button class="detail-close" onclick="closeModal()">✕</button>
-    </div>
-    <div class="detail-body" id="modal-content"></div>
-  </div>
-</div>
-
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
-
-<script>
-// ══════════════════════════════════════════════════════
-//  CONFIG — change this to your deployed backend URL
-// ══════════════════════════════════════════════════════
-const API_BASE = 'http://localhost:5000/api';
-
-// ══════════════════════════════════════════════════════
-//  PRODUCTS CATALOG (static — same as frontend)
-// ══════════════════════════════════════════════════════
-const P = [
-  {id:'m1',name:'Cow Milk',e:'🥛',price:60,unit:'/L',cat:'milk',badge:'Fresh'},
-  {id:'m2',name:'Buffalo Milk',e:'🍼',price:75,unit:'/L',cat:'milk',badge:'Popular'},
-  {id:'m3',name:'Organic Milk',e:'🌿',price:90,unit:'/L',cat:'milk',badge:'Organic'},
-  {id:'v1',name:'Fresh Tomatoes',e:'🍅',price:40,unit:'/kg',cat:'vegetables',badge:null},
-  {id:'v2',name:'Potatoes',e:'🥔',price:30,unit:'/kg',cat:'vegetables',badge:null},
-  {id:'v3',name:'Red Onions',e:'🧅',price:35,unit:'/kg',cat:'vegetables',badge:null},
-  {id:'v4',name:'Spinach',e:'🥬',price:30,unit:'/bunch',cat:'vegetables',badge:null},
-  {id:'v5',name:'Carrots',e:'🥕',price:45,unit:'/kg',cat:'vegetables',badge:'Fresh'},
-  {id:'d1',name:'Pure Ghee',e:'🫙',price:580,unit:'/500g',cat:'dairy',badge:'Best Seller'},
-  {id:'d2',name:'Fresh Paneer',e:'🧀',price:90,unit:'/200g',cat:'dairy',badge:null},
-  {id:'d3',name:'White Butter',e:'🧈',price:120,unit:'/200g',cat:'dairy',badge:null},
-  {id:'d4',name:'Curd',e:'🥣',price:50,unit:'/500g',cat:'dairy',badge:'Probiotic'},
-  {id:'d5',name:'Cheese',e:'🫕',price:160,unit:'/200g',cat:'dairy',badge:null},
-  {id:'f1',name:'Apples',e:'🍎',price:180,unit:'/kg',cat:'fruits',badge:'Imported'},
-  {id:'f2',name:'Bananas',e:'🍌',price:50,unit:'/dozen',cat:'fruits',badge:null},
-  {id:'f3',name:'Alphonso Mango',e:'🥭',price:120,unit:'/kg',cat:'fruits',badge:'Seasonal'},
-  {id:'f4',name:'Oranges',e:'🍊',price:80,unit:'/kg',cat:'fruits',badge:null},
-  {id:'f5',name:'Papaya',e:'🍈',price:60,unit:'/kg',cat:'fruits',badge:null},
-];
-
-// ══════════════════════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════════════════════
-let allOrders = [], allSubs = [], allMsgs = [];
-let filteredOrders = [], ordPage = 0;
-const PER_PAGE = 10;
-
-// ══════════════════════════════════════════════════════
-//  UTILS
-// ══════════════════════════════════════════════════════
-function fmt(d)     { return new Date(d).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
-function fmtDate(d) { return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
-
-function statusBadge(s) {
-  const m = {
-    confirmed:'badge-green', pending:'badge-amber', out_for_delivery:'badge-blue',
-    delivered:'badge-blue', cancelled:'badge-red',
-    active:'badge-green', paused:'badge-amber',
-    unread:'badge-amber', read:'badge-gray', replied:'badge-blue'
-  };
-  return `<span class="badge ${m[s]||'badge-gray'}">${(s||'').replace(/_/g,' ')}</span>`;
-}
-function payBadge(p) {
-  const icons = {upi:'📱',card:'💳',netbanking:'🏦',cod:'💵'};
-  return `<span style="font-size:13px;">${icons[p]||'💰'} ${(p||'').toUpperCase()}</span>`;
-}
-
-function toast(msg, type='success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `toast show ${type}`;
-  setTimeout(()=>t.classList.remove('show'), 3200);
-}
-
-function setApiStatus(ok) {
-  const el = document.getElementById('api-status');
-  const txt = document.getElementById('api-status-text');
-  el.className = 'api-status ' + (ok ? 'ok' : 'err');
-  txt.textContent = ok ? 'MongoDB Connected' : 'Server Offline';
-}
-
-// ══════════════════════════════════════════════════════
-//  API CALLS
-// ══════════════════════════════════════════════════════
-async function apiFetch(path) {
-  const res = await fetch(API_BASE + path);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-async function apiPatch(path, body) {
-  const res = await fetch(API_BASE + path, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  return res.json();
-}
-
-// ══════════════════════════════════════════════════════
-//  PANEL NAV
-// ══════════════════════════════════════════════════════
-function showPanel(id, btn) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + id).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  const titles = {overview:'📊 Overview',orders:'🛒 Orders',subscriptions:'📦 Subscriptions',messages:'💬 Messages',products:'🥛 Products'};
-  document.getElementById('panel-title').textContent = titles[id] || id;
-  if (id === 'orders') renderOrders();
-  if (id === 'subscriptions') renderSubs();
-  if (id === 'messages') renderMessages();
-  if (id === 'products') renderProducts();
-}
-
-// ══════════════════════════════════════════════════════
-//  LOAD ALL
-// ══════════════════════════════════════════════════════
-async function loadAll() {
-  const btn = document.getElementById('refresh-btn');
-  btn.classList.add('loading');
-  btn.textContent = '↻ Loading…';
-
-  try {
-    // Check server health
-    await fetch(API_BASE + '/health');
-    setApiStatus(true);
-
-    // Parallel fetch
-    const [ordRes, subRes, msgRes] = await Promise.all([
-      apiFetch('/orders?limit=200'),
-      apiFetch('/subscriptions?limit=200'),
-      apiFetch('/messages?limit=200')
-    ]);
-
-    allOrders = ordRes.orders || [];
-    allSubs   = subRes.subscriptions || [];
-    allMsgs   = msgRes.messages || [];
-
-    // Update nav badges
-    const pendingOrds = allOrders.filter(o => o.status === 'pending' || o.status === 'confirmed').length;
-    const activeSubs  = allSubs.filter(s => s.status === 'active').length;
-    const unreadMsgs  = allMsgs.filter(m => m.status === 'unread').length;
-
-    setBadge('nb-orders', pendingOrds);
-    setBadge('nb-subs', activeSubs);
-    setBadge('nb-msgs', unreadMsgs);
-
-    renderOverview();
-    toast('✅ Data refreshed from MongoDB');
-  } catch (err) {
-    console.error('Load error:', err);
-    setApiStatus(false);
-    toast('❌ Cannot reach server. Is it running on port 5000?', 'error');
-  }
-
-  btn.classList.remove('loading');
-  btn.textContent = '↻ Refresh';
-}
-
-function setBadge(id, count) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.textContent = count;
-  el.style.display = count > 0 ? 'inline' : 'none';
-}
-
-// ══════════════════════════════════════════════════════
-//  OVERVIEW
-// ══════════════════════════════════════════════════════
-function renderOverview() {
-  const totalRev  = allOrders.reduce((s, o) => s + (o.total || 0), 0);
-  const activeSub = allSubs.filter(s => s.status === 'active').length;
-  const unread    = allMsgs.filter(m => m.status === 'unread').length;
-  const todayStr  = new Date().toDateString();
-  const today     = allOrders.filter(o => new Date(o.createdAt).toDateString() === todayStr).length;
-
-  document.getElementById('overview-stats').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-label">Total Revenue</div>
-      <div class="stat-val" style="color:var(--accent);">₹${totalRev.toLocaleString()}</div>
-      <div class="stat-sub">${allOrders.length} total orders</div>
-      <div class="stat-icon">💰</div>
-    </div>
-    <div class="stat-card amber">
-      <div class="stat-label">Active Subscriptions</div>
-      <div class="stat-val" style="color:var(--amber);">${activeSub}</div>
-      <div class="stat-sub">of ${allSubs.length} total</div>
-      <div class="stat-icon">📦</div>
-    </div>
-    <div class="stat-card red">
-      <div class="stat-label">Unread Messages</div>
-      <div class="stat-val" style="color:var(--red);">${unread}</div>
-      <div class="stat-sub">${allMsgs.length} total messages</div>
-      <div class="stat-icon">💬</div>
-    </div>
-    <div class="stat-card blue">
-      <div class="stat-label">Orders Today</div>
-      <div class="stat-val" style="color:var(--blue);">${today}</div>
-      <div class="stat-sub">vs ${allOrders.length} total</div>
-      <div class="stat-icon">🛒</div>
-    </div>`;
-
-  // Revenue chart — group orders by day of week
-  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const dayRevs = [0,0,0,0,0,0,0];
-  allOrders.forEach(o => {
-    const d = new Date(o.createdAt).getDay(); // 0=Sun
-    const idx = d === 0 ? 6 : d - 1;
-    dayRevs[idx] += (o.total || 0);
-  });
-  const maxRev = Math.max(...dayRevs, 1);
-  const bars = days.map((d,i) => `
-    <div class="rev-bar-wrap">
-      <div class="rev-bar order-bar" style="height:${(dayRevs[i]/maxRev*100).toFixed(0)}%;" data-val="₹${dayRevs[i].toLocaleString()}"></div>
-    </div>`).join('');
-  const labels = days.map(d => `<div class="rev-label">${d}</div>`).join('');
-  document.getElementById('rev-chart').innerHTML = `
-    <div class="rev-bars">${bars}</div>
-    <div class="rev-labels">${labels}</div>
-    <div class="chart-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Order Revenue</div>
-    </div>`;
-
-  // Top products
-  const prodSales = {};
-  allOrders.forEach(o => (o.items || []).forEach(i => { prodSales[i.id] = (prodSales[i.id]||0) + (i.price * i.qty); }));
-  const sorted = Object.entries(prodSales).sort((a,b) => b[1]-a[1]).slice(0,5);
-  document.getElementById('top-products-list').innerHTML = sorted.map(([id,rev]) => {
-    const prod = P.find(p => p.id === id);
-    if (!prod) return '';
-    return `<div class="top-prod-item">
-      <div class="top-prod-icon">${prod.e}</div>
-      <div class="top-prod-info">
-        <div class="top-prod-name">${prod.name}</div>
-        <div class="top-prod-cat">${prod.cat}</div>
-      </div>
-      <div class="top-prod-rev">₹${rev.toLocaleString()}</div>
-    </div>`;
-  }).join('') || `<div class="empty-state"><span class="es-icon">📊</span><p>No sales data yet</p></div>`;
-
-  // Recent orders
-  const recentOrds = [...allOrders].sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5);
-  document.getElementById('recent-orders-count').textContent = allOrders.length + ' orders';
-  document.getElementById('recent-orders-body').innerHTML = recentOrds.map(o => `
-    <tr onclick="openOrderModal('${o.orderId}')" style="cursor:pointer;">
-      <td><span style="font-family:var(--mono);color:var(--accent);font-size:12px;">#${o.orderId}</span></td>
-      <td><strong>${o.customer?.name||'—'}</strong></td>
-      <td style="font-family:var(--mono);">₹${(o.total||0).toFixed(0)}</td>
-      <td>${statusBadge(o.status)}</td>
-    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text3);">No orders yet</td></tr>';
-
-  // Recent messages
-  const recentMsgs = [...allMsgs].sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt)).slice(0,4);
-  document.getElementById('recent-msgs-count').textContent = allMsgs.length + ' msgs';
-  document.getElementById('recent-msgs-list').innerHTML = recentMsgs.map(m => `
-    <div class="msg-item ${m.status}" onclick="showPanel('messages',document.querySelector('[onclick*=messages]'));setTimeout(()=>openMsg('${m.messageId}'),100)">
-      <div class="msg-head"><span class="msg-name">${m.name}</span><span class="msg-date">${fmt(m.createdAt)}</span></div>
-      <div class="msg-subject">${m.subject}</div>
-      <div class="msg-preview">${m.message}</div>
-    </div>`).join('') || `<div class="empty-state"><span class="es-icon">💬</span><p>No messages yet</p></div>`;
-}
-
-// ══════════════════════════════════════════════════════
-//  ORDERS
-// ══════════════════════════════════════════════════════
-function renderOrders() { filteredOrders = [...allOrders]; filterOrders(); }
-
-function filterOrders() {
-  const q  = (document.getElementById('order-search')?.value || '').toLowerCase();
-  const st = document.getElementById('order-status-filter')?.value || '';
-  const pm = document.getElementById('order-pay-filter')?.value || '';
-  filteredOrders = allOrders.filter(o => {
-    const mQ = !q  || (o.orderId?.toLowerCase().includes(q)) || (o.customer?.name?.toLowerCase().includes(q)) || (o.customer?.phone?.includes(q));
-    const mS = !st || o.status === st;
-    const mP = !pm || o.paymentMethod === pm;
-    return mQ && mS && mP;
-  });
-  ordPage = 0;
-  renderOrdersPage();
-}
-
-function renderOrdersPage() {
-  const start = ordPage * PER_PAGE, end = start + PER_PAGE;
-  const page = filteredOrders.slice(start, end);
-  document.getElementById('orders-body').innerHTML = page.map(o => `
-    <tr>
-      <td><span style="font-family:var(--mono);color:var(--accent);font-size:12px;">#${o.orderId}</span></td>
-      <td>
-        <div style="font-weight:600;">${o.customer?.name||'—'}</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${o.customer?.phone||''}</div>
-      </td>
-      <td style="font-size:12px;color:var(--text2);">${(o.items||[]).map(i=>`${i.e||''}${i.name}×${i.qty}`).join(', ').substring(0,50)}</td>
-      <td><span style="font-family:var(--mono);font-weight:700;">₹${(o.total||0).toFixed(0)}</span></td>
-      <td>${payBadge(o.paymentMethod)}</td>
-      <td>${statusBadge(o.status)}</td>
-      <td style="font-size:12px;color:var(--text3);font-family:var(--mono);">${fmtDate(o.createdAt)}</td>
-      <td><button class="view-btn" onclick="openOrderModal('${o.orderId}')">View</button></td>
-    </tr>`).join('') || `<tr><td colspan="8"><div class="empty-state"><span class="es-icon">🛒</span><p>No orders found</p></div></td></tr>`;
-
-  document.getElementById('orders-pg-info').textContent = `Showing ${Math.min(start+1,filteredOrders.length)}–${Math.min(end,filteredOrders.length)} of ${filteredOrders.length}`;
-  const totalPgs = Math.ceil(filteredOrders.length / PER_PAGE);
-  let pgHtml = '';
-  for (let i = 0; i < totalPgs; i++) pgHtml += `<button class="pg-btn ${i===ordPage?'active':''}" onclick="ordPage=${i};renderOrdersPage()">${i+1}</button>`;
-  document.getElementById('orders-pg-btns').innerHTML = pgHtml;
-}
-
-// ══════════════════════════════════════════════════════
-//  ORDER MODAL
-// ══════════════════════════════════════════════════════
-function openOrderModal(orderId) {
-  const o = allOrders.find(x => x.orderId === orderId);
-  if (!o) return;
-  document.getElementById('modal-order-id').textContent = `Order #${o.orderId}`;
-  document.getElementById('modal-order-date').textContent = fmt(o.createdAt);
-  const items = (o.items||[]).map(i => `
-    <div class="detail-row">
-      <span>${i.e||''} ${i.name} × ${i.qty}</span>
-      <strong style="font-family:var(--mono);">₹${((i.price||0)*(i.qty||1)).toFixed(0)}</strong>
-    </div>`).join('');
-
-  document.getElementById('modal-content').innerHTML = `
-    <div class="detail-section">
-      <h4>Customer Info</h4>
-      <div class="detail-row"><span>Name</span><strong>${o.customer?.name||'—'}</strong></div>
-      <div class="detail-row"><span>Phone</span><strong style="font-family:var(--mono);">${o.customer?.phone||'—'}</strong></div>
-      <div class="detail-row"><span>Email</span><strong>${o.customer?.email||'—'}</strong></div>
-      <div class="detail-row"><span>Address</span><strong>${o.customer?.address||'—'}</strong></div>
-      ${o.customer?.notes?`<div class="detail-row"><span>Notes</span><strong>${o.customer.notes}</strong></div>`:''}
-    </div>
-    <div class="detail-section">
-      <h4>Order Items</h4>
-      ${items}
-      <div class="detail-row" style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
-        <span>Total</span>
-        <strong style="font-family:var(--mono);color:var(--accent);font-size:16px;">₹${(o.total||0).toFixed(0)}</strong>
-      </div>
-    </div>
-    <div class="detail-section">
-      <h4>Payment & Status</h4>
-      <div class="detail-row"><span>Method</span>${payBadge(o.paymentMethod)}</div>
-      <div class="detail-row"><span>Payment Status</span>${statusBadge(o.paymentStatus||'pending')}</div>
-      <div class="detail-row"><span>Order Status</span>${statusBadge(o.status)}</div>
-    </div>
-    <div class="detail-section">
-      <h4>Update Order Status</h4>
-      <div class="status-update-row">
-        ${['confirmed','out_for_delivery','delivered','cancelled'].map(s =>
-          `<button class="status-btn ${o.status===s?'active-status':''}" onclick="updateOrderStatus('${o.orderId}','${s}',this)">${s.replace(/_/g,' ')}</button>`
-        ).join('')}
-      </div>
-    </div>`;
-  document.getElementById('order-modal').classList.add('open');
-}
-
-function closeModal() { document.getElementById('order-modal').classList.remove('open'); }
-document.getElementById('order-modal').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
-
-async function updateOrderStatus(orderId, status, btn) {
-  try {
-    const result = await apiPatch(`/orders/${orderId}/status`, { status });
-    if (result.success) {
-      // Update local data
-      const idx = allOrders.findIndex(o => o.orderId === orderId);
-      if (idx >= 0) allOrders[idx].status = status;
-      // Update UI
-      document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active-status'));
-      btn.classList.add('active-status');
-      renderOrdersPage();
-      toast(`✅ Order status updated to "${status.replace(/_/g,' ')}"`);
-    } else {
-      toast('❌ ' + result.message, 'error');
-    }
-  } catch {
-    toast('❌ Failed to update status', 'error');
-  }
-}
-
-// ══════════════════════════════════════════════════════
-//  SUBSCRIPTIONS
-// ══════════════════════════════════════════════════════
-function renderSubs() { filterSubs(); }
-
-function filterSubs() {
-  const q  = (document.getElementById('sub-search')?.value || '').toLowerCase();
-  const st = document.getElementById('sub-status-filter')?.value || '';
-  const filtered = allSubs.filter(s => {
-    const mQ = !q  || s.name?.toLowerCase().includes(q) || s.phone?.includes(q);
-    const mS = !st || s.status === st;
-    return mQ && mS;
-  });
-  const milkLabels = {cow:'🥛 Cow',buffalo:'🍼 Buffalo',organic:'🌿 Organic'};
-  const schedLabels = {daily:'📅 Daily',alternate:'📆 Alt Days',weekdays:'🗓 Weekdays',custom:'✏️ Custom'};
-
-  document.getElementById('subs-body').innerHTML = filtered.map(s => `
-    <tr>
-      <td><span style="font-family:var(--mono);color:var(--accent);font-size:12px;">#${s.subscriptionId}</span></td>
-      <td>
-        <div style="font-weight:600;">${s.name}</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${s.phone}</div>
-      </td>
-      <td>${milkLabels[s.milkType]||s.milkType}</td>
-      <td><strong style="font-family:var(--mono);">${s.qty} L</strong></td>
-      <td>${schedLabels[s.schedule]||s.schedule}</td>
-      <td><strong style="font-family:var(--mono);color:var(--accent);">${s.monthlyTotal||'—'}</strong></td>
-      <td>${payBadge(s.paymentMethod||'upi')}</td>
-      <td>${statusBadge(s.status)}</td>
-      <td style="font-size:12px;color:var(--text3);font-family:var(--mono);">${s.startDate||fmtDate(s.createdAt)}</td>
-      <td>
-        <select onchange="updateSubStatus('${s.subscriptionId}',this.value)" style="background:var(--bg2);border:1px solid var(--border);color:var(--text2);padding:4px 8px;border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;cursor:pointer;">
-          <option value="">Change…</option>
-          <option value="active">Activate</option>
-          <option value="paused">Pause</option>
-          <option value="cancelled">Cancel</option>
-        </select>
-      </td>
-    </tr>`).join('') || `<tr><td colspan="9"><div class="empty-state"><span class="es-icon">📦</span><p>No subscriptions found</p></div></td></tr>`;
-
-  document.getElementById('subs-pg-info').textContent = `Showing ${filtered.length} of ${allSubs.length}`;
-}
-
-async function updateSubStatus(subscriptionId, status) {
-  if (!status) return;
-  try {
-    const result = await apiPatch(`/subscriptions/${subscriptionId}/status`, { status });
-    if (result.success) {
-      const idx = allSubs.findIndex(s => s.subscriptionId === subscriptionId);
-      if (idx >= 0) allSubs[idx].status = status;
-      filterSubs();
-      toast(`✅ Subscription ${status}`);
-    } else {
-      toast('❌ ' + result.message, 'error');
-    }
-  } catch {
-    toast('❌ Failed to update subscription', 'error');
-  }
-}
-
-// ══════════════════════════════════════════════════════
-//  MESSAGES
-// ══════════════════════════════════════════════════════
-function renderMessages() { filterMsgs(); }
-
-function filterMsgs() {
-  const filter = document.getElementById('msg-filter')?.value || '';
-  const msgs = [...allMsgs].sort((a,b) => new Date(b.createdAt)-new Date(a.createdAt));
-  const filtered = filter ? msgs.filter(m => m.status === filter) : msgs;
-
-  document.getElementById('messages-list').innerHTML = filtered.map(m => `
-    <div class="msg-item ${m.status}" onclick="openMsg('${m.messageId}')">
-      <div class="msg-head">
-        <span class="msg-name">${m.name}</span>
-        <div style="display:flex;align-items:center;gap:8px;">${statusBadge(m.status)}<span class="msg-date">${fmt(m.createdAt)}</span></div>
-      </div>
-      <div class="msg-subject">${m.subject}</div>
-      <div class="msg-preview">${m.message}</div>
-    </div>`).join('') || `<div class="empty-state"><span class="es-icon">💬</span><p>No messages</p></div>`;
-}
-
-async function openMsg(messageId) {
-  const m = allMsgs.find(x => x.messageId === messageId);
-  if (!m) return;
-
-  // Mark as read if unread
-  if (m.status === 'unread') {
-    try {
-      await apiPatch(`/messages/${messageId}/status`, { status: 'read' });
-      const idx = allMsgs.findIndex(x => x.messageId === messageId);
-      if (idx >= 0) allMsgs[idx].status = 'read';
-      filterMsgs();
-      setBadge('nb-msgs', allMsgs.filter(x => x.status === 'unread').length);
-    } catch {}
-  }
-
-  document.getElementById('msg-detail-panel').innerHTML = `
-    <div class="pcard-head"><h3>💬 Message Detail</h3>${statusBadge(m.status)}</div>
-    <div style="padding:20px;">
-      <div style="margin-bottom:16px;">
-        <div style="font-size:18px;font-weight:800;margin-bottom:4px;">${m.name}</div>
-        <div style="font-size:12px;color:var(--text3);font-family:var(--mono);">${m.email}${m.phone?' · '+m.phone:''}</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px;">${fmt(m.createdAt)}</div>
-      </div>
-      <div style="background:var(--accent-light);border:1px solid var(--accent-mid);border-radius:9px;padding:8px 12px;margin-bottom:14px;">
-        <div style="font-size:11px;color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Subject</div>
-        <div style="font-size:14px;font-weight:600;margin-top:2px;">${m.subject}</div>
-      </div>
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:14px;font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:20px;">${m.message}</div>
-      <div>
-        <div style="font-size:12px;font-weight:700;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;font-family:var(--mono);">Quick Reply</div>
-        <textarea id="reply-input" placeholder="Type your reply…" style="width:100%;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:12px;border-radius:9px;font-family:'Inter',sans-serif;font-size:13px;resize:vertical;min-height:80px;outline:none;"></textarea>
-        <div style="display:flex;gap:8px;margin-top:10px;">
-          <button onclick="markReplied('${m.messageId}')" style="background:var(--accent);color:#fff;border:none;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;">✉️ Mark as Replied</button>
+      <!-- ══ PRODUCTS PANEL ══ -->
+      <div class="panel" id="panel-products">
+        <div class="grid3">
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>🥛 Product Catalog</h3><span class="count-tag" id="products-count">0</span>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Icon</th>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Price</th>
+                  <th>Unit</th>
+                  <th>Stock</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="products-body">
+                <tr class="loading-row">
+                  <td colspan="8">⏳ Loading…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>➕ Add Product</h3>
+            </div>
+            <div style="padding:20px;">
+              <form id="product-form" onsubmit="addProduct(event)">
+                <div class="form-group"><label>Name *</label><input name="name" required></div>
+                <div class="form-row">
+                  <div class="form-group"><label>Price (₹) *</label><input name="price" type="number" required></div>
+                  <div class="form-group"><label>Stock</label><input name="stock" type="number" value="0"></div>
+                </div>
+                <div class="form-group"><label>Category *</label>
+                  <select name="category" required>
+                    <option value="">Select…</option>
+                    <option value="milk">Milk</option>
+                    <option value="dairy">Dairy</option>
+                    <option value="vegetables">Vegetables</option>
+                    <option value="fruits">Fruits</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label>Emoji</label><input name="emoji" placeholder="🥛"></div>
+                  <div class="form-group"><label>Unit</label><input name="unit" placeholder="/L, /kg"></div>
+                </div>
+                <div class="form-group"><label>Badge</label><input name="badge" placeholder="Fresh, Popular, etc.">
+                </div>
+                <div class="form-group"><label>Description</label><textarea name="description"></textarea></div>
+                <div class="form-group"><label>Image</label><input name="image" type="file" accept="image/*"></div>
+                <button type="submit" class="btn-primary" style="width:100%;">➕ Add Product</button>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
-    </div>`;
-}
 
-async function markReplied(messageId) {
-  try {
-    await apiPatch(`/messages/${messageId}/status`, { status: 'replied' });
-    const idx = allMsgs.findIndex(m => m.messageId === messageId);
-    if (idx >= 0) allMsgs[idx].status = 'replied';
-    filterMsgs();
-    openMsg(messageId);
-    toast('✅ Message marked as replied');
-  } catch {
-    toast('❌ Failed to update message', 'error');
-  }
-}
+      <!-- ══ CUSTOMERS PANEL ══ -->
+      <div class="panel" id="panel-customers">
+        <div class="pcard">
+          <div class="pcard-head">
+            <h3>👥 Customers</h3><span class="count-tag" id="customers-count">0</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Orders</th>
+                <th>Total Spent</th>
+                <th>Last Order</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="customers-body">
+              <tr class="loading-row">
+                <td colspan="7">⏳ Loading…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-// ══════════════════════════════════════════════════════
-//  PRODUCTS (static)
-// ══════════════════════════════════════════════════════
-function renderProducts() {
-  document.getElementById('products-body').innerHTML = P.map(p => `
-    <tr>
-      <td style="font-size:26px;">${p.e}</td>
-      <td><strong>${p.name}</strong></td>
-      <td><span class="badge badge-gray">${p.cat}</span></td>
-      <td><strong style="font-family:var(--mono);">₹${p.price}</strong></td>
-      <td style="font-family:var(--mono);color:var(--text2);">${p.unit}</td>
-      <td>${p.badge ? `<span class="badge badge-green">${p.badge}</span>` : '<span style="color:var(--text3);">—</span>'}</td>
-    </tr>`).join('');
-}
+      <!-- ══ SUBSCRIPTIONS PANEL ══ -->
+      <div class="panel" id="panel-subscriptions">
+        <div class="pcard">
+          <div class="table-controls">
+            <input type="text" class="search-input" id="sub-search" placeholder="Search by name, phone…"
+              oninput="filterSubs()">
+            <select class="filter-sel" id="sub-status-filter" onchange="filterSubs()">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sub ID</th>
+                <th>Customer</th>
+                <th>Milk Type</th>
+                <th>Qty/Day</th>
+                <th>Schedule</th>
+                <th>Monthly</th>
+                <th>Status</th>
+                <th>Start Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="subs-body">
+              <tr class="loading-row">
+                <td colspan="9">⏳ Loading…</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <div class="pg-info" id="subs-pg-info">—</div>
+          </div>
+        </div>
+      </div>
 
-// ══════════════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════════════
-loadAll();
-</script>
+      <!-- ══ INVENTORY PANEL ══ -->
+      <div class="panel" id="panel-inventory">
+        <div class="pcard">
+          <div class="pcard-head">
+            <h3>📋 Inventory Management</h3><span class="count-tag">Update stock levels</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Icon</th>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-body">
+              <tr class="loading-row">
+                <td colspan="6">⏳ Loading…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ MESSAGES PANEL ══ -->
+      <div class="panel" id="panel-messages">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>Inbox</h3>
+              <select class="filter-sel" id="msg-filter" onchange="filterMsgs()"
+                style="font-size:12px;padding:6px 10px;">
+                <option value="">All</option>
+                <option value="unread">Unread</option>
+                <option value="read">Read</option>
+                <option value="replied">Replied</option>
+              </select>
+            </div>
+            <div id="messages-list">
+              <div class="empty-state"><span class="es-icon">💬</span>
+                <p>Loading…</p>
+              </div>
+            </div>
+          </div>
+          <div class="pcard" id="msg-detail-panel">
+            <div class="pcard-head">
+              <h3>Message Detail</h3>
+            </div>
+            <div style="padding:40px 20px;text-align:center;color:var(--text3);">
+              <div style="font-size:40px;margin-bottom:12px;">💬</div>
+              <p style="font-size:14px;">Select a message to view details</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CMS PANEL ══ -->
+      <div class="panel" id="panel-cms">
+        <div class="grid3">
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>🎨 CMS Content</h3>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Type</th>
+                  <th>Title</th>
+                  <th>Value</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="cms-body">
+                <tr class="loading-row">
+                  <td colspan="6">⏳ Loading…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>➕ Add Content</h3>
+            </div>
+            <div style="padding:20px;">
+              <form id="cms-form" onsubmit="addCMSContent(event)">
+                <div class="form-group"><label>Key *</label><input name="key" required placeholder="homepage_banner_1">
+                </div>
+                <div class="form-group"><label>Type *</label>
+                  <select name="type" required>
+                    <option value="">Select…</option>
+                    <option value="banner">Banner</option>
+                    <option value="offer">Offer</option>
+                    <option value="category">Category</option>
+                    <option value="text">Text</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>Title</label><input name="title" placeholder="Banner Title"></div>
+                <div class="form-group"><label>Value / Text</label><textarea name="value"
+                    placeholder="Content text or URL…"></textarea></div>
+                <div class="form-group"><label>Image</label><input name="image" type="file" accept="image/*"></div>
+                <div class="form-group"><label>Display Order</label><input name="order" type="number" value="0"></div>
+                <button type="submit" class="btn-primary" style="width:100%;">➕ Add Content</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+
+  <!-- ══ ORDER/CUSTOMER DETAIL MODAL ══ -->
+  <div class="detail-modal" id="order-modal">
+    <div class="detail-box">
+      <div class="detail-box-head">
+        <div>
+          <div style="font-size:16px;font-weight:800;" id="modal-order-id">Detail</div>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);" id="modal-order-date"></div>
+        </div>
+        <button class="detail-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="detail-body" id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- ══ PRODUCT EDIT MODAL ══ -->
+  <div class="detail-modal" id="product-edit-modal">
+    <div class="detail-box">
+      <div class="detail-box-head">
+        <div style="font-size:16px;font-weight:800;">Edit Product</div>
+        <button class="detail-close"
+          onclick="document.getElementById('product-edit-modal').classList.remove('open')">✕</button>
+      </div>
+      <div class="detail-body">
+        <form id="product-edit-form" onsubmit="saveProductEdit(event)">
+          <input type="hidden" id="edit-prod-id">
+          <div class="form-group"><label>Name</label><input id="edit-prod-name" name="name" required></div>
+          <div class="form-row">
+            <div class="form-group"><label>Price (₹)</label><input id="edit-prod-price" name="price" type="number"
+                required></div>
+            <div class="form-group"><label>Stock</label><input id="edit-prod-stock" name="stock" type="number"></div>
+          </div>
+          <div class="form-group"><label>Category</label>
+            <select id="edit-prod-category" name="category">
+              <option value="milk">Milk</option>
+              <option value="dairy">Dairy</option>
+              <option value="vegetables">Vegetables</option>
+              <option value="fruits">Fruits</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Emoji</label><input id="edit-prod-emoji" name="emoji"></div>
+            <div class="form-group"><label>Unit</label><input id="edit-prod-unit" name="unit"></div>
+          </div>
+          <div class="form-group"><label>Badge</label><input id="edit-prod-badge" name="badge"></div>
+          <div class="form-group"><label>Description</label><textarea id="edit-prod-desc" name="description"></textarea>
+          </div>
+          <div class="form-group"><label>New Image (optional)</label><input name="image" type="file" accept="image/*">
+          </div>
+          <button type="submit" class="btn-primary" style="width:100%;">💾 Save Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="admin.js"></script>
 </body>
+
 </html>
