@@ -468,6 +468,6 @@ document.getElementById('pay-modal').addEventListener('click', function (e) { if
 //  INIT
 // ============================================================
 renderGrid('home-grid');
-initTabs('home-tabs', 'home-grid');
+initTabs('h ome-tabs', 'home-grid');
 updateCart();
 initFade();
