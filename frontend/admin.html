@@ -31,6 +31,14 @@
 
   <!-- ══ SIDEBAR ══ -->
   <aside class="sidebar">
+
+
+
+
+
+
+
+
     <div class="sidebar-logo">
       <div class="logo-mark">🌿</div>
       <div>
@@ -54,6 +62,8 @@
       <button class="nav-item" data-panel="messages" onclick="showPanel('messages',this)"><span class="ni">💬</span>
         Messages <span class="nav-badge" id="nb-msgs">0</span></button>
       <button class="nav-item" data-panel="cms" onclick="showPanel('cms',this)"><span class="ni">🎨</span> CMS</button>
+      <button class="nav-item" data-panel="settings" onclick="showPanel('settings',this)"><span class="ni">⚙️</span>
+        Settings</button>
       <div class="nav-sep"></div>
       <a href="index.html" target="_blank" class="nav-item" style="color:var(--text2);text-decoration:none;"><span
           class="ni">🌐</span> View Website</a>
@@ -472,6 +482,34 @@
                 <button type="submit" class="btn-primary" style="width:100%;">➕ Add Content</button>
               </form>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SETTINGS PANEL ══ -->
+      <div class="panel" id="panel-settings">
+        <div class="pcard" style="max-width:500px; margin:0 auto;">
+          <div class="pcard-head">
+            <h3>⚙️ Update Credentials</h3>
+          </div>
+          <div style="padding:20px;">
+            <form id="settings-form" onsubmit="updateCredentials(event)">
+              <div class="form-group">
+                <label>Current Password *</label>
+                <input type="password" id="set-curr-pass" required placeholder="Enter current password">
+              </div>
+              <div class="form-group">
+                <label>New Email (ID) *</label>
+                <input type="email" id="set-new-email" required placeholder="Enter new email address">
+              </div>
+              <div class="form-group">
+                <label>New Password *</label>
+                <input type="password" id="set-new-pass" required minlength="6"
+                  placeholder="Enter new password (min 6 chars)">
+              </div>
+              <button type="submit" class="btn-primary" style="width:100%;" id="settings-save-btn">💾 Update
+                Credentials</button>
+            </form>
           </div>
         </div>
       </div>

@@ -122,7 +122,7 @@ function showPanel(id, btn) {
     document.getElementById('panel-' + id).classList.add('active');
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (btn) btn.classList.add('active');
-    const titles = { overview: '📊 Overview', orders: '🛒 Orders', subscriptions: '📦 Subscriptions', messages: '💬 Messages', products: '🥛 Products', customers: '👥 Customers', inventory: '📋 Inventory', cms: '🎨 CMS', notifications: '🔔 Notifications' };
+    const titles = { overview: '📊 Overview', orders: '🛒 Orders', subscriptions: '📦 Subscriptions', messages: '💬 Messages', products: '🥛 Products', customers: '👥 Customers', inventory: '📋 Inventory', cms: '🎨 CMS', notifications: '🔔 Notifications', settings: '⚙️ Settings' };
     document.getElementById('panel-title').textContent = titles[id] || id;
     if (id === 'orders') renderOrders();
     if (id === 'subscriptions') renderSubs();
@@ -131,6 +131,11 @@ function showPanel(id, btn) {
     if (id === 'customers') renderCustomers();
     if (id === 'inventory') renderInventory();
     if (id === 'cms') renderCMS();
+    if (id === 'settings') {
+        document.getElementById('set-new-email').value = currentAdmin?.email || '';
+        document.getElementById('set-curr-pass').value = '';
+        document.getElementById('set-new-pass').value = '';
+    }
 }
 
 function setBadge(id, count) { const el = document.getElementById(id); if (!el) return; el.textContent = count; el.style.display = count > 0 ? 'inline' : 'none'; }
@@ -579,6 +584,48 @@ async function deleteCMS(key) {
     if (!confirm(`Delete content "${key}"?`)) return;
     try { const r = await apiDelete('/content/' + key); if (r.success) { renderCMS(); toast('✅ Deleted'); } else toast('❌ ' + r.message, 'error'); }
     catch { toast('❌ Failed', 'error'); }
+}
+
+// ══════════════════════════════════════════════════════
+//  SETTINGS / CREDENTIALS
+// ══════════════════════════════════════════════════════
+async function updateCredentials(e) {
+    e.preventDefault();
+    const btn = document.getElementById('settings-save-btn');
+    const origText = btn.textContent;
+    btn.textContent = '⏱ Updating...';
+    btn.disabled = true;
+
+    const currentPassword = document.getElementById('set-curr-pass').value;
+    const newEmail = document.getElementById('set-new-email').value.trim();
+    const newPassword = document.getElementById('set-new-pass').value;
+
+    try {
+        const res = await fetch(API_BASE + '/admin/credentials', {
+            method: 'PUT',
+            headers: authHeaders(),
+            body: JSON.stringify({ currentPassword, newEmail, newPassword })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            setToken(data.token);
+            currentAdmin = data.admin;
+            sessionStorage.setItem('admin_data', JSON.stringify(data.admin));
+            document.getElementById('admin-disp-name').textContent = currentAdmin.name || 'Admin';
+
+            document.getElementById('set-curr-pass').value = '';
+            document.getElementById('set-new-pass').value = '';
+            toast('✅ Credentials updated successfully!');
+        } else {
+            toast('❌ ' + data.message, 'error');
+        }
+    } catch (err) {
+        toast('❌ Failed to update credentials', 'error');
+    } finally {
+        btn.textContent = origText;
+        btn.disabled = false;
+    }
 }
 
 // ══════════════════════════════════════════════════════
