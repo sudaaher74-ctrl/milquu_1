@@ -116,6 +116,59 @@ router.get('/me', verifyToken, (req, res) => {
     });
 });
 
+// ── PUT /api/admin/credentials — update current admin email and password
+router.put('/credentials', verifyToken, async (req, res) => {
+    try {
+        const { currentPassword, newEmail, newPassword } = req.body;
+
+        if (!currentPassword || !newEmail || !newPassword) {
+            return res.status(400).json({ success: false, message: 'Current password, new email, and new password are required.' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, message: 'New password must be at least 6 characters.' });
+        }
+
+        const admin = await Admin.findById(req.admin._id);
+        if (!admin) {
+            return res.status(404).json({ success: false, message: 'Admin not found.' });
+        }
+
+        // Check current password
+        const isMatch = await admin.comparePassword(currentPassword);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Incorrect current password.' });
+        }
+
+        // Check if new email is taken by a different admin
+        if (newEmail.toLowerCase() !== admin.email) {
+            const existing = await Admin.findOne({ email: newEmail.toLowerCase() });
+            if (existing && existing._id.toString() !== admin._id.toString()) {
+                return res.status(400).json({ success: false, message: 'Email already in use by another account.' });
+            }
+            admin.email = newEmail.toLowerCase();
+        }
+
+        // Update password (will be hashed by pre-save hook)
+        admin.password = newPassword;
+        await admin.save();
+
+        // Generate new token reflecting new email
+        const token = generateToken(admin);
+
+        res.json({
+            success: true,
+            message: 'Credentials updated successfully.',
+            token,
+            admin: { id: admin._id, name: admin.name, email: admin.email, role: admin.role }
+        });
+
+    } catch (err) {
+        console.error('Admin update credentials error:', err);
+        res.status(500).json({ success: false, message: 'Server error while updating credentials.' });
+    }
+});
+
 // ── GET /api/admin — list all admins (super_admin only)
 router.get('/', verifyToken, requireRole('super_admin'), async (req, res) => {
     try {
