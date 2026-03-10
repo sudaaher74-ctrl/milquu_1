@@ -1,11 +1,11 @@
-// routes/customers.js  —  Customer aggregation from orders & subscriptions
 const express = require('express');
-const router = express.Router();
 const Order = require('../models/Order');
 const Subscription = require('../models/Subscription');
+const { verifyToken, requireRole } = require('../middleware/auth');
 
-// ── GET /api/customers — aggregated customer list
-router.get('/', async (req, res) => {
+const router = express.Router();
+
+router.get('/', verifyToken, requireRole('super_admin', 'manager'), async (req, res) => {
     try {
         const customers = await Order.aggregate([
             {
@@ -30,11 +30,9 @@ router.get('/', async (req, res) => {
     }
 });
 
-// ── GET /api/customers/:phone — customer profile with order history & subscriptions
-router.get('/:phone', async (req, res) => {
+router.get('/:phone', verifyToken, requireRole('super_admin', 'manager'), async (req, res) => {
     try {
         const phone = req.params.phone;
-
         const orders = await Order.find({ 'customer.phone': phone }).sort({ createdAt: -1 });
         const subscriptions = await Subscription.find({ phone }).sort({ createdAt: -1 });
 
@@ -43,12 +41,12 @@ router.get('/:phone', async (req, res) => {
         }
 
         const customer = {
-            name: orders[0]?.customer?.name || subscriptions[0]?.name || '—',
+            name: orders[0]?.customer?.name || subscriptions[0]?.name || '-',
             phone,
             email: orders[0]?.customer?.email || '',
             address: orders[0]?.customer?.address || subscriptions[0]?.address || '',
             totalOrders: orders.length,
-            totalSpent: orders.reduce((sum, o) => sum + (o.total || 0), 0),
+            totalSpent: orders.reduce((sum, order) => sum + (order.total || 0), 0),
             orders,
             subscriptions
         };

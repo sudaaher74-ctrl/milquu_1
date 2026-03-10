@@ -1,12 +1,12 @@
-// routes/notifications.js  —  Notification counts for admin dashboard
 const express = require('express');
-const router = express.Router();
 const Order = require('../models/Order');
 const Subscription = require('../models/Subscription');
 const Message = require('../models/Message');
+const { verifyToken, requireRole } = require('../middleware/auth');
 
-// ── GET /api/notifications/counts — unread/new counts for admin notification bell
-router.get('/counts', async (req, res) => {
+const router = express.Router();
+
+router.get('/counts', verifyToken, requireRole('super_admin', 'manager', 'delivery_staff'), async (req, res) => {
     try {
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
@@ -17,7 +17,6 @@ router.get('/counts', async (req, res) => {
         ]);
 
         const total = newOrders + newSubscriptions + unreadMessages;
-
         res.json({
             success: true,
             newOrders,

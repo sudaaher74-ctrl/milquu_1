@@ -1,11 +1,7 @@
-// middleware/auth.js  —  JWT authentication & role-based access
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
+const { getRequiredEnv } = require('../config');
 
-/**
- * Verify JWT token from Authorization header.
- * Attaches `req.admin` with { id, name, email, role }.
- */
 async function verifyToken(req, res, next) {
     try {
         const header = req.headers.authorization;
@@ -14,8 +10,7 @@ async function verifyToken(req, res, next) {
         }
 
         const token = header.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'milqu_default_secret');
-
+        const decoded = jwt.verify(token, getRequiredEnv('JWT_SECRET'));
         const admin = await Admin.findById(decoded.id).select('-password');
         if (!admin) {
             return res.status(401).json({ success: false, message: 'Invalid token. Admin not found.' });
@@ -31,11 +26,34 @@ async function verifyToken(req, res, next) {
     }
 }
 
-/**
- * Require one of the specified roles.
- * Must be used AFTER verifyToken.
- * Usage: requireRole('super_admin', 'manager')
- */
+async function optionalVerifyToken(req, res, next) {
+    const header = req.headers.authorization;
+    if (!header) {
+        return next();
+    }
+
+    if (!header.startsWith('Bearer ')) {
+        return res.status(401).json({ success: false, message: 'Invalid authorization header.' });
+    }
+
+    try {
+        const token = header.split(' ')[1];
+        const decoded = jwt.verify(token, getRequiredEnv('JWT_SECRET'));
+        const admin = await Admin.findById(decoded.id).select('-password');
+        if (!admin) {
+            return res.status(401).json({ success: false, message: 'Invalid token. Admin not found.' });
+        }
+
+        req.admin = admin;
+        next();
+    } catch (err) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ success: false, message: 'Token expired. Please login again.' });
+        }
+        return res.status(401).json({ success: false, message: 'Invalid token.' });
+    }
+}
+
 function requireRole(...roles) {
     return (req, res, next) => {
         if (!req.admin) {
@@ -48,4 +66,4 @@ function requireRole(...roles) {
     };
 }
 
-module.exports = { verifyToken, requireRole };
+module.exports = { verifyToken, optionalVerifyToken, requireRole };
