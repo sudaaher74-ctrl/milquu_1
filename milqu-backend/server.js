@@ -8,6 +8,7 @@ const { ensureDefaultProducts } = require('./utils/seed-default-products');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
 
 app.use(cors({
     origin: '*',
@@ -44,6 +45,16 @@ app.get('/api/health', (req, res) => {
         service: 'Milqu Fresh API',
         timestamp: new Date().toISOString()
     });
+});
+
+app.use(express.static(FRONTEND_DIR));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
+});
+
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(FRONTEND_DIR, 'admin.html'));
 });
 
 app.use((req, res) => {

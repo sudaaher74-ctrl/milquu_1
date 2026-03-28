@@ -16,6 +16,20 @@ function generateToken(admin) {
     );
 }
 
+router.get('/setup-status', async (req, res) => {
+    try {
+        const adminCount = await Admin.countDocuments();
+        res.json({
+            success: true,
+            adminCount,
+            hasAdmins: adminCount > 0,
+            allowSelfRegister: adminCount === 0
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Failed to check admin setup.' });
+    }
+});
+
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password, role } = req.body;

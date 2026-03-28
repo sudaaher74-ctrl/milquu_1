@@ -24,8 +24,11 @@
       <input type="password" id="login-pass" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
       <button class="btn-login" onclick="doLogin()">🔐 Login</button>
       <div class="login-err" id="login-error"></div>
-      <div class="login-hint">First time? <a href="#" onclick="doRegister();return false"
-          style="color:var(--accent);font-weight:600;">Create Admin Account</a></div>
+      <div class="login-hint">
+        <span id="login-hint-text">Checking admin setup...</span>
+        <a href="#" id="login-action-link" onclick="doRegister();return false"
+          style="color:var(--accent);font-weight:600;">Create Admin Account</a>
+      </div>
     </div>
   </div>
 

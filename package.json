@@ -5,7 +5,9 @@
   "main": "milqu-backend/server.js",
   "scripts": {
     "start": "node milqu-backend/server.js",
-    "dev": "nodemon milqu-backend/server.js"
+    "dev": "nodemon milqu-backend/server.js",
+    "seed-admin": "node milqu-backend/seed-admin.js",
+    "clear-db": "node milqu-backend/clear-db.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

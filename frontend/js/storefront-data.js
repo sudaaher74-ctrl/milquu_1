@@ -13,6 +13,7 @@ var DB = {
 };
 
 var P = [];
+var CMS_CONTENT = [];
 
 // Fallback products — shown when the backend server is not running
 var FALLBACK_PRODUCTS = [
@@ -68,4 +69,24 @@ async function loadProducts() {
         P = FALLBACK_PRODUCTS;
     }
     return P;
+}
+
+function contentImageUrl(item) {
+    if (!item) return '';
+    return item.image ? `${API_BASE.replace('/api', '')}/uploads/${item.image}` : '';
+}
+
+async function loadContent() {
+    try {
+        var response = await fetch(`${API_BASE}/content`);
+        var result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || 'Failed to load content');
+        }
+        CMS_CONTENT = result.content || [];
+    } catch (err) {
+        console.warn('CMS content unavailable:', err.message);
+        CMS_CONTENT = [];
+    }
+    return CMS_CONTENT;
 }

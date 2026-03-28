@@ -4,10 +4,47 @@ var filteredOrders = [], ordPage = 0;
 var PER_PAGE = 10;
 var revenueChart = null;
 var currentAdmin = null;
+var adminSetup = { hasAdmins: null, adminCount: 0, allowSelfRegister: false };
 
 function getToken() { return sessionStorage.getItem('admin_token'); }
 function setToken(t) { sessionStorage.setItem('admin_token', t); }
 function clearToken() { sessionStorage.removeItem('admin_token'); sessionStorage.removeItem('admin_data'); }
+
+function updateLoginHint() {
+    var textEl = document.getElementById('login-hint-text');
+    var actionEl = document.getElementById('login-action-link');
+    if (!textEl || !actionEl) return;
+
+    if (adminSetup.hasAdmins === false) {
+        textEl.textContent = 'No admin account exists yet.';
+        actionEl.textContent = 'Create Admin Account';
+        actionEl.style.display = 'inline';
+        return;
+    }
+
+    if (adminSetup.hasAdmins === true) {
+        textEl.textContent = 'An admin account already exists. Sign in with its email and password.';
+        actionEl.style.display = 'none';
+        return;
+    }
+
+    textEl.textContent = 'Enter your admin email and password to continue.';
+    actionEl.textContent = 'Create Admin Account';
+    actionEl.style.display = 'inline';
+}
+
+async function loadSetupStatus() {
+    try {
+        var res = await fetch(API_BASE + '/admin/setup-status');
+        var data = await res.json();
+        if (data.success) {
+            adminSetup = data;
+        }
+    } catch (e) {
+        adminSetup = { hasAdmins: null, adminCount: 0, allowSelfRegister: false };
+    }
+    updateLoginHint();
+}
 
 function authHeaders() {
     var t = getToken();
@@ -43,6 +80,11 @@ async function doRegister() {
     var pass = document.getElementById('login-pass').value;
     var errEl = document.getElementById('login-error');
     errEl.style.display = 'none';
+    if (adminSetup.hasAdmins) {
+        errEl.textContent = 'Admin self-registration is disabled after the first account is created.';
+        errEl.style.display = 'block';
+        return;
+    }
     if (!email || !pass) { errEl.textContent = 'Please enter email and password.'; errEl.style.display = 'block'; return; }
     try {
         var res = await fetch(API_BASE + '/admin/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: email.split('@')[0], email: email, password: pass, role: 'super_admin' }) });
@@ -50,6 +92,8 @@ async function doRegister() {
         if (data.success) {
             setToken(data.token);
             currentAdmin = data.admin;
+            adminSetup = { hasAdmins: true, adminCount: 1, allowSelfRegister: false };
+            updateLoginHint();
             sessionStorage.setItem('admin_data', JSON.stringify(data.admin));
             showDashboard();
         } else {
@@ -91,7 +135,11 @@ function applyRolePermissions() {
 
 async function checkAuth() {
     var token = getToken();
-    if (!token) { document.getElementById('login-screen').classList.remove('hidden'); return; }
+    if (!token) {
+        document.getElementById('login-screen').classList.remove('hidden');
+        await loadSetupStatus();
+        return;
+    }
     try {
         var res = await fetch(API_BASE + '/admin/me', { headers: { 'Authorization': 'Bearer ' + token } });
         var data = await res.json();
@@ -102,10 +150,12 @@ async function checkAuth() {
         } else {
             clearToken();
             document.getElementById('login-screen').classList.remove('hidden');
+            await loadSetupStatus();
         }
     } catch {
         clearToken();
         document.getElementById('login-screen').classList.remove('hidden');
+        await loadSetupStatus();
     }
 }
 

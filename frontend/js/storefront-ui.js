@@ -68,6 +68,38 @@ function initTabs(tabsId, gridId) {
   });
 }
 
+function renderCmsUpdates() {
+  const section = document.getElementById('cms-updates-section');
+  const grid = document.getElementById('cms-updates-grid');
+  if (!section || !grid) return;
+
+  const items = CMS_CONTENT
+    .filter(item => ['banner', 'offer', 'text'].includes(item.type))
+    .slice()
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
+    .slice(0, 6);
+
+  if (!items.length) {
+    section.style.display = 'none';
+    grid.innerHTML = '';
+    return;
+  }
+
+  grid.innerHTML = items.map(item => {
+    const img = contentImageUrl(item);
+    return `
+      <div class="why-card fade-in" style="overflow:hidden;">
+        ${img ? `<img src="${img}" alt="${item.title || item.key}" style="width:100%;height:180px;object-fit:cover;border-radius:14px;margin-bottom:18px;" onerror="this.style.display='none';">` : ''}
+        <div class="tag" style="display:inline-flex;margin-bottom:12px;">${item.type}</div>
+        <h3>${item.title || item.key}</h3>
+        <p>${item.value || 'Published from the admin dashboard.'}</p>
+      </div>`;
+  }).join('');
+
+  section.style.display = '';
+  initFade();
+}
+
 // ============================================================
 //  PRODUCT DETAIL PAGE
 // ============================================================
@@ -452,9 +484,10 @@ document.getElementById('pay-modal').addEventListener('click', function (e) { if
 // ============================================================
 //  INIT
 // ============================================================
-loadProducts()
+Promise.all([loadProducts(), loadContent()])
   .then(() => {
     refreshSubscriptionContent();
+    renderCmsUpdates();
     renderGrid('home-grid');
     initTabs('home-tabs', 'home-grid');
     updateCart();
