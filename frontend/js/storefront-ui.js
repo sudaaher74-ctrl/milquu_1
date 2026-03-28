@@ -159,6 +159,53 @@ function detail(id) {
 const getCart = () => DB.get('cart');
 const saveCart = c => DB.set('cart', c);
 
+function syncCartWithCatalog() {
+  const cart = getCart();
+  if (!cart.length) return;
+
+  const productByRef = new Map();
+  P.forEach(product => {
+    if (product.productId) productByRef.set(product.productId, product);
+    if (product.id) productByRef.set(product.id, product);
+  });
+
+  let changed = false;
+  const nextCart = cart.flatMap(item => {
+    const product = productByRef.get(item.productId) || productByRef.get(item.id);
+    if (!product) {
+      changed = true;
+      return [];
+    }
+
+    const nextItem = {
+      ...item,
+      id: product.id,
+      productId: product.productId,
+      name: product.name,
+      price: product.price,
+      e: product.e,
+      unit: product.unit
+    };
+
+    if (
+      nextItem.id !== item.id ||
+      nextItem.productId !== item.productId ||
+      nextItem.name !== item.name ||
+      nextItem.price !== item.price ||
+      nextItem.e !== item.e ||
+      nextItem.unit !== item.unit
+    ) {
+      changed = true;
+    }
+
+    return [nextItem];
+  });
+
+  if (changed) {
+    saveCart(nextCart);
+  }
+}
+
 function addToCart(item) {
   const c = getCart(), ex = c.find(i => i.id === item.id);
   if (ex) ex.qty++; else c.push({ ...item, qty: 1 });
@@ -490,6 +537,7 @@ Promise.all([loadProducts(), loadContent()])
     renderCmsUpdates();
     renderGrid('home-grid');
     initTabs('home-tabs', 'home-grid');
+    syncCartWithCatalog();
     updateCart();
     initFade();
   })

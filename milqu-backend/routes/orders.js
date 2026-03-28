@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const { sendWhatsAppNotification } = require('../utils/whatsapp');
@@ -36,18 +37,41 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Order must contain valid product items.' });
         }
 
-        const productIds = normalizedItems.map((item) => item.productId);
-        const products = await Product.find({ _id: { $in: productIds }, status: 'active' });
-        if (products.length !== normalizedItems.length) {
+        const requestedRefs = normalizedItems.map((item) => item.productId);
+        const objectIds = requestedRefs.filter((ref) => mongoose.Types.ObjectId.isValid(ref));
+        const productCodes = requestedRefs.filter((ref) => !mongoose.Types.ObjectId.isValid(ref));
+        const filters = [];
+
+        if (objectIds.length > 0) {
+            filters.push({ _id: { $in: objectIds } });
+        }
+        if (productCodes.length > 0) {
+            filters.push({ productCode: { $in: productCodes } });
+        }
+
+        const products = await Product.find({
+            status: 'active',
+            ...(filters.length > 0 ? { $or: filters } : {})
+        });
+
+        const productByRef = new Map();
+        for (const product of products) {
+            productByRef.set(product._id.toString(), product);
+            if (product.productCode) {
+                productByRef.set(product.productCode, product);
+            }
+        }
+
+        const hasMissingProduct = normalizedItems.some((item) => !productByRef.get(item.productId));
+        if (hasMissingProduct) {
             return res.status(400).json({ success: false, message: 'One or more products are unavailable.' });
         }
 
-        const productById = new Map(products.map((product) => [product._id.toString(), product]));
         const orderItems = [];
         let subtotal = 0;
 
         for (const item of normalizedItems) {
-            const product = productById.get(item.productId);
+            const product = productByRef.get(item.productId);
             if (!product) {
                 return res.status(400).json({ success: false, message: 'One or more products are unavailable.' });
             }
@@ -83,7 +107,7 @@ router.post('/', async (req, res) => {
         await order.save();
 
         for (const item of normalizedItems) {
-            const product = productById.get(item.productId);
+            const product = productByRef.get(item.productId);
             product.stock = Math.max(0, product.stock - item.qty);
             if (product.stock <= 0) {
                 product.status = 'out_of_stock';
