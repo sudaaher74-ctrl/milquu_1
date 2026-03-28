@@ -10,6 +10,8 @@ const AdminSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+AdminSchema.index({ role: 1, createdAt: -1 });
+
 // Hash password before saving
 AdminSchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next();

@@ -17,4 +17,8 @@ const SubscriptionSchema = new mongoose.Schema({
   createdAt:      { type: Date, default: Date.now }
 });
 
+SubscriptionSchema.index({ status: 1, createdAt: -1 });
+SubscriptionSchema.index({ phone: 1, createdAt: -1 });
+SubscriptionSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model('Subscription', SubscriptionSchema);

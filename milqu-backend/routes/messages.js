@@ -1,10 +1,18 @@
 const express = require('express');
 const Message = require('../models/Message');
+const { createRateLimiter } = require('../middleware/rateLimit');
 const { verifyToken, requireRole } = require('../middleware/auth');
+const { generatePublicId } = require('../utils/public-id');
 
 const router = express.Router();
+const publicMessageLimiter = createRateLimiter({
+    namespace: 'messages-post',
+    windowMs: 60 * 1000,
+    max: 10,
+    message: 'Too many messages from this connection. Please wait a minute and try again.'
+});
 
-router.post('/', async (req, res) => {
+router.post('/', publicMessageLimiter, async (req, res) => {
     try {
         const { name, email, phone, subject, message } = req.body;
 
@@ -15,7 +23,7 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
         }
 
-        const messageId = 'MSG-' + Date.now().toString().slice(-6);
+        const messageId = generatePublicId('MSG');
         const msg = new Message({ messageId, name, email, phone, subject, message, status: 'unread' });
         await msg.save();
 

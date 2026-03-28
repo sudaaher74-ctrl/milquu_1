@@ -12,6 +12,9 @@ const ContentSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
+ContentSchema.index({ type: 1, isActive: 1, order: 1 });
+ContentSchema.index({ updatedAt: -1 });
+
 ContentSchema.pre('save', function (next) {
     this.updatedAt = new Date();
     next();

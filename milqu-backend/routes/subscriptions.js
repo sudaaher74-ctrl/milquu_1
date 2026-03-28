@@ -1,11 +1,19 @@
 const express = require('express');
 const Subscription = require('../models/Subscription');
+const { createRateLimiter } = require('../middleware/rateLimit');
 const { verifyToken, requireRole } = require('../middleware/auth');
+const { generatePublicId } = require('../utils/public-id');
 
 const router = express.Router();
 const SUBSCRIPTION_ROLES = ['super_admin', 'manager', 'delivery_staff'];
+const publicSubscriptionLimiter = createRateLimiter({
+    namespace: 'subscriptions-post',
+    windowMs: 60 * 1000,
+    max: 12,
+    message: 'Too many subscription attempts from this connection. Please wait a minute and try again.'
+});
 
-router.post('/', async (req, res) => {
+router.post('/', publicSubscriptionLimiter, async (req, res) => {
     try {
         const { name, phone, address, milkType, qty, schedule, startDate, notes, monthlyTotal, paymentMethod } = req.body;
 
@@ -16,7 +24,7 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Enter a valid 10-digit phone number.' });
         }
 
-        const subscriptionId = 'SUB-' + Date.now().toString().slice(-6);
+        const subscriptionId = generatePublicId('SUB');
         const sub = new Subscription({
             subscriptionId,
             name,

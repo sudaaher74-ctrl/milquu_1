@@ -2,23 +2,63 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const { createRateLimiter } = require('../middleware/rateLimit');
 const { sendWhatsAppNotification } = require('../utils/whatsapp');
 const { verifyToken, requireRole } = require('../middleware/auth');
+const { generatePublicId } = require('../utils/public-id');
 
 const router = express.Router();
 const ORDER_ACCESS_ROLES = ['super_admin', 'manager', 'delivery_staff'];
 const COD_HANDLING_FEE = 20;
+const publicOrderLimiter = createRateLimiter({
+    namespace: 'orders-post',
+    windowMs: 60 * 1000,
+    max: 20,
+    message: 'Too many order attempts from this connection. Please wait a minute and try again.'
+});
 
 function normalizeItems(items = []) {
-    return items
-        .map((item) => ({
-            productId: item.productId || item._id || item.id || '',
-            qty: Number(item.qty) || 0
-        }))
-        .filter((item) => item.productId && item.qty > 0);
+    const grouped = new Map();
+
+    for (const item of items) {
+        const productId = item.productId || item._id || item.id || '';
+        const qty = Number(item.qty) || 0;
+        if (!productId || qty <= 0) {
+            continue;
+        }
+        grouped.set(productId, (grouped.get(productId) || 0) + qty);
+    }
+
+    return Array.from(grouped.entries()).map(([productId, qty]) => ({ productId, qty }));
 }
 
-router.post('/', async (req, res) => {
+async function rollbackStockAdjustments(adjustments) {
+    for (const adjustment of [...adjustments].reverse()) {
+        try {
+            await Product.updateOne(
+                { _id: adjustment.productId },
+                [
+                    {
+                        $set: {
+                            stock: { $add: ['$stock', adjustment.qty] }
+                        }
+                    },
+                    {
+                        $set: {
+                            status: {
+                                $cond: [{ $gt: ['$stock', 0] }, 'active', 'out_of_stock']
+                            }
+                        }
+                    }
+                ]
+            );
+        } catch (err) {
+            console.error('Stock rollback error:', err);
+        }
+    }
+}
+
+router.post('/', publicOrderLimiter, async (req, res) => {
     try {
         const { customer, items, paymentMethod } = req.body;
 
@@ -69,15 +109,46 @@ router.post('/', async (req, res) => {
 
         const orderItems = [];
         let subtotal = 0;
+        const stockAdjustments = [];
 
         for (const item of normalizedItems) {
             const product = productByRef.get(item.productId);
             if (!product) {
                 return res.status(400).json({ success: false, message: 'One or more products are unavailable.' });
             }
-            if (product.stock < item.qty) {
-                return res.status(400).json({ success: false, message: `Insufficient stock for ${product.name}.` });
+
+            const reservedProduct = await Product.findOneAndUpdate(
+                {
+                    _id: product._id,
+                    status: 'active',
+                    stock: { $gte: item.qty }
+                },
+                [
+                    {
+                        $set: {
+                            stock: { $subtract: ['$stock', item.qty] }
+                        }
+                    },
+                    {
+                        $set: {
+                            status: {
+                                $cond: [{ $gt: ['$stock', 0] }, 'active', 'out_of_stock']
+                            }
+                        }
+                    }
+                ],
+                { new: true }
+            );
+
+            if (!reservedProduct) {
+                await rollbackStockAdjustments(stockAdjustments);
+                return res.status(409).json({ success: false, message: `Insufficient stock for ${product.name}.` });
             }
+
+            stockAdjustments.push({
+                productId: product._id.toString(),
+                qty: item.qty
+            });
 
             orderItems.push({
                 id: product.productCode || product._id.toString(),
@@ -92,7 +163,7 @@ router.post('/', async (req, res) => {
         }
 
         const total = paymentMethod === 'cod' ? subtotal + COD_HANDLING_FEE : subtotal;
-        const orderId = 'MQ-' + Date.now().toString().slice(-6);
+        const orderId = generatePublicId('MQ');
 
         const order = new Order({
             orderId,
@@ -104,15 +175,11 @@ router.post('/', async (req, res) => {
             paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid'
         });
 
-        await order.save();
-
-        for (const item of normalizedItems) {
-            const product = productByRef.get(item.productId);
-            product.stock = Math.max(0, product.stock - item.qty);
-            if (product.stock <= 0) {
-                product.status = 'out_of_stock';
-            }
-            await product.save();
+        try {
+            await order.save();
+        } catch (err) {
+            await rollbackStockAdjustments(stockAdjustments);
+            throw err;
         }
 
         sendWhatsAppNotification(order).catch(() => { });

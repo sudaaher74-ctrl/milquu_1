@@ -17,6 +17,9 @@ const ProductSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+ProductSchema.index({ category: 1, status: 1, createdAt: -1 });
+ProductSchema.index({ status: 1, createdAt: -1 });
+
 ProductSchema.pre('save', function (next) {
     if (this.stock <= 0) {
         this.stock = 0;

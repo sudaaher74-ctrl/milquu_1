@@ -1,12 +1,19 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
+const { createRateLimiter } = require('../middleware/rateLimit');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const { getRequiredEnv } = require('../config');
 
 const router = express.Router();
 const JWT_SECRET = getRequiredEnv('JWT_SECRET');
 const JWT_EXPIRES = '7d';
+const authLimiter = createRateLimiter({
+    namespace: 'admin-auth',
+    windowMs: 10 * 60 * 1000,
+    max: 15,
+    message: 'Too many admin authentication attempts. Please wait a few minutes and try again.'
+});
 
 function generateToken(admin) {
     return jwt.sign(
@@ -30,7 +37,7 @@ router.get('/setup-status', async (req, res) => {
     }
 });
 
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
     try {
         const { name, email, password, role } = req.body;
 
@@ -85,7 +92,7 @@ router.post('/register', async (req, res) => {
     }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', authLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
 

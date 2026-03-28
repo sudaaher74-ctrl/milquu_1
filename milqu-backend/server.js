@@ -10,11 +10,21 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
 
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+    next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
