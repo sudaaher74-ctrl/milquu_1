@@ -409,10 +409,10 @@
             every day. Choose a plan that works for you.</p>
         </div>
         <div class="plans-grid">
-          <div class="plan-card fade-in">
+          <div class="plan-card fade-in" data-plan-type="cow" data-plan-qty="1">
             <div class="plan-name">Basic</div>
-            <div class="plan-price"><sup>₹</sup>1,800<sub>/mo</sub></div>
-            <div class="plan-desc">Cow Milk · 1 Litre/day</div>
+            <div class="plan-price" data-plan-price><sup>₹</sup>1,800<sub>/mo</sub></div>
+            <div class="plan-desc" data-plan-desc>Cow Milk · 1 Litre/day</div>
             <ul class="plan-features">
               <li>1 L Cow Milk daily</li>
               <li>Morning delivery by 7 AM</li>
@@ -422,10 +422,10 @@
             <button class="btn btn-outline" style="width:100%;justify-content:center;" onclick="nav('subscription')">Get
               Started</button>
           </div>
-          <div class="plan-card featured fade-in">
+          <div class="plan-card featured fade-in" data-plan-type="buffalo" data-plan-qty="2">
             <div class="plan-name">Popular ⭐</div>
-            <div class="plan-price"><sup>₹</sup>4,500<sub>/mo</sub></div>
-            <div class="plan-desc">Buffalo Milk · 2 Litres/day</div>
+            <div class="plan-price" data-plan-price><sup>₹</sup>4,500<sub>/mo</sub></div>
+            <div class="plan-desc" data-plan-desc>Buffalo Milk · 2 Litres/day</div>
             <ul class="plan-features">
               <li>2 L Buffalo Milk daily</li>
               <li>Morning delivery by 6 AM</li>
@@ -436,10 +436,10 @@
             <button class="btn btn-white" style="width:100%;justify-content:center;" onclick="nav('subscription')">Get
               Started</button>
           </div>
-          <div class="plan-card fade-in">
+          <div class="plan-card fade-in" data-plan-type="organic" data-plan-qty="2">
             <div class="plan-name">Premium</div>
-            <div class="plan-price"><sup>₹</sup>5,400<sub>/mo</sub></div>
-            <div class="plan-desc">Organic Milk · 2 Litres/day</div>
+            <div class="plan-price" data-plan-price><sup>₹</sup>7,200<sub>/mo</sub></div>
+            <div class="plan-desc" data-plan-desc>Organic Milk · 2 Litres/day</div>
             <ul class="plan-features">
               <li>2 L Organic Milk daily</li>
               <li>Priority delivery by 6 AM</li>
@@ -647,7 +647,7 @@
                 <select id="milk-type">
                   <option value="cow">🥛 Cow Milk — ₹60/L</option>
                   <option value="buffalo">🍼 Buffalo Milk — ₹75/L</option>
-                  <option value="organic">🌿 Organic Milk — ₹90/L</option>
+                  <option value="organic">🌿 Organic Milk — ₹120/L</option>
                 </select>
               </div>
               <div class="form-group">

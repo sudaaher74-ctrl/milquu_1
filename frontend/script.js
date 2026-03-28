@@ -40,7 +40,7 @@ const P = [
   // MILK
   { id: 'm1', name: 'Cow Milk', e: '🥛', img: 'cow-milk.png', price: 60, unit: '/L', cat: 'milk', badge: 'Fresh', desc: 'Pure A2 cow milk, collected fresh each morning.', nut: [['Calories', '62 kcal'], ['Protein', '3.2g'], ['Fat', '3.7g'], ['Carbs', '4.8g'], ['Calcium', '120mg'], ['Vit D', '40 IU']] },
   { id: 'm2', name: 'Buffalo Milk', e: '🍼', img: 'buffalo-milk.png', price: 75, unit: '/L', cat: 'milk', badge: 'Popular', desc: 'Rich, creamy buffalo milk — perfect for curd and sweets.', nut: [['Calories', '97 kcal'], ['Protein', '3.7g'], ['Fat', '6.9g'], ['Carbs', '5.2g'], ['Calcium', '195mg'], ['Phosphorus', '130mg']] },
-  { id: 'm3', name: 'Organic Milk', e: '🌿', img: 'buffalo-milk.png', price: 90, unit: '/L', cat: 'milk', badge: 'Organic', desc: 'Certified organic milk from free-range cows on pesticide-free pastures.', nut: [['Calories', '64 kcal'], ['Protein', '3.4g'], ['Fat', '3.9g'], ['Carbs', '4.9g'], ['Omega-3', '0.3g'], ['Vit B12', '1.1µg']] },
+  { id: 'm3', name: 'Organic Milk', e: '🌿', img: 'buffalo-milk.png', price: 120, unit: '/L', cat: 'milk', badge: 'Organic', desc: 'Certified organic milk from free-range cows on pesticide-free pastures.', nut: [['Calories', '64 kcal'], ['Protein', '3.4g'], ['Fat', '3.9g'], ['Carbs', '4.9g'], ['Omega-3', '0.3g'], ['Vit B12', '1.1µg']] },
 
   // VEGETABLES
   { id: 'v1', name: 'Fresh Tomatoes', e: '🍅', img: 'fresh tomato.png', price: 40, unit: '/kg', cat: 'vegetables', badge: null, desc: 'Sun-ripened tomatoes from Karnataka farms.', nut: [['Calories', '18 kcal'], ['Fiber', '1.2g'], ['Vit C', '14mg'], ['Lycopene', '3.0mg'], ['Potassium', '237mg'], ['Folate', '15µg']] },

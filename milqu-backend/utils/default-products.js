@@ -44,7 +44,7 @@ module.exports = [
     {
         productCode: 'm3',
         name: 'Organic Milk',
-        price: 90,
+        price: 120,
         category: 'milk',
         description: 'Certified organic milk from free-range cows on pesticide-free pastures.',
         imageUrl: 'images/buffalo-milk.png',

@@ -287,15 +287,72 @@ function notif(msg) { const n = document.getElementById('notification'); n.textC
 // ============================================================
 //  SUBSCRIPTION
 // ============================================================
-const RATES = { cow: 60, buffalo: 75, organic: 90 }, DAYS = { daily: 30, alternate: 15, weekdays: 22, custom: 30 };
+const DEFAULT_MILK_RATES = { cow: 60, buffalo: 75, organic: 120 };
+const DEFAULT_MILK_META = {
+  cow: { name: 'Cow Milk', emoji: '🥛' },
+  buffalo: { name: 'Buffalo Milk', emoji: '🍼' },
+  organic: { name: 'Organic Milk', emoji: '🌿' }
+};
+const DAYS = { daily: 30, alternate: 15, weekdays: 22, custom: 30 };
 let sSched = 'daily', subPayMethod = 'cod', subUPIApp = '';
+
+function findMilkProduct(type) {
+  return P.find(p => p.cat === 'milk' && p.name && p.name.toLowerCase().includes(type));
+}
+
+function getMilkRate(type) {
+  const product = findMilkProduct(type);
+  return Number(product && product.price) || DEFAULT_MILK_RATES[type] || DEFAULT_MILK_RATES.cow;
+}
+
+function refreshSubscriptionContent() {
+  Object.keys(DEFAULT_MILK_META).forEach(type => {
+    const option = document.querySelector(`#milk-type option[value="${type}"]`);
+    const product = findMilkProduct(type);
+    const meta = DEFAULT_MILK_META[type];
+    const name = (product && product.name) || meta.name;
+    const emoji = (product && product.e) || meta.emoji;
+    const unit = (product && product.unit) || '/L';
+    const rate = getMilkRate(type);
+
+    if (option) {
+      option.textContent = `${emoji} ${name} — ₹${rate}${unit}`;
+    }
+  });
+
+  document.querySelectorAll('[data-plan-type]').forEach(card => {
+    const type = card.dataset.planType;
+    const qty = Number(card.dataset.planQty) || 1;
+    const product = findMilkProduct(type);
+    const name = (product && product.name) || (DEFAULT_MILK_META[type] && DEFAULT_MILK_META[type].name) || 'Milk';
+    const monthly = getMilkRate(type) * qty * DAYS.daily;
+    const priceEl = card.querySelector('[data-plan-price]');
+    const descEl = card.querySelector('[data-plan-desc]');
+
+    if (priceEl) {
+      priceEl.innerHTML = `<sup>₹</sup>${monthly.toFixed(0)}<sub>/mo</sub>`;
+    }
+    if (descEl) {
+      descEl.textContent = `${name} · ${qty} ${qty === 1 ? 'Litre' : 'Litres'}/day`;
+    }
+  });
+}
 
 function initSub() {
   const mt = document.getElementById('milk-type'), mq = document.getElementById('milk-qty');
-  if (mt) mt.addEventListener('change', calcSub);
-  if (mq) mq.addEventListener('input', calcSub);
+  refreshSubscriptionContent();
+  if (mt && !mt.dataset.calcBound) {
+    mt.addEventListener('change', calcSub);
+    mt.dataset.calcBound = 'true';
+  }
+  if (mq && !mq.dataset.calcBound) {
+    mq.addEventListener('input', calcSub);
+    mq.dataset.calcBound = 'true';
+  }
   document.querySelectorAll('.schedule-opt').forEach(o => {
+    if (o.dataset.calcBound) return;
     o.onclick = () => { document.querySelectorAll('.schedule-opt').forEach(x => x.classList.remove('active')); o.classList.add('active'); sSched = o.dataset.s; calcSub(); };
+    o.dataset.calcBound = 'true';
   });
   const t = new Date(); t.setDate(t.getDate() + 1);
   const sd = document.getElementById('sub-start');
@@ -307,7 +364,7 @@ function initSub() {
 function calcSub() {
   const type = document.getElementById('milk-type')?.value || 'cow';
   const qty = parseFloat(document.getElementById('milk-qty')?.value) || 1;
-  const rate = RATES[type] || 60, days = DAYS[sSched] || 30, sub = qty * days * rate;
+  const rate = getMilkRate(type), days = DAYS[sSched] || 30, sub = qty * days * rate;
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   set('s-rate', `₹${rate}/L`); set('s-qty', `${qty} L/day`); set('s-days', `${days} days`);
   set('s-sub', `₹${sub.toFixed(0)}`); set('s-del', '₹0 (Free)'); set('s-total', `₹${sub.toFixed(0)}`);
@@ -397,6 +454,7 @@ document.getElementById('pay-modal').addEventListener('click', function (e) { if
 // ============================================================
 loadProducts()
   .then(() => {
+    refreshSubscriptionContent();
     renderGrid('home-grid');
     initTabs('home-tabs', 'home-grid');
     updateCart();
@@ -406,4 +464,3 @@ loadProducts()
     console.error(err);
     notif('? Failed to load products. Please refresh.');
   });
-
