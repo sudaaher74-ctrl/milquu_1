@@ -90,3 +90,49 @@ async function loadContent() {
     }
     return CMS_CONTENT;
 }
+
+// ============================================================
+//  DELIVERY ZONES — Serviceable Pincodes
+//  Currently serving: Navi Mumbai (Panvel side)
+//  Add new pincodes here as you expand your delivery range
+// ============================================================
+var DELIVERY_ZONES = {
+    serviceable: {
+        '410206': { area: 'Panvel / Old Panvel / Karanjade', city: 'Navi Mumbai' },
+        '410218': { area: 'New Panvel / Kalamboli', city: 'Navi Mumbai' },
+        '410209': { area: 'Kamothe', city: 'Navi Mumbai' },
+        '410210': { area: 'Kharghar', city: 'Navi Mumbai' },
+        '410220': { area: 'Taloja', city: 'Navi Mumbai' },
+        '410222': { area: 'Ulwe', city: 'Navi Mumbai' },
+        '400614': { area: 'CBD Belapur', city: 'Navi Mumbai' },
+        '400706': { area: 'Nerul', city: 'Navi Mumbai' },
+        '410208': { area: 'Panvel (Rural)', city: 'Navi Mumbai' },
+        '410221': { area: 'Roadpali / Kalamboli', city: 'Navi Mumbai' },
+    },
+    businessName: 'Milqu Fresh',
+    businessArea: 'Navi Mumbai (Panvel side)',
+    contactWhatsApp: '8767067884'
+};
+
+function isDeliveryAvailable(pincode) {
+    var pin = String(pincode).trim();
+    return DELIVERY_ZONES.serviceable.hasOwnProperty(pin);
+}
+
+function getDeliveryAreaName(pincode) {
+    var pin = String(pincode).trim();
+    var zone = DELIVERY_ZONES.serviceable[pin];
+    return zone ? zone.area + ', ' + zone.city : null;
+}
+
+function getAllServiceableAreas() {
+    var areas = [];
+    for (var pin in DELIVERY_ZONES.serviceable) {
+        areas.push({
+            pincode: pin,
+            area: DELIVERY_ZONES.serviceable[pin].area,
+            city: DELIVERY_ZONES.serviceable[pin].city
+        });
+    }
+    return areas;
+}
