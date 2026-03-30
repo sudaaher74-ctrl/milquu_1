@@ -415,52 +415,12 @@ async function deleteCMS(key) {
     catch { toast('❌ Failed', 'error'); }
 }
 
-// ══════════════════════════════════════════════════════
-//  SETTINGS / CREDENTIALS
-// ══════════════════════════════════════════════════════
-async function updateCredentials(e) {
-    e.preventDefault();
-    const btn = document.getElementById('settings-save-btn');
-    const origText = btn.textContent;
-    btn.textContent = '⏱ Updating...';
-    btn.disabled = true;
 
-    const currentPassword = document.getElementById('set-curr-pass').value;
-    const newEmail = document.getElementById('set-new-email').value.trim();
-    const newPassword = document.getElementById('set-new-pass').value;
-
-    try {
-        const res = await fetch(API_BASE + '/admin/credentials', {
-            method: 'PUT',
-            headers: authHeaders(),
-            body: JSON.stringify({ currentPassword, newEmail, newPassword })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            setToken(data.token);
-            currentAdmin = data.admin;
-            sessionStorage.setItem('admin_data', JSON.stringify(data.admin));
-            document.getElementById('admin-disp-name').textContent = currentAdmin.name || 'Admin';
-
-            document.getElementById('set-curr-pass').value = '';
-            document.getElementById('set-new-pass').value = '';
-            toast('✅ Credentials updated successfully!');
-        } else {
-            toast('❌ ' + data.message, 'error');
-        }
-    } catch (err) {
-        toast('❌ Failed to update credentials', 'error');
-    } finally {
-        btn.textContent = origText;
-        btn.disabled = false;
-    }
-}
 
 // ══════════════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════════════
 document.getElementById('order-modal').addEventListener('click', function (e) { if (e.target === this) closeModal(); });
 document.getElementById('product-edit-modal')?.addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
-checkAuth();
+showDashboard();
 
