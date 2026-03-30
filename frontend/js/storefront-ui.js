@@ -282,6 +282,11 @@ function goPayStep(n) {
     if (!fn || !ln || !ph || !ad || !cy || !pi) { notif('Please fill all required fields ⚠️'); return; }
     if (!/^[6-9]\d{9}$/.test(ph)) { notif('Enter valid 10-digit phone number ⚠️'); return; }
     if (!/^\d{6}$/.test(pi)) { notif('Enter valid 6-digit pincode ⚠️'); return; }
+    // ── DELIVERY AREA CHECK ──
+    if (!isDeliveryAvailable(pi)) {
+      showNotServiceableModal(pi);
+      return;
+    }
   }
   if (n === 3) {
     renderReview();
@@ -456,6 +461,10 @@ document.getElementById('sub-form')?.addEventListener('submit', async e => {
   const ad = document.getElementById('sub-address').value.trim();
   if (!nm || !ph || !ad) { notif('Please fill all required fields ⚠️'); return; }
   if (!/^[6-9]\d{9}$/.test(ph)) { notif('Enter a valid 10-digit phone number ⚠️'); return; }
+  // ── DELIVERY AREA CHECK for subscription ──
+  const subPin = document.getElementById('sub-pincode')?.value?.trim();
+  if (!subPin || !/^\d{6}$/.test(subPin)) { notif('Enter a valid 6-digit pincode ⚠️'); return; }
+  if (!isDeliveryAvailable(subPin)) { showNotServiceableModal(subPin); return; }
   calcSub();
   const total = document.getElementById('s-total').textContent;
   const subData = {
@@ -518,6 +527,55 @@ function initFade() {
 }
 
 // ============================================================
+//  DELIVERY AREA CHECKER (Hero Widget)
+// ============================================================
+function checkDeliveryPincode() {
+  const input = document.getElementById('hero-pincode');
+  const resultBox = document.getElementById('pincode-result');
+  if (!input || !resultBox) return;
+  const pin = input.value.trim();
+  if (!pin || !/^\d{6}$/.test(pin)) {
+    resultBox.className = 'pincode-result error show';
+    resultBox.innerHTML = '⚠️ Please enter a valid 6-digit pincode';
+    return;
+  }
+  if (isDeliveryAvailable(pin)) {
+    const area = getDeliveryAreaName(pin);
+    resultBox.className = 'pincode-result success show';
+    resultBox.innerHTML = `✅ Great news! We deliver to <strong>${area}</strong>. Order now!`;
+  } else {
+    resultBox.className = 'pincode-result error show';
+    resultBox.innerHTML = `😔 Sorry, we don't deliver to pincode <strong>${pin}</strong> yet. We currently serve <strong>${DELIVERY_ZONES.businessArea}</strong> only.`;
+  }
+}
+
+// ============================================================
+//  NOT SERVICEABLE MODAL
+// ============================================================
+function showNotServiceableModal(pincode) {
+  const modal = document.getElementById('not-serviceable-modal');
+  if (!modal) return;
+  const areasList = getAllServiceableAreas();
+  const areasHtml = areasList.map(a => 
+    `<div class="ns-area-chip"><span class="ns-pin">${a.pincode}</span> ${a.area}</div>`
+  ).join('');
+  
+  document.getElementById('ns-pincode').textContent = pincode;
+  document.getElementById('ns-areas-list').innerHTML = areasHtml;
+  document.getElementById('ns-business-area').textContent = DELIVERY_ZONES.businessArea;
+  document.getElementById('ns-whatsapp-link').href = `https://wa.me/${DELIVERY_ZONES.contactWhatsApp}?text=Hi%20${encodeURIComponent(DELIVERY_ZONES.businessName)},%20I%20want%20delivery%20in%20pincode%20${pincode}.%20When%20will%20you%20start%20delivering%20here?`;
+  
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeNotServiceableModal() {
+  const modal = document.getElementById('not-serviceable-modal');
+  if (modal) modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ============================================================
 //  EVENTS
 // ============================================================
 window.addEventListener('scroll', () => document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20));
@@ -527,6 +585,8 @@ document.getElementById('cart-overlay').addEventListener('click', closeCart);
 document.getElementById('cart-close').addEventListener('click', closeCart);
 document.getElementById('checkout-btn').addEventListener('click', openPayModal);
 document.getElementById('pay-modal').addEventListener('click', function (e) { if (e.target === this) closePayModal(); });
+const nsModal = document.getElementById('not-serviceable-modal');
+if (nsModal) nsModal.addEventListener('click', function (e) { if (e.target === this) closeNotServiceableModal(); });
 
 // ============================================================
 //  INIT

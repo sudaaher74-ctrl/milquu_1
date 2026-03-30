@@ -145,11 +145,12 @@
             <div class="two-col">
               <div class="form-group">
                 <label>City *</label>
-                <input type="text" id="pay-city" placeholder="Bangalore" required>
+                <input type="text" id="pay-city" placeholder="Navi Mumbai" required>
               </div>
               <div class="form-group">
                 <label>Pincode *</label>
-                <input type="text" id="pay-pin" placeholder="560001" required>
+                <input type="text" id="pay-pin" placeholder="410206" required>
+                <small style="display:block;margin-top:6px;color:var(--gray);font-size:12px;">📍 We currently deliver in Navi Mumbai (Panvel side) only</small>
               </div>
             </div>
             <div class="form-group">
@@ -651,7 +652,12 @@
               </div>
               <div class="form-group">
                 <label>Delivery Address *</label>
-                <input type="text" id="sub-address" placeholder="Flat no, Street, City, Pincode" required>
+                <input type="text" id="sub-address" placeholder="Flat no, Street, Area" required>
+              </div>
+              <div class="form-group">
+                <label>Pincode *</label>
+                <input type="text" id="sub-pincode" placeholder="e.g. 410206" maxlength="6" pattern="[0-9]*" inputmode="numeric" required>
+                <small style="display:block;margin-top:6px;color:var(--gray);font-size:12px;">📍 We currently deliver in Navi Mumbai (Panvel side) only</small>
               </div>
               <div class="form-group">
                 <label>Milk Type</label>
@@ -980,7 +986,7 @@
             title="Milqu Fresh Location"></iframe>
         </div>
       </div>
-    </section> 
+    </section>
   </div>
 
   <!-- FOOTER -->
@@ -1036,6 +1042,45 @@
       </div>
     </div>
   </footer>
+
+  <!-- ========== NOT SERVICEABLE MODAL ========== -->
+  <div class="modal-overlay ns-modal" id="not-serviceable-modal">
+    <div class="ns-modal-box">
+      <button class="ns-close-btn" onclick="closeNotServiceableModal()">✕</button>
+      
+      <div class="ns-icon-wrap">
+        <div class="ns-icon-bg">
+          <span class="ns-icon">📍</span>
+        </div>
+      </div>
+
+      <h2 class="ns-title">Delivery Not Available</h2>
+      <p class="ns-subtitle">Sorry! We don't deliver to pincode <strong id="ns-pincode">000000</strong> yet.</p>
+      
+      <div class="ns-info-card">
+        <div class="ns-info-icon">🚚</div>
+        <div>
+          <div class="ns-info-title">We currently serve</div>
+          <div class="ns-info-value" id="ns-business-area">Navi Mumbai (Panvel side)</div>
+        </div>
+      </div>
+
+      <div class="ns-areas-section">
+        <h4>📌 Serviceable Areas</h4>
+        <div class="ns-areas-grid" id="ns-areas-list"></div>
+      </div>
+
+      <div class="ns-expand-note">
+        <span>🌱</span>
+        <p>We're expanding fast! Tell us your area and we'll notify you when we start delivering there.</p>
+      </div>
+
+      <div class="ns-actions">
+        <a href="#" class="btn btn-primary ns-wa-btn" id="ns-whatsapp-link" target="_blank">💬 Request My Area</a>
+        <button class="btn btn-outline" onclick="closeNotServiceableModal()">← Go Back</button>
+      </div>
+    </div>
+  </div>
 
   <script src="js/config.js"></script>
   <script src="js/storefront-data.js"></script>
