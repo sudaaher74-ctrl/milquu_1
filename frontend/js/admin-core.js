@@ -6,13 +6,17 @@ var revenueChart = null;
 var currentAdmin = null;
 var dashboardSyncInterval = null;
 var notifInterval = null;
+var ADMIN_AUTH_DISABLED = !!window.MILQU_CONFIG.ADMIN_AUTH_DISABLED;
 var ADMIN_LOGIN_EMAIL = window.MILQU_CONFIG.ADMIN_LOGIN_EMAIL || '';
+var PUBLIC_ADMIN = { id: 'dashboard-access', name: 'Admin', email: '', role: 'super_admin' };
 
 function getToken() {
+    if (ADMIN_AUTH_DISABLED) return '';
     return sessionStorage.getItem('admin_token') || '';
 }
 
 function setToken(token) {
+    if (ADMIN_AUTH_DISABLED) return;
     sessionStorage.setItem('admin_token', token);
 }
 
@@ -24,6 +28,9 @@ function clearToken() {
 }
 
 function getStoredAdmin() {
+    if (ADMIN_AUTH_DISABLED) {
+        return PUBLIC_ADMIN;
+    }
     try {
         return JSON.parse(sessionStorage.getItem('admin_data') || 'null');
     } catch (err) {
@@ -32,6 +39,7 @@ function getStoredAdmin() {
 }
 
 function setStoredAdmin(admin) {
+    if (ADMIN_AUTH_DISABLED) return;
     sessionStorage.setItem('admin_data', JSON.stringify(admin));
 }
 
@@ -40,6 +48,11 @@ function authHeaders() {
     return token
         ? { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
         : { 'Content-Type': 'application/json' };
+}
+
+function authUploadHeaders() {
+    var token = getToken();
+    return token ? { 'Authorization': 'Bearer ' + token } : {};
 }
 
 function getAdminLoginEmail() {
@@ -54,6 +67,10 @@ function setLoginError(message) {
 }
 
 function showLoginScreen(message) {
+    if (ADMIN_AUTH_DISABLED) {
+        hideLoginScreen();
+        return;
+    }
     var screen = document.getElementById('login-screen');
     if (screen) screen.classList.remove('hidden');
     setLoginError(message || '');
@@ -62,6 +79,8 @@ function showLoginScreen(message) {
 function hideLoginScreen() {
     var screen = document.getElementById('login-screen');
     if (screen) screen.classList.add('hidden');
+    var logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) logoutBtn.style.display = ADMIN_AUTH_DISABLED ? 'none' : '';
     setLoginError('');
 }
 
@@ -77,19 +96,31 @@ function stopDashboardSync() {
 }
 
 function updateAdminIdentity() {
-    currentAdmin = currentAdmin || getStoredAdmin();
+    currentAdmin = ADMIN_AUTH_DISABLED ? PUBLIC_ADMIN : (currentAdmin || getStoredAdmin());
     document.getElementById('admin-disp-name').textContent = currentAdmin?.name || 'Admin';
     document.getElementById('admin-disp-role').textContent = (currentAdmin?.role || 'admin').replace(/_/g, ' ');
 }
 
 function handleUnauthorized(message) {
     stopDashboardSync();
+    if (ADMIN_AUTH_DISABLED) {
+        currentAdmin = PUBLIC_ADMIN;
+        hideLoginScreen();
+        updateAdminIdentity();
+        if (message) toast(message, 'error');
+        return;
+    }
     clearToken();
     currentAdmin = null;
     showLoginScreen(message || 'Please log in to view the dashboard.');
 }
 
 async function doLogin() {
+    if (ADMIN_AUTH_DISABLED) {
+        currentAdmin = PUBLIC_ADMIN;
+        showDashboard();
+        return false;
+    }
     var email = getAdminLoginEmail();
     var password = document.getElementById('login-pass')?.value || '';
     var btn = document.getElementById('login-btn');
@@ -140,6 +171,11 @@ async function doLogin() {
 }
 
 async function doRegister() {
+    if (ADMIN_AUTH_DISABLED) {
+        currentAdmin = PUBLIC_ADMIN;
+        showDashboard();
+        return;
+    }
     var name = document.getElementById('login-name')?.value.trim() || '';
     var email = getAdminLoginEmail();
     var password = document.getElementById('login-pass')?.value || '';
@@ -189,6 +225,11 @@ async function doRegister() {
 }
 
 async function checkAuth() {
+    if (ADMIN_AUTH_DISABLED) {
+        currentAdmin = PUBLIC_ADMIN;
+        showDashboard();
+        return;
+    }
     var token = getToken();
     if (!token) {
         showLoginScreen('Log in with your admin account to load orders.');
@@ -214,6 +255,10 @@ async function checkAuth() {
 }
 
 function doLogout() {
+    if (ADMIN_AUTH_DISABLED) {
+        toast('Admin login has been removed from this dashboard.');
+        return;
+    }
     stopDashboardSync();
     clearToken();
     currentAdmin = null;
@@ -221,7 +266,7 @@ function doLogout() {
 }
 
 function showDashboard() {
-    if (!getToken()) {
+    if (!ADMIN_AUTH_DISABLED && !getToken()) {
         showLoginScreen('Log in with your admin account to load orders.');
         return;
     }
@@ -300,8 +345,13 @@ async function loadAll(silent) {
         console.error(err);
         if (/HTTP 401|HTTP 403/.test(err.message)) {
             setApiStatus(true);
-            handleUnauthorized(hasToken ? 'Admin session expired. Please log in again.' : 'Admin login required to view orders.');
-            if (!silent) toast(hasToken ? 'Admin session expired. Please log in again.' : 'Admin login required to view orders.', 'error');
+            if (ADMIN_AUTH_DISABLED) {
+                stopDashboardSync();
+                toast('Dashboard access is open, but the backend still requires admin auth.', 'error');
+            } else {
+                handleUnauthorized(hasToken ? 'Admin session expired. Please log in again.' : 'Admin login required to view orders.');
+                if (!silent) toast(hasToken ? 'Admin session expired. Please log in again.' : 'Admin login required to view orders.', 'error');
+            }
         } else {
             setApiStatus(false);
             if (!silent) toast('Cannot reach server', 'error');

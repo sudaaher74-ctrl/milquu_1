@@ -1,8 +1,23 @@
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
-const { getRequiredEnv } = require('../config');
+const { getRequiredEnv, isAdminAuthDisabled } = require('../config');
+
+function getBypassAdmin() {
+    return {
+        _id: 'admin-auth-disabled',
+        name: 'Admin',
+        email: '',
+        role: 'super_admin',
+        authDisabled: true
+    };
+}
 
 async function verifyToken(req, res, next) {
+    if (isAdminAuthDisabled()) {
+        req.admin = getBypassAdmin();
+        return next();
+    }
+
     try {
         const header = req.headers.authorization;
         if (!header || !header.startsWith('Bearer ')) {
@@ -27,6 +42,11 @@ async function verifyToken(req, res, next) {
 }
 
 async function optionalVerifyToken(req, res, next) {
+    if (isAdminAuthDisabled()) {
+        req.admin = getBypassAdmin();
+        return next();
+    }
+
     const header = req.headers.authorization;
     if (!header) {
         return next();
