@@ -4,8 +4,10 @@ var filteredOrders = [], ordPage = 0;
 var PER_PAGE = 10;
 var revenueChart = null;
 var currentAdmin = null;
+var dashboardSyncInterval = null;
 var notifInterval = null;
 var adminSetupState = { allowSelfRegister: false, loaded: false };
+var ADMIN_LOGIN_EMAIL = window.MILQU_CONFIG.ADMIN_LOGIN_EMAIL || '';
 
 function getToken() {
     return sessionStorage.getItem('admin_token') || '';
@@ -20,6 +22,20 @@ function setToken(token) {
 function clearToken() {
     sessionStorage.removeItem('admin_token');
     sessionStorage.removeItem('admin_data');
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_data');
+}
+
+function getStoredAdmin() {
+    try {
+        return JSON.parse(sessionStorage.getItem('admin_data') || 'null');
+    } catch (err) {
+        return null;
+    }
+}
+
+function setStoredAdmin(admin) {
+    sessionStorage.setItem('admin_data', JSON.stringify(admin || null));
 }
 
 function authHeaders(extraHeaders) {
@@ -34,18 +50,18 @@ function authHeaders(extraHeaders) {
     return headers;
 }
 
-function showLoginScreen() {
-    var loginScreen = document.getElementById('login-screen');
-    if (loginScreen) {
-        loginScreen.classList.remove('hidden');
+function syncLoginEmailInput() {
+    var emailInput = document.getElementById('login-email');
+    if (!emailInput) return;
+    if (!emailInput.value && ADMIN_LOGIN_EMAIL) {
+        emailInput.value = ADMIN_LOGIN_EMAIL;
     }
 }
 
-function hideLoginScreen() {
-    var loginScreen = document.getElementById('login-screen');
-    if (loginScreen) {
-        loginScreen.classList.add('hidden');
-    }
+function getAdminLoginEmail() {
+    var emailInput = document.getElementById('login-email');
+    var email = (emailInput && emailInput.value ? emailInput.value : ADMIN_LOGIN_EMAIL || '').trim();
+    return email.toLowerCase();
 }
 
 function setLoginError(message) {
@@ -68,7 +84,43 @@ function setLoginHint(message) {
     }
 }
 
+function showLoginScreen(message) {
+    syncLoginEmailInput();
+    var loginScreen = document.getElementById('login-screen');
+    if (loginScreen) {
+        loginScreen.classList.remove('hidden');
+    }
+    setLoginError(message || '');
+}
+
+function hideLoginScreen() {
+    var loginScreen = document.getElementById('login-screen');
+    if (loginScreen) {
+        loginScreen.classList.add('hidden');
+    }
+    setLoginError('');
+}
+
+function stopDashboardSync() {
+    if (notifInterval) {
+        clearInterval(notifInterval);
+        notifInterval = null;
+    }
+    if (dashboardSyncInterval) {
+        clearInterval(dashboardSyncInterval);
+        dashboardSyncInterval = null;
+    }
+}
+
+function updateAdminIdentity() {
+    currentAdmin = currentAdmin || getStoredAdmin();
+    document.getElementById('admin-disp-name').textContent = currentAdmin?.name || 'Admin';
+    document.getElementById('admin-disp-role').textContent = (currentAdmin?.role || 'admin').replace(/_/g, ' ');
+}
+
 async function loadAdminSetupStatus() {
+    syncLoginEmailInput();
+
     var registerBtn = document.getElementById('register-btn');
 
     try {
@@ -97,14 +149,21 @@ async function loadAdminSetupStatus() {
 }
 
 async function doLogin() {
-    var email = document.getElementById('login-email')?.value.trim();
+    var email = getAdminLoginEmail();
     var pass = document.getElementById('login-pass')?.value || '';
+    var btn = document.getElementById('login-btn');
+    var originalText = btn ? btn.textContent : '';
 
     setLoginError('');
 
     if (!email || !pass) {
         setLoginError('Please enter your admin email and password.');
-        return;
+        return false;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Signing in...';
     }
 
     try {
@@ -117,15 +176,23 @@ async function doLogin() {
 
         if (!res.ok || !data.success) {
             setLoginError(data.message || 'Login failed.');
-            return;
+            return false;
         }
 
         setToken(data.token);
         currentAdmin = data.admin || null;
-        sessionStorage.setItem('admin_data', JSON.stringify(currentAdmin || {}));
+        setStoredAdmin(currentAdmin);
         showDashboard();
+        toast('Admin dashboard connected');
+        return false;
     } catch (err) {
         setLoginError('Cannot reach the server. Please make sure the backend is running.');
+        return false;
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = originalText || 'Login to Dashboard';
+        }
     }
 }
 
@@ -135,14 +202,21 @@ async function doRegister() {
         return;
     }
 
-    var email = document.getElementById('login-email')?.value.trim();
+    var email = getAdminLoginEmail();
     var pass = document.getElementById('login-pass')?.value || '';
+    var btn = document.getElementById('register-btn');
+    var originalText = btn ? btn.textContent : '';
 
     setLoginError('');
 
     if (!email || !pass) {
         setLoginError('Enter an email and password to create the first admin.');
         return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
     }
 
     try {
@@ -166,10 +240,16 @@ async function doRegister() {
 
         setToken(data.token);
         currentAdmin = data.admin || null;
-        sessionStorage.setItem('admin_data', JSON.stringify(currentAdmin || {}));
+        setStoredAdmin(currentAdmin);
         showDashboard();
+        toast('First admin created');
     } catch (err) {
         setLoginError('Cannot reach the server. Please make sure the backend is running.');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = originalText || 'Create First Admin';
+        }
     }
 }
 
@@ -192,45 +272,12 @@ function applyRolePermissions() {
     });
 }
 
-function showDashboard() {
-    hideLoginScreen();
-    setLoginError('');
-
-    if (!currentAdmin) {
-        try {
-            currentAdmin = JSON.parse(sessionStorage.getItem('admin_data') || 'null');
-        } catch (err) {
-            currentAdmin = null;
-        }
-    }
-
-    document.getElementById('admin-disp-name').textContent = currentAdmin?.name || 'Admin';
-    document.getElementById('admin-disp-role').textContent = (currentAdmin?.role || 'admin').replace(/_/g, ' ');
-    applyRolePermissions();
-    loadAll();
-    startNotifPolling();
-}
-
-function doLogout() {
-    clearToken();
-    currentAdmin = null;
-    if (notifInterval) {
-        clearInterval(notifInterval);
-        notifInterval = null;
-    }
-    location.reload();
-}
-
 function handleUnauthorized(message) {
+    stopDashboardSync();
     clearToken();
     currentAdmin = null;
-    if (notifInterval) {
-        clearInterval(notifInterval);
-        notifInterval = null;
-    }
-    showLoginScreen();
+    showLoginScreen(message || 'Please sign in to view the dashboard.');
     loadAdminSetupStatus();
-    setLoginError(message || 'Your session expired. Please sign in again.');
 }
 
 async function checkAuth() {
@@ -254,11 +301,33 @@ async function checkAuth() {
         }
 
         currentAdmin = data.admin || null;
-        sessionStorage.setItem('admin_data', JSON.stringify(currentAdmin || {}));
+        setStoredAdmin(currentAdmin);
         showDashboard();
     } catch (err) {
-        handleUnauthorized('Cannot verify your session. Please sign in again.');
+        showLoginScreen('Cannot verify your session. Please sign in again.');
     }
+}
+
+function showDashboard() {
+    if (!getToken()) {
+        showLoginScreen('Log in with your admin account to load orders.');
+        return;
+    }
+
+    hideLoginScreen();
+    updateAdminIdentity();
+    applyRolePermissions();
+    loadAll(true);
+    startNotifPolling();
+    startDashboardSync();
+}
+
+function doLogout() {
+    stopDashboardSync();
+    clearToken();
+    currentAdmin = null;
+    showLoginScreen('Logged out. Log in again to continue.');
+    loadAdminSetupStatus();
 }
 
 function fmt(d) { return new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
@@ -310,7 +379,7 @@ function showPanel(id, btn) {
     document.getElementById('panel-' + id).classList.add('active');
     document.querySelectorAll('.nav-item').forEach(function (n) { n.classList.remove('active'); });
     if (btn) btn.classList.add('active');
-    var titles = { overview: 'Overview', orders: 'Orders', subscriptions: 'Subscriptions', messages: 'Messages', products: 'Products', customers: 'Customers', inventory: 'Inventory', cms: 'CMS' };
+    var titles = { overview: '📊 Overview', orders: '🛒 Orders', subscriptions: '📦 Subscriptions', messages: '💬 Messages', products: '🥛 Products', customers: '👥 Customers', inventory: '📋 Inventory', cms: '🎨 CMS' };
     document.getElementById('panel-title').textContent = titles[id] || id;
     if (id === 'orders') renderOrders();
     if (id === 'subscriptions') renderSubs();
@@ -328,15 +397,17 @@ function setBadge(id, count) {
     el.style.display = count > 0 ? 'inline' : 'none';
 }
 
-async function loadAll() {
+async function loadAll(silent) {
     if (!getToken()) {
-        showLoginScreen();
+        showLoginScreen('Log in with your admin account to load orders.');
         return;
     }
 
     var btn = document.getElementById('refresh-btn');
-    btn.classList.add('loading');
-    btn.textContent = 'Loading...';
+    if (!silent && btn) {
+        btn.classList.add('loading');
+        btn.textContent = 'Loading...';
+    }
 
     try {
         var healthRes = await fetch(API_BASE + '/health');
@@ -363,7 +434,9 @@ async function loadAll() {
         setBadge('nb-msgs', allMsgs.filter(function (m) { return m.status === 'unread'; }).length);
 
         renderOverview();
-        toast('Data refreshed');
+        if (!silent) {
+            toast('Data refreshed');
+        }
     } catch (err) {
         console.error(err);
         if (err.code === 'AUTH_REQUIRED') {
@@ -371,14 +444,20 @@ async function loadAll() {
         }
         if (err.code === 'AUTH_FORBIDDEN') {
             setApiStatus(true);
-            toast(err.message || 'Access denied.', 'error');
+            if (!silent) {
+                toast(err.message || 'Access denied.', 'error');
+            }
         } else {
             setApiStatus(false);
-            toast(err.message || 'Cannot reach server', 'error');
+            if (!silent) {
+                toast(err.message || 'Cannot reach server', 'error');
+            }
         }
     } finally {
-        btn.classList.remove('loading');
-        btn.textContent = 'Refresh';
+        if (!silent && btn) {
+            btn.classList.remove('loading');
+            btn.textContent = 'Refresh';
+        }
     }
 }
 
@@ -386,4 +465,12 @@ function startNotifPolling() {
     if (notifInterval) clearInterval(notifInterval);
     fetchNotifCounts();
     notifInterval = setInterval(fetchNotifCounts, 10000);
+}
+
+function startDashboardSync() {
+    if (dashboardSyncInterval) clearInterval(dashboardSyncInterval);
+    dashboardSyncInterval = setInterval(function () {
+        if (document.hidden) return;
+        loadAll(true);
+    }, 15000);
 }

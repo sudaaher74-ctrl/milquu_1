@@ -122,6 +122,29 @@ body {
     background: var(--accent2);
 }
 
+.login-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.login-box .btn-register {
+    width: 100%;
+    padding: 13px;
+    background: #fff;
+    color: var(--accent);
+    border: 1px solid var(--accent-mid);
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font);
+}
+
+.login-box .btn-register:hover {
+    background: var(--accent-light);
+}
+
 .login-box .login-err {
     color: var(--red);
     font-size: 12px;
@@ -343,6 +366,16 @@ body {
 
 .refresh-btn:hover {
     background: var(--accent2);
+}
+
+.refresh-btn.secondary {
+    background: var(--bg2);
+    color: var(--text);
+    box-shadow: none;
+}
+
+.refresh-btn.secondary:hover {
+    background: var(--bg3);
 }
 
 .refresh-btn.loading {

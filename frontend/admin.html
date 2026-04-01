@@ -18,31 +18,22 @@
     <div class="login-box">
       <h1>Milqu<span> Fresh</span></h1>
       <p class="sub">Sign in to see live orders from your website in the admin dashboard.</p>
-      <form onsubmit="event.preventDefault(); doLogin();">
+      <form onsubmit="doLogin(); return false;">
         <input type="email" id="login-email" placeholder="Admin email" autocomplete="username" required>
         <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password" required>
-        <button type="submit" class="btn-login">Login to Dashboard</button>
-        <button type="button" class="btn-login" id="register-btn"
-          style="display:none;margin-top:10px;background:#fff;color:var(--accent);border:1px solid var(--border2);"
-          onclick="doRegister()">Create First Admin</button>
+        <div class="login-actions">
+          <button type="submit" class="btn-login" id="login-btn">Login to Dashboard</button>
+          <button type="button" class="btn-register" id="register-btn" style="display:none;"
+            onclick="doRegister()">Create First Admin</button>
+        </div>
         <div class="login-err" id="login-error"></div>
         <div class="login-hint" id="login-hint">Use your admin email and password.</div>
       </form>
     </div>
   </div>
 
-
-
   <!-- ══ SIDEBAR ══ -->
   <aside class="sidebar">
-
-
-
-
-
-
-
-
     <div class="sidebar-logo">
       <div class="logo-mark">🌿</div>
       <div>
@@ -89,7 +80,6 @@
         <div class="api-status" id="api-status">
           <div class="api-dot"></div><span id="api-status-text">Connecting…</span>
         </div>
-        <!-- NOTIFICATION BELL -->
         <div class="notif-bell" onclick="toggleNotifDropdown()">
           🔔 <span class="notif-count" id="notif-total">0</span>
           <div class="notif-dropdown" id="notif-dropdown">
@@ -103,13 +93,11 @@
           <div class="live-dot"></div> Live
         </div>
         <button class="refresh-btn" id="refresh-btn" onclick="loadAll()">↻ Refresh</button>
-        <button class="refresh-btn" type="button" onclick="doLogout()">Logout</button>
+        <button class="refresh-btn secondary" type="button" onclick="doLogout()">Logout</button>
       </div>
     </div>
 
     <div class="content">
-
-      <!-- ══ OVERVIEW PANEL ══ -->
       <div class="panel active" id="panel-overview">
         <div class="stats-grid" id="overview-stats">
           <div class="stat-card">
@@ -199,7 +187,6 @@
         </div>
       </div>
 
-      <!-- ══ ORDERS PANEL ══ -->
       <div class="panel" id="panel-orders">
         <div class="pcard">
           <div class="table-controls">
@@ -247,7 +234,6 @@
         </div>
       </div>
 
-      <!-- ══ PRODUCTS PANEL ══ -->
       <div class="panel" id="panel-products">
         <div class="grid3">
           <div class="pcard">
@@ -310,7 +296,6 @@
         </div>
       </div>
 
-      <!-- ══ CUSTOMERS PANEL ══ -->
       <div class="panel" id="panel-customers">
         <div class="pcard">
           <div class="pcard-head">
@@ -337,7 +322,6 @@
         </div>
       </div>
 
-      <!-- ══ SUBSCRIPTIONS PANEL ══ -->
       <div class="panel" id="panel-subscriptions">
         <div class="pcard">
           <div class="table-controls">
@@ -376,7 +360,6 @@
         </div>
       </div>
 
-      <!-- ══ INVENTORY PANEL ══ -->
       <div class="panel" id="panel-inventory">
         <div class="pcard">
           <div class="pcard-head">
@@ -402,7 +385,6 @@
         </div>
       </div>
 
-      <!-- ══ MESSAGES PANEL ══ -->
       <div class="panel" id="panel-messages">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
           <div class="pcard">
@@ -434,7 +416,6 @@
         </div>
       </div>
 
-      <!-- ══ CMS PANEL ══ -->
       <div class="panel" id="panel-cms">
         <div class="grid3">
           <div class="pcard">
@@ -487,13 +468,9 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-
-
-    </div><!-- /content -->
-  </div><!-- /main -->
-
-  <!-- ══ ORDER/CUSTOMER DETAIL MODAL ══ -->
   <div class="detail-modal" id="order-modal">
     <div class="detail-box">
       <div class="detail-box-head">
@@ -507,7 +484,6 @@
     </div>
   </div>
 
-  <!-- ══ PRODUCT EDIT MODAL ══ -->
   <div class="detail-modal" id="product-edit-modal">
     <div class="detail-box">
       <div class="detail-box-head">
@@ -548,7 +524,6 @@
     </div>
   </div>
 
-  <!-- TOAST -->
   <div class="toast" id="toast"></div>
 
   <script src="js/config.js"></script>
