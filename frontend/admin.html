@@ -14,6 +14,22 @@
 </head>
 
 <body>
+  <div class="login-screen hidden" id="login-screen">
+    <div class="login-box">
+      <h1>Milqu<span> Fresh</span></h1>
+      <p class="sub">Sign in to see live orders from your website in the admin dashboard.</p>
+      <form onsubmit="event.preventDefault(); doLogin();">
+        <input type="email" id="login-email" placeholder="Admin email" autocomplete="username" required>
+        <input type="password" id="login-pass" placeholder="Password" autocomplete="current-password" required>
+        <button type="submit" class="btn-login">Login to Dashboard</button>
+        <button type="button" class="btn-login" id="register-btn"
+          style="display:none;margin-top:10px;background:#fff;color:var(--accent);border:1px solid var(--border2);"
+          onclick="doRegister()">Create First Admin</button>
+        <div class="login-err" id="login-error"></div>
+        <div class="login-hint" id="login-hint">Use your admin email and password.</div>
+      </form>
+    </div>
+  </div>
 
 
 
@@ -87,6 +103,7 @@
           <div class="live-dot"></div> Live
         </div>
         <button class="refresh-btn" id="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+        <button class="refresh-btn" type="button" onclick="doLogout()">Logout</button>
       </div>
     </div>
 
