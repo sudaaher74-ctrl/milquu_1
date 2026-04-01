@@ -4,18 +4,232 @@ var filteredOrders = [], ordPage = 0;
 var PER_PAGE = 10;
 var revenueChart = null;
 var currentAdmin = null;
+var dashboardSyncInterval = null;
+var notifInterval = null;
+var ADMIN_LOGIN_EMAIL = window.MILQU_CONFIG.ADMIN_LOGIN_EMAIL || '';
 
-function getToken() { return ''; }
+function getToken() {
+    return sessionStorage.getItem('admin_token') || '';
+}
+
+function setToken(token) {
+    sessionStorage.setItem('admin_token', token);
+}
+
+function clearToken() {
+    sessionStorage.removeItem('admin_token');
+    sessionStorage.removeItem('admin_data');
+    localStorage.removeItem('admin_token');
+    localStorage.removeItem('admin_data');
+}
+
+function getStoredAdmin() {
+    try {
+        return JSON.parse(sessionStorage.getItem('admin_data') || 'null');
+    } catch (err) {
+        return null;
+    }
+}
+
+function setStoredAdmin(admin) {
+    sessionStorage.setItem('admin_data', JSON.stringify(admin));
+}
 
 function authHeaders() {
-    return { 'Content-Type': 'application/json' };
+    var token = getToken();
+    return token
+        ? { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' }
+        : { 'Content-Type': 'application/json' };
+}
+
+function getAdminLoginEmail() {
+    return (ADMIN_LOGIN_EMAIL || '').trim().toLowerCase();
+}
+
+function setLoginError(message) {
+    var el = document.getElementById('login-error');
+    if (!el) return;
+    el.textContent = message || '';
+    el.style.display = message ? 'block' : 'none';
+}
+
+function showLoginScreen(message) {
+    var screen = document.getElementById('login-screen');
+    if (screen) screen.classList.remove('hidden');
+    setLoginError(message || '');
+}
+
+function hideLoginScreen() {
+    var screen = document.getElementById('login-screen');
+    if (screen) screen.classList.add('hidden');
+    setLoginError('');
+}
+
+function stopDashboardSync() {
+    if (notifInterval) {
+        clearInterval(notifInterval);
+        notifInterval = null;
+    }
+    if (dashboardSyncInterval) {
+        clearInterval(dashboardSyncInterval);
+        dashboardSyncInterval = null;
+    }
+}
+
+function updateAdminIdentity() {
+    currentAdmin = currentAdmin || getStoredAdmin();
+    document.getElementById('admin-disp-name').textContent = currentAdmin?.name || 'Admin';
+    document.getElementById('admin-disp-role').textContent = (currentAdmin?.role || 'admin').replace(/_/g, ' ');
+}
+
+function handleUnauthorized(message) {
+    stopDashboardSync();
+    clearToken();
+    currentAdmin = null;
+    showLoginScreen(message || 'Please log in to view the dashboard.');
+}
+
+async function doLogin() {
+    var email = getAdminLoginEmail();
+    var password = document.getElementById('login-pass')?.value || '';
+    var btn = document.getElementById('login-btn');
+    var originalText = btn ? btn.textContent : '';
+
+    setLoginError('');
+    if (!email) {
+        setLoginError('Set the primary admin email in js/config.js first.');
+        return false;
+    }
+    if (!password) {
+        setLoginError('Enter your admin password.');
+        return false;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Signing in...';
+    }
+
+    try {
+        var res = await fetch(API_BASE + '/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: password })
+        });
+        var data = await res.json();
+        if (!res.ok || !data.success) {
+            setLoginError(data.message || 'Login failed.');
+            return false;
+        }
+
+        setToken(data.token);
+        setStoredAdmin(data.admin);
+        currentAdmin = data.admin;
+        showDashboard();
+        toast('Admin dashboard connected');
+        return false;
+    } catch (err) {
+        setLoginError('Cannot reach the server. Start the backend and try again.');
+        return false;
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = originalText || 'Login';
+        }
+    }
+}
+
+async function doRegister() {
+    var name = document.getElementById('login-name')?.value.trim() || '';
+    var email = getAdminLoginEmail();
+    var password = document.getElementById('login-pass')?.value || '';
+    var btn = document.getElementById('register-btn');
+    var originalText = btn ? btn.textContent : '';
+
+    setLoginError('');
+    if (!email) {
+        setLoginError('Set the primary admin email in js/config.js first.');
+        return;
+    }
+    if (!name || !password) {
+        setLoginError('Enter name and password to create the first admin.');
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+    }
+
+    try {
+        var res = await fetch(API_BASE + '/admin/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name, email: email, password: password, role: 'super_admin' })
+        });
+        var data = await res.json();
+        if (!res.ok || !data.success) {
+            setLoginError(data.message || 'Admin creation failed.');
+            return;
+        }
+
+        setToken(data.token);
+        setStoredAdmin(data.admin);
+        currentAdmin = data.admin;
+        showDashboard();
+        toast('First admin created');
+    } catch (err) {
+        setLoginError('Cannot reach the server. Start the backend and try again.');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = originalText || 'Create First Admin';
+        }
+    }
+}
+
+async function checkAuth() {
+    var token = getToken();
+    if (!token) {
+        showLoginScreen('Log in with your admin account to load orders.');
+        return;
+    }
+
+    try {
+        var res = await fetch(API_BASE + '/admin/me', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        var data = await res.json();
+        if (!res.ok || !data.success) {
+            handleUnauthorized('Your admin session expired. Please log in again.');
+            return;
+        }
+
+        setStoredAdmin(data.admin);
+        currentAdmin = data.admin;
+        showDashboard();
+    } catch (err) {
+        showLoginScreen('Cannot reach the server. Start the backend and try again.');
+    }
+}
+
+function doLogout() {
+    stopDashboardSync();
+    clearToken();
+    currentAdmin = null;
+    showLoginScreen('Logged out. Log in again to continue.');
 }
 
 function showDashboard() {
-    document.getElementById('admin-disp-name').textContent = 'Admin';
-    document.getElementById('admin-disp-role').textContent = 'super admin';
-    loadAll();
+    if (!getToken()) {
+        showLoginScreen('Log in with your admin account to load orders.');
+        return;
+    }
+    hideLoginScreen();
+    updateAdminIdentity();
+    loadAll(true);
     startNotifPolling();
+    startDashboardSync();
 }
 
 function fmt(d) { return new Date(d).toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
@@ -57,14 +271,16 @@ function setBadge(id, count) {
     el.style.display = count > 0 ? 'inline' : 'none';
 }
 
-async function loadAll() {
+async function loadAll(silent) {
     var btn = document.getElementById('refresh-btn');
-    btn.classList.add('loading');
-    btn.textContent = 'Loading...';
+    var hasToken = !!getToken();
+    if (!silent) {
+        btn.classList.add('loading');
+        btn.textContent = 'Loading...';
+    }
     try {
         await fetch(API_BASE + '/health');
         setApiStatus(true);
-        var role = currentAdmin?.role;
         var baseResponses = await Promise.all([
             apiFetch('/orders?limit=500'),
             apiFetch('/subscriptions?limit=500'),
@@ -79,19 +295,34 @@ async function loadAll() {
         setBadge('nb-subs', allSubs.filter(function (s) { return s.status === 'active'; }).length);
         setBadge('nb-msgs', allMsgs.filter(function (m) { return m.status === 'unread'; }).length);
         renderOverview();
-        toast('Data refreshed');
+        if (!silent) toast('Data refreshed');
     } catch (err) {
         console.error(err);
-        setApiStatus(false);
-        toast('Cannot reach server', 'error');
+        if (/HTTP 401|HTTP 403/.test(err.message)) {
+            setApiStatus(true);
+            handleUnauthorized(hasToken ? 'Admin session expired. Please log in again.' : 'Admin login required to view orders.');
+            if (!silent) toast(hasToken ? 'Admin session expired. Please log in again.' : 'Admin login required to view orders.', 'error');
+        } else {
+            setApiStatus(false);
+            if (!silent) toast('Cannot reach server', 'error');
+        }
     }
-    btn.classList.remove('loading');
-    btn.textContent = 'Refresh';
+    if (!silent) {
+        btn.classList.remove('loading');
+        btn.textContent = 'Refresh';
+    }
 }
 
-var notifInterval = null;
 function startNotifPolling() {
     if (notifInterval) clearInterval(notifInterval);
     fetchNotifCounts();
     notifInterval = setInterval(fetchNotifCounts, 10000);
+}
+
+function startDashboardSync() {
+    if (dashboardSyncInterval) clearInterval(dashboardSyncInterval);
+    dashboardSyncInterval = setInterval(function () {
+        if (document.hidden) return;
+        loadAll(true);
+    }, 15000);
 }

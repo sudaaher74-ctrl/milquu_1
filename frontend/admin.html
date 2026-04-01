@@ -14,9 +14,22 @@
 </head>
 
 <body>
-
-
-
+  <div class="login-screen" id="login-screen">
+    <div class="login-box">
+      <h1>Milqu <span>Fresh</span></h1>
+      <p class="sub">Sign in with password only to view your admin dashboard data.</p>
+      <form onsubmit="doLogin(); return false;">
+        <input id="login-name" type="text" placeholder="Admin name (first setup only)">
+        <input id="login-pass" type="password" placeholder="Password" required>
+        <div class="login-actions">
+          <button class="btn-login" id="login-btn" type="submit">Login</button>
+          <button class="btn-register" id="register-btn" type="button" onclick="doRegister()">Create First Admin</button>
+        </div>
+      </form>
+      <div class="login-err" id="login-error"></div>
+      <div class="login-hint">The primary admin email is configured in `js/config.js`. Use "Create First Admin" only once.</div>
+    </div>
+  </div>
   <!-- ══ SIDEBAR ══ -->
   <aside class="sidebar">
 
@@ -87,6 +100,7 @@
           <div class="live-dot"></div> Live
         </div>
         <button class="refresh-btn" id="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+        <button class="refresh-btn secondary" type="button" onclick="doLogout()">Logout</button>
       </div>
     </div>
 

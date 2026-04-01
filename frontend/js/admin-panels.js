@@ -422,5 +422,5 @@ async function deleteCMS(key) {
 // ══════════════════════════════════════════════════════
 document.getElementById('order-modal').addEventListener('click', function (e) { if (e.target === this) closeModal(); });
 document.getElementById('product-edit-modal')?.addEventListener('click', function (e) { if (e.target === this) this.classList.remove('open'); });
-showDashboard();
+checkAuth();
 
