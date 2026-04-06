@@ -259,12 +259,66 @@ const closeCart = () => { document.getElementById('cart-overlay').classList.remo
 // ============================================================
 //  CHECKOUT PAYMENT MODAL
 // ============================================================
+function setAreaOptions(selectId, options, placeholder) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const defaultLabel = placeholder || 'Select Area';
+  const defaultOption = `<option value="" disabled selected>${defaultLabel}</option>`;
+  select.innerHTML = defaultOption + options.map(option => `<option value="${option.value}">${option.label}</option>`).join('');
+}
+
+function getSelectedArea(selectId) {
+  const select = document.getElementById(selectId);
+  if (!select) return { value: '', name: '' };
+
+  const option = select.options[select.selectedIndex];
+  return {
+    value: select.value || '',
+    name: option && option.value ? option.text.trim() : ''
+  };
+}
+
+function getFallbackAreaOptions() {
+  return getAllServiceableAreas()
+    .slice()
+    .sort((a, b) => a.area.localeCompare(b.area))
+    .map(area => ({
+      value: area.pincode,
+      label: `${area.area}, ${area.city} (${area.pincode})`
+    }));
+}
+
+async function fetchAreas() {
+  try {
+    const res = await fetch(`${API_BASE}/areas`);
+    const result = await res.json();
+
+    if (!res.ok || !result.success || !Array.isArray(result.data) || !result.data.length) {
+      throw new Error(result.message || 'No active areas available');
+    }
+
+    const options = result.data.map(area => ({
+      value: area._id,
+      label: area.name
+    }));
+
+    setAreaOptions('pay-area', options, 'Select Area');
+    setAreaOptions('sub-area', options, 'Select Area');
+  } catch (err) {
+    console.warn('Falling back to static delivery areas:', err.message);
+    const fallbackOptions = getFallbackAreaOptions();
+    setAreaOptions('pay-area', fallbackOptions, 'Select Area');
+    setAreaOptions('sub-area', fallbackOptions, 'Select Area');
+  }
+}
+
 let curPayStep = 1, selPayMethod = 'cod', selUPIApp = '';
 
 function openPayModal() {
   const c = getCart();
   if (!c.length) { notif('Your cart is empty 🛒'); return; }
-  closeCart(); renderOrderSummary(); goPayStep(1);
+  closeCart(); renderOrderSummary(); goPayStep(1); fetchAreas();
   document.getElementById('pay-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -363,6 +417,146 @@ async function placeOrder() {
   }
 }
 
+function buildCheckoutAddress() {
+  const address = document.getElementById('pay-address')?.value.trim() || '';
+  const city = document.getElementById('pay-city')?.value.trim() || 'Navi Mumbai';
+  const area = getSelectedArea('pay-area');
+  const areaLabel = area.name || city;
+  return `${address}, ${areaLabel}${area.name ? '' : `, ${city}`}`;
+}
+
+function goPayStep(n) {
+  if (n === 2) {
+    const fn = document.getElementById('pay-fname').value.trim();
+    const ln = document.getElementById('pay-lname').value.trim();
+    const ph = document.getElementById('pay-phone').value.trim();
+    const ad = document.getElementById('pay-address').value.trim();
+    const area = getSelectedArea('pay-area');
+
+    if (!fn || !ln || !ph || !ad || !area.value) { notif('Please fill all required fields'); return; }
+    if (!/^[6-9]\d{9}$/.test(ph)) { notif('Enter a valid 10-digit phone number'); return; }
+  }
+
+  if (n === 3) {
+    renderReview();
+  }
+
+  curPayStep = n;
+  document.querySelectorAll('.pay-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.pay-step').forEach((s, i) => {
+    s.classList.remove('active', 'done');
+    if (i + 1 === n) s.classList.add('active');
+    else if (i + 1 < n) s.classList.add('done');
+  });
+  if (n <= 3) document.getElementById('pay-panel-' + n).classList.add('active');
+}
+
+function renderReview() {
+  const c = getCart();
+  const sum = c.reduce((s, i) => s + i.price * i.qty, 0);
+  const nm = document.getElementById('pay-fname').value + ' ' + document.getElementById('pay-lname').value;
+  const ph = document.getElementById('pay-phone').value;
+  const total = sum + 20;
+
+  document.getElementById('review-content').innerHTML = `
+    <div style="background:var(--light-gray);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <h4 style="font-size:14px;margin-bottom:8px;">ðŸ“¦ Delivering To</h4>
+      <p style="font-size:14px;font-weight:600;">${nm}</p>
+      <p style="font-size:13px;color:var(--gray);">${ph}</p>
+      <p style="font-size:13px;color:var(--gray);">${buildCheckoutAddress()}</p>
+    </div>
+    <div style="background:var(--green-light);border:1.5px solid var(--green);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <h4 style="font-size:14px;margin-bottom:6px;color:var(--green-dark);">ðŸ’µ Cash on Delivery</h4>
+      <p style="font-size:13px;color:var(--green-dark);">Pay â‚¹${total.toFixed(0)} in cash when your order arrives. (Incl. â‚¹20 handling fee)</p>
+    </div>
+    <div>
+      ${c.map(i => `<div class="order-item-row"><span>${i.e} ${i.name} Ã— ${i.qty}</span><span>â‚¹${(i.price * i.qty).toFixed(0)}</span></div>`).join('')}
+      <div class="order-item-row"><span>COD Handling Fee</span><span>â‚¹20</span></div>
+      <div class="order-total-row"><span>Total to Pay (Cash)</span><span style="color:var(--green)">â‚¹${total.toFixed(0)}</span></div>
+    </div>`;
+}
+
+async function placeOrder() {
+  const btn = document.getElementById('place-order-btn');
+  const c = getCart();
+  const sum = c.reduce((s, i) => s + i.price * i.qty, 0);
+  const area = getSelectedArea('pay-area');
+  const areaId = /^[a-f\d]{24}$/i.test(area.value) ? area.value : '';
+
+  if (!c.length) { notif('Your cart is empty'); return; }
+  if (!area.value) { notif('Please select a delivery area'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Processing...';
+
+  const orderData = {
+    customer: {
+      name: document.getElementById('pay-fname').value.trim() + ' ' + document.getElementById('pay-lname').value.trim(),
+      phone: document.getElementById('pay-phone').value.trim(),
+      email: document.getElementById('pay-email').value.trim(),
+      address: buildCheckoutAddress(),
+      notes: document.getElementById('pay-notes').value
+    },
+    area_id: areaId || undefined,
+    items: c.map(i => ({ productId: i.productId || i.id, qty: i.qty })),
+    total: sum + 20,
+    paymentMethod: 'cod'
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/orders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderData)
+    });
+    const result = await res.json();
+
+    btn.disabled = false;
+    btn.textContent = 'Confirm & Place Order';
+
+    if (result.success) {
+      document.getElementById('final-order-id').textContent = '#' + result.orderId;
+      document.querySelectorAll('.pay-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.pay-step').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
+      document.getElementById('pay-panel-success').classList.add('active');
+      saveCart([]);
+      updateCart();
+    } else {
+      notif('Order failed. Please try again.');
+    }
+  } catch (err) {
+    console.error(err);
+    btn.disabled = false;
+    btn.textContent = 'Confirm & Place Order';
+    notif('Server offline. Please try again.');
+  }
+}
+
+function renderReview() {
+  const c = getCart();
+  const sum = c.reduce((s, i) => s + i.price * i.qty, 0);
+  const nm = document.getElementById('pay-fname').value + ' ' + document.getElementById('pay-lname').value;
+  const ph = document.getElementById('pay-phone').value;
+  const total = sum + 20;
+
+  document.getElementById('review-content').innerHTML = `
+    <div style="background:var(--light-gray);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <h4 style="font-size:14px;margin-bottom:8px;">Delivering To</h4>
+      <p style="font-size:14px;font-weight:600;">${nm}</p>
+      <p style="font-size:13px;color:var(--gray);">${ph}</p>
+      <p style="font-size:13px;color:var(--gray);">${buildCheckoutAddress()}</p>
+    </div>
+    <div style="background:var(--green-light);border:1.5px solid var(--green);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <h4 style="font-size:14px;margin-bottom:6px;color:var(--green-dark);">Cash on Delivery</h4>
+      <p style="font-size:13px;color:var(--green-dark);">Pay Rs.${total.toFixed(0)} in cash when your order arrives. (Incl. Rs.20 handling fee)</p>
+    </div>
+    <div>
+      ${c.map(i => `<div class="order-item-row"><span>${i.e} ${i.name} x ${i.qty}</span><span>Rs.${(i.price * i.qty).toFixed(0)}</span></div>`).join('')}
+      <div class="order-item-row"><span>COD Handling Fee</span><span>Rs.20</span></div>
+      <div class="order-total-row"><span>Total to Pay (Cash)</span><span style="color:var(--green)">Rs.${total.toFixed(0)}</span></div>
+    </div>`;
+}
+
 // ============================================================
 //  NOTIFICATION
 // ============================================================
@@ -424,7 +618,7 @@ function refreshSubscriptionContent() {
 
 function initSub() {
   const mt = document.getElementById('milk-type'), mq = document.getElementById('milk-qty');
-  refreshSubscriptionContent();
+  refreshSubscriptionContent(); fetchAreas();
   if (mt && !mt.dataset.calcBound) {
     mt.addEventListener('change', calcSub);
     mt.dataset.calcBound = 'true';

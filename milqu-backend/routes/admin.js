@@ -39,7 +39,7 @@ router.get('/setup-status', async (req, res) => {
 
 router.post('/register', authLimiter, async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        const { name, email, password, role, phone, assigned_area } = req.body;
 
         if (!name || !email || !password) {
             return res.status(400).json({ success: false, message: 'Name, email, and password are required.' });
@@ -74,7 +74,9 @@ router.post('/register', authLimiter, async (req, res) => {
             name,
             email: email.toLowerCase(),
             password,
-            role: adminCount === 0 ? 'super_admin' : (role || 'manager')
+            role: adminCount === 0 ? 'super_admin' : (role || 'manager'),
+            phone,
+            assigned_area
         });
 
         await admin.save();
@@ -177,8 +179,31 @@ router.put('/credentials', verifyToken, async (req, res) => {
 
 router.get('/', verifyToken, requireRole('super_admin'), async (req, res) => {
     try {
-        const admins = await Admin.find().select('-password').sort({ createdAt: -1 });
-        res.json({ success: true, admins });
+        const { role } = req.query;
+        const query = role ? { role } : {};
+        const admins = await Admin.find(query).select('-password').populate('assigned_area').sort({ createdAt: -1 });
+        res.json({ success: true, count: admins.length, admins });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.put('/:id', verifyToken, requireRole('super_admin'), async (req, res) => {
+    try {
+        const { password, ...updateData } = req.body; // Don't allow password update here
+        const admin = await Admin.findByIdAndUpdate(req.params.id, updateData, { new: true }).select('-password');
+        if (!admin) return res.status(404).json({ success: false, message: 'Admin not found.' });
+        res.json({ success: true, admin });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.delete('/:id', verifyToken, requireRole('super_admin'), async (req, res) => {
+    try {
+        const admin = await Admin.findByIdAndDelete(req.params.id);
+        if (!admin) return res.status(404).json({ success: false, message: 'Admin not found.' });
+        res.json({ success: true, message: 'Admin deleted successfully.' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }

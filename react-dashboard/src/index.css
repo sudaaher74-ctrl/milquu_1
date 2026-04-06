@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-900 text-gray-200 antialiased selection:bg-brand-500/30 selection:text-brand-300;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-dark-800/60 backdrop-blur-xl border border-white/5 shadow-card;
+  }
+  
+  .glass-panel-hover {
+    @apply hover:bg-dark-800/80 hover:border-white/10 hover:shadow-card-hover transition-all duration-300;
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 20px rgba(20, 184, 166, 0.4);
+  }
+  
+  .bg-gradient-brand {
+    @apply bg-gradient-to-br from-brand-400 to-brand-600;
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-300 to-brand-500;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Custom Scrollbar for global UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-dark-900;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-dark-700 rounded-full hover:bg-brand-500/50 transition-colors;
+}
+
+/* Base input overrides */
+input[type="text"], input[type="email"], input[type="password"] {
+  @apply bg-dark-900/50 border-white/10 text-white placeholder-gray-500 focus:border-brand-500 focus:ring-brand-500/20 shadow-inner;
+}
+
+/* Toast custom styling for dark theme */
+.Toastify__toast-theme--light {
+  @apply !bg-dark-800 !text-gray-100 !border !border-white/10 !shadow-card !rounded-xl;
+}
+.Toastify__close-button--light {
+  @apply !text-gray-400 hover:!text-white;
+}

@@ -7,16 +7,20 @@ var currentAdmin = null;
 var dashboardSyncInterval = null;
 var notifInterval = null;
 var adminSetupState = { allowSelfRegister: false, loaded: false };
+var ADMIN_AUTH_DISABLED = !!window.MILQU_CONFIG.ADMIN_AUTH_DISABLED;
 var ADMIN_LOGIN_EMAIL = window.MILQU_CONFIG.ADMIN_LOGIN_EMAIL || '';
+var PUBLIC_ADMIN = { id: 'dashboard-access', name: 'Admin', email: '', role: 'super_admin' };
+var knownOrderIds = [];
+var hasLoadedDashboardData = false;
 
 function getToken() {
+    if (ADMIN_AUTH_DISABLED) return '';
     return sessionStorage.getItem('admin_token') || '';
 }
 
 function setToken(token) {
-    if (token) {
-        sessionStorage.setItem('admin_token', token);
-    }
+    if (ADMIN_AUTH_DISABLED || !token) return;
+    sessionStorage.setItem('admin_token', token);
 }
 
 function clearToken() {
@@ -27,6 +31,10 @@ function clearToken() {
 }
 
 function getStoredAdmin() {
+    if (ADMIN_AUTH_DISABLED) {
+        return PUBLIC_ADMIN;
+    }
+
     try {
         return JSON.parse(sessionStorage.getItem('admin_data') || 'null');
     } catch (err) {
@@ -35,19 +43,27 @@ function getStoredAdmin() {
 }
 
 function setStoredAdmin(admin) {
+    if (ADMIN_AUTH_DISABLED) return;
     sessionStorage.setItem('admin_data', JSON.stringify(admin || null));
 }
 
 function authHeaders(extraHeaders) {
     var headers = { 'Content-Type': 'application/json' };
     var token = getToken();
+
     if (token) {
         headers.Authorization = 'Bearer ' + token;
     }
     if (extraHeaders) {
         Object.assign(headers, extraHeaders);
     }
+
     return headers;
+}
+
+function authUploadHeaders() {
+    var token = getToken();
+    return token ? { Authorization: 'Bearer ' + token } : {};
 }
 
 function syncLoginEmailInput() {
@@ -85,19 +101,36 @@ function setLoginHint(message) {
 }
 
 function showLoginScreen(message) {
-    syncLoginEmailInput();
-    var loginScreen = document.getElementById('login-screen');
-    if (loginScreen) {
-        loginScreen.classList.remove('hidden');
+    if (ADMIN_AUTH_DISABLED) {
+        hideLoginScreen();
+        return;
     }
+
+    syncLoginEmailInput();
+    var screen = document.getElementById('login-screen');
+    if (screen) {
+        screen.classList.remove('hidden');
+    }
+
+    var logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.style.display = '';
+    }
+
     setLoginError(message || '');
 }
 
 function hideLoginScreen() {
-    var loginScreen = document.getElementById('login-screen');
-    if (loginScreen) {
-        loginScreen.classList.add('hidden');
+    var screen = document.getElementById('login-screen');
+    if (screen) {
+        screen.classList.add('hidden');
     }
+
+    var logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.style.display = ADMIN_AUTH_DISABLED ? 'none' : '';
+    }
+
     setLoginError('');
 }
 
@@ -113,7 +146,7 @@ function stopDashboardSync() {
 }
 
 function updateAdminIdentity() {
-    currentAdmin = currentAdmin || getStoredAdmin();
+    currentAdmin = ADMIN_AUTH_DISABLED ? PUBLIC_ADMIN : (currentAdmin || getStoredAdmin());
     document.getElementById('admin-disp-name').textContent = currentAdmin?.name || 'Admin';
     document.getElementById('admin-disp-role').textContent = (currentAdmin?.role || 'admin').replace(/_/g, ' ');
 }
@@ -122,10 +155,18 @@ async function loadAdminSetupStatus() {
     syncLoginEmailInput();
 
     var registerBtn = document.getElementById('register-btn');
+    if (ADMIN_AUTH_DISABLED) {
+        if (registerBtn) {
+            registerBtn.style.display = 'none';
+        }
+        setLoginHint('Demo mode is enabled. The dashboard opens without admin login.');
+        return;
+    }
 
     try {
         var res = await fetch(API_BASE + '/admin/setup-status');
         var data = await res.json();
+
         adminSetupState.allowSelfRegister = !!(data && data.allowSelfRegister);
         adminSetupState.loaded = true;
 
@@ -141,14 +182,61 @@ async function loadAdminSetupStatus() {
     } catch (err) {
         adminSetupState.loaded = false;
         adminSetupState.allowSelfRegister = false;
+
         if (registerBtn) {
             registerBtn.style.display = 'none';
         }
+
         setLoginHint('Start the backend server first, then sign in to view live orders.');
     }
 }
 
+function applyRolePermissions() {
+    if (!currentAdmin) return;
+
+    var role = currentAdmin.role;
+    var hideForDelivery = ['products', 'customers', 'inventory', 'cms', 'messages'];
+    var hideForManager = ['cms'];
+
+    document.querySelectorAll('.nav-item[data-panel]').forEach(function (btn) {
+        var panel = btn.dataset.panel;
+        if (role === 'delivery_staff' && hideForDelivery.includes(panel)) {
+            btn.style.display = 'none';
+        } else if (role === 'manager' && hideForManager.includes(panel)) {
+            btn.style.display = 'none';
+        } else {
+            btn.style.display = '';
+        }
+    });
+}
+
+function handleUnauthorized(message) {
+    stopDashboardSync();
+
+    if (ADMIN_AUTH_DISABLED) {
+        currentAdmin = PUBLIC_ADMIN;
+        hideLoginScreen();
+        updateAdminIdentity();
+        setApiStatus(false, 'Auth required');
+        if (message) {
+            toast(message, 'error');
+        }
+        return;
+    }
+
+    clearToken();
+    currentAdmin = null;
+    showLoginScreen(message || 'Please sign in to view the dashboard.');
+    loadAdminSetupStatus();
+}
+
 async function doLogin() {
+    if (ADMIN_AUTH_DISABLED) {
+        currentAdmin = PUBLIC_ADMIN;
+        showDashboard();
+        return false;
+    }
+
     var email = getAdminLoginEmail();
     var pass = document.getElementById('login-pass')?.value || '';
     var btn = document.getElementById('login-btn');
@@ -197,6 +285,12 @@ async function doLogin() {
 }
 
 async function doRegister() {
+    if (ADMIN_AUTH_DISABLED) {
+        currentAdmin = PUBLIC_ADMIN;
+        showDashboard();
+        return;
+    }
+
     if (!adminSetupState.allowSelfRegister) {
         setLoginError('An admin already exists. Please sign in with that admin account.');
         return;
@@ -253,35 +347,14 @@ async function doRegister() {
     }
 }
 
-function applyRolePermissions() {
-    if (!currentAdmin) return;
-
-    var role = currentAdmin.role;
-    var hideForDelivery = ['products', 'customers', 'inventory', 'cms', 'messages'];
-    var hideForManager = ['cms'];
-
-    document.querySelectorAll('.nav-item[data-panel]').forEach(function (btn) {
-        var panel = btn.dataset.panel;
-        if (role === 'delivery_staff' && hideForDelivery.includes(panel)) {
-            btn.style.display = 'none';
-        } else if (role === 'manager' && hideForManager.includes(panel)) {
-            btn.style.display = 'none';
-        } else {
-            btn.style.display = '';
-        }
-    });
-}
-
-function handleUnauthorized(message) {
-    stopDashboardSync();
-    clearToken();
-    currentAdmin = null;
-    showLoginScreen(message || 'Please sign in to view the dashboard.');
-    loadAdminSetupStatus();
-}
-
 async function checkAuth() {
     await loadAdminSetupStatus();
+
+    if (ADMIN_AUTH_DISABLED) {
+        currentAdmin = PUBLIC_ADMIN;
+        showDashboard();
+        return;
+    }
 
     var token = getToken();
     if (!token) {
@@ -309,7 +382,7 @@ async function checkAuth() {
 }
 
 function showDashboard() {
-    if (!getToken()) {
+    if (!ADMIN_AUTH_DISABLED && !getToken()) {
         showLoginScreen('Log in with your admin account to load orders.');
         return;
     }
@@ -323,6 +396,11 @@ function showDashboard() {
 }
 
 function doLogout() {
+    if (ADMIN_AUTH_DISABLED) {
+        toast('Demo mode is enabled. No admin login is required.');
+        return;
+    }
+
     stopDashboardSync();
     clearToken();
     currentAdmin = null;
@@ -338,7 +416,7 @@ function statusBadge(s) {
 }
 function payBadge(p) { var icons = { upi: 'UPI', card: 'Card', netbanking: 'Net Banking', cod: 'COD' }; return `<span style="font-size:13px;">${icons[p] || (p || 'NA').toUpperCase()}</span>`; }
 function toast(msg, type) { var t = document.getElementById('toast'); t.textContent = msg; t.className = `toast show ${type || 'success'}`; setTimeout(function () { t.classList.remove('show'); }, 3200); }
-function setApiStatus(ok) { var el = document.getElementById('api-status'); var txt = document.getElementById('api-status-text'); el.className = 'api-status ' + (ok ? 'ok' : 'err'); txt.textContent = ok ? 'Connected' : 'Offline'; }
+function setApiStatus(ok, label) { var el = document.getElementById('api-status'); var txt = document.getElementById('api-status-text'); el.className = 'api-status ' + (ok ? 'ok' : 'err'); txt.textContent = label || (ok ? 'Connected' : 'Offline'); }
 
 async function parseJsonSafe(res) {
     try {
@@ -379,8 +457,10 @@ function showPanel(id, btn) {
     document.getElementById('panel-' + id).classList.add('active');
     document.querySelectorAll('.nav-item').forEach(function (n) { n.classList.remove('active'); });
     if (btn) btn.classList.add('active');
+
     var titles = { overview: '📊 Overview', orders: '🛒 Orders', subscriptions: '📦 Subscriptions', messages: '💬 Messages', products: '🥛 Products', customers: '👥 Customers', inventory: '📋 Inventory', cms: '🎨 CMS' };
     document.getElementById('panel-title').textContent = titles[id] || id;
+
     if (id === 'orders') renderOrders();
     if (id === 'subscriptions') renderSubs();
     if (id === 'messages') renderMessages();
@@ -397,13 +477,38 @@ function setBadge(id, count) {
     el.style.display = count > 0 ? 'inline' : 'none';
 }
 
+function getActivePanelId() {
+    var activePanel = document.querySelector('.panel.active');
+    return activePanel ? activePanel.id.replace('panel-', '') : 'overview';
+}
+
+function refreshVisiblePanel(activePanelId) {
+    if (activePanelId === 'orders') renderOrders();
+    if (activePanelId === 'subscriptions') renderSubs();
+    if (activePanelId === 'messages') renderMessages();
+    if (activePanelId === 'products') renderProductsPanel();
+    if (activePanelId === 'customers') renderCustomers();
+    if (activePanelId === 'inventory') renderInventory();
+    if (activePanelId === 'cms') renderCMS();
+}
+
+function announceNewOrders(newOrders) {
+    if (!newOrders.length) return;
+
+    var latestOrder = newOrders[0];
+    var customerName = latestOrder.customer?.name || 'Customer';
+    toast(`New order ${latestOrder.orderId} from ${customerName}`);
+}
+
 async function loadAll(silent) {
-    if (!getToken()) {
+    if (!ADMIN_AUTH_DISABLED && !getToken()) {
         showLoginScreen('Log in with your admin account to load orders.');
         return;
     }
 
     var btn = document.getElementById('refresh-btn');
+    var activePanelId = getActivePanelId();
+
     if (!silent && btn) {
         btn.classList.add('loading');
         btn.textContent = 'Loading...';
@@ -414,7 +519,7 @@ async function loadAll(silent) {
         if (!healthRes.ok) {
             throw new Error('Cannot reach server');
         }
-        setApiStatus(true);
+        setApiStatus(true, 'Connected');
 
         var role = currentAdmin && currentAdmin.role;
         var baseResponses = await Promise.all([
@@ -424,31 +529,59 @@ async function loadAll(silent) {
             apiFetch('/products?scope=admin')
         ]);
 
-        allOrders = baseResponses[0].orders || [];
-        allSubs = baseResponses[1].subscriptions || [];
-        allMsgs = baseResponses[2].messages || [];
-        allProducts = baseResponses[3].products || [];
+        var nextOrders = baseResponses[0].orders || [];
+        var nextSubs = baseResponses[1].subscriptions || [];
+        var nextMsgs = baseResponses[2].messages || [];
+        var nextProducts = baseResponses[3].products || [];
+        var previousOrderIdSet = new Set(knownOrderIds);
+        var newOrders = hasLoadedDashboardData
+            ? nextOrders.filter(function (order) { return !previousOrderIdSet.has(order.orderId); })
+            : [];
+
+        allOrders = nextOrders;
+        allSubs = nextSubs;
+        allMsgs = nextMsgs;
+        allProducts = nextProducts;
+        knownOrderIds = nextOrders.map(function (order) { return order.orderId; });
+        hasLoadedDashboardData = true;
 
         setBadge('nb-orders', allOrders.filter(function (o) { return o.status === 'pending' || o.status === 'confirmed'; }).length);
         setBadge('nb-subs', allSubs.filter(function (s) { return s.status === 'active'; }).length);
         setBadge('nb-msgs', allMsgs.filter(function (m) { return m.status === 'unread'; }).length);
 
         renderOverview();
-        if (!silent) {
-            toast('Data refreshed');
+        if (activePanelId !== 'overview') {
+            refreshVisiblePanel(activePanelId);
+        }
+
+        if (silent) {
+            announceNewOrders(newOrders);
+        } else {
+            toast(newOrders.length ? `${newOrders.length} new order(s) synced` : 'Data refreshed');
         }
     } catch (err) {
         console.error(err);
+
+        if (ADMIN_AUTH_DISABLED && (err.code === 'AUTH_REQUIRED' || err.code === 'AUTH_FORBIDDEN')) {
+            stopDashboardSync();
+            setApiStatus(false, 'Auth mismatch');
+            if (!silent) {
+                toast('Backend still requires admin auth. Restart the backend once and refresh this page.', 'error');
+            }
+            return;
+        }
+
         if (err.code === 'AUTH_REQUIRED') {
             return;
         }
+
         if (err.code === 'AUTH_FORBIDDEN') {
-            setApiStatus(true);
+            setApiStatus(true, 'Access denied');
             if (!silent) {
                 toast(err.message || 'Access denied.', 'error');
             }
         } else {
-            setApiStatus(false);
+            setApiStatus(false, 'Offline');
             if (!silent) {
                 toast(err.message || 'Cannot reach server', 'error');
             }
@@ -472,5 +605,5 @@ function startDashboardSync() {
     dashboardSyncInterval = setInterval(function () {
         if (document.hidden) return;
         loadAll(true);
-    }, 15000);
+    }, 5000);
 }

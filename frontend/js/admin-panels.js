@@ -250,7 +250,7 @@ async function addProduct(e) {
     const form = document.getElementById('product-form');
     const fd = new FormData(form);
     try {
-        const res = await fetch(API_BASE + '/products', { method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() }, body: fd });
+        const res = await fetch(API_BASE + '/products', { method: 'POST', headers: authUploadHeaders(), body: fd });
         const data = await res.json();
         if (data.success) { allProducts.unshift(data.product); renderProductsPanel(); form.reset(); toast('✅ Product added!'); }
         else toast('❌ ' + data.message, 'error');
@@ -276,7 +276,7 @@ async function saveProductEdit(e) {
     const id = document.getElementById('edit-prod-id').value;
     const fd = new FormData(document.getElementById('product-edit-form'));
     try {
-        const res = await fetch(API_BASE + '/products/' + id, { method: 'PUT', headers: { 'Authorization': 'Bearer ' + getToken() }, body: fd });
+        const res = await fetch(API_BASE + '/products/' + id, { method: 'PUT', headers: authUploadHeaders(), body: fd });
         const data = await res.json();
         if (data.success) {
             const i = allProducts.findIndex(p => p._id === id);
@@ -393,7 +393,7 @@ async function addCMSContent(e) {
     const form = document.getElementById('cms-form');
     const fd = new FormData(form);
     try {
-        const res = await fetch(API_BASE + '/content', { method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() }, body: fd });
+        const res = await fetch(API_BASE + '/content', { method: 'POST', headers: authUploadHeaders(), body: fd });
         const data = await res.json();
         if (data.success) { renderCMS(); form.reset(); toast('✅ Content added!'); }
         else toast('❌ ' + data.message, 'error');

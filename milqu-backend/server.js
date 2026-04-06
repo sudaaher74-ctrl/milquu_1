@@ -41,6 +41,7 @@ mongoose.connect(getRequiredEnv('MONGO_URI'))
     });
 
 app.use('/api/orders', require('./routes/orders'));
+app.use('/api/areas', require('./routes/areas'));
 app.use('/api/subscriptions', require('./routes/subscriptions'));
 app.use('/api/messages', require('./routes/messages'));
 app.use('/api/products', require('./routes/products'));

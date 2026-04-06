@@ -252,12 +252,25 @@ const closeCart = () => { document.getElementById('cart-overlay').classList.remo
 // ============================================================
 //  CHECKOUT PAYMENT MODAL
 // ============================================================
+async function fetchAreas() {
+  try {
+    const res = await fetch(`${API_BASE}/areas`);
+    const data = await res.json();
+    if(data.success && data.data) {
+      const opts = '<option value="" disabled selected>Select Area</option>' + data.data.map(a => `<option value="${a._id}">${a.name}</option>`).join('');
+      const pArea = document.getElementById('pay-area');
+      const sArea = document.getElementById('sub-area');
+      if(pArea) pArea.innerHTML = opts;
+      if(sArea) sArea.innerHTML = opts;
+    }
+  } catch(e) { console.error('Error fetching areas', e); }
+}
 let curPayStep = 1, selPayMethod = 'cod', selUPIApp = '';
 
 function openPayModal() {
   const c = getCart();
   if (!c.length) { notif('Your cart is empty 🛒'); return; }
-  closeCart(); renderOrderSummary(); goPayStep(1);
+  closeCart(); renderOrderSummary(); goPayStep(1); fetchAreas();
   document.getElementById('pay-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -270,11 +283,9 @@ function goPayStep(n) {
     const ln = document.getElementById('pay-lname').value.trim();
     const ph = document.getElementById('pay-phone').value.trim();
     const ad = document.getElementById('pay-address').value.trim();
-    const cy = document.getElementById('pay-city').value.trim();
-    const pi = document.getElementById('pay-pin').value.trim();
-    if (!fn || !ln || !ph || !ad || !cy || !pi) { notif('Please fill all required fields ⚠️'); return; }
+    const area = document.getElementById('pay-area').value;
+    if (!fn || !ln || !ph || !ad || !area) { notif('Please fill all required fields ⚠️'); return; }
     if (!/^[6-9]\d{9}$/.test(ph)) { notif('Enter valid 10-digit phone number ⚠️'); return; }
-    if (!/^\d{6}$/.test(pi)) { notif('Enter valid 6-digit pincode ⚠️'); return; }
   }
   if (n === 3) {
     renderReview();
@@ -299,7 +310,9 @@ function renderReview() {
   const c = getCart(), sum = c.reduce((s, i) => s + i.price * i.qty, 0);
   const nm = document.getElementById('pay-fname').value + ' ' + document.getElementById('pay-lname').value;
   const ph = document.getElementById('pay-phone').value;
-  const ad = `${document.getElementById('pay-address').value}, ${document.getElementById('pay-city').value} - ${document.getElementById('pay-pin').value}`;
+  const selArea = document.getElementById('pay-area');
+  const areaName = selArea.options[selArea.selectedIndex]?.text || '';
+  const ad = `${document.getElementById('pay-address').value}, ${areaName}`;
   const total = sum + 20; // COD fee
   document.getElementById('review-content').innerHTML = `
     <div style="background:var(--light-gray);border-radius:12px;padding:16px;margin-bottom:14px;">
@@ -323,14 +336,17 @@ async function placeOrder() {
   const btn = document.getElementById('place-order-btn');
   btn.disabled = true; btn.textContent = '⏳ Processing...';
   const c = getCart(), sum = c.reduce((s, i) => s + i.price * i.qty, 0);
+  const selArea = document.getElementById('pay-area');
+  const areaName = selArea.options[selArea.selectedIndex]?.text || '';
   const orderData = {
     customer: {
       name: document.getElementById('pay-fname').value.trim() + ' ' + document.getElementById('pay-lname').value.trim(),
       phone: document.getElementById('pay-phone').value.trim(),
       email: document.getElementById('pay-email').value.trim(),
-      address: `${document.getElementById('pay-address').value}, ${document.getElementById('pay-city').value} - ${document.getElementById('pay-pin').value}`,
+      address: `${document.getElementById('pay-address').value}, ${areaName}`,
       notes: document.getElementById('pay-notes').value
     },
+    area_id: selArea.value,
     items: c, total: sum + 20, paymentMethod: 'cod'
   };
   try {
@@ -372,6 +388,7 @@ function initSub() {
   const t = new Date(); t.setDate(t.getDate() + 1);
   const sd = document.getElementById('sub-start');
   if (sd) { sd.min = t.toISOString().split('T')[0]; sd.value = sd.min; }
+  fetchAreas();
   calcSub();
   // Payment is always COD — no listener setup needed
 }
@@ -390,7 +407,8 @@ document.getElementById('sub-form')?.addEventListener('submit', async e => {
   const nm = document.getElementById('sub-name').value.trim();
   const ph = document.getElementById('sub-phone').value.trim();
   const ad = document.getElementById('sub-address').value.trim();
-  if (!nm || !ph || !ad) { notif('Please fill all required fields ⚠️'); return; }
+  const areaId = document.getElementById('sub-area').value;
+  if (!nm || !ph || !ad || !areaId) { notif('Please fill all required fields ⚠️'); return; }
   if (!/^[6-9]\d{9}$/.test(ph)) { notif('Enter a valid 10-digit phone number ⚠️'); return; }
   calcSub();
   const total = document.getElementById('s-total').textContent;

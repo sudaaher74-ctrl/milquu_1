@@ -7,6 +7,8 @@ const AdminSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['super_admin', 'manager', 'delivery_staff'], default: 'manager' },
+    phone: { type: String, required: false, trim: true },
+    assigned_area: { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: false },
     createdAt: { type: Date, default: Date.now }
 });
 

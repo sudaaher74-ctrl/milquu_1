@@ -144,13 +144,14 @@
             </div>
             <div class="two-col">
               <div class="form-group">
-                <label>City *</label>
-                <input type="text" id="pay-city" placeholder="Navi Mumbai" required>
+                <label>Delivery Area *</label>
+                <select id="pay-area" required style="width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 15px; font-family: inherit; background: transparent;">
+                  <option value="" disabled selected>Loading areas...</option>
+                </select>
               </div>
               <div class="form-group">
-                <label>Pincode *</label>
-                <input type="text" id="pay-pin" placeholder="410206" required>
-                <small style="display:block;margin-top:6px;color:var(--gray);font-size:12px;">📍 We currently deliver in Navi Mumbai (Panvel side) only</small>
+                <label>City *</label>
+                <input type="text" id="pay-city" value="Navi Mumbai" readonly style="background-color: var(--light-gray); color: var(--gray);">
               </div>
             </div>
             <div class="form-group">
@@ -655,9 +656,11 @@
                 <input type="text" id="sub-address" placeholder="Flat no, Street, Area" required>
               </div>
               <div class="form-group">
-                <label>Pincode *</label>
-                <input type="text" id="sub-pincode" placeholder="e.g. 410206" maxlength="6" pattern="[0-9]*" inputmode="numeric" required>
-                <small style="display:block;margin-top:6px;color:var(--gray);font-size:12px;">📍 We currently deliver in Navi Mumbai (Panvel side) only</small>
+                <label>Delivery Area *</label>
+                <select id="sub-area" required style="width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 15px; font-family: inherit; background: transparent;">
+                  <option value="" disabled selected>Loading areas...</option>
+                </select>
+                <small style="display:block;margin-top:6px;color:var(--gray);font-size:12px;">📍 We deliver in selected areas only</small>
               </div>
               <div class="form-group">
                 <label>Milk Type</label>

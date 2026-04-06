@@ -26,6 +26,9 @@ const OrderSchema = new mongoose.Schema({
     paymentMethod: { type: String, enum: ['upi', 'card', 'netbanking', 'cod'], required: true },
     status: { type: String, enum: ['pending', 'confirmed', 'out_for_delivery', 'delivered', 'cancelled'], default: 'confirmed' },
     paymentStatus: { type: String, enum: ['pending', 'paid', 'failed'], default: 'pending' },
+    area_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: false },
+    assigned_delivery_boy_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: false },
+    photo_proof_url: { type: String, required: false },
     createdAt: { type: Date, default: Date.now }
 });
 

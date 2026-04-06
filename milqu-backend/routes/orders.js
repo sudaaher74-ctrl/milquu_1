@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const Admin = require('../models/Admin');
+const { upload } = require('../utils/cloudinary');
 const { createRateLimiter } = require('../middleware/rateLimit');
 const { sendWhatsAppNotification } = require('../utils/whatsapp');
 const { verifyToken, requireRole } = require('../middleware/auth');
@@ -60,7 +62,7 @@ async function rollbackStockAdjustments(adjustments) {
 
 router.post('/', publicOrderLimiter, async (req, res) => {
     try {
-        const { customer, items, paymentMethod } = req.body;
+        const { customer, items, paymentMethod, area_id } = req.body;
 
         if (!customer || !Array.isArray(items) || items.length === 0 || !paymentMethod) {
             return res.status(400).json({ success: false, message: 'Missing required order fields.' });
@@ -156,10 +158,19 @@ router.post('/', publicOrderLimiter, async (req, res) => {
                 name: product.name,
                 price: product.price,
                 qty: item.qty,
+                qty: item.qty,
                 e: product.emoji,
                 unit: product.unit
             });
             subtotal += product.price * item.qty;
+        }
+
+        let assigned_delivery_boy_id = null;
+        if (area_id) {
+            const deliveryBoy = await Admin.findOne({ role: 'delivery_staff', assigned_area: area_id });
+            if (deliveryBoy) {
+                assigned_delivery_boy_id = deliveryBoy._id;
+            }
         }
 
         const total = paymentMethod === 'cod' ? subtotal + COD_HANDLING_FEE : subtotal;
@@ -172,7 +183,9 @@ router.post('/', publicOrderLimiter, async (req, res) => {
             total,
             paymentMethod,
             status: 'confirmed',
-            paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid'
+            paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
+            area_id,
+            assigned_delivery_boy_id
         });
 
         try {
@@ -205,6 +218,8 @@ router.get('/', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res
         const filter = status ? { status } : {};
 
         const orders = await Order.find(filter)
+            .populate('area_id', 'name')
+            .populate('assigned_delivery_boy_id', 'name phone')
             .sort({ createdAt: -1 })
             .skip((safePage - 1) * safeLimit)
             .limit(safeLimit);
@@ -300,7 +315,9 @@ router.get('/stats/top-products', verifyToken, requireRole(...ORDER_ACCESS_ROLES
 
 router.get('/:orderId', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res) => {
     try {
-        const order = await Order.findOne({ orderId: req.params.orderId });
+        const order = await Order.findOne({ orderId: req.params.orderId })
+            .populate('area_id', 'name')
+            .populate('assigned_delivery_boy_id', 'name phone');
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found.' });
         }
@@ -327,6 +344,75 @@ router.patch('/:orderId/status', verifyToken, requireRole(...ORDER_ACCESS_ROLES)
             return res.status(404).json({ success: false, message: 'Order not found.' });
         }
         res.json({ success: true, message: 'Order status updated.', order });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/public/delivery', async (req, res) => {
+    try {
+        const { status, area_id } = req.query;
+        const filter = {};
+        if (status) filter.status = status;
+        if (area_id) filter.area_id = area_id;
+
+        const orders = await Order.find(filter)
+            .populate('area_id', 'name')
+            .sort({ createdAt: -1 });
+        res.json({ success: true, count: orders.length, orders });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/delivery-boy/:id', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res) => {
+    try {
+        const { status } = req.query;
+        const filter = { assigned_delivery_boy_id: req.params.id };
+        if (status) filter.status = status;
+
+        const orders = await Order.find(filter)
+            .populate('area_id', 'name')
+            .sort({ createdAt: -1 });
+        res.json({ success: true, count: orders.length, orders });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.patch('/:orderId/delivery-status', upload.single('photo_proof'), async (req, res) => {
+    try {
+        const { status } = req.body;
+        const allowed = ['out_for_delivery', 'delivered', 'cancelled'];
+        if (!allowed.includes(status)) {
+            return res.status(400).json({ success: false, message: 'Invalid status value.' });
+        }
+
+        const updateData = { status };
+        if (req.file && req.file.path) {
+            updateData.photo_proof_url = req.file.path;
+        }
+
+        if (status === 'delivered') {
+            const existingOrder = await Order.findOne({ orderId: req.params.orderId });
+            if (!existingOrder) {
+                return res.status(404).json({ success: false, message: 'Order not found.' });
+            }
+            if (!updateData.photo_proof_url && !existingOrder.photo_proof_url) {
+                return res.status(400).json({ success: false, message: 'Photo proof is mandatory for delivered status.' });
+            }
+        }
+
+        const order = await Order.findOneAndUpdate(
+            { orderId: req.params.orderId },
+            updateData,
+            { new: true }
+        ).populate('area_id assigned_delivery_boy_id');
+        
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found.' });
+        }
+        res.json({ success: true, message: 'Delivery status updated.', order });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
