@@ -3,6 +3,7 @@ const Message = require('../models/Message');
 const { createRateLimiter } = require('../middleware/rateLimit');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const { generatePublicId } = require('../utils/public-id');
+const { sanitizeMultilineText, sanitizeText } = require('../utils/sanitize');
 
 const router = express.Router();
 const publicMessageLimiter = createRateLimiter({
@@ -15,16 +16,29 @@ const publicMessageLimiter = createRateLimiter({
 router.post('/', publicMessageLimiter, async (req, res) => {
     try {
         const { name, email, phone, subject, message } = req.body;
+        const cleanName = sanitizeText(name);
+        const cleanEmail = sanitizeText(email).toLowerCase();
+        const cleanPhone = sanitizeText(phone);
+        const cleanSubject = sanitizeText(subject);
+        const cleanMessage = sanitizeMultilineText(message);
 
-        if (!name || !email || !subject || !message) {
+        if (!cleanName || !cleanEmail || !cleanSubject || !cleanMessage) {
             return res.status(400).json({ success: false, message: 'Please fill all required fields.' });
         }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
             return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
         }
 
         const messageId = generatePublicId('MSG');
-        const msg = new Message({ messageId, name, email, phone, subject, message, status: 'unread' });
+        const msg = new Message({
+            messageId,
+            name: cleanName,
+            email: cleanEmail,
+            phone: cleanPhone,
+            subject: cleanSubject,
+            message: cleanMessage,
+            status: 'unread'
+        });
         await msg.save();
 
         res.status(201).json({

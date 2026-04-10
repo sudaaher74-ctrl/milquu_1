@@ -4,8 +4,7 @@
 // ============================================================
 
 // ── Backend API URL ─────────────────────────────────────────
-// Change this to your live server URL when you deploy
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = window.MILQU_CONFIG?.API_BASE || 'http://localhost:5000/api';
 
 // ── Cart uses localStorage (browser only) ───────────────────
 const DB = {

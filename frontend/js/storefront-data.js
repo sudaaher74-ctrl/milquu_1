@@ -1,4 +1,5 @@
 var API_BASE = window.MILQU_CONFIG.API_BASE;
+var IS_LOCAL_DEV = !!window.MILQU_CONFIG.IS_LOCAL_DEV;
 var DB = {
     get: function (key) {
         try {
@@ -64,9 +65,14 @@ async function loadProducts() {
         }
         P = (result.products || []).map(mapProduct);
     } catch (err) {
-        // Backend not running — fall back to the built-in product list
-        console.warn('Backend unavailable, using fallback products:', err.message);
-        P = FALLBACK_PRODUCTS;
+        if (IS_LOCAL_DEV) {
+            console.warn('Backend unavailable, using fallback products:', err.message);
+            P = FALLBACK_PRODUCTS;
+            return P;
+        }
+
+        P = [];
+        throw err;
     }
     return P;
 }

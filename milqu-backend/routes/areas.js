@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Area = require('../models/Area');
+const { verifyToken, requireRole } = require('../middleware/auth');
+
+const AREA_MANAGERS = ['super_admin', 'manager'];
 
 // Get all areas
 router.get('/', async (req, res) => {
@@ -13,7 +16,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create new area
-router.post('/', async (req, res) => {
+router.post('/', verifyToken, requireRole(...AREA_MANAGERS), async (req, res) => {
     try {
         const { name, pincodes } = req.body;
         if (!name) return res.status(400).json({ success: false, message: 'Name is required' });
@@ -27,7 +30,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update area
-router.put('/:id', async (req, res) => {
+router.put('/:id', verifyToken, requireRole(...AREA_MANAGERS), async (req, res) => {
     try {
         const area = await Area.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
         if (!area) return res.status(404).json({ success: false, message: 'Area not found' });
@@ -38,7 +41,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete area
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verifyToken, requireRole(...AREA_MANAGERS), async (req, res) => {
     try {
         const area = await Area.findById(req.params.id);
         if (!area) return res.status(404).json({ success: false, message: 'Area not found' });

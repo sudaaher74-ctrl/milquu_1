@@ -29,6 +29,7 @@ const OrderSchema = new mongoose.Schema({
     area_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: false },
     assigned_delivery_boy_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: false },
     photo_proof_url: { type: String, required: false },
+    stockRestoredAt: { type: Date, required: false },
     createdAt: { type: Date, default: Date.now }
 });
 

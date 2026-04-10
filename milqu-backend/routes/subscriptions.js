@@ -3,6 +3,7 @@ const Subscription = require('../models/Subscription');
 const { createRateLimiter } = require('../middleware/rateLimit');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const { generatePublicId } = require('../utils/public-id');
+const { sanitizeMultilineText, sanitizeText } = require('../utils/sanitize');
 
 const router = express.Router();
 const SUBSCRIPTION_ROLES = ['super_admin', 'manager', 'delivery_staff'];
@@ -16,27 +17,35 @@ const publicSubscriptionLimiter = createRateLimiter({
 router.post('/', publicSubscriptionLimiter, async (req, res) => {
     try {
         const { name, phone, address, milkType, qty, schedule, startDate, notes, monthlyTotal, paymentMethod } = req.body;
+        const cleanName = sanitizeText(name);
+        const cleanPhone = sanitizeText(phone);
+        const cleanAddress = sanitizeText(address);
+        const cleanMilkType = sanitizeText(milkType).toLowerCase();
+        const cleanSchedule = sanitizeText(schedule).toLowerCase();
+        const cleanNotes = sanitizeMultilineText(notes);
+        const cleanMonthlyTotal = sanitizeText(monthlyTotal);
+        const cleanPaymentMethod = sanitizeText(paymentMethod || 'upi').toLowerCase();
 
-        if (!name || !phone || !address || !milkType || !qty || !schedule) {
+        if (!cleanName || !cleanPhone || !cleanAddress || !cleanMilkType || !qty || !cleanSchedule) {
             return res.status(400).json({ success: false, message: 'Please fill all required fields.' });
         }
-        if (!/^[6-9]\d{9}$/.test(phone)) {
+        if (!/^[6-9]\d{9}$/.test(cleanPhone)) {
             return res.status(400).json({ success: false, message: 'Enter a valid 10-digit phone number.' });
         }
 
         const subscriptionId = generatePublicId('SUB');
         const sub = new Subscription({
             subscriptionId,
-            name,
-            phone,
-            address,
-            milkType,
+            name: cleanName,
+            phone: cleanPhone,
+            address: cleanAddress,
+            milkType: cleanMilkType,
             qty: parseFloat(qty),
-            schedule,
+            schedule: cleanSchedule,
             startDate,
-            notes,
-            monthlyTotal,
-            paymentMethod: paymentMethod || 'upi',
+            notes: cleanNotes,
+            monthlyTotal: cleanMonthlyTotal,
+            paymentMethod: cleanPaymentMethod || 'upi',
             status: 'active'
         });
 

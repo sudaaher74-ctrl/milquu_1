@@ -2,10 +2,14 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Area = require('./models/Area');
 const Admin = require('./models/Admin');
-const { getRequiredEnv } = require('./config');
+const { getBooleanEnv, getRequiredEnv } = require('./config');
 
 async function seedAreas() {
     try {
+        if (!getBooleanEnv('CONFIRM_AREA_SEED', false)) {
+            throw new Error('Set CONFIRM_AREA_SEED=true before reseeding areas and delivery staff.');
+        }
+
         await mongoose.connect(getRequiredEnv('MONGO_URI'));
         console.log('Connected to MongoDB.');
 
@@ -26,10 +30,11 @@ async function seedAreas() {
         console.log('Inserted 4 areas successfully!');
 
         // 2. Hire Delivery boys for each area
+        const deliveryStaffPassword = getRequiredEnv('DELIVERY_STAFF_PASSWORD');
         const adminsData = insertedAreas.map((area, idx) => ({
             name: `${area.name} Delivery Boy`,
             email: `delivery${idx + 1}@milqu.com`,
-            password: 'password123',
+            password: deliveryStaffPassword,
             role: 'delivery_staff',
             assigned_area: area._id
         }));

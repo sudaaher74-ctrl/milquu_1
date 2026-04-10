@@ -8,6 +8,7 @@ const { createRateLimiter } = require('../middleware/rateLimit');
 const { sendWhatsAppNotification } = require('../utils/whatsapp');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const { generatePublicId } = require('../utils/public-id');
+const { sanitizeMultilineText, sanitizeText } = require('../utils/sanitize');
 
 const router = express.Router();
 const ORDER_ACCESS_ROLES = ['super_admin', 'manager', 'delivery_staff'];
@@ -60,18 +61,84 @@ async function rollbackStockAdjustments(adjustments) {
     }
 }
 
+function isDeliveryStaff(admin) {
+    return admin && admin.role === 'delivery_staff';
+}
+
+function buildOrderAccessFilter(req, filter = {}) {
+    if (!isDeliveryStaff(req.admin)) {
+        return filter;
+    }
+
+    return {
+        ...filter,
+        assigned_delivery_boy_id: req.admin._id
+    };
+}
+
+function canAccessOrder(req, order) {
+    if (!isDeliveryStaff(req.admin)) {
+        return true;
+    }
+
+    return order &&
+        order.assigned_delivery_boy_id &&
+        String(order.assigned_delivery_boy_id) === String(req.admin._id);
+}
+
+function denyOrderAccess(res) {
+    return res.status(403).json({ success: false, message: 'You can only access orders assigned to you.' });
+}
+
+async function restoreOrderStock(order) {
+    for (const item of order.items || []) {
+        if (!item.productId || !item.qty) {
+            continue;
+        }
+
+        await Product.updateOne(
+            { _id: item.productId },
+            [
+                {
+                    $set: {
+                        stock: { $add: ['$stock', item.qty] }
+                    }
+                },
+                {
+                    $set: {
+                        status: {
+                            $cond: [{ $gt: ['$stock', 0] }, 'active', 'out_of_stock']
+                        }
+                    }
+                }
+            ]
+        );
+    }
+}
+
 router.post('/', publicOrderLimiter, async (req, res) => {
     try {
         const { customer, items, paymentMethod, area_id } = req.body;
+        const cleanCustomer = {
+            name: sanitizeText(customer && customer.name),
+            phone: sanitizeText(customer && customer.phone),
+            email: sanitizeText(customer && customer.email).toLowerCase(),
+            address: sanitizeText(customer && customer.address),
+            notes: sanitizeMultilineText(customer && customer.notes)
+        };
+        const cleanPaymentMethod = sanitizeText(paymentMethod).toLowerCase();
 
-        if (!customer || !Array.isArray(items) || items.length === 0 || !paymentMethod) {
+        if (!customer || !Array.isArray(items) || items.length === 0 || !cleanPaymentMethod) {
             return res.status(400).json({ success: false, message: 'Missing required order fields.' });
         }
-        if (!customer.name || !customer.phone || !customer.address) {
+        if (!cleanCustomer.name || !cleanCustomer.phone || !cleanCustomer.address) {
             return res.status(400).json({ success: false, message: 'Customer name, phone, and address are required.' });
         }
-        if (!/^[6-9]\d{9}$/.test(customer.phone)) {
+        if (!/^[6-9]\d{9}$/.test(cleanCustomer.phone)) {
             return res.status(400).json({ success: false, message: 'Enter a valid 10-digit Indian phone number.' });
+        }
+        if (!['upi', 'card', 'netbanking', 'cod'].includes(cleanPaymentMethod)) {
+            return res.status(400).json({ success: false, message: 'Invalid payment method.' });
         }
 
         const normalizedItems = normalizeItems(items);
@@ -158,7 +225,6 @@ router.post('/', publicOrderLimiter, async (req, res) => {
                 name: product.name,
                 price: product.price,
                 qty: item.qty,
-                qty: item.qty,
                 e: product.emoji,
                 unit: product.unit
             });
@@ -173,17 +239,17 @@ router.post('/', publicOrderLimiter, async (req, res) => {
             }
         }
 
-        const total = paymentMethod === 'cod' ? subtotal + COD_HANDLING_FEE : subtotal;
+        const total = cleanPaymentMethod === 'cod' ? subtotal + COD_HANDLING_FEE : subtotal;
         const orderId = generatePublicId('MQ');
 
         const order = new Order({
             orderId,
-            customer,
+            customer: cleanCustomer,
             items: orderItems,
             total,
-            paymentMethod,
+            paymentMethod: cleanPaymentMethod,
             status: 'confirmed',
-            paymentStatus: paymentMethod === 'cod' ? 'pending' : 'paid',
+            paymentStatus: cleanPaymentMethod === 'cod' ? 'pending' : 'paid',
             area_id,
             assigned_delivery_boy_id
         });
@@ -201,7 +267,7 @@ router.post('/', publicOrderLimiter, async (req, res) => {
             success: true,
             message: 'Order placed successfully!',
             orderId,
-            totals: { subtotal, handlingFee: paymentMethod === 'cod' ? COD_HANDLING_FEE : 0, total },
+            totals: { subtotal, handlingFee: cleanPaymentMethod === 'cod' ? COD_HANDLING_FEE : 0, total },
             order
         });
     } catch (err) {
@@ -215,7 +281,7 @@ router.get('/', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res
         const { status, page = 1, limit = 20 } = req.query;
         const safePage = Math.max(1, parseInt(page, 10) || 1);
         const safeLimit = Math.min(500, Math.max(1, parseInt(limit, 10) || 20));
-        const filter = status ? { status } : {};
+        const filter = buildOrderAccessFilter(req, status ? { status } : {});
 
         const orders = await Order.find(filter)
             .populate('area_id', 'name')
@@ -232,13 +298,20 @@ router.get('/', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res
 
 router.get('/stats/summary', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res) => {
     try {
-        const totalOrders = await Order.countDocuments();
-        const totalRevenue = await Order.aggregate([{ $group: { _id: null, total: { $sum: '$total' } } }]);
+        const match = buildOrderAccessFilter(req);
+        const totalOrders = await Order.countDocuments(match);
+        const totalRevenue = await Order.aggregate([
+            { $match: match },
+            { $group: { _id: null, total: { $sum: '$total' } } }
+        ]);
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
-        const todayOrders = await Order.countDocuments({ createdAt: { $gte: todayStart } });
-        const pendingOrders = await Order.countDocuments({ status: { $in: ['pending', 'confirmed'] } });
-        const byStatus = await Order.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]);
+        const todayOrders = await Order.countDocuments({ ...match, createdAt: { $gte: todayStart } });
+        const pendingOrders = await Order.countDocuments({ ...match, status: { $in: ['pending', 'confirmed'] } });
+        const byStatus = await Order.aggregate([
+            { $match: match },
+            { $group: { _id: '$status', count: { $sum: 1 } } }
+        ]);
 
         res.json({
             success: true,
@@ -256,12 +329,13 @@ router.get('/stats/summary', verifyToken, requireRole(...ORDER_ACCESS_ROLES), as
 router.get('/stats/analytics', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res) => {
     try {
         const now = new Date();
+        const match = buildOrderAccessFilter(req);
         const sevenDaysAgo = new Date(now);
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
         sevenDaysAgo.setHours(0, 0, 0, 0);
 
         const dailyData = await Order.aggregate([
-            { $match: { createdAt: { $gte: sevenDaysAgo } } },
+            { $match: { ...match, createdAt: { $gte: sevenDaysAgo } } },
             { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } }, revenue: { $sum: '$total' }, count: { $sum: 1 } } },
             { $sort: { _id: 1 } }
         ]);
@@ -270,7 +344,7 @@ router.get('/stats/analytics', verifyToken, requireRole(...ORDER_ACCESS_ROLES), 
         fourWeeksAgo.setDate(fourWeeksAgo.getDate() - 27);
         fourWeeksAgo.setHours(0, 0, 0, 0);
         const weeklyData = await Order.aggregate([
-            { $match: { createdAt: { $gte: fourWeeksAgo } } },
+            { $match: { ...match, createdAt: { $gte: fourWeeksAgo } } },
             { $group: { _id: { $isoWeek: '$createdAt' }, revenue: { $sum: '$total' }, count: { $sum: 1 } } },
             { $sort: { _id: 1 } }
         ]);
@@ -280,7 +354,7 @@ router.get('/stats/analytics', verifyToken, requireRole(...ORDER_ACCESS_ROLES), 
         sixMonthsAgo.setDate(1);
         sixMonthsAgo.setHours(0, 0, 0, 0);
         const monthlyData = await Order.aggregate([
-            { $match: { createdAt: { $gte: sixMonthsAgo } } },
+            { $match: { ...match, createdAt: { $gte: sixMonthsAgo } } },
             { $group: { _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } }, revenue: { $sum: '$total' }, count: { $sum: 1 } } },
             { $sort: { _id: 1 } }
         ]);
@@ -294,6 +368,7 @@ router.get('/stats/analytics', verifyToken, requireRole(...ORDER_ACCESS_ROLES), 
 router.get('/stats/top-products', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res) => {
     try {
         const topProducts = await Order.aggregate([
+            { $match: buildOrderAccessFilter(req) },
             { $unwind: '$items' },
             {
                 $group: {
@@ -321,6 +396,9 @@ router.get('/:orderId', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found.' });
         }
+        if (!canAccessOrder(req, order)) {
+            return denyOrderAccess(res);
+        }
         res.json({ success: true, order });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
@@ -330,14 +408,40 @@ router.get('/:orderId', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (
 router.patch('/:orderId/status', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res) => {
     try {
         const { status } = req.body;
-        const allowed = ['pending', 'confirmed', 'out_for_delivery', 'delivered', 'cancelled'];
-        if (!allowed.includes(status)) {
+        const nextStatus = sanitizeText(status).toLowerCase();
+        const allowed = isDeliveryStaff(req.admin)
+            ? ['out_for_delivery', 'delivered', 'cancelled']
+            : ['pending', 'confirmed', 'out_for_delivery', 'delivered', 'cancelled'];
+        if (!allowed.includes(nextStatus)) {
             return res.status(400).json({ success: false, message: 'Invalid status value.' });
+        }
+
+        const existingOrder = await Order.findOne({ orderId: req.params.orderId });
+        if (!existingOrder) {
+            return res.status(404).json({ success: false, message: 'Order not found.' });
+        }
+        if (!canAccessOrder(req, existingOrder)) {
+            return denyOrderAccess(res);
+        }
+        if (existingOrder.status === 'cancelled' && nextStatus !== 'cancelled') {
+            return res.status(400).json({ success: false, message: 'Cancelled orders cannot be reopened.' });
+        }
+
+        const updateData = { status: nextStatus };
+        if (nextStatus === 'cancelled' && existingOrder.status !== 'cancelled') {
+            await restoreOrderStock(existingOrder);
+            updateData.stockRestoredAt = new Date();
+            if (existingOrder.paymentMethod === 'cod') {
+                updateData.paymentStatus = 'failed';
+            }
+        }
+        if (nextStatus === 'delivered' && existingOrder.paymentMethod === 'cod') {
+            updateData.paymentStatus = 'paid';
         }
 
         const order = await Order.findOneAndUpdate(
             { orderId: req.params.orderId },
-            { status },
+            updateData,
             { new: true }
         );
         if (!order) {
@@ -349,10 +453,10 @@ router.patch('/:orderId/status', verifyToken, requireRole(...ORDER_ACCESS_ROLES)
     }
 });
 
-router.get('/public/delivery', async (req, res) => {
+router.get('/public/delivery', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res) => {
     try {
         const { status, area_id } = req.query;
-        const filter = {};
+        const filter = buildOrderAccessFilter(req);
         if (status) filter.status = status;
         if (area_id) filter.area_id = area_id;
 
@@ -367,6 +471,10 @@ router.get('/public/delivery', async (req, res) => {
 
 router.get('/delivery-boy/:id', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res) => {
     try {
+        if (isDeliveryStaff(req.admin) && String(req.params.id) !== String(req.admin._id)) {
+            return denyOrderAccess(res);
+        }
+
         const { status } = req.query;
         const filter = { assigned_delivery_boy_id: req.params.id };
         if (status) filter.status = status;
@@ -380,27 +488,44 @@ router.get('/delivery-boy/:id', verifyToken, requireRole(...ORDER_ACCESS_ROLES),
     }
 });
 
-router.patch('/:orderId/delivery-status', upload.single('photo_proof'), async (req, res) => {
+router.patch('/:orderId/delivery-status', verifyToken, requireRole(...ORDER_ACCESS_ROLES), upload.single('photo_proof'), async (req, res) => {
     try {
-        const { status } = req.body;
+        const nextStatus = sanitizeText(req.body.status).toLowerCase();
         const allowed = ['out_for_delivery', 'delivered', 'cancelled'];
-        if (!allowed.includes(status)) {
+        if (!allowed.includes(nextStatus)) {
             return res.status(400).json({ success: false, message: 'Invalid status value.' });
         }
 
-        const updateData = { status };
+        const existingOrder = await Order.findOne({ orderId: req.params.orderId });
+        if (!existingOrder) {
+            return res.status(404).json({ success: false, message: 'Order not found.' });
+        }
+        if (!canAccessOrder(req, existingOrder)) {
+            return denyOrderAccess(res);
+        }
+        if (existingOrder.status === 'cancelled' && nextStatus !== 'cancelled') {
+            return res.status(400).json({ success: false, message: 'Cancelled orders cannot be reopened.' });
+        }
+
+        const updateData = { status: nextStatus };
         if (req.file && req.file.path) {
             updateData.photo_proof_url = req.file.path;
         }
 
-        if (status === 'delivered') {
-            const existingOrder = await Order.findOne({ orderId: req.params.orderId });
-            if (!existingOrder) {
-                return res.status(404).json({ success: false, message: 'Order not found.' });
-            }
+        if (nextStatus === 'delivered') {
             if (!updateData.photo_proof_url && !existingOrder.photo_proof_url) {
                 return res.status(400).json({ success: false, message: 'Photo proof is mandatory for delivered status.' });
             }
+        }
+        if (nextStatus === 'cancelled' && existingOrder.status !== 'cancelled') {
+            await restoreOrderStock(existingOrder);
+            updateData.stockRestoredAt = new Date();
+            if (existingOrder.paymentMethod === 'cod') {
+                updateData.paymentStatus = 'failed';
+            }
+        }
+        if (nextStatus === 'delivered' && existingOrder.paymentMethod === 'cod') {
+            updateData.paymentStatus = 'paid';
         }
 
         const order = await Order.findOneAndUpdate(

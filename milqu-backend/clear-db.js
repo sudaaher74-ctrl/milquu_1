@@ -1,5 +1,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
+const { getBooleanEnv, getRequiredEnv } = require('./config');
 
 // Import all models
 const Admin = require('./models/Admin');
@@ -11,8 +12,12 @@ const Subscription = require('./models/Subscription');
 
 async function clearDatabase() {
     try {
+        if (!getBooleanEnv('CONFIRM_CLEAR_DB', false)) {
+            throw new Error('Set CONFIRM_CLEAR_DB=true before wiping the database.');
+        }
+
         console.log('⏳ Connecting to MongoDB...');
-        await mongoose.connect(process.env.MONGO_URI);
+        await mongoose.connect(getRequiredEnv('MONGO_URI'));
         console.log('✅ Connected.');
 
         console.log('🗑️  Deleting all data...');

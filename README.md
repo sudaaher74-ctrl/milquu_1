@@ -1,10 +1,19 @@
-# 🌿 Milqu Fresh — Backend Setup Guide
+# 🌿 Milqu Fresh — Deployment & Backend Guide
 
 ## What this backend does
 - Saves every **order** from the checkout page → MongoDB
 - Saves every **subscription** from the subscribe page → MongoDB
 - Saves every **contact message** → MongoDB
 - Provides an **Admin API** so your admin dashboard reads live data from MongoDB
+
+## ✅ Production Checklist
+- Set `NODE_ENV=production`
+- Set a strong `JWT_SECRET`
+- Keep `ADMIN_AUTH_DISABLED=false`
+- Set `CORS_ORIGIN=https://your-domain.com,https://www.your-domain.com`
+- Use MongoDB Atlas or another managed MongoDB instance
+- Open `/admin` after deploy and create the first admin account
+- Do not run `clear-db`, `seed-admin`, or `seed-areas` unless you intentionally set their confirmation env vars
 
 ---
 
@@ -47,13 +56,18 @@ Download from https://www.mongodb.com/try/download/community
 Open the `.env` file and set your MongoDB URL:
 
 ```env
+NODE_ENV=production
+
 # Local MongoDB:
 MONGO_URI=mongodb://localhost:27017/milqu_fresh
 
 # OR MongoDB Atlas (cloud):
 MONGO_URI=mongodb+srv://youruser:yourpassword@cluster0.xxxxx.mongodb.net/milqu_fresh
 
+JWT_SECRET=replace-this-with-a-long-random-secret
 PORT=5000
+CORS_ORIGIN=https://your-domain.com,https://www.your-domain.com
+ADMIN_AUTH_DISABLED=false
 ```
 
 ### Step 4 — Install & Run the backend
@@ -76,14 +90,11 @@ Test it by visiting: http://localhost:5000/api/health
 
 ## 🔌 Step 5 — Connect Your Frontend
 
-Open your `script.js` and:
+The current frontend is already wired to the backend through `frontend/js/config.js`.
 
-1. **Delete** the old `placeOrder()` function
-2. **Delete** the old `sub-form` addEventListener
-3. **Delete** the old `contact-form` addEventListener
-4. **Paste** the entire contents of `frontend-api-connector.js` in their place
-
-That's it! Your frontend will now send data to MongoDB.
+- Local development uses `http://localhost:5000/api`
+- Production uses the same site origin plus `/api`
+- If you deploy frontend and backend on different domains, set `CORS_ORIGIN` on the backend and update `frontend/js/config.js` with your API host
 
 ---
 
@@ -128,11 +139,13 @@ await fetch('http://localhost:5000/api/orders/MQ-001234/status', {
 | **Railway.app** | Fast deploy from GitHub |
 | **Vercel** | If you convert to serverless |
 
-For any of these, just set the `MONGO_URI` environment variable to your MongoDB Atlas URL.
-After deploying, update `API_BASE` in `frontend-api-connector.js`:
-```javascript
-const API_BASE = 'https://your-app.render.com/api'; // your live URL
-```
+For any of these:
+- Set `MONGO_URI` to your MongoDB Atlas URL
+- Set `JWT_SECRET`
+- Set `CORS_ORIGIN`
+- Keep `ADMIN_AUTH_DISABLED=false`
+- Visit `/api/health` after deploy
+- Visit `/admin` and create the first admin if one does not exist
 
 ---
 

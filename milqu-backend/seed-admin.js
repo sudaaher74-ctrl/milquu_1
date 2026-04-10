@@ -1,10 +1,14 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const Admin = require('./models/Admin');
-const { getRequiredEnv } = require('./config');
+const { getBooleanEnv, getRequiredEnv } = require('./config');
 
 async function resetAdmin() {
     try {
+        if (!getBooleanEnv('CONFIRM_ADMIN_RESET', false)) {
+            throw new Error('Set CONFIRM_ADMIN_RESET=true before resetting admin accounts.');
+        }
+
         await mongoose.connect(getRequiredEnv('MONGO_URI'));
         console.log('Connected to MongoDB.');
 
@@ -12,9 +16,9 @@ async function resetAdmin() {
         console.log('Deleted old admins.');
 
         const newAdmin = new Admin({
-            name: 'Sudarshan',
-            email: 'sudaaher74@gmail.com',
-            password: 'Sudarshan@2002',
+            name: process.env.SEED_ADMIN_NAME || 'Admin',
+            email: getRequiredEnv('SEED_ADMIN_EMAIL').toLowerCase(),
+            password: getRequiredEnv('SEED_ADMIN_PASSWORD'),
             role: 'super_admin'
         });
 
