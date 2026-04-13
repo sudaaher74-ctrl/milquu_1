@@ -1,70 +1,120 @@
-function productImg(p, size) {
-  const h = size === 'detail' ? '320px' : '170px';
-  const fz = size === 'detail' ? '110px' : '76px';
-  if (p.img) {
-    return `
-      <img src="${p.img}" alt="${p.name}"
-        style="width:100%;height:${h};object-fit:contain;padding:10px;display:block;"
-        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-      <div style="display:none;width:100%;height:${h};font-size:${fz};align-items:center;justify-content:center;">${p.e}</div>`;
-  }
-  return `<div style="width:100%;height:${h};font-size:${fz};display:flex;align-items:center;justify-content:center;">${p.e}</div>`;
+const COD_HANDLING_FEE = 20;
+const DEFAULT_CITY = 'Navi Mumbai';
+const DEFAULT_ORDER_BUTTON_LABEL = '💵 Confirm & Place Order';
+const DEFAULT_SUBSCRIPTION_BUTTON_LABEL = '💵 Confirm Subscription';
+
+function isMongoId(value) {
+  return /^[a-f\d]{24}$/i.test(String(value || ''));
 }
 
-// ============================================================
-//  PRODUCT CARD
-// ============================================================
-function card(p) {
+function productImg(product, size) {
+  const height = size === 'detail' ? '320px' : '170px';
+  const emojiSize = size === 'detail' ? '110px' : '76px';
+
+  if (product.img) {
+    return `
+      <img src="${product.img}" alt="${product.name}"
+        style="width:100%;height:${height};object-fit:contain;padding:10px;display:block;"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+      <div style="display:none;width:100%;height:${height};font-size:${emojiSize};align-items:center;justify-content:center;">${product.e}</div>`;
+  }
+
+  return `<div style="width:100%;height:${height};font-size:${emojiSize};display:flex;align-items:center;justify-content:center;">${product.e}</div>`;
+}
+
+function card(product) {
   return `
-<div class="product-card fade-in" data-cat="${p.cat}">
-  <div class="product-img" onclick="detail('${p.id}')" style="padding:0;overflow:hidden;background:#f0fdf4;position:relative;cursor:pointer;">
-    ${p.badge ? `<span class="product-badge" style="position:absolute;top:10px;left:10px;z-index:2;">${p.badge}</span>` : ''}
-    ${productImg(p, 'card')}
+<div class="product-card fade-in" data-cat="${product.cat}">
+  <div class="product-img" onclick="detail('${product.id}')" style="padding:0;overflow:hidden;background:#f0fdf4;position:relative;cursor:pointer;">
+    ${product.badge ? `<span class="product-badge" style="position:absolute;top:10px;left:10px;z-index:2;">${product.badge}</span>` : ''}
+    ${productImg(product, 'card')}
   </div>
   <div class="product-info">
-    <div class="product-cat">${p.cat}</div>
-    <div class="product-name" onclick="detail('${p.id}')" style="cursor:pointer;">${p.name}</div>
-    <div class="product-desc">${p.desc}</div>
+    <div class="product-cat">${product.cat}</div>
+    <div class="product-name" onclick="detail('${product.id}')" style="cursor:pointer;">${product.name}</div>
+    <div class="product-desc">${product.desc}</div>
     <div class="product-footer">
-      <div class="product-price">₹${p.price}<span>${p.unit}</span></div>
-      <button class="add-cart-btn" onclick="addToCart({id:'${p.id}',productId:'${p.productId}',name:'${p.name}',price:${p.price},e:'${p.e}',unit:'${p.unit}'})">+</button>
+      <div class="product-price">₹${product.price}<span>${product.unit}</span></div>
+      <button class="add-cart-btn" onclick="addToCart({id:'${product.id}',productId:'${product.productId}',name:'${product.name}',price:${product.price},e:'${product.e}',unit:'${product.unit}'})">+</button>
     </div>
   </div>
 </div>`;
 }
 
 function renderGrid(gridId, filter) {
-  const list = (!filter || filter === 'all') ? P : P.filter(p => p.cat === filter);
-  const el = document.getElementById(gridId);
-  if (el) { el.innerHTML = list.map(card).join(''); initFade(); }
+  const list = !filter || filter === 'all' ? P : P.filter(product => product.cat === filter);
+  const grid = document.getElementById(gridId);
+
+  if (!grid) return;
+
+  if (!list.length) {
+    grid.innerHTML = `
+      <div class="why-card" style="grid-column:1 / -1;text-align:center;">
+        <div class="why-icon" style="margin:0 auto 18px;">📦</div>
+        <h3>No products available</h3>
+        <p>We are updating the catalog right now. Please check back in a moment.</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(card).join('');
+  initFade();
 }
 
-// ============================================================
-//  NAVIGATION
-// ============================================================
 function nav(page, cat, closeMob) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  document.querySelectorAll('.nl').forEach(l => l.classList.toggle('active', l.dataset.p === page));
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (closeMob) { document.getElementById('mobile-menu').classList.remove('open'); document.body.style.overflow = ''; }
-  if (page === 'home') { renderGrid('home-grid'); initTabs('home-tabs', 'home-grid'); }
+  const targetPage = document.getElementById(`page-${page}`);
+  if (!targetPage) return false;
+
+  document.querySelectorAll('.page').forEach(panel => panel.classList.remove('active'));
+  targetPage.classList.add('active');
+
+  document.querySelectorAll('.nl').forEach(link => {
+    link.classList.toggle('active', link.dataset.p === page);
+  });
+
+  if (closeMob) {
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (mobileMenu) mobileMenu.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  if (page === 'home') {
+    renderGrid('home-grid');
+    initTabs('home-tabs', 'home-grid');
+  }
+
   if (page === 'products') {
     renderGrid('prod-grid', cat || 'all');
     initTabs('prod-tabs', 'prod-grid');
-    if (cat) setTimeout(() => {
-      const t = document.querySelector(`#prod-tabs [data-cat="${cat}"]`);
-      if (t) { document.querySelectorAll('#prod-tabs .filter-tab').forEach(x => x.classList.remove('active')); t.classList.add('active'); renderGrid('prod-grid', cat); }
-    }, 50);
+
+    if (cat) {
+      window.setTimeout(() => {
+        const tab = document.querySelector(`#prod-tabs [data-cat="${cat}"]`);
+        if (!tab) return;
+
+        document.querySelectorAll('#prod-tabs .filter-tab').forEach(item => item.classList.remove('active'));
+        tab.classList.add('active');
+        renderGrid('prod-grid', cat);
+      }, 50);
+    }
   }
-  if (page === 'subscription') initSub();
+
+  if (page === 'subscription') {
+    initSub();
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
   initFade();
   return false;
 }
 
 function initTabs(tabsId, gridId) {
-  document.querySelectorAll(`#${tabsId} .filter-tab`).forEach(t => {
-    t.onclick = () => { document.querySelectorAll(`#${tabsId} .filter-tab`).forEach(x => x.classList.remove('active')); t.classList.add('active'); renderGrid(gridId, t.dataset.cat); };
+  document.querySelectorAll(`#${tabsId} .filter-tab`).forEach(tab => {
+    tab.onclick = function () {
+      document.querySelectorAll(`#${tabsId} .filter-tab`).forEach(item => item.classList.remove('active'));
+      tab.classList.add('active');
+      renderGrid(gridId, tab.dataset.cat);
+    };
   });
 }
 
@@ -86,10 +136,10 @@ function renderCmsUpdates() {
   }
 
   grid.innerHTML = items.map(item => {
-    const img = contentImageUrl(item);
+    const imageUrl = contentImageUrl(item);
     return `
       <div class="why-card fade-in" style="overflow:hidden;">
-        ${img ? `<img src="${img}" alt="${item.title || item.key}" style="width:100%;height:180px;object-fit:cover;border-radius:14px;margin-bottom:18px;" onerror="this.style.display='none';">` : ''}
+        ${imageUrl ? `<img src="${imageUrl}" alt="${item.title || item.key}" style="width:100%;height:180px;object-fit:cover;border-radius:14px;margin-bottom:18px;" onerror="this.style.display='none';">` : ''}
         <div class="tag" style="display:inline-flex;margin-bottom:12px;">${item.type}</div>
         <h3>${item.title || item.key}</h3>
         <p>${item.value || 'Published from the admin dashboard.'}</p>
@@ -100,36 +150,40 @@ function renderCmsUpdates() {
   initFade();
 }
 
-// ============================================================
-//  PRODUCT DETAIL PAGE
-// ============================================================
 let dQty = 1;
 
 function detail(id) {
-  const p = P.find(x => x.id === id);
-  if (!p) return;
+  const product = P.find(item => item.id === id);
+  if (!product) return;
+
   dQty = 1;
-  document.getElementById('bc-name').textContent = p.name;
-  const rows = p.nut.map(([n, v]) => `<tr><td>${n}</td><td><strong>${v}</strong></td></tr>`).join('');
+  document.getElementById('bc-name').textContent = product.name;
+
+  const nutritionRows = Array.isArray(product.nut) && product.nut.length
+    ? product.nut.map(([name, value]) => `<tr><td>${name}</td><td><strong>${value}</strong></td></tr>`).join('')
+    : '<tr><td colspan="2"><strong>Nutrition details will be added soon.</strong></td></tr>';
+
   document.getElementById('detail-grid').innerHTML = `
     <div>
       <div style="background:#f0fdf4;border-radius:16px;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:300px;">
-        ${productImg(p, 'detail')}
+        ${productImg(product, 'detail')}
       </div>
       <div class="product-thumbs" style="margin-top:12px;">
         <div class="thumb active" style="background:#f0fdf4;overflow:hidden;display:flex;align-items:center;justify-content:center;">
-          ${p.img ? `<img src="${p.img}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';">` : p.e}
+          ${product.img ? `<img src="${product.img}" style="width:100%;height:100%;object-fit:contain;" onerror="this.style.display='none';">` : product.e}
         </div>
-        <div class="thumb">🌾</div><div class="thumb">✅</div><div class="thumb">🚚</div>
+        <div class="thumb">🌾</div>
+        <div class="thumb">✅</div>
+        <div class="thumb">🚚</div>
       </div>
     </div>
     <div>
-      <div class="prod-cat">${p.cat}</div>
-      <h1 style="font-size:32px;margin-bottom:12px;">${p.name}</h1>
-      <div class="prod-price">₹${p.price} <span>${p.unit}</span></div>
-      <p class="prod-desc">${p.desc}</p>
+      <div class="prod-cat">${product.cat}</div>
+      <h1 style="font-size:32px;margin-bottom:12px;">${product.name}</h1>
+      <div class="prod-price">₹${product.price} <span>${product.unit}</span></div>
+      <p class="prod-desc">${product.desc}</p>
       <h4 style="font-size:15px;margin-bottom:12px;font-weight:700;">Nutrition Information</h4>
-      <table class="nutrition-table"><thead><tr><th>Nutrient</th><th>Amount</th></tr></thead><tbody>${rows}</tbody></table>
+      <table class="nutrition-table"><thead><tr><th>Nutrient</th><th>Amount</th></tr></thead><tbody>${nutritionRows}</tbody></table>
       <div class="qty-selector">
         <label>Quantity:</label>
         <div class="qty-control">
@@ -139,7 +193,7 @@ function detail(id) {
         </div>
       </div>
       <div class="detail-actions">
-        <button class="btn btn-primary" onclick="for(let i=0;i<dQty;i++)addToCart({id:'${p.id}',productId:'${p.productId}',name:'${p.name}',price:${p.price},e:'${p.e}',unit:'${p.unit}'})">🛒 Add to Cart</button>
+        <button class="btn btn-primary" onclick="for(let i=0;i<dQty;i++)addToCart({id:'${product.id}',productId:'${product.productId}',name:'${product.name}',price:${product.price},e:'${product.e}',unit:'${product.unit}'})">🛒 Add to Cart</button>
         <button class="btn btn-outline" onclick="nav('subscription')">📦 Subscribe Daily</button>
       </div>
       <div style="display:flex;gap:20px;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);flex-wrap:wrap;">
@@ -148,16 +202,14 @@ function detail(id) {
         <span style="font-size:13px;color:var(--gray);">🔄 Easy Returns</span>
       </div>
     </div>`;
-  const related = P.filter(x => x.cat === p.cat && x.id !== p.id).slice(0, 4);
+
+  const related = P.filter(item => item.cat === product.cat && item.id !== product.id).slice(0, 4);
   document.getElementById('related-grid').innerHTML = related.map(card).join('');
   nav('detail');
 }
 
-// ============================================================
-//  CART
-// ============================================================
 const getCart = () => DB.get('cart');
-const saveCart = c => DB.set('cart', c);
+const saveCart = cart => DB.set('cart', cart);
 
 function syncCartWithCatalog() {
   const cart = getCart();
@@ -207,66 +259,108 @@ function syncCartWithCatalog() {
 }
 
 function addToCart(item) {
-  const c = getCart(), ex = c.find(i => i.id === item.id);
-  if (ex) ex.qty++; else c.push({ ...item, qty: 1 });
-  saveCart(c); updateCart(); notif(`${item.name} added to cart! ✅`);
+  const cart = getCart();
+  const existing = cart.find(cartItem => cartItem.id === item.id);
+
+  if (existing) existing.qty += 1;
+  else cart.push({ ...item, qty: 1 });
+
+  saveCart(cart);
+  updateCart();
+  notif(`${item.name} added to cart! ✅`);
 }
 
-function removeFromCart(id) { saveCart(getCart().filter(i => i.id !== id)); updateCart(); }
+function removeFromCart(id) {
+  saveCart(getCart().filter(item => item.id !== id));
+  updateCart();
+}
 
-function upQty(id, d) {
-  const c = getCart(), it = c.find(i => i.id === id);
-  if (it) { it.qty = Math.max(1, it.qty + d); saveCart(c); }
+function upQty(id, delta) {
+  const cart = getCart();
+  const item = cart.find(entry => entry.id === id);
+
+  if (item) {
+    item.qty = Math.max(1, item.qty + delta);
+    saveCart(cart);
+  }
+
   updateCart();
 }
 
 function updateCart() {
-  const c = getCart(), tot = c.reduce((s, i) => s + i.qty, 0);
-  const el = document.getElementById('cart-count');
-  el.textContent = tot; el.classList.toggle('show', tot > 0);
+  const cart = getCart();
+  const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
+  const desktopCount = document.getElementById('cart-count');
   const mobileCount = document.getElementById('mobile-cart-count');
-  if (mobileCount) mobileCount.textContent = tot;
+
+  if (desktopCount) {
+    desktopCount.textContent = totalItems;
+    desktopCount.classList.toggle('show', totalItems > 0);
+  }
+
+  if (mobileCount) {
+    mobileCount.textContent = totalItems;
+  }
+
   renderCart();
 }
 
 function renderCart() {
-  const c = getCart(), list = document.getElementById('cart-items-list'), tv = document.getElementById('cart-total-val');
-  if (!c.length) {
+  const cart = getCart();
+  const list = document.getElementById('cart-items-list');
+  const totalValue = document.getElementById('cart-total-val');
+
+  if (!list || !totalValue) return;
+
+  if (!cart.length) {
     list.innerHTML = `<div class="cart-empty"><span>🛒</span><p>Your cart is empty</p><button class="btn btn-primary" style="margin-top:16px;" onclick="nav('products');closeCart()">Shop Now</button></div>`;
-    if (tv) tv.textContent = '₹0'; return;
+    totalValue.textContent = '₹0';
+    return;
   }
-  const sum = c.reduce((s, i) => s + i.price * i.qty, 0);
-  list.innerHTML = c.map(i => `
+
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  list.innerHTML = cart.map(item => `
     <div class="cart-item">
-      <div class="cart-item-img">${i.e}</div>
+      <div class="cart-item-img">${item.e}</div>
       <div class="cart-item-info">
-        <div class="cart-item-name">${i.name}</div>
-        <div class="cart-item-price">₹${i.price}${i.unit}</div>
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-price">₹${item.price}${item.unit}</div>
         <div class="cart-item-qty">
-          <button class="qty-btn" onclick="upQty('${i.id}',-1)">−</button>
-          <span class="qty-val">${i.qty}</span>
-          <button class="qty-btn" onclick="upQty('${i.id}',1)">+</button>
+          <button class="qty-btn" onclick="upQty('${item.id}',-1)">−</button>
+          <span class="qty-val">${item.qty}</span>
+          <button class="qty-btn" onclick="upQty('${item.id}',1)">+</button>
         </div>
       </div>
-      <button class="cart-remove" onclick="removeFromCart('${i.id}')">🗑</button>
+      <button class="cart-remove" onclick="removeFromCart('${item.id}')">🗑</button>
     </div>`).join('');
-  if (tv) tv.textContent = `₹${sum.toFixed(0)}`;
+
+  totalValue.textContent = `₹${subtotal.toFixed(0)}`;
 }
 
-const openCart = () => { document.getElementById('cart-overlay').classList.add('open'); document.getElementById('cart-sidebar').classList.add('open'); document.body.style.overflow = 'hidden'; };
-const closeCart = () => { document.getElementById('cart-overlay').classList.remove('open'); document.getElementById('cart-sidebar').classList.remove('open'); document.body.style.overflow = ''; };
+function openCart() {
+  document.getElementById('cart-overlay').classList.add('open');
+  document.getElementById('cart-sidebar').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
 
-// ============================================================
-//  CHECKOUT PAYMENT MODAL
-// ============================================================
+function closeCart() {
+  document.getElementById('cart-overlay').classList.remove('open');
+  document.getElementById('cart-sidebar').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 function setAreaOptions(selectId, options, placeholder) {
   const select = document.getElementById(selectId);
   if (!select) return;
 
+  const selectedValue = select.value;
   const defaultLabel = placeholder || 'Select Area';
   const defaultOption = `<option value="" disabled selected>${defaultLabel}</option>`;
   select.innerHTML = defaultOption + options.map(option => `<option value="${option.value}">${option.label}</option>`).join('');
-  select.disabled = options.length === 0;
+
+  if (selectedValue && options.some(option => option.value === selectedValue)) {
+    select.value = selectedValue;
+  }
 }
 
 function getSelectedArea(selectId) {
@@ -292,10 +386,10 @@ function getFallbackAreaOptions() {
 
 async function fetchAreas() {
   try {
-    const res = await fetch(`${API_BASE}/areas`);
-    const result = await res.json();
+    const response = await fetch(`${API_BASE}/areas`);
+    const result = await response.json();
 
-    if (!res.ok || !result.success || !Array.isArray(result.data) || !result.data.length) {
+    if (!response.ok || !result.success || !Array.isArray(result.data) || !result.data.length) {
       throw new Error(result.message || 'No active areas available');
     }
 
@@ -307,29 +401,56 @@ async function fetchAreas() {
     setAreaOptions('pay-area', options, 'Select Area');
     setAreaOptions('sub-area', options, 'Select Area');
   } catch (err) {
-    if (IS_LOCAL_DEV) {
-      console.warn('Falling back to static delivery areas:', err.message);
-      const fallbackOptions = getFallbackAreaOptions();
-      setAreaOptions('pay-area', fallbackOptions, 'Select Area');
-      setAreaOptions('sub-area', fallbackOptions, 'Select Area');
-      return;
-    }
-
-    console.error('Failed to load delivery areas:', err.message);
-    setAreaOptions('pay-area', [], 'Areas unavailable right now');
-    setAreaOptions('sub-area', [], 'Areas unavailable right now');
+    console.warn('Falling back to static delivery areas:', err.message);
+    const fallbackOptions = getFallbackAreaOptions();
+    setAreaOptions('pay-area', fallbackOptions, 'Select Area');
+    setAreaOptions('sub-area', fallbackOptions, 'Select Area');
   }
 }
 
+function buildCheckoutAddress() {
+  const addressLine = document.getElementById('pay-address')?.value.trim() || '';
+  const city = document.getElementById('pay-city')?.value.trim() || DEFAULT_CITY;
+  const area = getSelectedArea('pay-area');
+  return [addressLine, area.name || city, area.name ? '' : city].filter(Boolean).join(', ');
+}
+
+function buildSubscriptionAddress() {
+  const addressLine = document.getElementById('sub-address')?.value.trim() || '';
+  const area = getSelectedArea('sub-area');
+  return [addressLine, area.name || DEFAULT_CITY].filter(Boolean).join(', ');
+}
+
 let curPayStep = 1;
-const COD_HANDLING_FEE = 20;
+
+function resetCheckoutState() {
+  curPayStep = 1;
+
+  document.querySelectorAll('.pay-step').forEach((step, index) => {
+    step.classList.remove('active', 'done');
+    if (index === 0) step.classList.add('active');
+  });
+
+  document.querySelectorAll('.pay-panel').forEach(panel => panel.classList.remove('active'));
+  document.getElementById('pay-panel-1').classList.add('active');
+
+  const placeOrderButton = document.getElementById('place-order-btn');
+  if (placeOrderButton) {
+    placeOrderButton.disabled = false;
+    placeOrderButton.textContent = DEFAULT_ORDER_BUTTON_LABEL;
+  }
+}
 
 function openPayModal() {
-  const c = getCart();
-  if (!c.length) { notif('Your cart is empty 🛒'); return; }
+  const cart = getCart();
+  if (!cart.length) {
+    notif('Your cart is empty 🛒');
+    return;
+  }
+
   closeCart();
   renderOrderSummary();
-  goPayStep(1);
+  resetCheckoutState();
   fetchAreas();
   document.getElementById('pay-modal').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -340,67 +461,64 @@ function closePayModal() {
   document.body.style.overflow = '';
 }
 
-function buildCheckoutAddress() {
-  const address = document.getElementById('pay-address')?.value.trim() || '';
-  const city = document.getElementById('pay-city')?.value.trim() || 'Navi Mumbai';
-  const area = getSelectedArea('pay-area');
-  const areaLabel = area.name || city;
-  return `${address}, ${areaLabel}${area.name ? '' : `, ${city}`}`;
-}
-
-function buildSubscriptionAddress() {
-  const address = document.getElementById('sub-address')?.value.trim() || '';
-  const area = getSelectedArea('sub-area');
-  return area.name ? `${address}, ${area.name}` : address;
-}
-
-function goPayStep(n) {
-  if (n === 2) {
-    const fn = document.getElementById('pay-fname').value.trim();
-    const ln = document.getElementById('pay-lname').value.trim();
-    const ph = document.getElementById('pay-phone').value.trim();
-    const ad = document.getElementById('pay-address').value.trim();
+function goPayStep(stepNumber) {
+  if (stepNumber === 2) {
+    const firstName = document.getElementById('pay-fname').value.trim();
+    const lastName = document.getElementById('pay-lname').value.trim();
+    const phone = document.getElementById('pay-phone').value.trim();
+    const address = document.getElementById('pay-address').value.trim();
     const area = getSelectedArea('pay-area');
 
-    if (!fn || !ln || !ph || !ad || !area.value) { notif('Please fill all required fields'); return; }
-    if (!/^[6-9]\d{9}$/.test(ph)) { notif('Enter a valid 10-digit phone number'); return; }
+    if (!firstName || !lastName || !phone || !address || !area.value) {
+      notif('Please fill all required fields ⚠️');
+      return;
+    }
+
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      notif('Enter a valid 10-digit phone number ⚠️');
+      return;
+    }
   }
 
-  if (n === 3) {
+  if (stepNumber === 3) {
     renderReview();
   }
 
-  curPayStep = n;
-  document.querySelectorAll('.pay-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.pay-step').forEach((s, i) => {
-    s.classList.remove('active', 'done');
-    if (i + 1 === n) s.classList.add('active');
-    else if (i + 1 < n) s.classList.add('done');
+  curPayStep = stepNumber;
+  document.querySelectorAll('.pay-panel').forEach(panel => panel.classList.remove('active'));
+  document.querySelectorAll('.pay-step').forEach((step, index) => {
+    step.classList.remove('active', 'done');
+    if (index + 1 === stepNumber) step.classList.add('active');
+    else if (index + 1 < stepNumber) step.classList.add('done');
   });
-  if (n <= 3) document.getElementById('pay-panel-' + n).classList.add('active');
+
+  if (stepNumber <= 3) {
+    document.getElementById(`pay-panel-${stepNumber}`).classList.add('active');
+  }
 }
 
 function renderOrderSummary() {
-  const c = getCart();
-  const sum = c.reduce((s, i) => s + i.price * i.qty, 0);
+  const cart = getCart();
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
   document.getElementById('pay-order-summary').innerHTML =
-    c.map(i => `<div class="order-item-row"><span>${i.e} ${i.name} × ${i.qty}</span><span>₹${(i.price * i.qty).toFixed(0)}</span></div>`).join('') +
+    cart.map(item => `<div class="order-item-row"><span>${item.e} ${item.name} × ${item.qty}</span><span>₹${(item.price * item.qty).toFixed(0)}</span></div>`).join('') +
     `<div class="order-item-row"><span>Delivery</span><span style="color:var(--green)">FREE</span></div>
-     <div class="order-total-row"><span>Total</span><span style="color:var(--green)">₹${sum.toFixed(0)}</span></div>`;
+     <div class="order-total-row"><span>Subtotal</span><span style="color:var(--green)">₹${subtotal.toFixed(0)}</span></div>`;
 }
 
 function renderReview() {
-  const c = getCart();
-  const sum = c.reduce((s, i) => s + i.price * i.qty, 0);
-  const nm = document.getElementById('pay-fname').value + ' ' + document.getElementById('pay-lname').value;
-  const ph = document.getElementById('pay-phone').value;
-  const total = sum + COD_HANDLING_FEE;
+  const cart = getCart();
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const total = subtotal + COD_HANDLING_FEE;
+  const fullName = `${document.getElementById('pay-fname').value.trim()} ${document.getElementById('pay-lname').value.trim()}`.trim();
+  const phone = document.getElementById('pay-phone').value.trim();
 
   document.getElementById('review-content').innerHTML = `
     <div style="background:var(--light-gray);border-radius:12px;padding:16px;margin-bottom:14px;">
       <h4 style="font-size:14px;margin-bottom:8px;">📦 Delivering To</h4>
-      <p style="font-size:14px;font-weight:600;">${nm}</p>
-      <p style="font-size:13px;color:var(--gray);">${ph}</p>
+      <p style="font-size:14px;font-weight:600;">${fullName}</p>
+      <p style="font-size:13px;color:var(--gray);">${phone}</p>
       <p style="font-size:13px;color:var(--gray);">${buildCheckoutAddress()}</p>
     </div>
     <div style="background:var(--green-light);border:1.5px solid var(--green);border-radius:12px;padding:16px;margin-bottom:14px;">
@@ -408,76 +526,84 @@ function renderReview() {
       <p style="font-size:13px;color:var(--green-dark);">Pay ₹${total.toFixed(0)} in cash when your order arrives. (Incl. ₹${COD_HANDLING_FEE} handling fee)</p>
     </div>
     <div>
-      ${c.map(i => `<div class="order-item-row"><span>${i.e} ${i.name} × ${i.qty}</span><span>₹${(i.price * i.qty).toFixed(0)}</span></div>`).join('')}
+      ${cart.map(item => `<div class="order-item-row"><span>${item.e} ${item.name} × ${item.qty}</span><span>₹${(item.price * item.qty).toFixed(0)}</span></div>`).join('')}
       <div class="order-item-row"><span>COD Handling Fee</span><span>₹${COD_HANDLING_FEE}</span></div>
       <div class="order-total-row"><span>Total to Pay (Cash)</span><span style="color:var(--green)">₹${total.toFixed(0)}</span></div>
     </div>`;
 }
 
 async function placeOrder() {
-  const btn = document.getElementById('place-order-btn');
-  const c = getCart();
-  const sum = c.reduce((s, i) => s + i.price * i.qty, 0);
+  const placeOrderButton = document.getElementById('place-order-btn');
+  const cart = getCart();
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const area = getSelectedArea('pay-area');
-  const areaId = /^[a-f\d]{24}$/i.test(area.value) ? area.value : '';
 
-  if (!c.length) { notif('Your cart is empty'); return; }
-  if (!area.value) { notif('Please select a delivery area'); return; }
+  if (!cart.length) {
+    notif('Your cart is empty 🛒');
+    return;
+  }
 
-  btn.disabled = true;
-  btn.textContent = '⏳ Processing...';
+  if (!area.value) {
+    notif('Please select a delivery area ⚠️');
+    return;
+  }
+
+  placeOrderButton.disabled = true;
+  placeOrderButton.textContent = '⏳ Processing...';
 
   const orderData = {
     customer: {
-      name: document.getElementById('pay-fname').value.trim() + ' ' + document.getElementById('pay-lname').value.trim(),
+      name: `${document.getElementById('pay-fname').value.trim()} ${document.getElementById('pay-lname').value.trim()}`.trim(),
       phone: document.getElementById('pay-phone').value.trim(),
       email: document.getElementById('pay-email').value.trim(),
       address: buildCheckoutAddress(),
-      notes: document.getElementById('pay-notes').value
+      notes: document.getElementById('pay-notes').value.trim()
     },
-    area_id: areaId || undefined,
-    items: c.map(i => ({ productId: i.productId || i.id, qty: i.qty })),
-    total: sum + COD_HANDLING_FEE,
+    area_id: isMongoId(area.value) ? area.value : undefined,
+    items: cart.map(item => ({ productId: item.productId || item.id, qty: item.qty })),
+    total: subtotal + COD_HANDLING_FEE,
     paymentMethod: 'cod'
   };
 
   try {
-    const res = await fetch(`${API_BASE}/orders`, {
+    const response = await fetch(`${API_BASE}/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(orderData)
     });
-    const result = await res.json();
+    const result = await response.json().catch(() => ({}));
 
-    btn.disabled = false;
-    btn.textContent = '💵 Confirm & Place Order';
-
-    if (result.success) {
-      document.getElementById('final-order-id').textContent = '#' + result.orderId;
-      document.querySelectorAll('.pay-panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.pay-step').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
-      document.getElementById('pay-panel-success').classList.add('active');
-      saveCart([]);
-      updateCart();
-    } else {
-      notif('❌ ' + (result.message || 'Order failed. Please try again.'));
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Order failed. Please try again.');
     }
+
+    document.getElementById('final-order-id').textContent = `#${result.orderId}`;
+    document.querySelectorAll('.pay-panel').forEach(panel => panel.classList.remove('active'));
+    document.querySelectorAll('.pay-step').forEach(step => {
+      step.classList.remove('active');
+      step.classList.add('done');
+    });
+    document.getElementById('pay-panel-success').classList.add('active');
+    saveCart([]);
+    updateCart();
   } catch (err) {
     console.error(err);
-    btn.disabled = false;
-    btn.textContent = '💵 Confirm & Place Order';
-    notif('❌ Server offline. Please try again.');
+    notif(`❌ ${err.message || 'Server offline. Please try again.'}`);
+  } finally {
+    placeOrderButton.disabled = false;
+    placeOrderButton.textContent = DEFAULT_ORDER_BUTTON_LABEL;
   }
 }
 
-// ============================================================
-//  NOTIFICATION
-// ============================================================
-function notif(msg) { const n = document.getElementById('notification'); n.textContent = msg; n.classList.add('show'); setTimeout(() => n.classList.remove('show'), 3000); }
+function notif(message) {
+  const notification = document.getElementById('notification');
+  if (!notification) return;
 
-// ============================================================
-//  SUBSCRIPTION
-// ============================================================
+  notification.textContent = message;
+  notification.classList.add('show');
+  window.setTimeout(() => notification.classList.remove('show'), 3000);
+}
+
 const DEFAULT_MILK_RATES = { cow: 60, buffalo: 75, organic: 120 };
 const DEFAULT_MILK_META = {
   cow: { name: 'Cow Milk', emoji: '🥛' },
@@ -485,10 +611,10 @@ const DEFAULT_MILK_META = {
   organic: { name: 'Organic Milk', emoji: '🌿' }
 };
 const DAYS = { daily: 30, alternate: 15, weekdays: 22, custom: 30 };
-let sSched = 'daily', subPayMethod = 'cod', subUPIApp = '';
+let sSched = 'daily';
 
 function findMilkProduct(type) {
-  return P.find(p => p.cat === 'milk' && p.name && p.name.toLowerCase().includes(type));
+  return P.find(product => product.cat === 'milk' && product.name && product.name.toLowerCase().includes(type));
 }
 
 function getMilkRate(type) {
@@ -511,165 +637,282 @@ function refreshSubscriptionContent() {
     }
   });
 
-  document.querySelectorAll('[data-plan-type]').forEach(card => {
-    const type = card.dataset.planType;
-    const qty = Number(card.dataset.planQty) || 1;
+  document.querySelectorAll('[data-plan-type]').forEach(cardEl => {
+    const type = cardEl.dataset.planType;
+    const qty = Number(cardEl.dataset.planQty) || 1;
     const product = findMilkProduct(type);
     const name = (product && product.name) || (DEFAULT_MILK_META[type] && DEFAULT_MILK_META[type].name) || 'Milk';
     const monthly = getMilkRate(type) * qty * DAYS.daily;
-    const priceEl = card.querySelector('[data-plan-price]');
-    const descEl = card.querySelector('[data-plan-desc]');
+    const priceEl = cardEl.querySelector('[data-plan-price]');
+    const descEl = cardEl.querySelector('[data-plan-desc]');
 
     if (priceEl) {
       priceEl.innerHTML = `<sup>₹</sup>${monthly.toFixed(0)}<sub>/mo</sub>`;
     }
+
     if (descEl) {
       descEl.textContent = `${name} · ${qty} ${qty === 1 ? 'Litre' : 'Litres'}/day`;
     }
   });
 }
 
-function initSub() {
-  const mt = document.getElementById('milk-type'), mq = document.getElementById('milk-qty');
-  refreshSubscriptionContent(); fetchAreas();
-  if (mt && !mt.dataset.calcBound) {
-    mt.addEventListener('change', calcSub);
-    mt.dataset.calcBound = 'true';
+function setDefaultSubscriptionDate() {
+  const startDateInput = document.getElementById('sub-start');
+  if (!startDateInput) return;
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const minDate = tomorrow.toISOString().split('T')[0];
+  startDateInput.min = minDate;
+  if (!startDateInput.value || startDateInput.value < minDate) {
+    startDateInput.value = minDate;
   }
-  if (mq && !mq.dataset.calcBound) {
-    mq.addEventListener('input', calcSub);
-    mq.dataset.calcBound = 'true';
-  }
-  document.querySelectorAll('.schedule-opt').forEach(o => {
-    if (o.dataset.calcBound) return;
-    o.onclick = () => { document.querySelectorAll('.schedule-opt').forEach(x => x.classList.remove('active')); o.classList.add('active'); sSched = o.dataset.s; calcSub(); };
-    o.dataset.calcBound = 'true';
+}
+
+function setSchedule(schedule) {
+  sSched = schedule;
+  document.querySelectorAll('.schedule-opt').forEach(option => {
+    option.classList.toggle('active', option.dataset.s === schedule);
   });
-  const t = new Date(); t.setDate(t.getDate() + 1);
-  const sd = document.getElementById('sub-start');
-  if (sd) { sd.min = t.toISOString().split('T')[0]; sd.value = sd.min; }
   calcSub();
-  // Payment is always COD — no listener setup needed
+}
+
+function resetSubscriptionForm(form) {
+  if (form) form.reset();
+  setSchedule('daily');
+  setDefaultSubscriptionDate();
+  fetchAreas();
+  calcSub();
+}
+
+function initSub() {
+  const milkType = document.getElementById('milk-type');
+  const milkQty = document.getElementById('milk-qty');
+
+  refreshSubscriptionContent();
+  fetchAreas();
+  setDefaultSubscriptionDate();
+
+  if (milkType && !milkType.dataset.calcBound) {
+    milkType.addEventListener('change', calcSub);
+    milkType.dataset.calcBound = 'true';
+  }
+
+  if (milkQty && !milkQty.dataset.calcBound) {
+    milkQty.addEventListener('input', calcSub);
+    milkQty.dataset.calcBound = 'true';
+  }
+
+  document.querySelectorAll('.schedule-opt').forEach(option => {
+    if (option.dataset.calcBound) return;
+    option.addEventListener('click', () => setSchedule(option.dataset.s));
+    option.dataset.calcBound = 'true';
+  });
+
+  if (!document.querySelector('.schedule-opt.active')) {
+    setSchedule('daily');
+  } else {
+    sSched = document.querySelector('.schedule-opt.active').dataset.s;
+    calcSub();
+  }
 }
 
 function calcSub() {
   const type = document.getElementById('milk-type')?.value || 'cow';
   const qty = parseFloat(document.getElementById('milk-qty')?.value) || 1;
-  const rate = getMilkRate(type), days = DAYS[sSched] || 30, sub = qty * days * rate;
-  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
-  set('s-rate', `₹${rate}/L`); set('s-qty', `${qty} L/day`); set('s-days', `${days} days`);
-  set('s-sub', `₹${sub.toFixed(0)}`); set('s-del', '₹0 (Free)'); set('s-total', `₹${sub.toFixed(0)}`);
+  const rate = getMilkRate(type);
+  const days = DAYS[sSched] || DAYS.daily;
+  const subtotal = qty * days * rate;
+  const setText = (id, value) => {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value;
+  };
+
+  setText('s-rate', `₹${rate}/L`);
+  setText('s-qty', `${qty} L/day`);
+  setText('s-days', `${days} days`);
+  setText('s-sub', `₹${subtotal.toFixed(0)}`);
+  setText('s-del', '₹0 (Free)');
+  setText('s-total', `₹${subtotal.toFixed(0)}`);
 }
 
-document.getElementById('sub-form')?.addEventListener('submit', async e => {
-  e.preventDefault();
-  const nm = document.getElementById('sub-name').value.trim();
-  const ph = document.getElementById('sub-phone').value.trim();
-  const ad = document.getElementById('sub-address').value.trim();
+document.getElementById('sub-form')?.addEventListener('submit', async event => {
+  event.preventDefault();
+
+  const name = document.getElementById('sub-name').value.trim();
+  const phone = document.getElementById('sub-phone').value.trim();
+  const address = document.getElementById('sub-address').value.trim();
   const area = getSelectedArea('sub-area');
-  if (!nm || !ph || !ad) { notif('Please fill all required fields ⚠️'); return; }
-  if (!/^[6-9]\d{9}$/.test(ph)) { notif('Enter a valid 10-digit phone number ⚠️'); return; }
-  if (!area.value) { notif('Please select a delivery area ⚠️'); return; }
+
+  if (!name || !phone || !address || !area.value) {
+    notif('Please fill all required fields ⚠️');
+    return;
+  }
+
+  if (!/^[6-9]\d{9}$/.test(phone)) {
+    notif('Enter a valid 10-digit phone number ⚠️');
+    return;
+  }
+
   calcSub();
+
   const total = document.getElementById('s-total').textContent;
-  const subData = {
-    name: nm, phone: ph, address: buildSubscriptionAddress(),
+  const submitButton = event.target.querySelector('button[type=submit]');
+  const subscriptionData = {
+    name,
+    phone,
+    address: buildSubscriptionAddress(),
+    area_id: isMongoId(area.value) ? area.value : undefined,
     milkType: document.getElementById('milk-type').value,
     qty: document.getElementById('milk-qty').value,
     schedule: sSched,
     startDate: document.getElementById('sub-start').value,
-    notes: document.getElementById('sub-note').value,
-    monthlyTotal: total, paymentMethod: 'cod', status: 'active'
+    notes: document.getElementById('sub-note').value.trim(),
+    monthlyTotal: total,
+    paymentMethod: 'cod',
+    status: 'active'
   };
-  const btn = e.target.querySelector('button[type=submit]');
-  btn.disabled = true; btn.textContent = '⏳ Processing...';
+
+  submitButton.disabled = true;
+  submitButton.textContent = '⏳ Processing...';
+
   try {
-    const res = await fetch(`${API_BASE}/subscriptions`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(subData) });
-    const result = await res.json();
-    if (result.success) {
-      notif(`🎉 Subscription #${result.subscriptionId} confirmed! ${total}/month`);
-      e.target.reset(); subPayMethod = 'cod';
-      calcSub();
-    } else { notif('❌ ' + (result.message || 'Subscription failed.')); }
-  } catch (err) { console.error(err); notif('❌ Server offline. Try again.'); }
-  btn.disabled = false; btn.textContent = '💵 Confirm Subscription';
+    const response = await fetch(`${API_BASE}/subscriptions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(subscriptionData)
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Subscription failed.');
+    }
+
+    notif(`🎉 Subscription #${result.subscriptionId} confirmed! ${total}/month`);
+    resetSubscriptionForm(event.target);
+  } catch (err) {
+    console.error(err);
+    notif(`❌ ${err.message || 'Server offline. Try again.'}`);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = DEFAULT_SUBSCRIPTION_BUTTON_LABEL;
+  }
 });
 
-document.getElementById('contact-form')?.addEventListener('submit', async e => {
-  e.preventDefault();
-  const nm = document.getElementById('c-name').value.trim();
-  const em = document.getElementById('c-email').value.trim();
-  const sj = document.getElementById('c-subject').value;
-  const mg = document.getElementById('c-msg').value.trim();
-  if (!nm || !em || !sj || !mg) { notif('Please fill all required fields ⚠️'); return; }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { notif('Enter a valid email ⚠️'); return; }
+document.getElementById('contact-form')?.addEventListener('submit', async event => {
+  event.preventDefault();
+
+  const name = document.getElementById('c-name').value.trim();
+  const email = document.getElementById('c-email').value.trim();
+  const subject = document.getElementById('c-subject').value;
+  const message = document.getElementById('c-msg').value.trim();
+
+  if (!name || !email || !subject || !message) {
+    notif('Please fill all required fields ⚠️');
+    return;
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    notif('Enter a valid email ⚠️');
+    return;
+  }
+
   try {
-    const res = await fetch(`${API_BASE}/messages`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: nm, email: em, phone: document.getElementById('c-phone')?.value || '', subject: sj, message: mg }) });
-    const result = await res.json();
-    if (result.success) { notif("Message sent! We'll reply soon 💚"); e.target.reset(); }
-    else notif('❌ ' + result.message);
-  } catch { notif('❌ Server offline. Try again.'); }
+    const response = await fetch(`${API_BASE}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email,
+        phone: document.getElementById('c-phone')?.value || '',
+        subject,
+        message
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Message failed to send.');
+    }
+
+    notif("Message sent! We'll reply soon 💚");
+    event.target.reset();
+  } catch (err) {
+    console.error(err);
+    notif(`❌ ${err.message || 'Server offline. Try again.'}`);
+  }
 });
 
-// ============================================================
-//  TESTIMONIAL SLIDER
-// ============================================================
 (function () {
-  const track = document.getElementById('t-track'), dots = document.querySelectorAll('.slider-dot');
+  const track = document.getElementById('t-track');
+  const dots = document.querySelectorAll('.slider-dot');
   if (!track) return;
-  let cur = 0, tot = track.querySelectorAll('.testimonial-slide').length;
-  function go(n) { cur = (n + tot) % tot; track.style.transform = `translateX(-${cur * 100}%)`; dots.forEach((d, i) => d.classList.toggle('active', i === cur)); }
-  dots.forEach(d => d.addEventListener('click', () => go(parseInt(d.dataset.i))));
-  setInterval(() => go(cur + 1), 5000);
+
+  let current = 0;
+  const total = track.querySelectorAll('.testimonial-slide').length;
+
+  function go(nextIndex) {
+    current = (nextIndex + total) % total;
+    track.style.transform = `translateX(-${current * 100}%)`;
+    dots.forEach((dot, index) => dot.classList.toggle('active', index === current));
+  }
+
+  dots.forEach(dot => {
+    dot.addEventListener('click', () => go(parseInt(dot.dataset.i, 10)));
+  });
+
+  window.setInterval(() => go(current + 1), 5000);
 })();
 
-// ============================================================
-//  FADE IN ANIMATION
-// ============================================================
 function initFade() {
-  const obs = new IntersectionObserver((entries) => { entries.forEach((e, i) => { if (e.isIntersecting) { setTimeout(() => e.target.classList.add('visible'), i * 80); obs.unobserve(e.target); } }); }, { threshold: .12 });
-  document.querySelectorAll('.fade-in:not(.visible)').forEach(el => obs.observe(el));
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach((entry, index) => {
+      if (!entry.isIntersecting) return;
+      window.setTimeout(() => entry.target.classList.add('visible'), index * 80);
+      observer.unobserve(entry.target);
+    });
+  }, { threshold: 0.12 });
+
+  document.querySelectorAll('.fade-in:not(.visible)').forEach(element => observer.observe(element));
 }
 
-// ============================================================
-//  DELIVERY AREA CHECKER (Hero Widget)
-// ============================================================
 function checkDeliveryPincode() {
   const input = document.getElementById('hero-pincode');
   const resultBox = document.getElementById('pincode-result');
   if (!input || !resultBox) return;
+
   const pin = input.value.trim();
+
   if (!pin || !/^\d{6}$/.test(pin)) {
     resultBox.className = 'pincode-result error show';
     resultBox.innerHTML = '⚠️ Please enter a valid 6-digit pincode';
     return;
   }
+
   if (isDeliveryAvailable(pin)) {
     const area = getDeliveryAreaName(pin);
     resultBox.className = 'pincode-result success show';
-    resultBox.innerHTML = `✅ Great news! We deliver to <strong>${area}</strong>. Order now!`;
-  } else {
-    resultBox.className = 'pincode-result error show';
-    resultBox.innerHTML = `😔 Sorry, we don't deliver to pincode <strong>${pin}</strong> yet. We currently serve <strong>${DELIVERY_ZONES.businessArea}</strong> only.`;
+    resultBox.innerHTML = `✅ Great news! We deliver to <strong>${area}</strong>.`;
+    return;
   }
+
+  resultBox.className = 'pincode-result error show';
+  resultBox.innerHTML = `😔 Sorry, we do not deliver to pincode <strong>${pin}</strong> yet. We currently serve <strong>${DELIVERY_ZONES.businessArea}</strong>.`;
 }
 
-// ============================================================
-//  NOT SERVICEABLE MODAL
-// ============================================================
 function showNotServiceableModal(pincode) {
   const modal = document.getElementById('not-serviceable-modal');
   if (!modal) return;
-  const areasList = getAllServiceableAreas();
-  const areasHtml = areasList.map(a => 
-    `<div class="ns-area-chip"><span class="ns-pin">${a.pincode}</span> ${a.area}</div>`
+
+  const areasHtml = getAllServiceableAreas().map(area =>
+    `<div class="ns-area-chip"><span class="ns-pin">${area.pincode}</span> ${area.area}</div>`
   ).join('');
-  
+
   document.getElementById('ns-pincode').textContent = pincode;
   document.getElementById('ns-areas-list').innerHTML = areasHtml;
   document.getElementById('ns-business-area').textContent = DELIVERY_ZONES.businessArea;
   document.getElementById('ns-whatsapp-link').href = `https://wa.me/${DELIVERY_ZONES.contactWhatsApp}?text=Hi%20${encodeURIComponent(DELIVERY_ZONES.businessName)},%20I%20want%20delivery%20in%20pincode%20${pincode}.%20When%20will%20you%20start%20delivering%20here?`;
-  
+
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -680,33 +923,74 @@ function closeNotServiceableModal() {
   document.body.style.overflow = '';
 }
 
-// ============================================================
-//  EVENTS
-// ============================================================
-window.addEventListener('scroll', () => document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20));
-document.getElementById('hamburger').addEventListener('click', () => { const m = document.getElementById('mobile-menu'); m.classList.toggle('open'); document.body.style.overflow = m.classList.contains('open') ? 'hidden' : ''; });
-document.getElementById('cart-btn').addEventListener('click', openCart);
-document.getElementById('cart-overlay').addEventListener('click', closeCart);
-document.getElementById('cart-close').addEventListener('click', closeCart);
-document.getElementById('checkout-btn').addEventListener('click', openPayModal);
-document.getElementById('pay-modal').addEventListener('click', function (e) { if (e.target === this) closePayModal(); });
-const nsModal = document.getElementById('not-serviceable-modal');
-if (nsModal) nsModal.addEventListener('click', function (e) { if (e.target === this) closeNotServiceableModal(); });
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar')?.classList.toggle('scrolled', window.scrollY > 20);
+});
 
-// ============================================================
-//  INIT
-// ============================================================
+document.getElementById('hamburger')?.addEventListener('click', () => {
+  const mobileMenu = document.getElementById('mobile-menu');
+  if (!mobileMenu) return;
+
+  mobileMenu.classList.toggle('open');
+  document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
+});
+
+document.getElementById('cart-btn')?.addEventListener('click', openCart);
+document.getElementById('cart-overlay')?.addEventListener('click', closeCart);
+document.getElementById('cart-close')?.addEventListener('click', closeCart);
+document.getElementById('checkout-btn')?.addEventListener('click', openPayModal);
+document.getElementById('pay-modal')?.addEventListener('click', function (event) {
+  if (event.target === this) closePayModal();
+});
+
+document.getElementById('not-serviceable-modal')?.addEventListener('click', function (event) {
+  if (event.target === this) closeNotServiceableModal();
+});
+
+document.getElementById('hero-pincode')?.addEventListener('input', function () {
+  this.value = this.value.replace(/\D/g, '').slice(0, 6);
+});
+
+document.getElementById('hero-pincode')?.addEventListener('keydown', function (event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    checkDeliveryPincode();
+  }
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+
+  const notServiceableModal = document.getElementById('not-serviceable-modal');
+  const payModal = document.getElementById('pay-modal');
+  const cartSidebar = document.getElementById('cart-sidebar');
+
+  if (notServiceableModal?.classList.contains('open')) {
+    closeNotServiceableModal();
+    return;
+  }
+
+  if (payModal?.classList.contains('open')) {
+    closePayModal();
+    return;
+  }
+
+  if (cartSidebar?.classList.contains('open')) {
+    closeCart();
+  }
+});
+
 Promise.all([loadProducts(), loadContent()])
   .then(() => {
-    refreshSubscriptionContent();
     renderCmsUpdates();
     renderGrid('home-grid');
     initTabs('home-tabs', 'home-grid');
     syncCartWithCatalog();
     updateCart();
+    initSub();
     initFade();
   })
-  .catch((err) => {
+  .catch(err => {
     console.error(err);
-    notif('? Failed to load products. Please refresh.');
+    notif('Failed to load products. Please refresh.');
   });

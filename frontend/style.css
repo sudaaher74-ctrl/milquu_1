@@ -1058,6 +1058,22 @@ h4 {
   gap: 12px;
 }
 
+.footer-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.7);
+  transition: var(--transition);
+}
+
+.footer-links a:hover {
+  color: var(--white);
+}
+
 .social-links {
   display: flex;
   gap: 10px;

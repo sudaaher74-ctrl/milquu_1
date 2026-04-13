@@ -16,7 +16,7 @@ const publicSubscriptionLimiter = createRateLimiter({
 
 router.post('/', publicSubscriptionLimiter, async (req, res) => {
     try {
-        const { name, phone, address, milkType, qty, schedule, startDate, notes, monthlyTotal, paymentMethod } = req.body;
+        const { name, phone, address, milkType, qty, schedule, startDate, notes, monthlyTotal, paymentMethod, area_id } = req.body;
         const cleanName = sanitizeText(name);
         const cleanPhone = sanitizeText(phone);
         const cleanAddress = sanitizeText(address);
@@ -24,7 +24,8 @@ router.post('/', publicSubscriptionLimiter, async (req, res) => {
         const cleanSchedule = sanitizeText(schedule).toLowerCase();
         const cleanNotes = sanitizeMultilineText(notes);
         const cleanMonthlyTotal = sanitizeText(monthlyTotal);
-        const cleanPaymentMethod = sanitizeText(paymentMethod || 'upi').toLowerCase();
+        const cleanPaymentMethod = sanitizeText(paymentMethod || 'cod').toLowerCase();
+        const cleanAreaId = typeof area_id === 'string' && /^[a-f\d]{24}$/i.test(area_id) ? area_id : undefined;
 
         if (!cleanName || !cleanPhone || !cleanAddress || !cleanMilkType || !qty || !cleanSchedule) {
             return res.status(400).json({ success: false, message: 'Please fill all required fields.' });
@@ -45,7 +46,8 @@ router.post('/', publicSubscriptionLimiter, async (req, res) => {
             startDate,
             notes: cleanNotes,
             monthlyTotal: cleanMonthlyTotal,
-            paymentMethod: cleanPaymentMethod || 'upi',
+            paymentMethod: cleanPaymentMethod || 'cod',
+            area_id: cleanAreaId,
             status: 'active'
         });
 
@@ -70,6 +72,7 @@ router.get('/', verifyToken, requireRole(...SUBSCRIPTION_ROLES), async (req, res
         const filter = status ? { status } : {};
 
         const subs = await Subscription.find(filter)
+            .populate('area_id', 'name')
             .sort({ createdAt: -1 })
             .skip((safePage - 1) * safeLimit)
             .limit(safeLimit);

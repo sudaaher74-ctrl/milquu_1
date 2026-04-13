@@ -117,7 +117,7 @@ var DELIVERY_ZONES = {
     },
     businessName: 'Milqu Fresh',
     businessArea: 'Navi Mumbai (Panvel side)',
-    contactWhatsApp: '8767067884'
+    contactWhatsApp: '918767067884'
 };
 
 function isDeliveryAvailable(pincode) {

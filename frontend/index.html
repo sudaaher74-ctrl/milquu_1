@@ -5,12 +5,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description"
-    content="Milqu Fresh – Premium farm-fresh milk, vegetables, fruits & dairy products delivered daily to your doorstep.">
+    content="Milqu Fresh – Premium farm-fresh milk, vegetables, fruits &amp; dairy products delivered daily to your doorstep.">
   <meta name="theme-color" content="#2f7a38">
+  <meta name="milqu-api-base" content="">
   <title>Milqu Fresh | Farm-to-Home Delivery</title>
   <link rel="icon" href="images/milquuu-3.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=DM+Sans:wght@300;400;500;600&amp;display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -29,41 +32,30 @@
         </a>
         <div class="nav-links">
           <a href="#" onclick="return nav('home')" class="nl active" data-p="home">Home</a>
-
           <div class="nav-dropdown">
-
-            <a href="#" onclick="return nav('products')">Products</a>
-
+            <a href="#" onclick="return nav('products')" class="nl" data-p="products">Products</a>
             <div class="dropdown-menu">
-
               <a href="#" onclick="return nav('products','milk')" class="dropdown-item">
                 <img src="images/milk-products.png" alt="Milk">
                 <span>Milk</span>
               </a>
-
               <a href="#" onclick="return nav('products','vegetables')" class="dropdown-item">
                 <img src="images/vegitables.png" alt="Vegetables">
                 <span>Vegetables</span>
               </a>
-
               <a href="#" onclick="return nav('products','dairy')" class="dropdown-item">
                 <img src="images/milk-by-products.png" alt="By Products">
                 <span>By-Products</span>
               </a>
-
               <a href="#" onclick="return nav('products','fruits')" class="dropdown-item">
                 <img src="images/fruits.png" alt="Fruits">
                 <span>Fruits</span>
               </a>
-
-
             </div>
-
-
-            <a href="#" onclick="return nav('subscription')" class="nl" data-p="subscription">Subscribe</a>
-            <a href="#" onclick="return nav('about')" class="nl" data-p="about">About</a>
-            <a href="#" onclick="return nav('contact')" class="nl" data-p="contact">Contact</a>
           </div>
+          <a href="#" onclick="return nav('subscription')" class="nl" data-p="subscription">Subscribe</a>
+          <a href="#" onclick="return nav('about')" class="nl" data-p="about">About</a>
+          <a href="#" onclick="return nav('contact')" class="nl" data-p="contact">Contact</a>
           <a href="#" class="btn btn-primary" onclick="return nav('subscription')">Subscribe Now</a>
         </div>
         <div class="nav-actions">
@@ -72,6 +64,7 @@
           <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
         </div>
       </div>
+    </div>
   </nav>
 
   <!-- MOBILE MENU -->
@@ -208,13 +201,13 @@
           </div>
         </div>
 
-        <!-- STEP 3: Review & Confirm -->
+        <!-- STEP 3: Review &amp; Confirm -->
         <div class="pay-panel" id="pay-panel-3">
           <div id="review-content"></div>
           <button class="btn btn-primary"
             style="width:100%;justify-content:center;padding:16px;font-size:16px;margin-top:8px;" onclick="placeOrder()"
             id="place-order-btn">
-            💵 Confirm & Place Order
+            💵 Confirm &amp; Place Order
           </button>
           <button class="btn btn-outline" onclick="goPayStep(2)"
             style="width:100%;justify-content:center;margin-top:10px;">← Back</button>
@@ -246,12 +239,21 @@
         <div class="hero-inner">
           <div class="hero-content">
             <div class="hero-badge"><span class="dot"></span> Free delivery on first order</div>
-            <h1>Fresh Milk, Vegetables & <em>Fruits</em> Delivered Daily To Your Doorstep</h1>
+            <h1>Fresh Milk, Vegetables &amp; <em>Fruits</em> Delivered Daily To Your Doorstep</h1>
             <p>Pure farm-to-home goodness. No middlemen, no preservatives — just fresh organic produce delivered every
               morning.</p>
             <div class="hero-btns">
               <button class="btn btn-primary" onclick="nav('products')">🛍 Order Now</button>
               <button class="btn btn-outline" onclick="nav('subscription')">📦 Subscribe</button>
+            </div>
+            <div class="delivery-checker fade-in">
+              <div class="dc-label">Check delivery availability in your area</div>
+              <div class="dc-input-row">
+                <input type="text" id="hero-pincode" inputmode="numeric" maxlength="6"
+                  placeholder="Enter 6-digit pincode" aria-label="Enter your delivery pincode">
+                <button class="btn btn-primary dc-btn" type="button" onclick="checkDeliveryPincode()">Check</button>
+              </div>
+              <div class="pincode-result" id="pincode-result" aria-live="polite"></div>
             </div>
             <div class="hero-stats">
               <div class="hero-stat"><strong>500+</strong><span>Happy Customers</span></div>
@@ -311,7 +313,7 @@
               <img src="images/milk-products.png" alt="Milk">
             </div>
             <h3>Milk</h3>
-            <p>Cow, Buffalo & Organic</p>
+            <p>Cow, Buffalo &amp; Organic</p>
           </div>
 
           <!-- Vegetables -->
@@ -320,7 +322,7 @@
               <img src="images/vegitables.png" alt="Vegetables">
             </div>
             <h3>Vegetables</h3>
-            <p>Fresh & Farm-picked daily</p>
+            <p>Fresh &amp; Farm-picked daily</p>
           </div>
 
           <!-- Dairy Products -->
@@ -329,7 +331,7 @@
               <img src="images/milk-products.png" alt="Dairy Products">
             </div>
             <h3>Milk By-Products</h3>
-            <p>Ghee, Paneer, Butter & more</p>
+            <p>Ghee, Paneer, Butter &amp; more</p>
           </div>
 
           <!-- Fruits -->
@@ -338,7 +340,7 @@
               <img src="images/fruits.png" alt="Fruits">
             </div>
             <h3>Fruits</h3>
-            <p>Seasonal & tropical varieties</p>
+            <p>Seasonal &amp; tropical varieties</p>
           </div>
 
         </div>
@@ -418,7 +420,7 @@
     <section class="section subscription-section">
       <div class="container">
         <div style="text-align:center;margin-bottom:52px;">
-          <div class="stag">Subscribe & Save</div>
+          <div class="stag">Subscribe &amp; Save</div>
           <h2 style="font-size:clamp(28px,4vw,42px);color:var(--white);margin:14px 0;">Milk Subscription Plans</h2>
           <p style="color:rgba(255,255,255,.7);font-size:17px;max-width:520px;margin:0 auto;">Get fresh milk delivered
             every day. Choose a plan that works for you.</p>
@@ -853,7 +855,7 @@
             <div class="partner-card">
               <span class="big-icon">🐄</span>
               <h4>Green Acres Farm</h4>
-              <p>Pokhari , Parnner · Cow & Organic Milk</p>
+              <p>Pokhari , Parnner · Cow &amp; Organic Milk</p>
             </div>
             <div class="partner-card">
               <span class="big-icon">🌾</span>
@@ -883,9 +885,9 @@
               style="background:rgba(255,255,255,.2);color:var(--white);border:2px solid rgba(255,255,255,.5);"
               onclick="nav('subscription')">📦 Subscribe</button>
           </div>
+        </div>
       </div>
-  </div>
-  </section>
+    </section>
   </div>
 
   <!-- CONTACT PAGE -->
@@ -909,8 +911,8 @@
                 <div class="contact-item-icon">📞</div>
                 <div class="contact-item-text">
                   <h4>Phone</h4>
-                  <p>+91 8767067884</p>
-                  <p>+91 9372594694</p>
+                  <p><a href="tel:+918767067884">+91 87670 67884</a></p>
+                  <p><a href="tel:+919372594694">+91 93725 94694</a></p>
                 </div>
               </div>
               <div class="contact-item">
@@ -925,8 +927,8 @@
                 <div class="contact-item-icon">📍</div>
                 <div class="contact-item-text">
                   <h4>Address</h4>
-                  <p>Gee Cee Aspira </p>
-                  <p>Navi mumbai , Maharashtra – 410206</p>
+                  <p>Gee Cee Aspira</p>
+                  <p>Navi Mumbai, Maharashtra - 410206</p>
                 </div>
               </div>
               <div class="contact-item">
@@ -938,7 +940,7 @@
                 </div>
               </div>
             </div>
-            <a href="https://wa.me/8767067884" target="_blank" class="whatsapp-btn">💬 Chat on WhatsApp</a>
+            <a href="https://wa.me/918767067884" target="_blank" rel="noopener noreferrer" class="whatsapp-btn">💬 Chat on WhatsApp</a>
           </div>
           <div class="contact-form-card fade-in">
             <h3>Send Us a Message</h3>
@@ -984,7 +986,7 @@
         </div>
         <div class="map-container">
           <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3887.2043843505835!2d77.71120287573774!3d13.00516498734897!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae11e23e60b45b%3A0x9dd64ec8ba4f5965!2sWhitefield%2C%20Bengaluru%2C%20Karnataka!5e0!3m2!1sen!2sin!4v1721000000000!5m2!1sen!2sin"
+            src="https://www.google.com/maps?q=Gee%20Cee%20Aspira%20Navi%20Mumbai%20410206&amp;output=embed"
             width="100%" height="360" style="border:0;" allowfullscreen loading="lazy"
             title="Milqu Fresh Location"></iframe>
         </div>
@@ -1027,19 +1029,19 @@
         <div class="footer-col">
           <h4>Contact Us</h4>
           <ul class="footer-contact-list">
-            <li>📞 +91 8767067884</li>
+            <li>📞 <a href="tel:+918767067884">+91 87670 67884</a></li>
             <li>📧 <a href="mailto:hello@milqufresh.in">hello@milqufresh.in</a></li>
-            <li>📍 Navi Mumbai , Maharashtra 410206</li>
+            <li>📍 Navi Mumbai, Maharashtra 410206</li>
             <li>⏰ 5:00 AM – 9:00 PM daily</li>
           </ul>
         </div>
       </div>
       <div class="footer-bottom">
-        <p></p>
+        <p>&copy; Milqu Fresh. All rights reserved.</p>
         <div class="footer-links">
-          <a href="#">Privacy Policy</a>
-          <a href="#">Terms of Service</a>
-          <a href="#">Refund Policy</a>
+          <a href="#" onclick="return nav('about')">Our Story</a>
+          <a href="#" onclick="return nav('contact')">Support</a>
+          <a href="/admin">Admin</a>
         </div>
       </div>
     </div>
@@ -1078,7 +1080,7 @@
       </div>
 
       <div class="ns-actions">
-        <a href="#" class="btn btn-primary ns-wa-btn" id="ns-whatsapp-link" target="_blank">💬 Request My Area</a>
+        <a href="#" class="btn btn-primary ns-wa-btn" id="ns-whatsapp-link" target="_blank" rel="noopener noreferrer">💬 Request My Area</a>
         <button class="btn btn-outline" onclick="closeNotServiceableModal()">← Go Back</button>
       </div>
     </div>
@@ -1087,13 +1089,10 @@
   <script src="js/config.js"></script>
   <script src="js/storefront-data.js"></script>
   <script src="js/storefront-ui.js"></script>
+  <a href="https://wa.me/918767067884?text=Hi%20Milqu%20Fresh,%20I%20want%20to%20order%20milk" class="whatsapp-float"
+    target="_blank" rel="noopener noreferrer" aria-label="Chat with Milqu Fresh on WhatsApp">
+    <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" alt="WhatsApp">
+  </a>
 </body>
 
 </html>
-
-<!-- WhatsApp Button -->
-<a href="https://wa.me/8767067884?text=Hi%20Milqu%20Fresh,%20I%20want%20to%20order%20milk" class="whatsapp-float"
-  target="_blank">
-
-  <img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" alt="WhatsApp">
-</a>
