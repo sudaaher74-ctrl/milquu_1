@@ -255,14 +255,14 @@ async function fetchAreas() {
   try {
     const res = await fetch(`${API_BASE}/areas`);
     const data = await res.json();
-    if(data.success && data.data) {
+    if (data.success && data.data) {
       const opts = '<option value="" disabled selected>Select Area</option>' + data.data.map(a => `<option value="${a._id}">${a.name}</option>`).join('');
       const pArea = document.getElementById('pay-area');
       const sArea = document.getElementById('sub-area');
-      if(pArea) pArea.innerHTML = opts;
-      if(sArea) sArea.innerHTML = opts;
+      if (pArea) pArea.innerHTML = opts;
+      if (sArea) sArea.innerHTML = opts;
     }
-  } catch(e) { console.error('Error fetching areas', e); }
+  } catch (e) { console.error('Error fetching areas', e); }
 }
 let curPayStep = 1, selPayMethod = 'cod', selUPIApp = '';
 
@@ -328,7 +328,7 @@ function renderReview() {
       ${c.map(i => `<div class="order-item-row"><span>${i.e} ${i.name} × ${i.qty}</span><span>₹${(i.price * i.qty).toFixed(0)}</span></div>`).join('')}
       <div class="order-item-row"><span>COD Handling Fee</span><span>₹1</span></div>
       <div class="order-total-row"><span>Total to Pay (Cash)</span><span style="color:var(--green)">₹${total.toFixed(0)}</span></div>
-    </div>`;
+    </div>`
 }
 
 async function placeOrder() {
