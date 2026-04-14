@@ -134,6 +134,18 @@ router.post('/', publicOrderLimiter, async (req, res) => {
         if (!cleanCustomer.name || !cleanCustomer.phone || !cleanCustomer.address) {
             return res.status(400).json({ success: false, message: 'Customer name, phone, and address are required.' });
         }
+        if (cleanCustomer.name.length > 100) {
+            return res.status(400).json({ success: false, message: 'Name must be 100 characters or fewer.' });
+        }
+        if (cleanCustomer.address.length > 500) {
+            return res.status(400).json({ success: false, message: 'Address must be 500 characters or fewer.' });
+        }
+        if (cleanCustomer.notes && cleanCustomer.notes.length > 1000) {
+            return res.status(400).json({ success: false, message: 'Notes must be 1000 characters or fewer.' });
+        }
+        if (cleanCustomer.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanCustomer.email)) {
+            return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
+        }
         if (!/^[6-9]\d{9}$/.test(cleanCustomer.phone)) {
             return res.status(400).json({ success: false, message: 'Enter a valid 10-digit Indian phone number.' });
         }

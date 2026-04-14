@@ -312,7 +312,7 @@ function renderReview() {
   const selArea = document.getElementById('pay-area');
   const areaName = selArea.options[selArea.selectedIndex]?.text || '';
   const ad = `${document.getElementById('pay-address').value}, ${areaName}`;
-  const total = sum + 20; // COD fee
+  const total = sum + 1; // COD fee
   document.getElementById('review-content').innerHTML = `
     <div style="background:var(--light-gray);border-radius:12px;padding:16px;margin-bottom:14px;">
       <h4 style="font-size:14px;margin-bottom:8px;">📦 Delivering To</h4>

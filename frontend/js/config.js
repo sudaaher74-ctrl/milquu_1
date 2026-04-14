@@ -12,7 +12,6 @@
             : (isLocalDev
                 ? 'http://localhost:5000/api'
                 : `${window.location.origin.replace(/\/$/, '')}/api`),
-        ADMIN_AUTH_DISABLED: isLocalDev,
-        ADMIN_LOGIN_EMAIL: isLocalDev ? 'sudaaher74@gmail.com' : ''
+        ADMIN_AUTH_DISABLED: isLocalDev
     };
 })();

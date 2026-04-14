@@ -14,9 +14,8 @@ const SubscriptionSchema = new mongoose.Schema({
   monthlyTotal:   { type: String },
   paymentMethod:  { type: String, enum: ['upi', 'card', 'netbanking', 'cod'], default: 'cod' },
   area_id:        { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: false },
-  status:         { type: String, enum: ['active', 'paused', 'cancelled'], default: 'active' },
-  createdAt:      { type: Date, default: Date.now }
-});
+  status:         { type: String, enum: ['active', 'paused', 'cancelled'], default: 'active' }
+}, { timestamps: true });
 
 SubscriptionSchema.index({ status: 1, createdAt: -1 });
 SubscriptionSchema.index({ phone: 1, createdAt: -1 });

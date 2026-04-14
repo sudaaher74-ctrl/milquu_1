@@ -8,7 +8,6 @@ var dashboardSyncInterval = null;
 var notifInterval = null;
 var adminSetupState = { allowSelfRegister: false, loaded: false };
 var ADMIN_AUTH_DISABLED = !!window.MILQU_CONFIG.ADMIN_AUTH_DISABLED;
-var ADMIN_LOGIN_EMAIL = window.MILQU_CONFIG.ADMIN_LOGIN_EMAIL || '';
 var PUBLIC_ADMIN = { id: 'dashboard-access', name: 'Admin', email: '', role: 'super_admin' };
 var knownOrderIds = [];
 var hasLoadedDashboardData = false;
@@ -67,16 +66,12 @@ function authUploadHeaders() {
 }
 
 function syncLoginEmailInput() {
-    var emailInput = document.getElementById('login-email');
-    if (!emailInput) return;
-    if (!emailInput.value && ADMIN_LOGIN_EMAIL) {
-        emailInput.value = ADMIN_LOGIN_EMAIL;
-    }
+    // No-op: login email should not be auto-filled for security
 }
 
 function getAdminLoginEmail() {
     var emailInput = document.getElementById('login-email');
-    var email = (emailInput && emailInput.value ? emailInput.value : ADMIN_LOGIN_EMAIL || '').trim();
+    var email = (emailInput && emailInput.value ? emailInput.value : '').trim();
     return email.toLowerCase();
 }
 

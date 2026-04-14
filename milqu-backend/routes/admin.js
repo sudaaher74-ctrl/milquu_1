@@ -49,7 +49,13 @@ router.post('/register', authLimiter, async (req, res) => {
         }
 
         const adminCount = await Admin.countDocuments();
-        if (adminCount > 0) {
+        if (adminCount === 0) {
+            // Require a one-time setup token for the first admin account
+            const setupToken = process.env.INITIAL_ADMIN_TOKEN;
+            if (setupToken && req.body.setupToken !== setupToken) {
+                return res.status(403).json({ success: false, message: 'Setup token required to create the first admin account.' });
+            }
+        } else if (adminCount > 0) {
             const header = req.headers.authorization;
             if (!header || !header.startsWith('Bearer ')) {
                 return res.status(401).json({ success: false, message: 'Only super_admin can register new admins.' });
@@ -201,6 +207,9 @@ router.put('/:id', verifyToken, requireRole('super_admin'), async (req, res) => 
 
 router.delete('/:id', verifyToken, requireRole('super_admin'), async (req, res) => {
     try {
+        if (req.params.id === req.admin._id.toString()) {
+            return res.status(400).json({ success: false, message: 'You cannot delete your own account.' });
+        }
         const admin = await Admin.findByIdAndDelete(req.params.id);
         if (!admin) return res.status(404).json({ success: false, message: 'Admin not found.' });
         res.json({ success: true, message: 'Admin deleted successfully.' });

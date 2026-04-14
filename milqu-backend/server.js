@@ -2,8 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
 const path = require('path');
-const { getAllowedCorsOrigins, getRequiredEnv, isAdminAuthDisabled } = require('./config');
+const { getAllowedCorsOrigins, getRequiredEnv, isAdminAuthDisabled, isProduction } = require('./config');
 const { ensureDefaultProducts } = require('./utils/seed-default-products');
 
 const app = express();
@@ -13,6 +15,16 @@ const allowedCorsOrigins = new Set(getAllowedCorsOrigins());
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
+
+// HTTPS redirect in production (behind reverse proxy)
+if (isProduction()) {
+    app.use((req, res, next) => {
+        if (req.get('X-Forwarded-Proto') !== 'https') {
+            return res.redirect(301, `https://${req.get('Host')}${req.url}`);
+        }
+        next();
+    });
+}
 
 app.use(cors({
     origin(origin, callback) {
@@ -24,15 +36,38 @@ app.use(cors({
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use((req, res, next) => {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
-    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    next();
-});
+
+// Security headers via helmet (includes Content-Security-Policy)
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "blob:"],
+            connectSrc: ["'self'"],
+            frameSrc: ["'none'"],
+            objectSrc: ["'none'"],
+            baseUri: ["'self'"],
+            formAction: ["'self'"],
+        }
+    },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginOpenerPolicy: { policy: 'same-origin' },
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    permissionsPolicy: {
+        features: {
+            camera: [],
+            microphone: [],
+            geolocation: []
+        }
+    }
+}));
+
+// Gzip/Brotli compression for all responses
+app.use(compression());
+
 app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: true, limit: '200kb' }));
 
@@ -61,10 +96,14 @@ app.use('/api/customers', require('./routes/customers'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/notifications', require('./routes/notifications'));
 
-app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'ok',
+app.get('/api/health', async (req, res) => {
+    const dbState = mongoose.connection.readyState;
+    const dbStatus = dbState === 1 ? 'connected' : dbState === 2 ? 'connecting' : 'disconnected';
+    const isHealthy = dbState === 1;
+    res.status(isHealthy ? 200 : 503).json({
+        status: isHealthy ? 'ok' : 'degraded',
         service: 'Milqu Fresh API',
+        database: dbStatus,
         timestamp: new Date().toISOString()
     });
 });
@@ -82,6 +121,12 @@ app.get('/admin', (req, res) => {
 });
 
 app.use((req, res) => {
+    // Serve index.html for browser navigation (non-API routes)
+    const isApiRoute = req.originalUrl.startsWith('/api/');
+    const acceptsHtml = req.accepts('html');
+    if (!isApiRoute && acceptsHtml) {
+        return res.status(404).sendFile(path.join(FRONTEND_DIR, 'index.html'));
+    }
     res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found.` });
 });
 
@@ -94,7 +139,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, message: 'Internal server error.' });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     if (allowedCorsOrigins.size === 0) {
         console.warn('CORS_ORIGIN is not set. Cross-origin requests are currently allowed from any origin.');
     }
@@ -104,3 +149,25 @@ app.listen(PORT, () => {
     console.log(`Milqu Fresh backend running on http://localhost:${PORT}`);
     console.log(`Health: http://localhost:${PORT}/api/health`);
 });
+
+// Graceful shutdown
+function gracefulShutdown(signal) {
+    console.log(`${signal} received. Shutting down gracefully...`);
+    server.close(async () => {
+        try {
+            await mongoose.connection.close();
+            console.log('MongoDB connection closed.');
+        } catch (err) {
+            console.error('Error closing MongoDB connection:', err);
+        }
+        process.exit(0);
+    });
+    // Force exit if graceful shutdown takes too long
+    setTimeout(() => {
+        console.error('Forced shutdown after timeout.');
+        process.exit(1);
+    }, 10000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
