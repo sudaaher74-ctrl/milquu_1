@@ -322,11 +322,11 @@ function renderReview() {
     </div>
     <div style="background:var(--green-light);border:1.5px solid var(--green);border-radius:12px;padding:16px;margin-bottom:14px;">
       <h4 style="font-size:14px;margin-bottom:6px;color:var(--green-dark);">💵 Cash on Delivery</h4>
-      <p style="font-size:13px;color:var(--green-dark);">Pay ₹${total.toFixed(0)} in cash when your order arrives. (Incl. ₹20 handling fee)</p>
+      <p style="font-size:13px;color:var(--green-dark);">Pay ₹${total.toFixed(0)} in cash when your order arrives. (Incl. ₹1 handling fee)</p>
     </div>
     <div>
       ${c.map(i => `<div class="order-item-row"><span>${i.e} ${i.name} × ${i.qty}</span><span>₹${(i.price * i.qty).toFixed(0)}</span></div>`).join('')}
-      <div class="order-item-row"><span>COD Handling Fee</span><span>₹20</span></div>
+      <div class="order-item-row"><span>COD Handling Fee</span><span>₹1</span></div>
       <div class="order-total-row"><span>Total to Pay (Cash)</span><span style="color:var(--green)">₹${total.toFixed(0)}</span></div>
     </div>`;
 }
@@ -346,7 +346,7 @@ async function placeOrder() {
       notes: document.getElementById('pay-notes').value
     },
     area_id: selArea.value,
-    items: c, total: sum + 20, paymentMethod: 'cod'
+    items: c, total: sum + 1, paymentMethod: 'cod'
   };
   try {
     const res = await fetch(`${API_BASE}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderData) });

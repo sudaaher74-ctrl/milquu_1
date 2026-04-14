@@ -1,4 +1,4 @@
-const COD_HANDLING_FEE = 20;
+const COD_HANDLING_FEE = 1;
 const DEFAULT_CITY = 'Navi Mumbai';
 const DEFAULT_ORDER_BUTTON_LABEL = '💵 Confirm & Place Order';
 const DEFAULT_SUBSCRIPTION_BUTTON_LABEL = '💵 Confirm Subscription';

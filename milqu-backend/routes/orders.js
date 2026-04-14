@@ -12,7 +12,7 @@ const { sanitizeMultilineText, sanitizeText } = require('../utils/sanitize');
 
 const router = express.Router();
 const ORDER_ACCESS_ROLES = ['super_admin', 'manager', 'delivery_staff'];
-const COD_HANDLING_FEE = 20;
+const COD_HANDLING_FEE = 1;
 const publicOrderLimiter = createRateLimiter({
     namespace: 'orders-post',
     windowMs: 60 * 1000,
