@@ -422,8 +422,8 @@ router.patch('/:orderId/status', verifyToken, requireRole(...ORDER_ACCESS_ROLES)
         const { status } = req.body;
         const nextStatus = sanitizeText(status).toLowerCase();
         const allowed = isDeliveryStaff(req.admin)
-            ? ['out_for_delivery', 'delivered', 'cancelled']
-            : ['pending', 'confirmed', 'out_for_delivery', 'delivered', 'cancelled'];
+            ? ['out_for_delivery', 'delivered', 'failed', 'cancelled']
+            : ['pending', 'confirmed', 'assigned', 'out_for_delivery', 'delivered', 'failed', 'cancelled'];
         if (!allowed.includes(nextStatus)) {
             return res.status(400).json({ success: false, message: 'Invalid status value.' });
         }
@@ -503,7 +503,7 @@ router.get('/delivery-boy/:id', verifyToken, requireRole(...ORDER_ACCESS_ROLES),
 router.patch('/:orderId/delivery-status', verifyToken, requireRole(...ORDER_ACCESS_ROLES), upload.single('photo_proof'), async (req, res) => {
     try {
         const nextStatus = sanitizeText(req.body.status).toLowerCase();
-        const allowed = ['out_for_delivery', 'delivered', 'cancelled'];
+        const allowed = ['out_for_delivery', 'delivered', 'failed', 'cancelled'];
         if (!allowed.includes(nextStatus)) {
             return res.status(400).json({ success: false, message: 'Invalid status value.' });
         }
@@ -550,6 +550,117 @@ router.patch('/:orderId/delivery-status', verifyToken, requireRole(...ORDER_ACCE
             return res.status(404).json({ success: false, message: 'Order not found.' });
         }
         res.json({ success: true, message: 'Delivery status updated.', order });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ── Delivery Stats Summary
+router.get('/stats/delivery', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res) => {
+    try {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayFilter = { createdAt: { $gte: todayStart } };
+
+        const deliveredToday = await Order.countDocuments({ ...todayFilter, status: 'delivered' });
+        const inProgress = await Order.countDocuments({ status: { $in: ['assigned', 'out_for_delivery'] } });
+        const failed = await Order.countDocuments({ ...todayFilter, status: 'failed' });
+        const pending = await Order.countDocuments({ status: { $in: ['pending', 'confirmed'] } });
+
+        // Orders by area
+        const byArea = await Order.aggregate([
+            { $match: { ...todayFilter } },
+            { $group: { _id: '$area_id', count: { $sum: 1 } } }
+        ]);
+
+        // COD stats
+        const codOrders = await Order.countDocuments({ ...todayFilter, paymentMethod: 'cod' });
+        const codCollected = await Order.aggregate([
+            { $match: { ...todayFilter, paymentMethod: 'cod', status: 'delivered' } },
+            { $group: { _id: null, total: { $sum: '$total' } } }
+        ]);
+        const codPending = await Order.aggregate([
+            { $match: { ...todayFilter, paymentMethod: 'cod', status: { $ne: 'delivered' } } },
+            { $group: { _id: null, total: { $sum: '$total' } } }
+        ]);
+
+        res.json({
+            success: true,
+            deliveredToday,
+            inProgress,
+            failed,
+            pending,
+            byArea,
+            cod: {
+                orders: codOrders,
+                collected: codCollected[0]?.total || 0,
+                pending: codPending[0]?.total || 0
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ── Assign delivery boy to order
+router.patch('/:orderId/assign', verifyToken, requireRole('super_admin', 'manager'), async (req, res) => {
+    try {
+        const { delivery_boy_id } = req.body;
+        if (!delivery_boy_id) {
+            return res.status(400).json({ success: false, message: 'delivery_boy_id is required.' });
+        }
+
+        const deliveryBoy = await Admin.findOne({ _id: delivery_boy_id, role: 'delivery_staff' });
+        if (!deliveryBoy) {
+            return res.status(404).json({ success: false, message: 'Delivery boy not found.' });
+        }
+
+        const order = await Order.findOneAndUpdate(
+            { orderId: req.params.orderId },
+            { assigned_delivery_boy_id: delivery_boy_id, status: 'assigned' },
+            { new: true }
+        ).populate('area_id assigned_delivery_boy_id');
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found.' });
+        }
+
+        res.json({ success: true, message: `Order assigned to ${deliveryBoy.name}.`, order });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ── Bulk assign orders by area
+router.post('/bulk-assign', verifyToken, requireRole('super_admin', 'manager'), async (req, res) => {
+    try {
+        const unassigned = await Order.find({
+            status: { $in: ['pending', 'confirmed'] },
+            assigned_delivery_boy_id: null
+        }).populate('area_id');
+
+        if (unassigned.length === 0) {
+            return res.json({ success: true, assigned: 0, message: 'No unassigned orders found.' });
+        }
+
+        let assigned = 0;
+        for (const order of unassigned) {
+            let deliveryBoy = null;
+            if (order.area_id) {
+                deliveryBoy = await Admin.findOne({ role: 'delivery_staff', assigned_area: order.area_id._id || order.area_id });
+            }
+            if (!deliveryBoy) {
+                deliveryBoy = await Admin.findOne({ role: 'delivery_staff' });
+            }
+            if (deliveryBoy) {
+                order.assigned_delivery_boy_id = deliveryBoy._id;
+                order.status = 'assigned';
+                await order.save();
+                assigned++;
+            }
+        }
+
+        res.json({ success: true, assigned, total: unassigned.length, message: `Assigned ${assigned} orders.` });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }

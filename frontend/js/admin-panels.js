@@ -140,9 +140,12 @@ function renderOrdersPage() {
     const start = ordPage * PER_PAGE, end = start + PER_PAGE, page = filteredOrders.slice(start, end);
     const dbList = (typeof deliveryBoys !== 'undefined') ? deliveryBoys : [];
     document.getElementById('orders-body').innerHTML = page.map(o => {
-        const assignedDB = o.assignedDeliveryBoy || '';
-        const dbOptions = dbList.map(d => `<option value="${d.id}" ${assignedDB === d.id ? 'selected' : ''}>${d.name}</option>`).join('');
-        const deliveryStatus = o.deliveryStatus || o.status;
+        // Get the assigned delivery boy ID (may be populated object or string)
+        let assignedDBId = '';
+        if (o.assigned_delivery_boy_id) {
+            assignedDBId = typeof o.assigned_delivery_boy_id === 'object' ? (o.assigned_delivery_boy_id._id || '') : o.assigned_delivery_boy_id;
+        }
+        const dbOptions = dbList.map(d => `<option value="${d.id}" ${String(assignedDBId) === String(d.id) ? 'selected' : ''}>${d.name} (${d.area || ''})</option>`).join('');
         return `
     <tr>
       <td><input type="checkbox" class="order-checkbox" value="${o.orderId}"></td>

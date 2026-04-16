@@ -18,31 +18,45 @@ async function seedAreas() {
         await Admin.deleteMany({ role: 'delivery_staff' });
         console.log('Cleared existing areas and delivery boys.');
 
-        // 1. Create Area models
+        // 1. Create Area models — All Navi Mumbai areas
         const areaData = [
-            { name: 'Kharghar', pincodes: ['410210'] },
-            { name: 'New Panvel', pincodes: ['410206'] },
-            { name: 'Kamothe', pincodes: ['410209'] },
-            { name: 'Karanjade', pincodes: ['410206'] } // Panvel pincode
+            { name: 'New Panvel',  pincodes: ['410206'] },
+            { name: 'Old Panvel',  pincodes: ['410206'] },
+            { name: 'Kamothe',     pincodes: ['410209'] },
+            { name: 'Karanjade',   pincodes: ['410206'] },
+            { name: 'Kharghar',    pincodes: ['410210'] },
+            { name: 'Belapur',     pincodes: ['400614'] },
         ];
 
         const insertedAreas = await Area.insertMany(areaData);
-        console.log('Inserted 4 areas successfully!');
+        console.log(`Inserted ${insertedAreas.length} Navi Mumbai areas successfully!`);
 
         // 2. Hire Delivery boys for each area
         const deliveryStaffPassword = getRequiredEnv('DELIVERY_STAFF_PASSWORD');
+        const staffNames = [
+            'Rajesh Kumar',
+            'Amit Singh',
+            'Vikram Patel',
+            'Suresh Yadav',
+            'Pradeep Verma',
+            'Manoj Sharma'
+        ];
+
         const adminsData = insertedAreas.map((area, idx) => ({
-            name: `${area.name} Delivery Boy`,
+            name: staffNames[idx] || `${area.name} Delivery Boy`,
             email: `delivery${idx + 1}@milqu.com`,
             password: deliveryStaffPassword,
             role: 'delivery_staff',
+            phone: `98765432${10 + idx}`,
             assigned_area: area._id
         }));
 
         const insertedAdmins = await Admin.insertMany(adminsData);
-        console.log('Inserted 4 delivery boys assigned to the areas successfully!');
+        console.log(`Inserted ${insertedAdmins.length} delivery boys assigned to areas:`);
+        insertedAdmins.forEach((a, i) => {
+            console.log(`  ${a.name} → ${insertedAreas[i].name} (${insertedAreas[i].pincodes.join(', ')})`);
+        });
 
-        // 3. Update the seed-demo-orders.js dynamically by passing one of the area_ids
         process.exit(0);
     } catch (err) {
         console.error('Failed to seed areas:', err.message);

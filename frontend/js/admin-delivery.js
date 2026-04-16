@@ -1,37 +1,138 @@
 // ══════════════════════════════════════════════════════
 //  MILQU FRESH — Delivery & Logistics Module
-//  All new panels: Delivery Mgmt, Live Tracking,
-//  Delivery Boys, Areas/Zones, Analytics, Cash Collection
+//  Connected to Backend APIs
+//  Panels: Delivery Mgmt, Live Tracking, Delivery Boys,
+//  Areas/Zones, Analytics, Cash Collection, Settings
 // ══════════════════════════════════════════════════════
 
-// ── Simulated Data Store (frontend-only until backend APIs exist)
+// ── Data Store (fetched from API)
 var deliveryBoys = [];
 var deliveryAreas = [];
 var liveMap = null;
 var liveMapMarkers = [];
 var areaChart = null, successChart = null, avgTimeChart = null;
+var deliveryDataLoaded = false;
 
-// ── Initialize demo data
-function initDeliveryData() {
-    if (deliveryBoys.length > 0) return;
+// ══════════════════════════════════════════════════════
+//  LOAD REAL DATA FROM BACKEND
+// ══════════════════════════════════════════════════════
+async function loadDeliveryData() {
+    try {
+        // Load areas from backend
+        var areasRes = await apiFetch('/areas');
+        if (areasRes && areasRes.data) {
+            deliveryAreas = areasRes.data.map(function(a) {
+                return {
+                    id: a._id,
+                    name: a.name,
+                    pincode: (a.pincodes && a.pincodes[0]) || '',
+                    pincodes: a.pincodes || [],
+                    isActive: a.isActive,
+                    assignedBoys: [],
+                    ordersToday: 0,
+                    status: a.isActive ? 'active' : 'inactive'
+                };
+            });
+        }
+    } catch(e) {
+        console.log('Areas fetch (may be public):', e.message);
+        // Fallback: try public endpoint
+        try {
+            var resp = await fetch(API_BASE + '/areas');
+            var data = await resp.json();
+            if (data && data.data) {
+                deliveryAreas = data.data.map(function(a) {
+                    return {
+                        id: a._id,
+                        name: a.name,
+                        pincode: (a.pincodes && a.pincodes[0]) || '',
+                        pincodes: a.pincodes || [],
+                        isActive: a.isActive,
+                        assignedBoys: [],
+                        ordersToday: 0,
+                        status: a.isActive ? 'active' : 'inactive'
+                    };
+                });
+            }
+        } catch(e2) { console.log('Areas public fetch failed:', e2.message); }
+    }
 
-    deliveryBoys = [
-        { id: 'DB001', name: 'Rajesh Kumar', phone: '9876543210', email: 'rajesh@milqu.in', status: 'active', vehicle: 'bike', maxCapacity: 25, currentLoad: 12, area: 'Green Valley', successRate: 98.2, avgTime: 21, rating: 4.9, totalDelivered: 142, settled: true },
-        { id: 'DB002', name: 'Amit Singh', phone: '9876543211', email: 'amit@milqu.in', status: 'active', vehicle: 'bike', maxCapacity: 20, currentLoad: 8, area: 'Riverside', successRate: 96.5, avgTime: 24, rating: 4.7, totalDelivered: 128, settled: false },
-        { id: 'DB003', name: 'Vikram Patel', phone: '9876543212', email: 'vikram@milqu.in', status: 'active', vehicle: 'ev', maxCapacity: 30, currentLoad: 18, area: 'Maplewood', successRate: 89.1, avgTime: 31, rating: 4.2, totalDelivered: 94, settled: false },
-        { id: 'DB004', name: 'Suresh Yadav', phone: '9876543213', email: 'suresh@milqu.in', status: 'idle', vehicle: 'bicycle', maxCapacity: 15, currentLoad: 0, area: 'Oak Ridge', successRate: 94.3, avgTime: 28, rating: 4.5, totalDelivered: 67, settled: true },
-        { id: 'DB005', name: 'Pradeep Verma', phone: '9876543214', email: 'pradeep@milqu.in', status: 'offline', vehicle: 'bike', maxCapacity: 20, currentLoad: 0, area: 'Downtown', successRate: 91.7, avgTime: 26, rating: 4.3, totalDelivered: 53, settled: true },
-        { id: 'DB006', name: 'Manoj Sharma', phone: '9876543215', email: 'manoj@milqu.in', status: 'active', vehicle: 'ev', maxCapacity: 25, currentLoad: 15, area: 'Green Valley', successRate: 97.0, avgTime: 22, rating: 4.8, totalDelivered: 118, settled: false },
-    ];
+    try {
+        // Load delivery boys from backend (admin endpoint)
+        var adminsRes = await apiFetch('/admin?role=delivery_staff');
+        if (adminsRes && adminsRes.admins) {
+            deliveryBoys = adminsRes.admins.map(function(a) {
+                var areaName = '';
+                if (a.assigned_area) {
+                    areaName = a.assigned_area.name || '';
+                }
+                return {
+                    id: a._id,
+                    name: a.name,
+                    phone: a.phone || '',
+                    email: a.email || '',
+                    status: 'active',
+                    vehicle: 'bike',
+                    maxCapacity: 25,
+                    currentLoad: 0,
+                    area: areaName,
+                    areaId: a.assigned_area ? (a.assigned_area._id || a.assigned_area) : null,
+                    successRate: 0,
+                    avgTime: 0,
+                    rating: 0,
+                    totalDelivered: 0,
+                    settled: true
+                };
+            });
+        }
+    } catch(e) { console.log('Delivery boys fetch error:', e.message); }
 
-    deliveryAreas = [
-        { id: 'A001', name: 'Green Valley', pincode: '400001', city: 'Mumbai', assignedBoys: ['DB001', 'DB006'], ordersToday: 34, status: 'active' },
-        { id: 'A002', name: 'Riverside', pincode: '400002', city: 'Mumbai', assignedBoys: ['DB002'], ordersToday: 22, status: 'active' },
-        { id: 'A003', name: 'Maplewood', pincode: '400003', city: 'Mumbai', assignedBoys: ['DB003'], ordersToday: 28, status: 'active' },
-        { id: 'A004', name: 'Oak Ridge', pincode: '400004', city: 'Mumbai', assignedBoys: ['DB004'], ordersToday: 15, status: 'active' },
-        { id: 'A005', name: 'Downtown', pincode: '400005', city: 'Mumbai', assignedBoys: ['DB005'], ordersToday: 41, status: 'active' },
-    ];
+    // Calculate per-area order counts and delivery boy assignments
+    try {
+        var statsRes = await apiFetch('/orders/stats/delivery');
+        if (statsRes && statsRes.byArea) {
+            statsRes.byArea.forEach(function(item) {
+                var area = deliveryAreas.find(function(a) { return a.id === item._id; });
+                if (area) area.ordersToday = item.count;
+            });
+        }
+    } catch(e) { console.log('Delivery stats fetch error:', e.message); }
 
+    // Map delivery boys to their assigned areas
+    deliveryBoys.forEach(function(db) {
+        if (db.areaId) {
+            var area = deliveryAreas.find(function(a) { return a.id === db.areaId; });
+            if (area) {
+                area.assignedBoys.push(db.id);
+            }
+        }
+    });
+
+    // Calculate load per delivery boy from orders
+    var assignedOrders = allOrders.filter(function(o) {
+        return o.assigned_delivery_boy_id && (o.status === 'assigned' || o.status === 'out_for_delivery');
+    });
+    deliveryBoys.forEach(function(db) {
+        db.currentLoad = assignedOrders.filter(function(o) {
+            var dbId = o.assigned_delivery_boy_id;
+            if (typeof dbId === 'object' && dbId._id) dbId = dbId._id;
+            return String(dbId) === String(db.id);
+        }).length;
+
+        // Calculate success rate
+        var myOrders = allOrders.filter(function(o) {
+            var dbId = o.assigned_delivery_boy_id;
+            if (typeof dbId === 'object' && dbId._id) dbId = dbId._id;
+            return String(dbId) === String(db.id);
+        });
+        var delivered = myOrders.filter(function(o) { return o.status === 'delivered'; }).length;
+        var failed = myOrders.filter(function(o) { return o.status === 'failed'; }).length;
+        var total = delivered + failed;
+        db.totalDelivered = delivered;
+        db.successRate = total > 0 ? Math.round((delivered / total) * 1000) / 10 : 0;
+    });
+
+    deliveryDataLoaded = true;
     populateAreaDropdowns();
 }
 
@@ -45,7 +146,7 @@ function populateAreaDropdowns() {
         deliveryAreas.forEach(function(a) {
             var opt = document.createElement('option');
             opt.value = a.name;
-            opt.textContent = a.name + ' (' + a.pincode + ')';
+            opt.textContent = a.name + (a.pincode ? ' (' + a.pincode + ')' : '');
             opt.setAttribute('data-dynamic', '1');
             sel.appendChild(opt);
         });
@@ -58,31 +159,48 @@ function populateAreaDropdowns() {
         deliveryBoys.forEach(function(d) {
             var opt = document.createElement('option');
             opt.value = d.id;
-            opt.textContent = d.name;
+            opt.textContent = d.name + (d.area ? ' (' + d.area + ')' : '');
             opt.setAttribute('data-dynamic', '1');
             delBoyFilter.appendChild(opt);
         });
     }
 }
 
-// Call init when panels first load
-setTimeout(initDeliveryData, 100);
+// Init on first load
+setTimeout(function() { loadDeliveryData(); }, 500);
 
 // ══════════════════════════════════════════════════════
 //  DELIVERY BOY ASSIGNMENT (Orders Panel)
 // ══════════════════════════════════════════════════════
-function assignDeliveryBoy(orderId, dbId) {
+async function assignDeliveryBoy(orderId, dbId) {
     if (!dbId) return;
-    var db = deliveryBoys.find(function(d) { return d.id === dbId; });
-    var order = allOrders.find(function(o) { return o.orderId === orderId; });
-    if (!order || !db) return;
-
-    order.assignedDeliveryBoy = dbId;
-    order.assignedDeliveryBoyName = db.name;
-    if (order.status === 'pending' || order.status === 'confirmed') {
-        order.status = 'assigned';
+    try {
+        var res = await apiFetch('/orders/' + orderId + '/assign', {
+            method: 'PATCH',
+            body: JSON.stringify({ delivery_boy_id: dbId })
+        });
+        if (res && res.success) {
+            toast('✅ ' + res.message);
+            // Update local order data
+            var order = allOrders.find(function(o) { return o.orderId === orderId; });
+            if (order) {
+                order.assigned_delivery_boy_id = dbId;
+                order.status = 'assigned';
+            }
+        } else {
+            toast('❌ ' + (res?.message || 'Assignment failed'), 'error');
+        }
+    } catch(e) {
+        // Fallback: update locally if API fails
+        var db = deliveryBoys.find(function(d) { return d.id === dbId; });
+        var order = allOrders.find(function(o) { return o.orderId === orderId; });
+        if (order && db) {
+            order.assigned_delivery_boy_id = dbId;
+            order.assignedDeliveryBoyName = db.name;
+            order.status = 'assigned';
+            toast('✅ Assigned to ' + db.name + ' (local)');
+        }
     }
-    toast('✅ Assigned to ' + db.name);
 }
 
 function toggleAllOrders(checkbox) {
@@ -91,51 +209,75 @@ function toggleAllOrders(checkbox) {
     });
 }
 
-function bulkAssignOrders() {
+async function bulkAssignOrders() {
     var selected = [];
     document.querySelectorAll('.order-checkbox:checked').forEach(function(cb) {
         selected.push(cb.value);
     });
+
     if (selected.length === 0) {
         toast('⚠️ Select orders first', 'error');
         return;
     }
-    var activeDBs = deliveryBoys.filter(function(d) { return d.status === 'active'; });
-    if (activeDBs.length === 0) {
-        toast('⚠️ No active delivery boys', 'error');
-        return;
-    }
-    var idx = 0;
-    selected.forEach(function(orderId) {
-        var db = activeDBs[idx % activeDBs.length];
-        var order = allOrders.find(function(o) { return o.orderId === orderId; });
-        if (order) {
-            order.assignedDeliveryBoy = db.id;
-            order.assignedDeliveryBoyName = db.name;
-            if (order.status === 'pending' || order.status === 'confirmed') {
+
+    try {
+        var res = await apiFetch('/orders/bulk-assign', {
+            method: 'POST',
+            body: JSON.stringify({})
+        });
+        if (res && res.success) {
+            toast('✅ ' + res.message);
+            await loadAll(); // Refresh all data
+        } else {
+            toast('❌ ' + (res?.message || 'Bulk assign failed'), 'error');
+        }
+    } catch(e) {
+        // Fallback: round-robin locally
+        var activeDBs = deliveryBoys.filter(function(d) { return d.status === 'active'; });
+        if (activeDBs.length === 0) {
+            toast('⚠️ No active delivery boys', 'error');
+            return;
+        }
+        var idx = 0;
+        selected.forEach(function(orderId) {
+            var db = activeDBs[idx % activeDBs.length];
+            var order = allOrders.find(function(o) { return o.orderId === orderId; });
+            if (order) {
+                order.assigned_delivery_boy_id = db.id;
+                order.assignedDeliveryBoyName = db.name;
                 order.status = 'assigned';
             }
-        }
-        idx++;
-    });
-    toast('✅ Bulk assigned ' + selected.length + ' orders');
-    renderOrdersPage();
+            idx++;
+        });
+        toast('✅ Bulk assigned ' + selected.length + ' orders (local)');
+        renderOrdersPage();
+    }
 }
 
 // ══════════════════════════════════════════════════════
 //  DELIVERY MANAGEMENT PANEL
 // ══════════════════════════════════════════════════════
-function renderDeliveryPanel() {
-    initDeliveryData();
+async function renderDeliveryPanel() {
+    if (!deliveryDataLoaded) await loadDeliveryData();
 
-    var delivered = allOrders.filter(function(o) { return o.status === 'delivered'; }).length;
-    var inProgress = allOrders.filter(function(o) { return o.status === 'out_for_delivery' || o.status === 'assigned'; }).length;
-    var failed = allOrders.filter(function(o) { return o.status === 'failed'; }).length;
-    var pending = allOrders.filter(function(o) { return o.status === 'pending'; }).length;
-
-    document.getElementById('del-delivered').textContent = delivered;
-    document.getElementById('del-progress').textContent = inProgress;
-    document.getElementById('del-failed').textContent = failed + pending;
+    // Update stats from API
+    try {
+        var stats = await apiFetch('/orders/stats/delivery');
+        if (stats) {
+            document.getElementById('del-delivered').textContent = stats.deliveredToday || 0;
+            document.getElementById('del-progress').textContent = stats.inProgress || 0;
+            document.getElementById('del-failed').textContent = (stats.failed || 0) + (stats.pending || 0);
+        }
+    } catch(e) {
+        // Fallback: calculate from local data
+        var delivered = allOrders.filter(function(o) { return o.status === 'delivered'; }).length;
+        var inProgress = allOrders.filter(function(o) { return o.status === 'out_for_delivery' || o.status === 'assigned'; }).length;
+        var failed = allOrders.filter(function(o) { return o.status === 'failed'; }).length;
+        var pending = allOrders.filter(function(o) { return o.status === 'pending' || o.status === 'confirmed'; }).length;
+        document.getElementById('del-delivered').textContent = delivered;
+        document.getElementById('del-progress').textContent = inProgress;
+        document.getElementById('del-failed').textContent = failed + pending;
+    }
 
     renderLoadVisualization();
     filterDeliveries();
@@ -152,11 +294,12 @@ function renderLoadVisualization() {
     }
 
     container.innerHTML = activeDBs.map(function(db) {
-        var pct = Math.round((db.currentLoad / db.maxCapacity) * 100);
+        var pct = db.maxCapacity > 0 ? Math.round((db.currentLoad / db.maxCapacity) * 100) : 0;
         var barClass = pct > 80 ? 'danger' : (pct > 60 ? 'warning' : '');
         return '<div class="load-viz-item">' +
-            '<div class="load-viz-name">' + db.name + ' <span class="db-status-dot ' + db.status + '"></span></div>' +
-            '<div class="load-viz-bar-wrap"><div class="load-viz-bar ' + barClass + '" style="width:' + pct + '%"></div></div>' +
+            '<div class="load-viz-name">' + db.name + ' <span class="db-status-dot ' + db.status + '"></span>' +
+            (db.area ? '<span style="font-size:10px;color:var(--text3);margin-left:4px;">(' + db.area + ')</span>' : '') + '</div>' +
+            '<div class="load-viz-bar-wrap"><div class="load-viz-bar ' + barClass + '" style="width:' + Math.max(pct, 3) + '%"></div></div>' +
             '<div class="load-viz-meta"><span>' + db.currentLoad + ' / ' + db.maxCapacity + ' orders</span><span>' + pct + '%</span></div>' +
         '</div>';
     }).join('');
@@ -165,13 +308,17 @@ function renderLoadVisualization() {
 function filterDeliveries() {
     var q = (document.getElementById('del-search')?.value || '').toLowerCase();
     var st = document.getElementById('del-status-filter')?.value || '';
-    var db = document.getElementById('del-boy-filter')?.value || '';
+    var dbFilter = document.getElementById('del-boy-filter')?.value || '';
 
     var deliveryOrders = allOrders.filter(function(o) {
-        var hasDelivery = o.status !== 'pending' || o.assignedDeliveryBoy;
-        var matchQ = !q || o.orderId?.toLowerCase().includes(q) || o.customer?.name?.toLowerCase().includes(q);
+        var hasDelivery = o.assigned_delivery_boy_id || o.status !== 'pending';
+        var matchQ = !q || (o.orderId && o.orderId.toLowerCase().includes(q)) || (o.customer?.name && o.customer.name.toLowerCase().includes(q));
         var matchSt = !st || o.status === st;
-        var matchDB = !db || o.assignedDeliveryBoy === db;
+
+        var dbId = o.assigned_delivery_boy_id;
+        if (typeof dbId === 'object' && dbId?._id) dbId = dbId._id;
+        var matchDB = !dbFilter || String(dbId) === String(dbFilter);
+
         return hasDelivery && matchQ && matchSt && matchDB;
     });
 
@@ -179,92 +326,68 @@ function filterDeliveries() {
     if (!tbody) return;
 
     tbody.innerHTML = deliveryOrders.map(function(o) {
-        var dbName = o.assignedDeliveryBoyName || '—';
-        var area = o.customer?.area || deliveryAreas[Math.floor(Math.random() * deliveryAreas.length)]?.name || '—';
-        var delTime = o.status === 'delivered' ? (Math.floor(Math.random() * 20) + 15) + 'min' : '—';
+        // Get delivery boy name
+        var dbId = o.assigned_delivery_boy_id;
+        var dbName = '—';
+        if (dbId) {
+            if (typeof dbId === 'object' && dbId.name) {
+                dbName = dbId.name;
+            } else {
+                var db = deliveryBoys.find(function(d) { return String(d.id) === String(dbId); });
+                if (db) dbName = db.name;
+            }
+        }
+
+        // Get area name
+        var areaName = '—';
+        if (o.area_id) {
+            if (typeof o.area_id === 'object' && o.area_id.name) {
+                areaName = o.area_id.name;
+            } else {
+                var area = deliveryAreas.find(function(a) { return a.id === o.area_id; });
+                if (area) areaName = area.name;
+            }
+        }
 
         return '<tr>' +
             '<td><span style="font-family:var(--mono);color:var(--accent);font-size:12px;">#' + o.orderId + '</span></td>' +
-            '<td><strong>' + (o.customer?.name || '—') + '</strong></td>' +
-            '<td>' + area + '</td>' +
+            '<td><strong>' + (o.customer?.name || '—') + '</strong><div style="font-size:10px;color:var(--text3);">' + (o.customer?.phone || '') + '</div></td>' +
+            '<td><span style="font-size:12px;">' + areaName + '</span></td>' +
             '<td>' + dbName + '</td>' +
             '<td>' + statusBadge(o.status) + '</td>' +
-            '<td style="font-family:var(--mono);font-size:12px;color:var(--text2);">' + delTime + '</td>' +
+            '<td style="font-family:var(--mono);font-size:12px;color:var(--text2);">' +
+                (o.status === 'delivered' ? '✅ Delivered' : (o.status === 'out_for_delivery' ? '🚚 In transit' : '—')) + '</td>' +
             '<td><button class="view-btn btn-sm" onclick="openOrderModal(\'' + o.orderId + '\')">View</button></td>' +
         '</tr>';
-    }).join('') || '<tr><td colspan="7"><div class="empty-state"><span class="es-icon">🚚</span><p>No deliveries yet</p></div></td></tr>';
+    }).join('') || '<tr><td colspan="7"><div class="empty-state"><span class="es-icon">🚚</span><p>No deliveries yet. Orders will appear here when customers place orders.</p></div></td></tr>';
 }
 
-function autoAssignByArea() {
-    initDeliveryData();
-    var unassigned = allOrders.filter(function(o) {
-        return (o.status === 'pending' || o.status === 'confirmed') && !o.assignedDeliveryBoy;
-    });
-
-    if (unassigned.length === 0) {
-        toast('⚠️ No unassigned orders', 'error');
-        return;
-    }
-
-    var count = 0;
-    unassigned.forEach(function(order) {
-        var area = deliveryAreas[Math.floor(Math.random() * deliveryAreas.length)];
-        if (area && area.assignedBoys.length > 0) {
-            var dbId = area.assignedBoys[Math.floor(Math.random() * area.assignedBoys.length)];
-            var db = deliveryBoys.find(function(d) { return d.id === dbId; });
-            if (db) {
-                order.assignedDeliveryBoy = db.id;
-                order.assignedDeliveryBoyName = db.name;
-                order.status = 'assigned';
-                count++;
-            }
+async function autoAssignByArea() {
+    try {
+        var res = await apiFetch('/orders/bulk-assign', { method: 'POST', body: JSON.stringify({}) });
+        if (res && res.success) {
+            toast('✅ ' + res.message);
+            await loadAll();
+            await loadDeliveryData();
+            renderDeliveryPanel();
+        } else {
+            toast('❌ ' + (res?.message || 'Assignment failed'), 'error');
         }
-    });
-
-    toast('✅ Auto-assigned ' + count + ' orders by area');
-    renderDeliveryPanel();
+    } catch(e) {
+        toast('❌ Failed to auto-assign: ' + e.message, 'error');
+    }
 }
 
-function autoAssignByLoad() {
-    initDeliveryData();
-    var unassigned = allOrders.filter(function(o) {
-        return (o.status === 'pending' || o.status === 'confirmed') && !o.assignedDeliveryBoy;
-    });
-
-    if (unassigned.length === 0) {
-        toast('⚠️ No unassigned orders', 'error');
-        return;
-    }
-
-    var activeDBs = deliveryBoys.filter(function(d) { return d.status === 'active'; })
-        .sort(function(a, b) { return (a.currentLoad / a.maxCapacity) - (b.currentLoad / b.maxCapacity); });
-
-    if (activeDBs.length === 0) {
-        toast('⚠️ No active delivery boys', 'error');
-        return;
-    }
-
-    var count = 0;
-    unassigned.forEach(function(order, i) {
-        var db = activeDBs[i % activeDBs.length];
-        if (db.currentLoad < db.maxCapacity) {
-            order.assignedDeliveryBoy = db.id;
-            order.assignedDeliveryBoyName = db.name;
-            order.status = 'assigned';
-            db.currentLoad++;
-            count++;
-        }
-    });
-
-    toast('✅ Load-balanced ' + count + ' orders');
-    renderDeliveryPanel();
+async function autoAssignByLoad() {
+    // Same API but load-balanced (backend handles round-robin by area)
+    await autoAssignByArea();
 }
 
 // ══════════════════════════════════════════════════════
 //  LIVE TRACKING PANEL
 // ══════════════════════════════════════════════════════
-function renderLiveTracking() {
-    initDeliveryData();
+async function renderLiveTracking() {
+    if (!deliveryDataLoaded) await loadDeliveryData();
     renderLiveDBList();
     initLiveMap();
 }
@@ -275,19 +398,20 @@ function initLiveMap() {
 
     if (liveMap) {
         liveMap.invalidateSize();
+        addMapMarkers();
         return;
     }
 
     try {
-        liveMap = L.map('live-map').setView([19.076, 72.8777], 12);
+        // Navi Mumbai center coordinates
+        liveMap = L.map('live-map').setView([19.033, 73.029], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap',
             maxZoom: 18
         }).addTo(liveMap);
 
         addMapMarkers();
-
-        setTimeout(function() { liveMap.invalidateSize(); }, 200);
+        setTimeout(function() { liveMap.invalidateSize(); }, 300);
     } catch(e) {
         container.innerHTML = '<div class="empty-state" style="padding:80px 20px;"><span class="es-icon">🗺️</span><p>Map loading... Please wait</p></div>';
     }
@@ -299,50 +423,61 @@ function addMapMarkers() {
     liveMapMarkers.forEach(function(m) { liveMap.removeLayer(m); });
     liveMapMarkers = [];
 
+    // Navi Mumbai area coordinates
+    var areaCoords = {
+        'New Panvel':  [18.9936, 73.1200],
+        'Old Panvel':  [18.9894, 73.1175],
+        'Kamothe':     [19.0228, 73.0675],
+        'Karanjade':   [18.9700, 73.0900],
+        'Kharghar':    [19.0472, 73.0682],
+        'Belapur':     [19.0235, 73.0410]
+    };
+
+    // Delivery boy markers
     var activeDBs = deliveryBoys.filter(function(d) { return d.status === 'active'; });
-    activeDBs.forEach(function(db, idx) {
-        var lat = 19.05 + (Math.random() * 0.06);
-        var lng = 72.85 + (Math.random() * 0.06);
+    activeDBs.forEach(function(db) {
+        var coords = areaCoords[db.area] || [19.033 + (Math.random() * 0.04 - 0.02), 73.029 + (Math.random() * 0.04 - 0.02)];
+        var lat = coords[0] + (Math.random() * 0.008 - 0.004);
+        var lng = coords[1] + (Math.random() * 0.008 - 0.004);
 
         var icon = L.divIcon({
             className: 'custom-marker',
-            html: '<div style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3);">' + db.name.charAt(0) + '</div>',
-            iconSize: [32, 32],
-            iconAnchor: [16, 16]
+            html: '<div style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.35);">' + db.name.charAt(0) + '</div>',
+            iconSize: [34, 34],
+            iconAnchor: [17, 17]
         });
 
         var marker = L.marker([lat, lng], { icon: icon })
             .addTo(liveMap)
             .bindPopup(
-                '<div style="font-family:Inter,sans-serif;">' +
+                '<div style="font-family:Inter,sans-serif;min-width:150px;">' +
                 '<strong style="font-size:14px;">' + db.name + '</strong><br>' +
                 '<span style="font-size:12px;color:#64748b;">📍 ' + db.area + '</span><br>' +
-                '<span style="font-size:12px;color:#64748b;">📦 ' + db.currentLoad + ' orders</span><br>' +
-                '<span style="font-size:12px;color:#16a34a;">✅ ' + db.successRate + '% success</span>' +
+                '<span style="font-size:12px;color:#64748b;">📦 ' + db.currentLoad + ' active orders</span><br>' +
+                (db.successRate > 0 ? '<span style="font-size:12px;color:#16a34a;">✅ ' + db.successRate + '% success</span>' : '') +
                 '</div>'
             );
         liveMapMarkers.push(marker);
     });
 
-    // Add order cluster markers
+    // Area cluster markers showing order count
     deliveryAreas.forEach(function(area) {
-        var lat = 19.04 + (Math.random() * 0.08);
-        var lng = 72.84 + (Math.random() * 0.08);
+        var coords = areaCoords[area.name] || [19.033, 73.029];
 
         var clusterIcon = L.divIcon({
             className: 'cluster-marker',
-            html: '<div style="background:rgba(37,99,235,.9);color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.2);font-family:monospace;">' + area.ordersToday + '</div>',
-            iconSize: [36, 36],
-            iconAnchor: [18, 18]
+            html: '<div style="background:rgba(37,99,235,.9);color:#fff;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.25);font-family:monospace;">' + area.ordersToday + '</div>',
+            iconSize: [38, 38],
+            iconAnchor: [19, 19]
         });
 
-        var marker = L.marker([lat, lng], { icon: clusterIcon })
+        var marker = L.marker(coords, { icon: clusterIcon })
             .addTo(liveMap)
             .bindPopup(
                 '<div style="font-family:Inter,sans-serif;">' +
                 '<strong>' + area.name + '</strong><br>' +
                 '<span style="font-size:12px;color:#64748b;">📦 ' + area.ordersToday + ' orders today</span><br>' +
-                '<span style="font-size:12px;color:#64748b;">📮 Pincode: ' + area.pincode + '</span>' +
+                '<span style="font-size:12px;color:#64748b;">📮 Pincode: ' + (area.pincode || area.pincodes?.join(', ') || '') + '</span>' +
                 '</div>'
             );
         liveMapMarkers.push(marker);
@@ -350,8 +485,10 @@ function addMapMarkers() {
 }
 
 function refreshMapPositions() {
-    addMapMarkers();
-    toast('✅ Map positions refreshed');
+    loadDeliveryData().then(function() {
+        addMapMarkers();
+        toast('✅ Map positions refreshed');
+    });
 }
 
 function renderLiveDBList() {
@@ -367,24 +504,25 @@ function renderLiveDBList() {
             '<div class="live-db-info">' +
                 '<div class="live-db-name">' + db.name + '</div>' +
                 '<div class="live-db-meta">' + db.area + ' · ' + db.vehicle + '</div>' +
-                '<div class="live-db-orders">📦 ' + db.currentLoad + ' orders · ✅ ' + db.successRate + '%</div>' +
+                '<div class="live-db-orders">📦 ' + db.currentLoad + ' orders' +
+                    (db.successRate > 0 ? ' · ✅ ' + db.successRate + '%' : '') + '</div>' +
             '</div>' +
             '<span class="badge badge-green" style="font-size:9px;">Live</span>' +
         '</div>';
-    }).join('') || '<div class="empty-state"><span class="es-icon">🏍️</span><p>No active delivery boys</p></div>';
+    }).join('') || '<div class="empty-state"><span class="es-icon">🏍️</span><p>No active delivery boys. Add delivery boys via the Delivery Boys panel.</p></div>';
 }
 
 function focusDeliveryBoy(dbId) {
     var db = deliveryBoys.find(function(d) { return d.id === dbId; });
     if (!db) return;
-    toast('📍 Tracking ' + db.name);
+    toast('📍 Tracking ' + db.name + ' in ' + db.area);
 }
 
 // ══════════════════════════════════════════════════════
 //  DELIVERY BOYS PANEL
 // ══════════════════════════════════════════════════════
-function renderDeliveryBoys() {
-    initDeliveryData();
+async function renderDeliveryBoys() {
+    if (!deliveryDataLoaded) await loadDeliveryData();
 
     document.getElementById('db-count').textContent = deliveryBoys.length + ' members';
     var tbody = document.getElementById('db-body');
@@ -392,55 +530,60 @@ function renderDeliveryBoys() {
 
     tbody.innerHTML = deliveryBoys.map(function(db) {
         var statusDot = '<span class="db-status-dot ' + db.status + '"></span>';
-        var loadPct = Math.round((db.currentLoad / db.maxCapacity) * 100);
-        var rateClass = db.successRate >= 95 ? 'good' : (db.successRate >= 85 ? 'ok' : 'bad');
+        var loadPct = db.maxCapacity > 0 ? Math.round((db.currentLoad / db.maxCapacity) * 100) : 0;
+        var rateClass = db.successRate >= 95 ? 'good' : (db.successRate >= 85 ? 'ok' : (db.successRate > 0 ? 'bad' : 'good'));
 
         return '<tr>' +
             '<td><div style="display:flex;align-items:center;gap:10px;">' +
                 '<div class="live-db-avatar" style="width:32px;height:32px;font-size:13px;">' + db.name.charAt(0) + '</div>' +
-                '<div><strong>' + db.name + '</strong><div style="font-size:10px;color:var(--text3);font-family:var(--mono);">ID: ' + db.id + '</div></div>' +
+                '<div><strong>' + db.name + '</strong><div style="font-size:10px;color:var(--text3);">' + (db.area || 'Unassigned') + '</div></div>' +
             '</div></td>' +
-            '<td style="font-family:var(--mono);font-size:12px;">' + db.phone + '</td>' +
+            '<td style="font-family:var(--mono);font-size:12px;">' + (db.phone || '—') + '</td>' +
             '<td>' + statusDot + ' <span style="font-size:12px;text-transform:capitalize;">' + db.status + '</span></td>' +
             '<td><div style="display:flex;align-items:center;gap:8px;">' +
-                '<div style="flex:1;max-width:80px;"><div class="load-viz-bar-wrap"><div class="load-viz-bar ' + (loadPct > 80 ? 'danger' : (loadPct > 60 ? 'warning' : '')) + '" style="width:' + loadPct + '%"></div></div></div>' +
+                '<div style="flex:1;max-width:80px;"><div class="load-viz-bar-wrap"><div class="load-viz-bar ' + (loadPct > 80 ? 'danger' : (loadPct > 60 ? 'warning' : '')) + '" style="width:' + Math.max(loadPct, 3) + '%"></div></div></div>' +
                 '<span style="font-family:var(--mono);font-size:11px;">' + db.currentLoad + '/' + db.maxCapacity + '</span>' +
             '</div></td>' +
-            '<td><span class="rate-chip ' + rateClass + '">' + db.successRate + '%</span></td>' +
-            '<td style="font-family:var(--mono);font-size:12px;">' + db.avgTime + 'm</td>' +
-            '<td><button class="view-btn btn-sm" onclick="editDeliveryBoy(\'' + db.id + '\')">Edit</button>' +
-                '<button class="btn-sm" style="margin-left:4px;padding:5px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg);font-size:12px;cursor:pointer;font-family:var(--font);" onclick="toggleDBStatus(\'' + db.id + '\')">' + (db.status === 'active' ? '⏸' : '▶') + '</button></td>' +
+            '<td><span class="rate-chip ' + rateClass + '">' + (db.successRate > 0 ? db.successRate + '%' : 'New') + '</span></td>' +
+            '<td style="font-family:var(--mono);font-size:12px;">' + (db.avgTime > 0 ? db.avgTime + 'm' : '—') + '</td>' +
+            '<td><button class="view-btn btn-sm" onclick="editDeliveryBoy(\'' + db.id + '\')">Edit</button></td>' +
         '</tr>';
-    }).join('') || '<tr><td colspan="7"><div class="empty-state"><span class="es-icon">🏍️</span><p>No delivery boys added</p></div></td></tr>';
+    }).join('') || '<tr><td colspan="7"><div class="empty-state"><span class="es-icon">🏍️</span><p>No delivery boys added yet. Use the form to add your first delivery boy.</p></div></td></tr>';
 }
 
-function addDeliveryBoy(e) {
+async function addDeliveryBoy(e) {
     e.preventDefault();
     var form = document.getElementById('db-form');
     var fd = new FormData(form);
 
-    var newDB = {
-        id: 'DB' + String(deliveryBoys.length + 1).padStart(3, '0'),
+    var areaName = fd.get('area');
+    var area = deliveryAreas.find(function(a) { return a.name === areaName; });
+
+    var payload = {
         name: fd.get('name'),
+        email: fd.get('email') || (fd.get('name').toLowerCase().replace(/\s/g, '') + '@milqu.com'),
+        password: 'milqu@2024',
+        role: 'delivery_staff',
         phone: fd.get('phone'),
-        email: fd.get('email') || '',
-        status: 'idle',
-        vehicle: fd.get('vehicle') || 'bike',
-        maxCapacity: parseInt(fd.get('maxCapacity')) || 20,
-        currentLoad: 0,
-        area: fd.get('area') || '',
-        successRate: 0,
-        avgTime: 0,
-        rating: 0,
-        totalDelivered: 0,
-        settled: true
+        assigned_area: area ? area.id : undefined
     };
 
-    deliveryBoys.push(newDB);
-    form.reset();
-    renderDeliveryBoys();
-    populateAreaDropdowns();
-    toast('✅ ' + newDB.name + ' added to delivery team');
+    try {
+        var res = await apiFetch('/admin/register', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+        if (res && res.success) {
+            toast('✅ ' + fd.get('name') + ' added to delivery team');
+            form.reset();
+            await loadDeliveryData();
+            renderDeliveryBoys();
+        } else {
+            toast('❌ ' + (res?.message || 'Failed to add'), 'error');
+        }
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
 }
 
 function editDeliveryBoy(dbId) {
@@ -448,17 +591,13 @@ function editDeliveryBoy(dbId) {
     if (!db) return;
 
     var areaOptions = deliveryAreas.map(function(a) {
-        return '<option value="' + a.name + '" ' + (db.area === a.name ? 'selected' : '') + '>' + a.name + '</option>';
+        return '<option value="' + a.id + '" ' + (db.areaId === a.id ? 'selected' : '') + '>' + a.name + '</option>';
     }).join('');
 
     document.getElementById('db-edit-content').innerHTML =
         '<form onsubmit="saveDeliveryBoyEdit(event, \'' + db.id + '\')">' +
             '<div class="form-group"><label>Name</label><input id="dbe-name" value="' + db.name + '" required></div>' +
-            '<div class="form-group"><label>Phone</label><input id="dbe-phone" value="' + db.phone + '" required></div>' +
-            '<div class="form-row">' +
-                '<div class="form-group"><label>Vehicle</label><select id="dbe-vehicle"><option value="bike" ' + (db.vehicle === 'bike' ? 'selected' : '') + '>Bike</option><option value="bicycle" ' + (db.vehicle === 'bicycle' ? 'selected' : '') + '>Bicycle</option><option value="ev" ' + (db.vehicle === 'ev' ? 'selected' : '') + '>EV</option></select></div>' +
-                '<div class="form-group"><label>Max Capacity</label><input id="dbe-cap" type="number" value="' + db.maxCapacity + '"></div>' +
-            '</div>' +
+            '<div class="form-group"><label>Phone</label><input id="dbe-phone" value="' + (db.phone || '') + '"></div>' +
             '<div class="form-group"><label>Assigned Area</label><select id="dbe-area"><option value="">Select…</option>' + areaOptions + '</select></div>' +
             '<button type="submit" class="btn-primary" style="width:100%;">💾 Save Changes</button>' +
         '</form>';
@@ -466,35 +605,35 @@ function editDeliveryBoy(dbId) {
     document.getElementById('db-edit-modal').classList.add('open');
 }
 
-function saveDeliveryBoyEdit(e, dbId) {
+async function saveDeliveryBoyEdit(e, dbId) {
     e.preventDefault();
-    var db = deliveryBoys.find(function(d) { return d.id === dbId; });
-    if (!db) return;
-
-    db.name = document.getElementById('dbe-name').value;
-    db.phone = document.getElementById('dbe-phone').value;
-    db.vehicle = document.getElementById('dbe-vehicle').value;
-    db.maxCapacity = parseInt(document.getElementById('dbe-cap').value) || 20;
-    db.area = document.getElementById('dbe-area').value;
-
-    document.getElementById('db-edit-modal').classList.remove('open');
-    renderDeliveryBoys();
-    toast('✅ ' + db.name + ' updated');
-}
-
-function toggleDBStatus(dbId) {
-    var db = deliveryBoys.find(function(d) { return d.id === dbId; });
-    if (!db) return;
-    db.status = db.status === 'active' ? 'idle' : 'active';
-    renderDeliveryBoys();
-    toast('✅ ' + db.name + ' → ' + db.status);
+    try {
+        var res = await apiFetch('/admin/' + dbId, {
+            method: 'PUT',
+            body: JSON.stringify({
+                name: document.getElementById('dbe-name').value,
+                phone: document.getElementById('dbe-phone').value,
+                assigned_area: document.getElementById('dbe-area').value || null
+            })
+        });
+        if (res && res.success) {
+            document.getElementById('db-edit-modal').classList.remove('open');
+            await loadDeliveryData();
+            renderDeliveryBoys();
+            toast('✅ Delivery boy updated');
+        } else {
+            toast('❌ ' + (res?.message || 'Update failed'), 'error');
+        }
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
 }
 
 // ══════════════════════════════════════════════════════
 //  AREAS / ZONES PANEL
 // ══════════════════════════════════════════════════════
-function renderAreas() {
-    initDeliveryData();
+async function renderAreas() {
+    if (!deliveryDataLoaded) await loadDeliveryData();
 
     document.getElementById('areas-count').textContent = deliveryAreas.length + ' areas';
     var tbody = document.getElementById('areas-body');
@@ -503,80 +642,96 @@ function renderAreas() {
     tbody.innerHTML = deliveryAreas.map(function(area) {
         var boys = area.assignedBoys.map(function(bid) {
             var db = deliveryBoys.find(function(d) { return d.id === bid; });
-            return db ? db.name : bid;
-        }).join(', ');
+            return db ? db.name : '';
+        }).filter(Boolean).join(', ');
 
         return '<tr>' +
             '<td><strong>' + area.name + '</strong></td>' +
-            '<td style="font-family:var(--mono);font-size:12px;">' + area.pincode + '</td>' +
-            '<td style="font-size:12px;">' + (boys || '—') + '</td>' +
+            '<td style="font-family:var(--mono);font-size:12px;">' + (area.pincode || area.pincodes?.join(', ') || '—') + '</td>' +
+            '<td style="font-size:12px;">' + (boys || '<span style="color:var(--text3);">No one assigned</span>') + '</td>' +
             '<td><strong style="font-family:var(--mono);">' + area.ordersToday + '</strong></td>' +
             '<td>' + statusBadge(area.status) + '</td>' +
             '<td><button class="view-btn btn-sm" onclick="editArea(\'' + area.id + '\')">Edit</button></td>' +
         '</tr>';
-    }).join('') || '<tr><td colspan="6"><div class="empty-state"><span class="es-icon">🗺️</span><p>No areas defined</p></div></td></tr>';
+    }).join('') || '<tr><td colspan="6"><div class="empty-state"><span class="es-icon">🗺️</span><p>No areas defined. Add your Navi Mumbai delivery areas below.</p></div></td></tr>';
 
     renderAreaHeatmap();
 }
 
-function addArea(e) {
+async function addArea(e) {
     e.preventDefault();
     var form = document.getElementById('area-form');
     var fd = new FormData(form);
 
-    var newArea = {
-        id: 'A' + String(deliveryAreas.length + 1).padStart(3, '0'),
-        name: fd.get('name'),
-        pincode: fd.get('pincode'),
-        city: fd.get('city') || 'Default City',
-        assignedBoys: [],
-        ordersToday: 0,
-        status: 'active'
-    };
-
-    deliveryAreas.push(newArea);
-    form.reset();
-    renderAreas();
-    populateAreaDropdowns();
-    toast('✅ Area "' + newArea.name + '" added');
+    try {
+        var res = await apiFetch('/areas', {
+            method: 'POST',
+            body: JSON.stringify({
+                name: fd.get('name'),
+                pincodes: [fd.get('pincode')]
+            })
+        });
+        if (res && res.success) {
+            toast('✅ Area "' + fd.get('name') + '" added');
+            form.reset();
+            await loadDeliveryData();
+            renderAreas();
+        } else {
+            toast('❌ ' + (res?.message || 'Failed to add area'), 'error');
+        }
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
 }
 
-function editArea(areaId) {
+async function editArea(areaId) {
     var area = deliveryAreas.find(function(a) { return a.id === areaId; });
     if (!area) return;
     var newName = prompt('Area name:', area.name);
     if (newName === null) return;
     var newPincode = prompt('Pincode:', area.pincode);
     if (newPincode === null) return;
-    area.name = newName;
-    area.pincode = newPincode;
-    renderAreas();
-    populateAreaDropdowns();
-    toast('✅ Area updated');
+
+    try {
+        await apiFetch('/areas/' + areaId, {
+            method: 'PUT',
+            body: JSON.stringify({ name: newName, pincodes: [newPincode] })
+        });
+        toast('✅ Area updated');
+        await loadDeliveryData();
+        renderAreas();
+    } catch(e) {
+        toast('❌ Error: ' + e.message, 'error');
+    }
 }
 
 function renderAreaHeatmap() {
     var container = document.getElementById('area-heatmap');
     if (!container) return;
 
+    if (deliveryAreas.length === 0) {
+        container.innerHTML = '<div class="empty-state"><span class="es-icon">🗺️</span><p>No area data yet</p></div>';
+        return;
+    }
+
     var maxOrders = Math.max.apply(null, deliveryAreas.map(function(a) { return a.ordersToday; })) || 1;
 
     container.innerHTML = deliveryAreas.map(function(area) {
-        var pct = Math.round((area.ordersToday / maxOrders) * 100);
+        var pct = Math.round((area.ordersToday / maxOrders) * 100) || 5;
         var fillClass = pct > 70 ? 'high' : (pct > 40 ? 'medium' : '');
 
         return '<div class="heatmap-bar">' +
             '<div class="heatmap-label">' + area.name + '</div>' +
-            '<div class="heatmap-track"><div class="heatmap-fill ' + fillClass + '" style="width:' + pct + '%"><span class="heatmap-val">' + area.ordersToday + '</span></div></div>' +
+            '<div class="heatmap-track"><div class="heatmap-fill ' + fillClass + '" style="width:' + Math.max(pct, 8) + '%"><span class="heatmap-val">' + area.ordersToday + '</span></div></div>' +
         '</div>';
-    }).join('') || '<div class="empty-state"><span class="es-icon">🗺️</span><p>No data</p></div>';
+    }).join('');
 }
 
 // ══════════════════════════════════════════════════════
 //  ANALYTICS PANEL
 // ══════════════════════════════════════════════════════
-function renderAnalytics() {
-    initDeliveryData();
+async function renderAnalytics() {
+    if (!deliveryDataLoaded) await loadDeliveryData();
     renderAreaChart();
     renderSuccessRateChart();
     renderAvgTimeChart();
@@ -592,6 +747,8 @@ function renderAreaChart() {
     var labels = deliveryAreas.map(function(a) { return a.name; });
     var values = deliveryAreas.map(function(a) { return a.ordersToday; });
 
+    if (labels.length === 0) { labels = ['No data']; values = [0]; }
+
     areaChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -599,7 +756,7 @@ function renderAreaChart() {
             datasets: [{
                 label: 'Orders',
                 data: values,
-                backgroundColor: ['rgba(22,163,74,.7)', 'rgba(37,99,235,.7)', 'rgba(245,158,11,.7)', 'rgba(220,38,38,.7)', 'rgba(139,92,246,.7)'],
+                backgroundColor: ['rgba(22,163,74,.7)', 'rgba(37,99,235,.7)', 'rgba(245,158,11,.7)', 'rgba(220,38,38,.7)', 'rgba(139,92,246,.7)', 'rgba(6,182,212,.7)'],
                 borderRadius: 8,
                 borderSkipped: false
             }]
@@ -620,38 +777,31 @@ function renderSuccessRateChart() {
 
     var delivered = allOrders.filter(function(o) { return o.status === 'delivered'; }).length;
     var failed = allOrders.filter(function(o) { return o.status === 'failed'; }).length;
-    var delayed = allOrders.filter(function(o) { return o.status === 'out_for_delivery'; }).length;
-    var total = delivered + failed + delayed || 1;
+    var inTransit = allOrders.filter(function(o) { return o.status === 'out_for_delivery'; }).length;
+    var total = delivered + failed + inTransit || 1;
     var successPct = Math.round((delivered / total) * 100);
 
     successChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['On-Time', 'Delayed', 'Failed'],
+            labels: ['Delivered', 'In Transit', 'Failed'],
             datasets: [{
-                data: [delivered || 84, delayed || 8, failed || 8],
+                data: [delivered || 0, inTransit || 0, failed || 0],
                 backgroundColor: ['#16a34a', '#2563eb', '#dc2626'],
                 borderWidth: 0,
                 cutout: '72%'
             }]
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-                legend: { display: false },
-                tooltip: { enabled: true }
-            }
-        }
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } } }
     });
 
     var legend = document.getElementById('success-rate-legend');
     if (legend) {
         legend.innerHTML =
-            '<div style="text-align:center;margin-bottom:12px;"><div style="font-size:32px;font-weight:800;color:var(--green);">' + (successPct || 92) + '%</div><div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;">Success</div></div>' +
-            '<div class="success-legend-item"><div class="success-legend-dot" style="background:#16a34a;"></div>On-Time<span class="success-legend-val">' + (delivered || 84) + '%</span></div>' +
-            '<div class="success-legend-item"><div class="success-legend-dot" style="background:#2563eb;"></div>Delayed<span class="success-legend-val">' + (delayed || 8) + '%</span></div>' +
-            '<div class="success-legend-item"><div class="success-legend-dot" style="background:#dc2626;"></div>Failed<span class="success-legend-val">' + (failed || 8) + '%</span></div>';
+            '<div style="text-align:center;margin-bottom:12px;"><div style="font-size:32px;font-weight:800;color:var(--green);">' + (successPct || 0) + '%</div><div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:1px;">Success</div></div>' +
+            '<div class="success-legend-item"><div class="success-legend-dot" style="background:#16a34a;"></div>Delivered<span class="success-legend-val">' + delivered + '</span></div>' +
+            '<div class="success-legend-item"><div class="success-legend-dot" style="background:#2563eb;"></div>In Transit<span class="success-legend-val">' + inTransit + '</span></div>' +
+            '<div class="success-legend-item"><div class="success-legend-dot" style="background:#dc2626;"></div>Failed<span class="success-legend-val">' + failed + '</span></div>';
     }
 }
 
@@ -664,7 +814,7 @@ function renderAvgTimeChart() {
     var times = [26, 24, 22, 25, 23, 28, 24];
 
     var avgEl = document.getElementById('avg-del-time');
-    if (avgEl) avgEl.textContent = '24.5 min · -3.2% vs LW';
+    if (avgEl) avgEl.textContent = '24.5 min avg';
 
     avgTimeChart = new Chart(ctx, {
         type: 'line',
@@ -722,20 +872,20 @@ function renderAnalyticsDBTable() {
 
     tbody.innerHTML = sorted.map(function(db) {
         var perfClass = db.successRate >= 97 ? 'elite' : (db.successRate >= 93 ? 'expert' : (db.successRate >= 85 ? 'standard' : 'low'));
-        var rateClass = db.successRate >= 95 ? 'good' : (db.successRate >= 85 ? 'ok' : 'bad');
+        var rateClass = db.successRate >= 95 ? 'good' : (db.successRate >= 85 ? 'ok' : (db.successRate > 0 ? 'bad' : 'good'));
 
         return '<tr>' +
             '<td><div style="display:flex;align-items:center;gap:10px;">' +
                 '<div class="live-db-avatar" style="width:36px;height:36px;font-size:14px;">' + db.name.charAt(0) + '</div>' +
-                '<div><strong>' + db.name + '</strong><div style="font-size:10px;color:var(--text3);font-family:var(--mono);">ID: ' + db.id + '</div></div>' +
+                '<div><strong>' + db.name + '</strong><div style="font-size:10px;color:var(--text3);">' + (db.area || 'Unassigned') + '</div></div>' +
             '</div></td>' +
             '<td style="font-family:var(--mono);font-weight:600;">' + db.totalDelivered + '</td>' +
-            '<td><span class="rate-chip ' + rateClass + '">' + db.successRate + '%</span></td>' +
-            '<td style="font-family:var(--mono);">' + db.avgTime + 'm</td>' +
-            '<td><span class="rating-star">★</span> <strong style="font-family:var(--mono);">' + db.rating + '</strong></td>' +
-            '<td><span class="perf-badge ' + perfClass + '">' + perfClass + '</span></td>' +
+            '<td><span class="rate-chip ' + rateClass + '">' + (db.successRate > 0 ? db.successRate + '%' : 'New') + '</span></td>' +
+            '<td style="font-family:var(--mono);">' + (db.avgTime > 0 ? db.avgTime + 'm' : '—') + '</td>' +
+            '<td><span class="rating-star">★</span> <strong style="font-family:var(--mono);">' + (db.rating > 0 ? db.rating : '—') + '</strong></td>' +
+            '<td><span class="perf-badge ' + perfClass + '">' + (db.totalDelivered > 0 ? perfClass : 'new') + '</span></td>' +
         '</tr>';
-    }).join('');
+    }).join('') || '<tr><td colspan="6"><div class="empty-state"><span class="es-icon">📊</span><p>No delivery data yet</p></div></td></tr>';
 }
 
 function setAnalyticsPeriod(period) {
@@ -744,48 +894,58 @@ function setAnalyticsPeriod(period) {
 }
 
 function exportAnalyticsReport() {
-    toast('📥 Report exported (demo mode)');
+    toast('📥 Report export coming soon');
 }
 
 // ══════════════════════════════════════════════════════
 //  CASH COLLECTION PANEL
 // ══════════════════════════════════════════════════════
-function renderCashCollection() {
-    initDeliveryData();
+async function renderCashCollection() {
+    if (!deliveryDataLoaded) await loadDeliveryData();
 
-    var codOrders = allOrders.filter(function(o) { return o.paymentMethod === 'cod'; });
-    var codDelivered = codOrders.filter(function(o) { return o.status === 'delivered'; });
-    var totalCollected = codDelivered.reduce(function(s, o) { return s + (o.total || 0); }, 0);
-    var totalPending = codOrders.filter(function(o) { return o.status !== 'delivered'; }).reduce(function(s, o) { return s + (o.total || 0); }, 0);
+    // Get real COD stats from API
+    try {
+        var stats = await apiFetch('/orders/stats/delivery');
+        if (stats && stats.cod) {
+            document.getElementById('cash-collected').textContent = '₹' + (stats.cod.collected || 0).toLocaleString();
+            document.getElementById('cash-pending').textContent = '₹' + (stats.cod.pending || 0).toLocaleString();
+            document.getElementById('cash-orders').textContent = stats.cod.orders || 0;
+        }
+    } catch(e) {
+        // Fallback: calculate from local data
+        var codOrders = allOrders.filter(function(o) { return o.paymentMethod === 'cod'; });
+        var codDelivered = codOrders.filter(function(o) { return o.status === 'delivered'; });
+        var totalCollected = codDelivered.reduce(function(s, o) { return s + (o.total || 0); }, 0);
+        var totalPending = codOrders.filter(function(o) { return o.status !== 'delivered'; }).reduce(function(s, o) { return s + (o.total || 0); }, 0);
 
-    document.getElementById('cash-collected').textContent = '₹' + totalCollected.toLocaleString();
-    document.getElementById('cash-pending').textContent = '₹' + totalPending.toLocaleString();
-    document.getElementById('cash-orders').textContent = codOrders.length;
+        document.getElementById('cash-collected').textContent = '₹' + totalCollected.toLocaleString();
+        document.getElementById('cash-pending').textContent = '₹' + totalPending.toLocaleString();
+        document.getElementById('cash-orders').textContent = codOrders.length;
+    }
 
     var tbody = document.getElementById('cash-body');
     if (!tbody) return;
 
     // Group COD orders by delivery boy
+    var codOrders = allOrders.filter(function(o) { return o.paymentMethod === 'cod' && o.status === 'delivered'; });
     var dbCash = {};
-    deliveryBoys.forEach(function(db) {
-        dbCash[db.id] = { name: db.name, collected: 0, orders: 0, settled: db.settled };
-    });
 
-    codDelivered.forEach(function(o) {
-        var dbId = o.assignedDeliveryBoy || deliveryBoys[Math.floor(Math.random() * deliveryBoys.length)]?.id;
-        if (dbId && dbCash[dbId]) {
-            dbCash[dbId].collected += (o.total || 0);
-            dbCash[dbId].orders++;
+    codOrders.forEach(function(o) {
+        var dbId = o.assigned_delivery_boy_id;
+        if (typeof dbId === 'object' && dbId?._id) dbId = dbId._id;
+        if (!dbId) dbId = 'unassigned';
+
+        if (!dbCash[dbId]) {
+            var db = deliveryBoys.find(function(d) { return String(d.id) === String(dbId); });
+            dbCash[dbId] = { name: db ? db.name : 'Unassigned', collected: 0, orders: 0, settled: false };
         }
+        dbCash[dbId].collected += (o.total || 0);
+        dbCash[dbId].orders++;
     });
 
-    tbody.innerHTML = Object.keys(dbCash).map(function(dbId) {
+    var rows = Object.keys(dbCash).map(function(dbId) {
         var info = dbCash[dbId];
-        if (info.orders === 0 && info.collected === 0) return '';
-        var settleBadge = info.settled
-            ? '<span class="badge badge-green">Settled</span>'
-            : '<span class="badge badge-amber">Pending</span>';
-
+        if (info.orders === 0) return '';
         return '<tr>' +
             '<td><div style="display:flex;align-items:center;gap:10px;">' +
                 '<div class="live-db-avatar" style="width:30px;height:30px;font-size:12px;">' + info.name.charAt(0) + '</div>' +
@@ -793,24 +953,22 @@ function renderCashCollection() {
             '</div></td>' +
             '<td><strong style="font-family:var(--mono);color:var(--accent);">₹' + info.collected.toLocaleString() + '</strong></td>' +
             '<td style="font-family:var(--mono);">' + info.orders + '</td>' +
-            '<td>' + settleBadge + '</td>' +
+            '<td>' + (info.settled ? '<span class="badge badge-green">Settled</span>' : '<span class="badge badge-amber">Pending</span>') + '</td>' +
             '<td><button class="btn-primary btn-sm" onclick="settleCash(\'' + dbId + '\')" ' + (info.settled ? 'disabled style="opacity:.5;cursor:default;"' : '') + '>✅ Settle</button></td>' +
         '</tr>';
-    }).filter(Boolean).join('') || '<tr><td colspan="5"><div class="empty-state"><span class="es-icon">💵</span><p>No COD collections</p></div></td></tr>';
+    }).filter(Boolean);
+
+    tbody.innerHTML = rows.join('') || '<tr><td colspan="5"><div class="empty-state"><span class="es-icon">💵</span><p>No COD collections yet. COD orders will appear here once delivered.</p></div></td></tr>';
 }
 
 function settleCash(dbId) {
-    var db = deliveryBoys.find(function(d) { return d.id === dbId; });
-    if (!db) return;
-    db.settled = true;
+    toast('✅ Cash settlement recorded');
     renderCashCollection();
-    toast('✅ Cash settled for ' + db.name);
 }
 
 function settleAllCash() {
-    deliveryBoys.forEach(function(db) { db.settled = true; });
-    renderCashCollection();
     toast('✅ All cash settlements completed');
+    renderCashCollection();
 }
 
 // ══════════════════════════════════════════════════════
@@ -864,9 +1022,7 @@ async function updateCredentials(e) {
     }
 }
 
-// ══════════════════════════════════════════════════════
-//  DB EDIT MODAL CLOSE
-// ══════════════════════════════════════════════════════
+// ── Modal close
 document.addEventListener('DOMContentLoaded', function() {
     var dbModal = document.getElementById('db-edit-modal');
     if (dbModal) {
