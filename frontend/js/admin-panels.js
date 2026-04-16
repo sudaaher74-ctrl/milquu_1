@@ -19,16 +19,51 @@ function toggleNotifDropdown() { document.getElementById('notif-dropdown').class
 // ══════════════════════════════════════════════════════
 async function renderOverview() {
     const totalRev = allOrders.reduce((s, o) => s + (o.total || 0), 0);
-    const activeSub = allSubs.filter(s => s.status === 'active').length;
-    const unread = allMsgs.filter(m => m.status === 'unread').length;
     const todayStr = new Date().toDateString();
-    const today = allOrders.filter(o => new Date(o.createdAt).toDateString() === todayStr).length;
+    const todayOrders = allOrders.filter(o => new Date(o.createdAt).toDateString() === todayStr);
+    const today = todayOrders.length;
+    const delivered = allOrders.filter(o => o.status === 'delivered').length;
+    const pending = allOrders.filter(o => o.status === 'pending' || o.status === 'confirmed').length;
+    const failed = allOrders.filter(o => o.status === 'failed' || o.status === 'cancelled').length;
+    const activeDBs = (typeof deliveryBoys !== 'undefined') ? deliveryBoys.filter(d => d.status === 'active').length : 0;
 
     document.getElementById('overview-stats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-val" style="color:var(--accent);">₹${totalRev.toLocaleString()}</div><div class="stat-sub">${allOrders.length} total orders</div><div class="stat-icon">💰</div></div>
-    <div class="stat-card amber"><div class="stat-label">Active Subscriptions</div><div class="stat-val" style="color:var(--amber);">${activeSub}</div><div class="stat-sub">of ${allSubs.length} total</div><div class="stat-icon">📦</div></div>
-    <div class="stat-card red"><div class="stat-label">Unread Messages</div><div class="stat-val" style="color:var(--red);">${unread}</div><div class="stat-sub">${allMsgs.length} total</div><div class="stat-icon">💬</div></div>
-    <div class="stat-card blue"><div class="stat-label">Orders Today</div><div class="stat-val" style="color:var(--blue);">${today}</div><div class="stat-sub">vs ${allOrders.length} total</div><div class="stat-icon">🛒</div></div>`;
+    <div class="stat-card">
+      <div class="stat-label">Total Orders Today</div>
+      <div class="stat-val" style="color:var(--accent);">${today}</div>
+      <div class="stat-sub">${allOrders.length} total orders</div>
+      <div class="stat-icon">🛒</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Delivered Orders</div>
+      <div class="stat-val" style="color:var(--green);">${delivered}</div>
+      <div class="stat-sub">All time delivered</div>
+      <div class="stat-icon">✅</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-label">Pending Orders</div>
+      <div class="stat-val" style="color:var(--amber);">${pending}</div>
+      <div class="stat-sub">Awaiting processing</div>
+      <div class="stat-icon">⏳</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">Failed Deliveries</div>
+      <div class="stat-val" style="color:var(--red);">${failed}</div>
+      <div class="stat-sub">Failed / Cancelled</div>
+      <div class="stat-icon">❌</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">Active Delivery Boys</div>
+      <div class="stat-val" style="color:var(--blue);">${activeDBs}</div>
+      <div class="stat-sub">${(typeof deliveryBoys !== 'undefined') ? deliveryBoys.length : 0} total</div>
+      <div class="stat-icon">🏍️</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Revenue</div>
+      <div class="stat-val" style="color:var(--accent);">₹${totalRev.toLocaleString()}</div>
+      <div class="stat-sub">All time revenue</div>
+      <div class="stat-icon">💰</div>
+    </div>`;
 
     // Top products from API
     try {
@@ -81,7 +116,7 @@ async function loadRevenueChart(period) {
         if (revenueChart) revenueChart.destroy();
         revenueChart = new Chart(ctx, {
             type: 'bar',
-            data: { labels, datasets: [{ label: 'Revenue (₹)', data: values, backgroundColor: 'rgba(79,70,229,.7)', borderRadius: 6, borderSkipped: false }] },
+            data: { labels, datasets: [{ label: 'Revenue (₹)', data: values, backgroundColor: 'rgba(22,163,74,.7)', borderRadius: 6, borderSkipped: false }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + v.toLocaleString() } } } }
         });
     } catch { }
@@ -103,17 +138,25 @@ function filterOrders() {
 }
 function renderOrdersPage() {
     const start = ordPage * PER_PAGE, end = start + PER_PAGE, page = filteredOrders.slice(start, end);
-    document.getElementById('orders-body').innerHTML = page.map(o => `
+    const dbList = (typeof deliveryBoys !== 'undefined') ? deliveryBoys : [];
+    document.getElementById('orders-body').innerHTML = page.map(o => {
+        const assignedDB = o.assignedDeliveryBoy || '';
+        const dbOptions = dbList.map(d => `<option value="${d.id}" ${assignedDB === d.id ? 'selected' : ''}>${d.name}</option>`).join('');
+        const deliveryStatus = o.deliveryStatus || o.status;
+        return `
     <tr>
+      <td><input type="checkbox" class="order-checkbox" value="${o.orderId}"></td>
       <td><span style="font-family:var(--mono);color:var(--accent);font-size:12px;">#${o.orderId}</span></td>
       <td><div style="font-weight:600;">${o.customer?.name || '—'}</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${o.customer?.phone || ''}</div></td>
-      <td style="font-size:12px;color:var(--text2);">${(o.items || []).map(i => `${i.e || ''}${i.name}×${i.qty}`).join(', ').substring(0, 50)}</td>
+      <td style="font-size:12px;color:var(--text2);">${(o.items || []).map(function(i){ return (i.e||'') + i.name + '×' + i.qty; }).join(', ').substring(0, 50)}</td>
       <td><span style="font-family:var(--mono);font-weight:700;">₹${(o.total || 0).toFixed(0)}</span></td>
       <td>${payBadge(o.paymentMethod)}</td>
       <td>${statusBadge(o.status)}</td>
+      <td><select class="assign-select" onchange="assignDeliveryBoy('${o.orderId}',this.value)"><option value="">Assign…</option>${dbOptions}</select></td>
       <td style="font-size:12px;color:var(--text3);font-family:var(--mono);">${fmtDate(o.createdAt)}</td>
       <td><button class="view-btn" onclick="openOrderModal('${o.orderId}')">View</button></td>
-    </tr>`).join('') || '<tr><td colspan="8"><div class="empty-state"><span class="es-icon">🛒</span><p>No orders found</p></div></td></tr>';
+    </tr>`;
+    }).join('') || '<tr><td colspan="10"><div class="empty-state"><span class="es-icon">🛒</span><p>No orders found</p></div></td></tr>';
     document.getElementById('orders-pg-info').textContent = `Showing ${Math.min(start + 1, filteredOrders.length)}–${Math.min(end, filteredOrders.length)} of ${filteredOrders.length}`;
     const totalPgs = Math.ceil(filteredOrders.length / PER_PAGE);
     let pgH = ''; for (let i = 0; i < totalPgs; i++) pgH += `<button class="pg-btn ${i === ordPage ? 'active' : ''}" onclick="ordPage=${i};renderOrdersPage()">${i + 1}</button>`;
@@ -141,8 +184,25 @@ function openOrderModal(orderId) {
       <div class="detail-row"><span>Payment</span>${statusBadge(o.paymentStatus || 'pending')}</div>
       <div class="detail-row"><span>Status</span>${statusBadge(o.status)}</div>
     </div>
+    <div class="detail-section"><h4>Order Timeline</h4>
+      <div class="order-timeline">
+        ${['Ordered','Assigned','Out for Delivery','Delivered'].map((step, idx) => {
+          const statusMap = ['pending','assigned','out_for_delivery','delivered'];
+          const currentIdx = statusMap.indexOf(o.status);
+          const isFailed = o.status === 'failed' || o.status === 'cancelled';
+          const dotClass = isFailed && idx === currentIdx ? 'failed' : (idx <= currentIdx ? 'done' : (idx === currentIdx + 1 ? 'active' : ''));
+          const lineClass = idx < currentIdx ? 'done' : '';
+          return `
+            <div class="timeline-step">
+              <div class="timeline-dot ${dotClass}">${idx <= currentIdx ? '✓' : (idx + 1)}</div>
+              <div class="timeline-label">${step}</div>
+            </div>
+            ${idx < 3 ? `<div class="timeline-line ${lineClass}"></div>` : ''}`;
+        }).join('')}
+      </div>
+    </div>
     <div class="detail-section"><h4>Update Status</h4>
-      <div class="status-update-row">${['confirmed', 'out_for_delivery', 'delivered', 'cancelled'].map(s =>
+      <div class="status-update-row">${['confirmed', 'assigned', 'out_for_delivery', 'delivered', 'failed', 'cancelled'].map(s =>
         `<button class="status-btn ${o.status === s ? 'active-status' : ''}" onclick="updateOrderStatus('${o.orderId}','${s}',this)">${s.replace(/_/g, ' ')}</button>`).join('')}
       </div>
     </div>`;

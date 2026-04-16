@@ -449,11 +449,18 @@ async function apiDelete(path) { return apiRequest(path, { method: 'DELETE', hea
 
 function showPanel(id, btn) {
     document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('active'); });
-    document.getElementById('panel-' + id).classList.add('active');
+    var panelEl = document.getElementById('panel-' + id);
+    if (panelEl) panelEl.classList.add('active');
     document.querySelectorAll('.nav-item').forEach(function (n) { n.classList.remove('active'); });
     if (btn) btn.classList.add('active');
 
-    var titles = { overview: '📊 Overview', orders: '🛒 Orders', subscriptions: '📦 Subscriptions', messages: '💬 Messages', products: '🥛 Products', customers: '👥 Customers', inventory: '📋 Inventory', cms: '🎨 CMS' };
+    var titles = {
+        overview: '📊 Overview', orders: '🛒 Orders', delivery: '🚚 Delivery Management',
+        livetracking: '📍 Live Tracking', deliveryboys: '🏍️ Delivery Boys', areas: '🗺️ Areas / Zones',
+        subscriptions: '📦 Subscriptions', messages: '💬 Messages', products: '🥛 Products',
+        customers: '👥 Customers', inventory: '📋 Inventory', analytics: '📈 Analytics',
+        cashcollection: '💵 Cash Collection', cms: '🎨 CMS', settings: '⚙️ Settings'
+    };
     document.getElementById('panel-title').textContent = titles[id] || id;
 
     if (id === 'orders') renderOrders();
@@ -463,6 +470,19 @@ function showPanel(id, btn) {
     if (id === 'customers') renderCustomers();
     if (id === 'inventory') renderInventory();
     if (id === 'cms') renderCMS();
+    if (id === 'delivery') renderDeliveryPanel();
+    if (id === 'livetracking') renderLiveTracking();
+    if (id === 'deliveryboys') renderDeliveryBoys();
+    if (id === 'areas') renderAreas();
+    if (id === 'analytics') renderAnalytics();
+    if (id === 'cashcollection') renderCashCollection();
+    if (id === 'settings') renderSettings();
+
+    // Close sidebar on mobile
+    if (window.innerWidth <= 768) {
+        var sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.remove('open');
+    }
 }
 
 function setBadge(id, count) {
@@ -485,7 +505,25 @@ function refreshVisiblePanel(activePanelId) {
     if (activePanelId === 'customers') renderCustomers();
     if (activePanelId === 'inventory') renderInventory();
     if (activePanelId === 'cms') renderCMS();
+    if (activePanelId === 'delivery') renderDeliveryPanel();
+    if (activePanelId === 'deliveryboys') renderDeliveryBoys();
+    if (activePanelId === 'cashcollection') renderCashCollection();
 }
+
+// Sidebar toggle for mobile
+function toggleSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.toggle('open');
+}
+
+// Sync countdown
+var syncCountdown = 5;
+setInterval(function() {
+    syncCountdown--;
+    if (syncCountdown <= 0) syncCountdown = 5;
+    var el = document.getElementById('sync-countdown');
+    if (el) el.textContent = syncCountdown + 's';
+}, 1000);
 
 function announceNewOrders(newOrders) {
     if (!newOrders.length) return;

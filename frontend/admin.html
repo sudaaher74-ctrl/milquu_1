@@ -13,6 +13,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap"
     rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="admin.css">
 </head>
 
@@ -36,12 +38,12 @@
   </div>
 
   <!-- ══ SIDEBAR ══ -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-mark">🌿</div>
+      <div class="logo-mark">🥛</div>
       <div>
         <div class="logo-name">Milqu<span> Fresh</span></div>
-        <div class="logo-sub">Admin Panel</div>
+        <div class="logo-sub">Admin Console</div>
       </div>
     </div>
     <nav class="nav">
@@ -49,20 +51,38 @@
           class="ni">📊</span> Overview</button>
       <button class="nav-item" data-panel="orders" onclick="showPanel('orders',this)"><span class="ni">🛒</span> Orders
         <span class="nav-badge" id="nb-orders">0</span></button>
-      <button class="nav-item" data-panel="products" onclick="showPanel('products',this)"><span class="ni">🥛</span>
-        Products</button>
-      <button class="nav-item" data-panel="customers" onclick="showPanel('customers',this)"><span class="ni">👥</span>
-        Customers</button>
+      <div class="nav-sep"></div>
+      <div class="nav-section-label">Delivery & Logistics</div>
+      <button class="nav-item" data-panel="delivery" onclick="showPanel('delivery',this)"><span class="ni">🚚</span>
+        Delivery Management</button>
+      <button class="nav-item" data-panel="livetracking" onclick="showPanel('livetracking',this)"><span
+          class="ni">📍</span> Live Tracking</button>
+      <button class="nav-item" data-panel="deliveryboys" onclick="showPanel('deliveryboys',this)"><span
+          class="ni">🏍️</span> Delivery Boys</button>
+      <button class="nav-item" data-panel="areas" onclick="showPanel('areas',this)"><span class="ni">🗺️</span>
+        Areas / Zones</button>
+      <div class="nav-sep"></div>
       <button class="nav-item" data-panel="subscriptions" onclick="showPanel('subscriptions',this)"><span
           class="ni">📦</span> Subscriptions <span class="nav-badge" id="nb-subs">0</span></button>
+      <button class="nav-item" data-panel="customers" onclick="showPanel('customers',this)"><span class="ni">👥</span>
+        Customers</button>
+      <button class="nav-item" data-panel="products" onclick="showPanel('products',this)"><span class="ni">🥛</span>
+        Products</button>
       <button class="nav-item" data-panel="inventory" onclick="showPanel('inventory',this)"><span class="ni">📋</span>
         Inventory</button>
       <button class="nav-item" data-panel="messages" onclick="showPanel('messages',this)"><span class="ni">💬</span>
         Messages <span class="nav-badge" id="nb-msgs">0</span></button>
+      <div class="nav-sep"></div>
+      <button class="nav-item" data-panel="analytics" onclick="showPanel('analytics',this)"><span
+          class="ni">📈</span> Analytics</button>
+      <button class="nav-item" data-panel="cashcollection" onclick="showPanel('cashcollection',this)"><span
+          class="ni">💵</span> Cash Collection</button>
       <button class="nav-item" data-panel="cms" onclick="showPanel('cms',this)"><span class="ni">🎨</span> CMS</button>
       <div class="nav-sep"></div>
-      <a href="index.html" target="_blank" rel="noopener noreferrer" class="nav-item" style="color:var(--text2);text-decoration:none;"><span
-          class="ni">🌐</span> View Website</a>
+      <button class="nav-item" data-panel="settings" onclick="showPanel('settings',this)"><span class="ni">⚙️</span>
+        Settings</button>
+      <a href="index.html" target="_blank" rel="noopener noreferrer" class="nav-item"
+        style="color:var(--text2);text-decoration:none;"><span class="ni">🌐</span> View Website</a>
     </nav>
     <div class="sidebar-footer">
       <div class="admin-chip">
@@ -77,8 +97,15 @@
 
   <!-- ══ MAIN ══ -->
   <div class="main">
+    <!-- TOPBAR -->
     <div class="topbar">
-      <div class="topbar-title" id="panel-title">📊 Overview</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="topbar-title" id="panel-title">📊 Overview</div>
+      </div>
+      <div class="topbar-search">
+        <input type="text" placeholder="Search analytics..." id="global-search" class="global-search-input">
+      </div>
       <div class="topbar-right">
         <div class="api-status" id="api-status">
           <div class="api-dot"></div><span id="api-status-text">Connecting…</span>
@@ -92,6 +119,7 @@
             </div>
           </div>
         </div>
+        <div class="topbar-icon-btn" onclick="toggleTheme()" title="Toggle theme">🌓</div>
         <div class="live-label">
           <div class="live-dot"></div> Live
         </div>
@@ -101,36 +129,21 @@
     </div>
 
     <div class="content">
+      <!-- ═══ OVERVIEW PANEL ═══ -->
       <div class="panel active" id="panel-overview">
         <div class="stats-grid" id="overview-stats">
-          <div class="stat-card">
-            <div class="stat-label">Loading…</div>
-            <div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div>
-            <div class="skeleton" style="width:120px;"></div>
-          </div>
-          <div class="stat-card amber">
-            <div class="stat-label">Loading…</div>
-            <div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div>
-            <div class="skeleton" style="width:120px;"></div>
-          </div>
-          <div class="stat-card red">
-            <div class="stat-label">Loading…</div>
-            <div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div>
-            <div class="skeleton" style="width:120px;"></div>
-          </div>
-          <div class="stat-card blue">
-            <div class="stat-label">Loading…</div>
-            <div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div>
-            <div class="skeleton" style="width:120px;"></div>
-          </div>
+          <div class="stat-card"><div class="stat-label">Loading…</div><div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div><div class="skeleton" style="width:120px;"></div></div>
+          <div class="stat-card green"><div class="stat-label">Loading…</div><div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div><div class="skeleton" style="width:120px;"></div></div>
+          <div class="stat-card amber"><div class="stat-label">Loading…</div><div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div><div class="skeleton" style="width:120px;"></div></div>
+          <div class="stat-card red"><div class="stat-label">Loading…</div><div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div><div class="skeleton" style="width:120px;"></div></div>
+          <div class="stat-card blue"><div class="stat-label">Loading…</div><div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div><div class="skeleton" style="width:120px;"></div></div>
+          <div class="stat-card"><div class="stat-label">Loading…</div><div class="skeleton" style="height:36px;width:80px;margin-bottom:8px;"></div><div class="skeleton" style="width:120px;"></div></div>
         </div>
         <div class="quick-actions">
-          <button class="qa-btn" onclick="showPanel('orders',document.querySelector('[data-panel=orders]'))">🛒 Manage
-            Orders</button>
-          <button class="qa-btn" onclick="showPanel('products',document.querySelector('[data-panel=products]'))">🥛
-            Products</button>
-          <button class="qa-btn" onclick="showPanel('customers',document.querySelector('[data-panel=customers]'))">👥
-            Customers</button>
+          <button class="qa-btn" onclick="showPanel('orders',document.querySelector('[data-panel=orders]'))">🛒 Manage Orders</button>
+          <button class="qa-btn" onclick="showPanel('delivery',document.querySelector('[data-panel=delivery]'))">🚚 Delivery Mgmt</button>
+          <button class="qa-btn" onclick="showPanel('deliveryboys',document.querySelector('[data-panel=deliveryboys]'))">🏍️ Delivery Boys</button>
+          <button class="qa-btn" onclick="showPanel('analytics',document.querySelector('[data-panel=analytics]'))">📈 Analytics</button>
           <button class="qa-btn" onclick="loadAll()">🔄 Refresh All</button>
         </div>
         <div class="grid3" style="margin-bottom:20px;">
@@ -150,9 +163,7 @@
               <h3>Top 5 Products</h3>
             </div>
             <div id="top-products-list">
-              <div class="empty-state"><span class="es-icon">📊</span>
-                <p>Loading…</p>
-              </div>
+              <div class="empty-state"><span class="es-icon">📊</span><p>Loading…</p></div>
             </div>
           </div>
         </div>
@@ -162,19 +173,8 @@
               <h3>Recent Orders</h3><span class="count-tag" id="recent-orders-count">—</span>
             </div>
             <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Order ID</th>
-                  <th>Customer</th>
-                  <th>Total</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="recent-orders-body">
-                <tr class="loading-row">
-                  <td colspan="4">⏳ Loading…</td>
-                </tr>
-              </tbody>
+              <thead><tr><th>Order ID</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead>
+              <tbody id="recent-orders-body"><tr class="loading-row"><td colspan="4">⏳ Loading…</td></tr></tbody>
             </table>
           </div>
           <div class="pcard">
@@ -182,25 +182,25 @@
               <h3>Recent Messages</h3><span class="count-tag" id="recent-msgs-count">—</span>
             </div>
             <div id="recent-msgs-list">
-              <div class="empty-state"><span class="es-icon">💬</span>
-                <p>Loading…</p>
-              </div>
+              <div class="empty-state"><span class="es-icon">💬</span><p>Loading…</p></div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- ═══ ORDERS PANEL (Enhanced) ═══ -->
       <div class="panel" id="panel-orders">
         <div class="pcard">
           <div class="table-controls">
-            <input type="text" class="search-input" id="order-search" placeholder="Search by order ID, name, phone…"
-              oninput="filterOrders()">
+            <input type="text" class="search-input" id="order-search" placeholder="Search by order ID, name, phone, area…" oninput="filterOrders()">
             <select class="filter-sel" id="order-status-filter" onchange="filterOrders()">
               <option value="">All Status</option>
               <option value="confirmed">Confirmed</option>
               <option value="pending">Pending</option>
+              <option value="assigned">Assigned</option>
               <option value="out_for_delivery">Out for Delivery</option>
               <option value="delivered">Delivered</option>
+              <option value="failed">Failed</option>
               <option value="cancelled">Cancelled</option>
             </select>
             <select class="filter-sel" id="order-pay-filter" onchange="filterOrders()">
@@ -210,25 +210,27 @@
               <option value="netbanking">Net Banking</option>
               <option value="cod">COD</option>
             </select>
+            <select class="filter-sel" id="order-area-filter" onchange="filterOrders()">
+              <option value="">All Areas</option>
+            </select>
+            <button class="btn-primary btn-sm" onclick="bulkAssignOrders()" style="margin-left:auto;">🚚 Bulk Assign</button>
           </div>
           <table class="data-table">
             <thead>
               <tr>
+                <th><input type="checkbox" id="select-all-orders" onchange="toggleAllOrders(this)"></th>
                 <th>Order ID</th>
                 <th>Customer</th>
                 <th>Items</th>
                 <th>Total</th>
                 <th>Payment</th>
                 <th>Status</th>
+                <th>Delivery Boy</th>
                 <th>Date</th>
                 <th>Action</th>
               </tr>
             </thead>
-            <tbody id="orders-body">
-              <tr class="loading-row">
-                <td colspan="8">⏳ Loading…</td>
-              </tr>
-            </tbody>
+            <tbody id="orders-body"><tr class="loading-row"><td colspan="10">⏳ Loading…</td></tr></tbody>
           </table>
           <div class="pagination">
             <div class="pg-info" id="orders-pg-info">—</div>
@@ -237,6 +239,239 @@
         </div>
       </div>
 
+      <!-- ═══ DELIVERY MANAGEMENT PANEL (NEW) ═══ -->
+      <div class="panel" id="panel-delivery">
+        <div class="stats-grid stats-grid-3" id="delivery-stats">
+          <div class="stat-card green">
+            <div class="stat-label">Delivered Today</div>
+            <div class="stat-val" style="color:var(--green);" id="del-delivered">0</div>
+            <div class="stat-sub">Completed</div>
+            <div class="stat-icon">✅</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-label">In Progress</div>
+            <div class="stat-val" style="color:var(--amber);" id="del-progress">0</div>
+            <div class="stat-sub">Out for delivery</div>
+            <div class="stat-icon">🚚</div>
+          </div>
+          <div class="stat-card red">
+            <div class="stat-label">Failed / Pending</div>
+            <div class="stat-val" style="color:var(--red);" id="del-failed">0</div>
+            <div class="stat-sub">Needs attention</div>
+            <div class="stat-icon">⚠️</div>
+          </div>
+        </div>
+        <div class="pcard" style="margin-bottom:20px;">
+          <div class="pcard-head">
+            <h3>🚚 Auto Assignment</h3>
+            <div class="pcard-actions">
+              <button class="btn-primary btn-sm" onclick="autoAssignByArea()">📍 Assign by Area</button>
+              <button class="btn-primary btn-sm" onclick="autoAssignByLoad()">⚖️ Balance Load</button>
+            </div>
+          </div>
+          <div class="load-viz" id="delivery-load-viz">
+            <div class="empty-state"><span class="es-icon">📊</span><p>Delivery boy load will appear here</p></div>
+          </div>
+        </div>
+        <div class="pcard">
+          <div class="table-controls">
+            <input type="text" class="search-input" id="del-search" placeholder="Search deliveries…" oninput="filterDeliveries()">
+            <select class="filter-sel" id="del-status-filter" onchange="filterDeliveries()">
+              <option value="">All Status</option>
+              <option value="assigned">Assigned</option>
+              <option value="out_for_delivery">Out for Delivery</option>
+              <option value="delivered">Delivered</option>
+              <option value="failed">Failed</option>
+            </select>
+            <select class="filter-sel" id="del-boy-filter" onchange="filterDeliveries()">
+              <option value="">All Delivery Boys</option>
+            </select>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Area</th>
+                <th>Delivery Boy</th>
+                <th>Status</th>
+                <th>Delivery Time</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="deliveries-body"><tr class="loading-row"><td colspan="7">⏳ Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ LIVE TRACKING PANEL (NEW) ═══ -->
+      <div class="panel" id="panel-livetracking">
+        <div class="live-tracking-layout">
+          <div class="pcard live-map-card">
+            <div class="pcard-head">
+              <h3>📍 Live Delivery Map</h3>
+              <div class="pcard-actions">
+                <button class="btn-primary btn-sm" onclick="refreshMapPositions()">🔄 Refresh Map</button>
+              </div>
+            </div>
+            <div id="live-map" class="live-map-container"></div>
+          </div>
+          <div class="pcard live-sidebar-card">
+            <div class="pcard-head">
+              <h3>Active Delivery Boys</h3>
+              <span class="count-tag" id="active-db-count">0</span>
+            </div>
+            <div id="live-db-list" class="live-db-list">
+              <div class="empty-state"><span class="es-icon">🏍️</span><p>No active delivery boys</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ DELIVERY BOYS PANEL (NEW) ═══ -->
+      <div class="panel" id="panel-deliveryboys">
+        <div class="grid3">
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>🏍️ Delivery Team</h3>
+              <span class="count-tag" id="db-count">0</span>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Status</th>
+                  <th>Current Load</th>
+                  <th>Success Rate</th>
+                  <th>Avg Time</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="db-body"><tr class="loading-row"><td colspan="7">⏳ Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>➕ Add Delivery Boy</h3>
+            </div>
+            <div style="padding:20px;">
+              <form id="db-form" onsubmit="addDeliveryBoy(event)">
+                <div class="form-group"><label>Name *</label><input name="name" required></div>
+                <div class="form-group"><label>Phone *</label><input name="phone" required></div>
+                <div class="form-group"><label>Email</label><input name="email" type="email"></div>
+                <div class="form-row">
+                  <div class="form-group"><label>Vehicle</label>
+                    <select name="vehicle">
+                      <option value="bike">Bike</option>
+                      <option value="bicycle">Bicycle</option>
+                      <option value="ev">Electric Vehicle</option>
+                    </select>
+                  </div>
+                  <div class="form-group"><label>Max Capacity</label><input name="maxCapacity" type="number" value="20"></div>
+                </div>
+                <div class="form-group"><label>Assigned Area</label>
+                  <select name="area" id="db-area-select">
+                    <option value="">Select area…</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%;">➕ Add Delivery Boy</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ AREAS / ZONES PANEL (NEW) ═══ -->
+      <div class="panel" id="panel-areas">
+        <div class="grid3">
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>🗺️ Delivery Areas & Zones</h3>
+              <span class="count-tag" id="areas-count">0</span>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Area Name</th>
+                  <th>Pincode</th>
+                  <th>Assigned Boys</th>
+                  <th>Orders Today</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="areas-body"><tr class="loading-row"><td colspan="6">⏳ Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div>
+            <div class="pcard" style="margin-bottom:18px;">
+              <div class="pcard-head">
+                <h3>➕ Add Area</h3>
+              </div>
+              <div style="padding:20px;">
+                <form id="area-form" onsubmit="addArea(event)">
+                  <div class="form-group"><label>Area Name *</label><input name="name" required></div>
+                  <div class="form-group"><label>Pincode *</label><input name="pincode" required></div>
+                  <div class="form-group"><label>City</label><input name="city" value="Default City"></div>
+                  <button type="submit" class="btn-primary" style="width:100%;">➕ Add Area</button>
+                </form>
+              </div>
+            </div>
+            <div class="pcard">
+              <div class="pcard-head">
+                <h3>🔥 Order Heatmap by Area</h3>
+              </div>
+              <div id="area-heatmap" style="padding:20px;">
+                <div class="empty-state"><span class="es-icon">🗺️</span><p>Loading heatmap…</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SUBSCRIPTIONS PANEL ═══ -->
+      <div class="panel" id="panel-subscriptions">
+        <div class="pcard">
+          <div class="table-controls">
+            <input type="text" class="search-input" id="sub-search" placeholder="Search by name, phone…" oninput="filterSubs()">
+            <select class="filter-sel" id="sub-status-filter" onchange="filterSubs()">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Sub ID</th><th>Customer</th><th>Milk Type</th><th>Qty/Day</th><th>Schedule</th><th>Monthly</th><th>Status</th><th>Start Date</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="subs-body"><tr class="loading-row"><td colspan="9">⏳ Loading…</td></tr></tbody>
+          </table>
+          <div class="pagination">
+            <div class="pg-info" id="subs-pg-info">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CUSTOMERS PANEL ═══ -->
+      <div class="panel" id="panel-customers">
+        <div class="pcard">
+          <div class="pcard-head">
+            <h3>👥 Customers</h3><span class="count-tag" id="customers-count">0</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Name</th><th>Phone</th><th>Email</th><th>Orders</th><th>Total Spent</th><th>Last Order</th><th>Action</th></tr>
+            </thead>
+            <tbody id="customers-body"><tr class="loading-row"><td colspan="7">⏳ Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ PRODUCTS PANEL ═══ -->
       <div class="panel" id="panel-products">
         <div class="grid3">
           <div class="pcard">
@@ -245,28 +480,13 @@
             </div>
             <table class="data-table">
               <thead>
-                <tr>
-                  <th>Icon</th>
-                  <th>Name</th>
-                  <th>Category</th>
-                  <th>Price</th>
-                  <th>Unit</th>
-                  <th>Stock</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
+                <tr><th>Icon</th><th>Name</th><th>Category</th><th>Price</th><th>Unit</th><th>Stock</th><th>Status</th><th>Action</th></tr>
               </thead>
-              <tbody id="products-body">
-                <tr class="loading-row">
-                  <td colspan="8">⏳ Loading…</td>
-                </tr>
-              </tbody>
+              <tbody id="products-body"><tr class="loading-row"><td colspan="8">⏳ Loading…</td></tr></tbody>
             </table>
           </div>
           <div class="pcard">
-            <div class="pcard-head">
-              <h3>➕ Add Product</h3>
-            </div>
+            <div class="pcard-head"><h3>➕ Add Product</h3></div>
             <div style="padding:20px;">
               <form id="product-form" onsubmit="addProduct(event)">
                 <div class="form-group"><label>Name *</label><input name="name" required></div>
@@ -288,8 +508,7 @@
                   <div class="form-group"><label>Emoji</label><input name="emoji" placeholder="🥛"></div>
                   <div class="form-group"><label>Unit</label><input name="unit" placeholder="/L, /kg"></div>
                 </div>
-                <div class="form-group"><label>Badge</label><input name="badge" placeholder="Fresh, Popular, etc.">
-                </div>
+                <div class="form-group"><label>Badge</label><input name="badge" placeholder="Fresh, Popular, etc."></div>
                 <div class="form-group"><label>Description</label><textarea name="description"></textarea></div>
                 <div class="form-group"><label>Image</label><input name="image" type="file" accept="image/*"></div>
                 <button type="submit" class="btn-primary" style="width:100%;">➕ Add Product</button>
@@ -299,102 +518,26 @@
         </div>
       </div>
 
-      <div class="panel" id="panel-customers">
-        <div class="pcard">
-          <div class="pcard-head">
-            <h3>👥 Customers</h3><span class="count-tag" id="customers-count">0</span>
-          </div>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Orders</th>
-                <th>Total Spent</th>
-                <th>Last Order</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="customers-body">
-              <tr class="loading-row">
-                <td colspan="7">⏳ Loading…</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="panel" id="panel-subscriptions">
-        <div class="pcard">
-          <div class="table-controls">
-            <input type="text" class="search-input" id="sub-search" placeholder="Search by name, phone…"
-              oninput="filterSubs()">
-            <select class="filter-sel" id="sub-status-filter" onchange="filterSubs()">
-              <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Sub ID</th>
-                <th>Customer</th>
-                <th>Milk Type</th>
-                <th>Qty/Day</th>
-                <th>Schedule</th>
-                <th>Monthly</th>
-                <th>Status</th>
-                <th>Start Date</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="subs-body">
-              <tr class="loading-row">
-                <td colspan="9">⏳ Loading…</td>
-              </tr>
-            </tbody>
-          </table>
-          <div class="pagination">
-            <div class="pg-info" id="subs-pg-info">—</div>
-          </div>
-        </div>
-      </div>
-
+      <!-- ═══ INVENTORY PANEL ═══ -->
       <div class="panel" id="panel-inventory">
         <div class="pcard">
           <div class="pcard-head">
             <h3>📋 Inventory Management</h3><span class="count-tag">Update stock levels</span>
           </div>
           <table class="data-table">
-            <thead>
-              <tr>
-                <th>Icon</th>
-                <th>Product</th>
-                <th>Category</th>
-                <th>Stock</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="inventory-body">
-              <tr class="loading-row">
-                <td colspan="6">⏳ Loading…</td>
-              </tr>
-            </tbody>
+            <thead><tr><th>Icon</th><th>Product</th><th>Category</th><th>Stock</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="inventory-body"><tr class="loading-row"><td colspan="6">⏳ Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
 
+      <!-- ═══ MESSAGES PANEL ═══ -->
       <div class="panel" id="panel-messages">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
           <div class="pcard">
             <div class="pcard-head">
               <h3>Inbox</h3>
-              <select class="filter-sel" id="msg-filter" onchange="filterMsgs()"
-                style="font-size:12px;padding:6px 10px;">
+              <select class="filter-sel" id="msg-filter" onchange="filterMsgs()" style="font-size:12px;padding:6px 10px;">
                 <option value="">All</option>
                 <option value="unread">Unread</option>
                 <option value="read">Read</option>
@@ -402,15 +545,11 @@
               </select>
             </div>
             <div id="messages-list">
-              <div class="empty-state"><span class="es-icon">💬</span>
-                <p>Loading…</p>
-              </div>
+              <div class="empty-state"><span class="es-icon">💬</span><p>Loading…</p></div>
             </div>
           </div>
           <div class="pcard" id="msg-detail-panel">
-            <div class="pcard-head">
-              <h3>Message Detail</h3>
-            </div>
+            <div class="pcard-head"><h3>Message Detail</h3></div>
             <div style="padding:40px 20px;text-align:center;color:var(--text3);">
               <div style="font-size:40px;margin-bottom:12px;">💬</div>
               <p style="font-size:14px;">Select a message to view details</p>
@@ -419,38 +558,115 @@
         </div>
       </div>
 
+      <!-- ═══ ANALYTICS PANEL (NEW) ═══ -->
+      <div class="panel" id="panel-analytics">
+        <div class="analytics-header">
+          <div>
+            <h2 class="analytics-title">Performance Analytics</h2>
+            <p class="analytics-subtitle">Detailed logistics and operational efficiency metrics</p>
+          </div>
+          <div class="pcard-actions">
+            <button class="view-btn" onclick="setAnalyticsPeriod('7d')">📅 Last 7 Days</button>
+            <button class="view-btn" onclick="setAnalyticsPeriod('30d')">📅 Last 30 Days</button>
+            <button class="btn-primary btn-sm" onclick="exportAnalyticsReport()">↓ Export Report</button>
+          </div>
+        </div>
+        <div class="grid2" style="margin-bottom:20px;">
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>Orders by Delivery Area</h3>
+              <span class="count-tag">Bar Chart</span>
+            </div>
+            <div class="chart-container"><canvas id="area-chart-canvas"></canvas></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-head"><h3>Delivery Success Rate</h3></div>
+            <div class="chart-container" style="display:flex;align-items:center;justify-content:center;">
+              <canvas id="success-rate-canvas" style="max-width:260px;max-height:260px;"></canvas>
+              <div id="success-rate-legend" class="success-legend"></div>
+            </div>
+          </div>
+        </div>
+        <div class="grid2" style="margin-bottom:20px;">
+          <div class="pcard">
+            <div class="pcard-head">
+              <h3>Avg Delivery Time</h3>
+              <span class="count-tag" id="avg-del-time">—</span>
+            </div>
+            <div class="chart-container"><canvas id="avg-time-chart-canvas"></canvas></div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-head"><h3>Peak Delivery Hours</h3></div>
+            <div id="peak-hours-list" style="padding:16px;">
+              <div class="empty-state"><span class="es-icon">⏰</span><p>Loading…</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-head">
+            <h3>Logistics Efficiency by Personnel</h3>
+            <button class="view-btn" onclick="showPanel('deliveryboys',document.querySelector('[data-panel=deliveryboys]'))">View All Squads</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Delivery Partner</th><th>Completed</th><th>Success Rate</th><th>Avg Time</th><th>Rating</th><th>Performance</th></tr>
+            </thead>
+            <tbody id="analytics-db-body"><tr class="loading-row"><td colspan="6">⏳ Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ CASH COLLECTION PANEL (NEW) ═══ -->
+      <div class="panel" id="panel-cashcollection">
+        <div class="stats-grid stats-grid-3" id="cash-stats">
+          <div class="stat-card green">
+            <div class="stat-label">Total COD Collected</div>
+            <div class="stat-val" style="color:var(--green);" id="cash-collected">₹0</div>
+            <div class="stat-sub">Today</div>
+            <div class="stat-icon">💵</div>
+          </div>
+          <div class="stat-card amber">
+            <div class="stat-label">Pending Settlement</div>
+            <div class="stat-val" style="color:var(--amber);" id="cash-pending">₹0</div>
+            <div class="stat-sub">From delivery boys</div>
+            <div class="stat-icon">⏳</div>
+          </div>
+          <div class="stat-card blue">
+            <div class="stat-label">Total COD Orders</div>
+            <div class="stat-val" style="color:var(--blue);" id="cash-orders">0</div>
+            <div class="stat-sub">Today</div>
+            <div class="stat-icon">📋</div>
+          </div>
+        </div>
+        <div class="pcard">
+          <div class="pcard-head">
+            <h3>💵 Cash Collection Breakdown</h3>
+            <button class="btn-primary btn-sm" onclick="settleAllCash()">✅ Settle All</button>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr><th>Delivery Boy</th><th>COD Collected</th><th>Orders</th><th>Settlement Status</th><th>Action</th></tr>
+            </thead>
+            <tbody id="cash-body"><tr class="loading-row"><td colspan="5">⏳ Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ CMS PANEL ═══ -->
       <div class="panel" id="panel-cms">
         <div class="grid3">
           <div class="pcard">
-            <div class="pcard-head">
-              <h3>🎨 CMS Content</h3>
-            </div>
+            <div class="pcard-head"><h3>🎨 CMS Content</h3></div>
             <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Key</th>
-                  <th>Type</th>
-                  <th>Title</th>
-                  <th>Value</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="cms-body">
-                <tr class="loading-row">
-                  <td colspan="6">⏳ Loading…</td>
-                </tr>
-              </tbody>
+              <thead><tr><th>Key</th><th>Type</th><th>Title</th><th>Value</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody id="cms-body"><tr class="loading-row"><td colspan="6">⏳ Loading…</td></tr></tbody>
             </table>
           </div>
           <div class="pcard">
-            <div class="pcard-head">
-              <h3>➕ Add Content</h3>
-            </div>
+            <div class="pcard-head"><h3>➕ Add Content</h3></div>
             <div style="padding:20px;">
               <form id="cms-form" onsubmit="addCMSContent(event)">
-                <div class="form-group"><label>Key *</label><input name="key" required placeholder="homepage_banner_1">
-                </div>
+                <div class="form-group"><label>Key *</label><input name="key" required placeholder="homepage_banner_1"></div>
                 <div class="form-group"><label>Type *</label>
                   <select name="type" required>
                     <option value="">Select…</option>
@@ -461,8 +677,7 @@
                   </select>
                 </div>
                 <div class="form-group"><label>Title</label><input name="title" placeholder="Banner Title"></div>
-                <div class="form-group"><label>Value / Text</label><textarea name="value"
-                    placeholder="Content text or URL…"></textarea></div>
+                <div class="form-group"><label>Value / Text</label><textarea name="value" placeholder="Content text or URL…"></textarea></div>
                 <div class="form-group"><label>Image</label><input name="image" type="file" accept="image/*"></div>
                 <div class="form-group"><label>Display Order</label><input name="order" type="number" value="0"></div>
                 <button type="submit" class="btn-primary" style="width:100%;">➕ Add Content</button>
@@ -471,9 +686,53 @@
           </div>
         </div>
       </div>
+
+      <!-- ═══ SETTINGS PANEL ═══ -->
+      <div class="panel" id="panel-settings">
+        <div class="grid2">
+          <div class="pcard">
+            <div class="pcard-head"><h3>⚙️ Account Settings</h3></div>
+            <div style="padding:20px;">
+              <form id="settings-form" onsubmit="updateCredentials(event)">
+                <div class="form-group"><label>Email</label><input id="set-new-email" type="email"></div>
+                <div class="form-group"><label>Current Password *</label><input id="set-curr-pass" type="password" required></div>
+                <div class="form-group"><label>New Password</label><input id="set-new-pass" type="password" placeholder="Leave blank to keep current"></div>
+                <button type="submit" class="btn-primary" id="settings-save-btn" style="width:100%;">💾 Save Changes</button>
+              </form>
+            </div>
+          </div>
+          <div class="pcard">
+            <div class="pcard-head"><h3>📊 System Info</h3></div>
+            <div style="padding:20px;">
+              <div class="detail-row"><span>Platform</span><strong>Milqu Fresh v2.0</strong></div>
+              <div class="detail-row"><span>Admin Role</span><strong id="settings-role">—</strong></div>
+              <div class="detail-row"><span>API Status</span><strong id="settings-api">—</strong></div>
+              <div class="detail-row"><span>Theme</span><strong id="settings-theme">Light</strong></div>
+              <div class="detail-row"><span>Auto Sync</span><strong>Every 5s</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+      <div class="status-bar-left">
+        <div class="status-indicator" id="system-status">
+          <div class="status-dot green"></div>
+          <span>System Status: Optimal</span>
+        </div>
+        <div class="status-sync" id="sync-timer">
+          <span>⏱</span> Next sync in <span id="sync-countdown">5s</span>
+        </div>
+      </div>
+      <div class="status-bar-right">
+        © 2024 Milqu Fresh Logistics Platform
+      </div>
     </div>
   </div>
 
+  <!-- ═══ MODALS ═══ -->
   <div class="detail-modal" id="order-modal">
     <div class="detail-box">
       <div class="detail-box-head">
@@ -491,25 +750,19 @@
     <div class="detail-box">
       <div class="detail-box-head">
         <div style="font-size:16px;font-weight:800;">Edit Product</div>
-        <button class="detail-close"
-          onclick="document.getElementById('product-edit-modal').classList.remove('open')">✕</button>
+        <button class="detail-close" onclick="document.getElementById('product-edit-modal').classList.remove('open')">✕</button>
       </div>
       <div class="detail-body">
         <form id="product-edit-form" onsubmit="saveProductEdit(event)">
           <input type="hidden" id="edit-prod-id">
           <div class="form-group"><label>Name</label><input id="edit-prod-name" name="name" required></div>
           <div class="form-row">
-            <div class="form-group"><label>Price (₹)</label><input id="edit-prod-price" name="price" type="number"
-                required></div>
+            <div class="form-group"><label>Price (₹)</label><input id="edit-prod-price" name="price" type="number" required></div>
             <div class="form-group"><label>Stock</label><input id="edit-prod-stock" name="stock" type="number"></div>
           </div>
           <div class="form-group"><label>Category</label>
             <select id="edit-prod-category" name="category">
-              <option value="milk">Milk</option>
-              <option value="dairy">Dairy</option>
-              <option value="vegetables">Vegetables</option>
-              <option value="fruits">Fruits</option>
-              <option value="other">Other</option>
+              <option value="milk">Milk</option><option value="dairy">Dairy</option><option value="vegetables">Vegetables</option><option value="fruits">Fruits</option><option value="other">Other</option>
             </select>
           </div>
           <div class="form-row">
@@ -517,13 +770,21 @@
             <div class="form-group"><label>Unit</label><input id="edit-prod-unit" name="unit"></div>
           </div>
           <div class="form-group"><label>Badge</label><input id="edit-prod-badge" name="badge"></div>
-          <div class="form-group"><label>Description</label><textarea id="edit-prod-desc" name="description"></textarea>
-          </div>
-          <div class="form-group"><label>New Image (optional)</label><input name="image" type="file" accept="image/*">
-          </div>
+          <div class="form-group"><label>Description</label><textarea id="edit-prod-desc" name="description"></textarea></div>
+          <div class="form-group"><label>New Image (optional)</label><input name="image" type="file" accept="image/*"></div>
           <button type="submit" class="btn-primary" style="width:100%;">💾 Save Changes</button>
         </form>
       </div>
+    </div>
+  </div>
+
+  <div class="detail-modal" id="db-edit-modal">
+    <div class="detail-box">
+      <div class="detail-box-head">
+        <div style="font-size:16px;font-weight:800;">Edit Delivery Boy</div>
+        <button class="detail-close" onclick="document.getElementById('db-edit-modal').classList.remove('open')">✕</button>
+      </div>
+      <div class="detail-body" id="db-edit-content"></div>
     </div>
   </div>
 
@@ -532,6 +793,7 @@
   <script src="js/config.js"></script>
   <script src="js/admin-core.js"></script>
   <script src="js/admin-panels.js"></script>
+  <script src="js/admin-delivery.js"></script>
 </body>
 
 </html>
