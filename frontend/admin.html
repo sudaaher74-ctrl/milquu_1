@@ -13,6 +13,7 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap"
     rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="admin.css">
@@ -221,6 +222,7 @@
                 <th><input type="checkbox" id="select-all-orders" onchange="toggleAllOrders(this)"></th>
                 <th>Order ID</th>
                 <th>Customer</th>
+                <th>Area</th>
                 <th>Items</th>
                 <th>Total</th>
                 <th>Payment</th>
@@ -230,7 +232,7 @@
                 <th>Action</th>
               </tr>
             </thead>
-            <tbody id="orders-body"><tr class="loading-row"><td colspan="10">⏳ Loading…</td></tr></tbody>
+            <tbody id="orders-body"><tr class="loading-row"><td colspan="11">⏳ Loading…</td></tr></tbody>
           </table>
           <div class="pagination">
             <div class="pg-info" id="orders-pg-info">—</div>
@@ -788,12 +790,26 @@
     </div>
   </div>
 
+  <!-- REAL-TIME ORDER NOTIFICATION BANNER -->
+  <div class="rt-notif-banner" id="rt-notif-banner">
+    <div class="rt-notif-inner">
+      <div class="rt-notif-icon">🛒</div>
+      <div class="rt-notif-content">
+        <div class="rt-notif-title">New Order Received!</div>
+        <div class="rt-notif-detail" id="rt-notif-detail">Order #MQ-XXXX from Customer</div>
+      </div>
+      <button class="rt-notif-view" id="rt-notif-view-btn" onclick="viewNewOrder()">View Order</button>
+      <button class="rt-notif-close" onclick="closeRealtimeNotif()">✕</button>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="js/config.js"></script>
   <script src="js/admin-core.js"></script>
   <script src="js/admin-panels.js"></script>
   <script src="js/admin-delivery.js"></script>
+  <script src="js/admin-realtime.js"></script>
 </body>
 
 </html>

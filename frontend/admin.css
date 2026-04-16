@@ -1339,3 +1339,131 @@ body {
 .rate-chip.good { background: var(--green-lt); color: var(--green); }
 .rate-chip.ok { background: var(--amber-lt); color: var(--amber); }
 .rate-chip.bad { background: var(--red-lt); color: var(--red); }
+
+/* ═══ REAL-TIME ORDER NOTIFICATION BANNER ═══ */
+.rt-notif-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 9000;
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: transform .4s cubic-bezier(.4, 0, .2, 1), opacity .3s ease;
+    pointer-events: none;
+}
+
+.rt-notif-banner.show {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
+}
+
+.rt-notif-inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 60%, #166534 100%);
+    color: #fff;
+    box-shadow: 0 6px 30px rgba(22, 163, 74, .4), 0 2px 10px rgba(0, 0, 0, .15);
+    animation: rtNotifPulse 2s ease-in-out infinite;
+}
+
+@keyframes rtNotifPulse {
+    0%, 100% { box-shadow: 0 6px 30px rgba(22, 163, 74, .4); }
+    50% { box-shadow: 0 6px 40px rgba(22, 163, 74, .65); }
+}
+
+.rt-notif-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+    animation: rtNotifBounce 0.6s ease;
+}
+
+@keyframes rtNotifBounce {
+    0% { transform: scale(0.3); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+.rt-notif-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.rt-notif-title {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -.2px;
+    margin-bottom: 2px;
+}
+
+.rt-notif-detail {
+    font-size: 13px;
+    font-weight: 500;
+    opacity: .9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--mono);
+}
+
+.rt-notif-view {
+    padding: 8px 18px;
+    background: rgba(255, 255, 255, .2);
+    color: #fff;
+    border: 2px solid rgba(255, 255, 255, .4);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font);
+    transition: all .2s;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+}
+
+.rt-notif-view:hover {
+    background: rgba(255, 255, 255, .35);
+    border-color: #fff;
+    transform: scale(1.04);
+}
+
+.rt-notif-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, .15);
+    border: 1px solid rgba(255, 255, 255, .3);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all .18s;
+    flex-shrink: 0;
+}
+
+.rt-notif-close:hover {
+    background: rgba(255, 255, 255, .3);
+}
+
+/* ═══ SOCKET STATUS IN TOPBAR ═══ */
+.api-status.socket-ok .api-dot {
+    background: #22c55e;
+    box-shadow: 0 0 6px #22c55e88;
+}
+
+@media (max-width: 768px) {
+    .rt-notif-inner {
+        padding: 12px 16px;
+        gap: 12px;
+    }
+    .rt-notif-icon { font-size: 24px; }
+    .rt-notif-title { font-size: 13px; }
+    .rt-notif-detail { font-size: 11px; }
+    .rt-notif-view { padding: 6px 12px; font-size: 11px; }
+}
+

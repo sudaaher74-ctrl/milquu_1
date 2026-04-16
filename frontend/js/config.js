@@ -10,7 +10,7 @@
         API_BASE: configuredApiBase
             ? configuredApiBase.replace(/\/$/, '')
             : (isLocalDev
-                ? 'http://localhost:5000/api'
+                ? 'http://localhost:5001/api'
                 : `${window.location.origin.replace(/\/$/, '')}/api`),
         ADMIN_AUTH_DISABLED: isLocalDev
     };

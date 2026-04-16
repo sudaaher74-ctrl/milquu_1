@@ -1,17 +1,39 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const path = require('path');
+const { Server: SocketIOServer } = require('socket.io');
 const { getAllowedCorsOrigins, getRequiredEnv, isAdminAuthDisabled, isProduction } = require('./config');
 const { ensureDefaultProducts } = require('./utils/seed-default-products');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const httpServer = http.createServer(app);
+const PORT = process.env.PORT || 5001;
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
 const allowedCorsOrigins = new Set(getAllowedCorsOrigins());
+
+// ── Socket.IO setup ─────────────────────────────────────────
+const io = new SocketIOServer(httpServer, {
+    cors: {
+        origin: allowedCorsOrigins.size > 0 ? [...allowedCorsOrigins] : '*',
+        methods: ['GET', 'POST']
+    },
+    transports: ['websocket', 'polling']
+});
+
+// Make io accessible in routes via req.app.get('io')
+app.set('io', io);
+
+io.on('connection', (socket) => {
+    console.log(`[Socket.IO] Client connected: ${socket.id}`);
+    socket.on('disconnect', () => {
+        console.log(`[Socket.IO] Client disconnected: ${socket.id}`);
+    });
+});
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
@@ -42,11 +64,11 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.socket.io"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "blob:"],
-            connectSrc: ["'self'"],
+            connectSrc: ["'self'", "ws:", "wss:"],
             frameSrc: ["'none'"],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
@@ -139,7 +161,8 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, message: 'Internal server error.' });
 });
 
-const server = app.listen(PORT, () => {
+const server = httpServer.listen(PORT, () => {
+    console.log(`[Socket.IO] Real-time sync enabled`);
     if (allowedCorsOrigins.size === 0) {
         console.warn('CORS_ORIGIN is not set. Cross-origin requests are currently allowed from any origin.');
     }

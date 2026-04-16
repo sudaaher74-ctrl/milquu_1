@@ -260,7 +260,7 @@ router.post('/', publicOrderLimiter, async (req, res) => {
             items: orderItems,
             total,
             paymentMethod: cleanPaymentMethod,
-            status: 'confirmed',
+            status: 'pending',
             paymentStatus: cleanPaymentMethod === 'cod' ? 'pending' : 'paid',
             area_id,
             assigned_delivery_boy_id
@@ -274,6 +274,15 @@ router.post('/', publicOrderLimiter, async (req, res) => {
         }
 
         sendWhatsAppNotification(order).catch(() => { });
+
+        // ── Emit real-time event for admin dashboard ──
+        const io = req.app.get('io');
+        if (io) {
+            const populatedOrder = await Order.findById(order._id)
+                .populate('area_id', 'name')
+                .populate('assigned_delivery_boy_id', 'name phone');
+            io.emit('new_order', populatedOrder || order);
+        }
 
         res.status(201).json({
             success: true,
@@ -459,6 +468,13 @@ router.patch('/:orderId/status', verifyToken, requireRole(...ORDER_ACCESS_ROLES)
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found.' });
         }
+
+        // ── Emit real-time status change ──
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('order_status_changed', { orderId: order.orderId, status: nextStatus, order });
+        }
+
         res.json({ success: true, message: 'Order status updated.', order });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
@@ -623,6 +639,12 @@ router.patch('/:orderId/assign', verifyToken, requireRole('super_admin', 'manage
 
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found.' });
+        }
+
+        // ── Emit real-time assignment event ──
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('order_status_changed', { orderId: order.orderId, status: 'assigned', order });
         }
 
         res.json({ success: true, message: `Order assigned to ${deliveryBoy.name}.`, order });

@@ -125,14 +125,37 @@ async function loadRevenueChart(period) {
 // ══════════════════════════════════════════════════════
 //  ORDERS
 // ══════════════════════════════════════════════════════
-function renderOrders() { filteredOrders = [...allOrders]; filterOrders(); }
+function renderOrders() {
+    filteredOrders = [...allOrders];
+    populateOrderAreaFilter();
+    filterOrders();
+}
+
+// Populate area filter dropdown dynamically
+async function populateOrderAreaFilter() {
+    var sel = document.getElementById('order-area-filter');
+    if (!sel || sel.options.length > 1) return; // already populated
+    try {
+        var data = await apiFetch('/areas');
+        var areas = data.data || data.areas || [];
+        areas.forEach(function (a) {
+            var opt = document.createElement('option');
+            opt.value = a._id;
+            opt.textContent = a.name;
+            sel.appendChild(opt);
+        });
+    } catch (e) { /* silent */ }
+}
+
 function filterOrders() {
     const q = (document.getElementById('order-search')?.value || '').toLowerCase();
     const st = document.getElementById('order-status-filter')?.value || '';
     const pm = document.getElementById('order-pay-filter')?.value || '';
+    const areaFilter = document.getElementById('order-area-filter')?.value || '';
     filteredOrders = allOrders.filter(o => {
-        const mQ = !q || o.orderId?.toLowerCase().includes(q) || o.customer?.name?.toLowerCase().includes(q) || o.customer?.phone?.includes(q);
-        return mQ && (!st || o.status === st) && (!pm || o.paymentMethod === pm);
+        const mQ = !q || o.orderId?.toLowerCase().includes(q) || o.customer?.name?.toLowerCase().includes(q) || o.customer?.phone?.includes(q) || (o.area_id && typeof o.area_id === 'object' && o.area_id.name && o.area_id.name.toLowerCase().includes(q));
+        const mArea = !areaFilter || (o.area_id && (typeof o.area_id === 'object' ? o.area_id._id : o.area_id) === areaFilter);
+        return mQ && (!st || o.status === st) && (!pm || o.paymentMethod === pm) && mArea;
     });
     ordPage = 0; renderOrdersPage();
 }
@@ -151,6 +174,7 @@ function renderOrdersPage() {
       <td><input type="checkbox" class="order-checkbox" value="${o.orderId}"></td>
       <td><span style="font-family:var(--mono);color:var(--accent);font-size:12px;">#${o.orderId}</span></td>
       <td><div style="font-weight:600;">${o.customer?.name || '—'}</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${o.customer?.phone || ''}</div></td>
+      <td><span class="badge badge-gray" style="font-size:10px;">${(o.area_id && typeof o.area_id === 'object') ? (o.area_id.name || '—') : '—'}</span></td>
       <td style="font-size:12px;color:var(--text2);">${(o.items || []).map(function(i){ return (i.e||'') + i.name + '×' + i.qty; }).join(', ').substring(0, 50)}</td>
       <td><span style="font-family:var(--mono);font-weight:700;">₹${(o.total || 0).toFixed(0)}</span></td>
       <td>${payBadge(o.paymentMethod)}</td>
@@ -159,7 +183,7 @@ function renderOrdersPage() {
       <td style="font-size:12px;color:var(--text3);font-family:var(--mono);">${fmtDate(o.createdAt)}</td>
       <td><button class="view-btn" onclick="openOrderModal('${o.orderId}')">View</button></td>
     </tr>`;
-    }).join('') || '<tr><td colspan="10"><div class="empty-state"><span class="es-icon">🛒</span><p>No orders found</p></div></td></tr>';
+    }).join('') || '<tr><td colspan="11"><div class="empty-state"><span class="es-icon">🛒</span><p>No orders found</p></div></td></tr>';
     document.getElementById('orders-pg-info').textContent = `Showing ${Math.min(start + 1, filteredOrders.length)}–${Math.min(end, filteredOrders.length)} of ${filteredOrders.length}`;
     const totalPgs = Math.ceil(filteredOrders.length / PER_PAGE);
     let pgH = ''; for (let i = 0; i < totalPgs; i++) pgH += `<button class="pg-btn ${i === ordPage ? 'active' : ''}" onclick="ordPage=${i};renderOrdersPage()">${i + 1}</button>`;
@@ -168,6 +192,7 @@ function renderOrdersPage() {
 
 function openOrderModal(orderId) {
     const o = allOrders.find(x => x.orderId === orderId); if (!o) return;
+    const areaName = (o.area_id && typeof o.area_id === 'object') ? (o.area_id.name || '—') : '—';
     document.getElementById('modal-order-id').textContent = `Order #${o.orderId}`;
     document.getElementById('modal-order-date').textContent = fmt(o.createdAt);
     const items = (o.items || []).map(i => `<div class="detail-row"><span>${i.e || ''} ${i.name} × ${i.qty}</span><strong style="font-family:var(--mono);">₹${((i.price || 0) * (i.qty || 1)).toFixed(0)}</strong></div>`).join('');
@@ -177,6 +202,7 @@ function openOrderModal(orderId) {
       <div class="detail-row"><span>Phone</span><strong style="font-family:var(--mono);">${o.customer?.phone || '—'}</strong></div>
       <div class="detail-row"><span>Email</span><strong>${o.customer?.email || '—'}</strong></div>
       <div class="detail-row"><span>Address</span><strong>${o.customer?.address || '—'}</strong></div>
+      <div class="detail-row"><span>Area</span><strong>${areaName}</strong></div>
       ${o.customer?.notes ? `<div class="detail-row"><span>Notes</span><strong>${o.customer.notes}</strong></div>` : ''}
     </div>
     <div class="detail-section"><h4>Order Items</h4>${items}
@@ -189,8 +215,8 @@ function openOrderModal(orderId) {
     </div>
     <div class="detail-section"><h4>Order Timeline</h4>
       <div class="order-timeline">
-        ${['Ordered','Assigned','Out for Delivery','Delivered'].map((step, idx) => {
-          const statusMap = ['pending','assigned','out_for_delivery','delivered'];
+        ${['Pending','Confirmed','Assigned','Out for Delivery','Delivered'].map((step, idx) => {
+          const statusMap = ['pending','confirmed','assigned','out_for_delivery','delivered'];
           const currentIdx = statusMap.indexOf(o.status);
           const isFailed = o.status === 'failed' || o.status === 'cancelled';
           const dotClass = isFailed && idx === currentIdx ? 'failed' : (idx <= currentIdx ? 'done' : (idx === currentIdx + 1 ? 'active' : ''));
@@ -200,7 +226,7 @@ function openOrderModal(orderId) {
               <div class="timeline-dot ${dotClass}">${idx <= currentIdx ? '✓' : (idx + 1)}</div>
               <div class="timeline-label">${step}</div>
             </div>
-            ${idx < 3 ? `<div class="timeline-line ${lineClass}"></div>` : ''}`;
+            ${idx < 4 ? `<div class="timeline-line ${lineClass}"></div>` : ''}`;
         }).join('')}
       </div>
     </div>

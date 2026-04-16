@@ -1,7 +1,7 @@
 // ══════════════════════════════════════════════════════
 //  MILQU FRESH — Admin Dashboard JS
 // ══════════════════════════════════════════════════════
-const API_BASE = window.MILQU_CONFIG?.API_BASE || 'http://localhost:5000/api';
+const API_BASE = window.MILQU_CONFIG?.API_BASE || 'http://localhost:5001/api';
 
 // ── STATE
 let allOrders = [], allSubs = [], allMsgs = [], allProducts = [], allCustomers = [], allContent = [];
