@@ -175,8 +175,9 @@ setTimeout(function() { loadDeliveryData(); }, 500);
 async function assignDeliveryBoy(orderId, dbId) {
     if (!dbId) return;
     try {
-        var res = await apiFetch('/orders/' + orderId + '/assign', {
+        var res = await apiRequest('/orders/' + orderId + '/assign', {
             method: 'PATCH',
+            headers: authHeaders(),
             body: JSON.stringify({ delivery_boy_id: dbId })
         });
         if (res && res.success) {
@@ -221,8 +222,9 @@ async function bulkAssignOrders() {
     }
 
     try {
-        var res = await apiFetch('/orders/bulk-assign', {
+        var res = await apiRequest('/orders/bulk-assign', {
             method: 'POST',
+            headers: authHeaders(),
             body: JSON.stringify({})
         });
         if (res && res.success) {
@@ -364,7 +366,7 @@ function filterDeliveries() {
 
 async function autoAssignByArea() {
     try {
-        var res = await apiFetch('/orders/bulk-assign', { method: 'POST', body: JSON.stringify({}) });
+        var res = await apiRequest('/orders/bulk-assign', { method: 'POST', headers: authHeaders(), body: JSON.stringify({}) });
         if (res && res.success) {
             toast('✅ ' + res.message);
             await loadAll();
@@ -569,8 +571,9 @@ async function addDeliveryBoy(e) {
     };
 
     try {
-        var res = await apiFetch('/admin/register', {
+        var res = await apiRequest('/admin/register', {
             method: 'POST',
+            headers: authHeaders(),
             body: JSON.stringify(payload)
         });
         if (res && res.success) {
@@ -608,8 +611,9 @@ function editDeliveryBoy(dbId) {
 async function saveDeliveryBoyEdit(e, dbId) {
     e.preventDefault();
     try {
-        var res = await apiFetch('/admin/' + dbId, {
+        var res = await apiRequest('/admin/' + dbId, {
             method: 'PUT',
+            headers: authHeaders(),
             body: JSON.stringify({
                 name: document.getElementById('dbe-name').value,
                 phone: document.getElementById('dbe-phone').value,
@@ -664,8 +668,9 @@ async function addArea(e) {
     var fd = new FormData(form);
 
     try {
-        var res = await apiFetch('/areas', {
+        var res = await apiRequest('/areas', {
             method: 'POST',
+            headers: authHeaders(),
             body: JSON.stringify({
                 name: fd.get('name'),
                 pincodes: [fd.get('pincode')]
@@ -693,8 +698,9 @@ async function editArea(areaId) {
     if (newPincode === null) return;
 
     try {
-        await apiFetch('/areas/' + areaId, {
+        await apiRequest('/areas/' + areaId, {
             method: 'PUT',
+            headers: authHeaders(),
             body: JSON.stringify({ name: newName, pincodes: [newPincode] })
         });
         toast('✅ Area updated');

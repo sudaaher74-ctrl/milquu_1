@@ -12,6 +12,6 @@
             : (isLocalDev
                 ? 'http://localhost:5001/api'
                 : `${window.location.origin.replace(/\/$/, '')}/api`),
-        ADMIN_AUTH_DISABLED: isLocalDev
+        ADMIN_AUTH_DISABLED: false
     };
 })();
