@@ -348,19 +348,8 @@ async function placeOrder() {
     area_id: selArea.value,
     items: c, total: sum + 1, paymentMethod: 'cod'
   };
+  // [DEMO MODE] FULL LOCAL STORAGE OVERRIDE
   try {
-    const res = await fetch(`${API_BASE}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(orderData) });
-    const result = await res.json();
-    btn.disabled = false; btn.textContent = '💵 Confirm & Place Order';
-    if (result.success) {
-      document.getElementById('final-order-id').textContent = '#' + result.orderId;
-      document.querySelectorAll('.pay-panel').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.pay-step').forEach(s => { s.classList.remove('active'); s.classList.add('done'); });
-      document.getElementById('pay-panel-success').classList.add('active');
-      saveCart([]); updateCart();
-    } else { notif('❌ ' + (result.message || 'Order failed. Try again.')); }
-  } catch (err) {
-    console.warn('[DEMO MODE] Server offline. Using LocalStorage fallback to simulate placement.');
     const mockOrderId = 'MQ-DEMO-' + Math.floor(1000 + Math.random() * 9000);
     const mockOrderPayload = {
       orderId: mockOrderId,
@@ -373,7 +362,15 @@ async function placeOrder() {
       createdAt: new Date().toISOString()
     };
     
-    // Dispatch mock storage event for admin dashboard
+    // Save to persistent local storage array
+    let existingDemoOrders = [];
+    try {
+        existingDemoOrders = JSON.parse(localStorage.getItem('milqu_demo_orders_list')) || [];
+    } catch(e) {}
+    existingDemoOrders.unshift(mockOrderPayload);
+    localStorage.setItem('milqu_demo_orders_list', JSON.stringify(existingDemoOrders));
+
+    // Dispatch mock storage event for real-time dashboard banner
     localStorage.setItem('milqu_demo_new_order', JSON.stringify(mockOrderPayload));
     
     setTimeout(() => {
@@ -384,6 +381,10 @@ async function placeOrder() {
       document.getElementById('pay-panel-success').classList.add('active');
       saveCart([]); updateCart();
     }, 600);
+  } catch (err) {
+    console.error(err);
+    btn.disabled = false; btn.textContent = '💵 Confirm & Place Order';
+    notif('❌ Something went wrong.');
   }
 }
 

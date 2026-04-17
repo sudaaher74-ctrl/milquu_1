@@ -238,8 +238,8 @@ window.addEventListener('storage', function(e) {
     if (e.key === 'milqu_demo_new_order' && e.newValue) {
         try {
             var order = JSON.parse(e.newValue);
-            console.log('[DEMO MODE] New mock order intercepted:', order.orderId);
-            updateSocketStatus('demo_mode');
+            console.log('[LOCAL OVERRIDE] New order intercepted:', order.orderId);
+            updateSocketStatus('connected');
             
             // Play notification sound
             playOrderSound();

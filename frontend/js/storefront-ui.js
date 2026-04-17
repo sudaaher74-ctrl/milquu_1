@@ -565,30 +565,45 @@ async function placeOrder() {
     paymentMethod: 'cod'
   };
 
+  // [DEMO MODE] FULL LOCAL STORAGE OVERRIDE
   try {
-    const response = await fetch(`${API_BASE}/orders`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(orderData)
-    });
-    const result = await response.json().catch(() => ({}));
+    const mockOrderId = 'MQ-DEMO-' + Math.floor(1000 + Math.random() * 9000);
+    const mockOrderPayload = {
+      orderId: mockOrderId,
+      customer: orderData.customer,
+      area_id: { name: area.name || 'Demo Area' },
+      items: orderData.items,
+      total: orderData.total,
+      paymentMethod: orderData.paymentMethod,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
 
-    if (!response.ok || !result.success) {
-      throw new Error(result.message || 'Order failed. Please try again.');
-    }
+    // Save to persistent local storage array
+    let existingDemoOrders = [];
+    try {
+        existingDemoOrders = JSON.parse(localStorage.getItem('milqu_demo_db_orders')) || [];
+    } catch(e) {}
+    existingDemoOrders.unshift(mockOrderPayload);
+    localStorage.setItem('milqu_demo_db_orders', JSON.stringify(existingDemoOrders));
 
-    document.getElementById('final-order-id').textContent = `#${result.orderId}`;
-    document.querySelectorAll('.pay-panel').forEach(panel => panel.classList.remove('active'));
-    document.querySelectorAll('.pay-step').forEach(step => {
-      step.classList.remove('active');
-      step.classList.add('done');
-    });
-    document.getElementById('pay-panel-success').classList.add('active');
-    saveCart([]);
-    updateCart();
+    // Dispatch mock storage event for real-time dashboard banner
+    localStorage.setItem('milqu_demo_new_order', JSON.stringify(mockOrderPayload));
+
+    setTimeout(() => {
+        document.getElementById('final-order-id').textContent = `#${mockOrderId}`;
+        document.querySelectorAll('.pay-panel').forEach(panel => panel.classList.remove('active'));
+        document.querySelectorAll('.pay-step').forEach(step => {
+          step.classList.remove('active');
+          step.classList.add('done');
+        });
+        document.getElementById('pay-panel-success').classList.add('active');
+        saveCart([]);
+        updateCart();
+    }, 600);
   } catch (err) {
     console.error(err);
-    notif(`❌ ${err.message || 'Server offline. Please try again.'}`);
+    notif(`❌ Something went wrong.`);
   } finally {
     placeOrderButton.disabled = false;
     placeOrderButton.textContent = DEFAULT_ORDER_BUTTON_LABEL;

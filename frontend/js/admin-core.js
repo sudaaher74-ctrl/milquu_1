@@ -627,16 +627,25 @@ async function loadAll(silent) {
             }
         }
         
-        // If it's the first load and we failed, render empty state so we don't get stuck in "LOADING..."
+        // [OFFLINE MOCKUP] - Pure empty state connected to LocalStorage checkout
         if (!hasLoadedDashboardData) {
-            allOrders = [];
+            try {
+                var storedOrders = JSON.parse(localStorage.getItem('milqu_demo_db_orders')) || [];
+                allOrders = storedOrders;
+            } catch(e) {
+                allOrders = [];
+            }
+            
             allSubs = [];
             allMsgs = [];
             allProducts = [];
+            
             hasLoadedDashboardData = true;
             renderOverview();
-            if (activePanelId !== 'overview') {
-                refreshVisiblePanel(activePanelId);
+            if (activePanelId !== 'overview') refreshVisiblePanel(activePanelId);
+            
+            if (typeof updateSocketStatus !== 'undefined') {
+                 setTimeout(() => updateSocketStatus('connected'), 100);
             }
         }
     } finally {
