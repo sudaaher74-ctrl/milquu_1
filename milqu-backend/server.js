@@ -104,8 +104,8 @@ mongoose.connect(getRequiredEnv('MONGO_URI'))
         console.log('MongoDB connected to milqu_fresh database');
     })
     .catch((err) => {
-        console.error('MongoDB connection failed:', err.message);
-        process.exit(1);
+        console.error('MongoDB connection failed. Continuing without database so frontend can still be served locally:', err.message);
+        // Removed process.exit(1) to allow the server to keep running for offline demo purposes.
     });
 
 app.use('/api/orders', require('./routes/orders'));

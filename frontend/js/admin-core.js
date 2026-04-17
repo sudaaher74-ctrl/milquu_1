@@ -411,7 +411,14 @@ function statusBadge(s) {
 }
 function payBadge(p) { var icons = { upi: 'UPI', card: 'Card', netbanking: 'Net Banking', cod: 'COD' }; return `<span style="font-size:13px;">${icons[p] || (p || 'NA').toUpperCase()}</span>`; }
 function toast(msg, type) { var t = document.getElementById('toast'); t.textContent = msg; t.className = `toast show ${type || 'success'}`; setTimeout(function () { t.classList.remove('show'); }, 3200); }
-function setApiStatus(ok, label) { var el = document.getElementById('api-status'); var txt = document.getElementById('api-status-text'); el.className = 'api-status ' + (ok ? 'ok' : 'err'); txt.textContent = label || (ok ? 'Connected' : 'Offline'); }
+function setApiStatus(ok, label) { 
+    var el = document.getElementById('api-status'); 
+    var txt = document.getElementById('api-status-text'); 
+    var newLabel = label || (ok ? 'Connected' : 'Offline');
+    if (txt && txt.textContent === 'Demo Mode' && !ok) return;
+    el.className = 'api-status ' + (ok ? 'ok' : 'err'); 
+    txt.textContent = newLabel; 
+}
 
 async function parseJsonSafe(res) {
     try {
@@ -617,6 +624,19 @@ async function loadAll(silent) {
             setApiStatus(false, 'Offline');
             if (!silent) {
                 toast(err.message || 'Cannot reach server', 'error');
+            }
+        }
+        
+        // If it's the first load and we failed, render empty state so we don't get stuck in "LOADING..."
+        if (!hasLoadedDashboardData) {
+            allOrders = [];
+            allSubs = [];
+            allMsgs = [];
+            allProducts = [];
+            hasLoadedDashboardData = true;
+            renderOverview();
+            if (activePanelId !== 'overview') {
+                refreshVisiblePanel(activePanelId);
             }
         }
     } finally {

@@ -224,8 +224,59 @@ function updateSocketStatus(status) {
             liveDot.style.boxShadow = '0 0 8px #3b82f688';
             liveLabel.innerHTML = '<div class="live-dot" style="background:#3b82f6;box-shadow:0 0 8px #3b82f688;"></div> Polling';
             break;
+        case 'demo_mode':
+            liveDot.style.background = '#22c55e';
+            liveDot.style.boxShadow = '0 0 8px #22c55e88';
+            liveLabel.innerHTML = '<div class="live-dot" style="background:#22c55e;box-shadow:0 0 8px #22c55e88;"></div> Demo Mode';
+            if (typeof setApiStatus !== 'undefined') setApiStatus(true, 'Demo Mode');
+            break;
     }
 }
+
+// ── Offline Demo Mode Interceptor ───────────────────────────
+window.addEventListener('storage', function(e) {
+    if (e.key === 'milqu_demo_new_order' && e.newValue) {
+        try {
+            var order = JSON.parse(e.newValue);
+            console.log('[DEMO MODE] New mock order intercepted:', order.orderId);
+            updateSocketStatus('demo_mode');
+            
+            // Play notification sound
+            playOrderSound();
+
+            // Show notification banner
+            showRealtimeNotif(order);
+
+            // Add to allOrders if not already present
+            var exists = allOrders.some(function (o) { return o.orderId === order.orderId; });
+            if (!exists) {
+                allOrders.unshift(order);
+                knownOrderIds.unshift(order.orderId);
+
+                // Update badges
+                var pendingCount = allOrders.filter(function (o) {
+                    return o.status === 'pending' || o.status === 'confirmed';
+                }).length;
+                setBadge('nb-orders', pendingCount);
+
+                // Refresh the active view
+                var activePanel = getActivePanelId();
+                if (activePanel === 'overview') {
+                    renderOverview();
+                } else if (activePanel === 'orders') {
+                    renderOrders();
+                } else if (activePanel === 'delivery') {
+                    renderDeliveryPanel();
+                }
+                
+                var btn = document.getElementById('refresh-btn');
+                if (btn) btn.classList.remove('loading');
+            }
+        } catch (err) {
+            console.error('[DEMO MODE] Failed to parse local order', err);
+        }
+    }
+});
 
 // ── Initialize on load (called after auth) ──────────────────
 // We hook into showDashboard to start Socket.IO after auth succeeds
