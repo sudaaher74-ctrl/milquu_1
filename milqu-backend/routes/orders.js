@@ -260,7 +260,7 @@ router.post('/', publicOrderLimiter, async (req, res) => {
             items: orderItems,
             total,
             paymentMethod: cleanPaymentMethod,
-            status: 'pending',
+            status: assigned_delivery_boy_id ? 'assigned' : 'pending',
             paymentStatus: cleanPaymentMethod === 'cod' ? 'pending' : 'paid',
             area_id,
             assigned_delivery_boy_id

@@ -517,6 +517,8 @@ body {
 .pcard-actions { display: flex; gap: 8px; align-items: center; }
 
 /* ═══ TABLE ═══ */
+.table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-responsive .data-table { min-width: max-content; }
 .data-table { width: 100%; border-collapse: collapse; }
 
 .data-table th {

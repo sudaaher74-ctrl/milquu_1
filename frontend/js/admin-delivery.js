@@ -145,7 +145,7 @@ function populateAreaDropdowns() {
         existing.forEach(function(o) { o.remove(); });
         deliveryAreas.forEach(function(a) {
             var opt = document.createElement('option');
-            opt.value = a.name;
+            opt.value = a.id;
             opt.textContent = a.name + (a.pincode ? ' (' + a.pincode + ')' : '');
             opt.setAttribute('data-dynamic', '1');
             sel.appendChild(opt);
@@ -558,8 +558,8 @@ async function addDeliveryBoy(e) {
     var form = document.getElementById('db-form');
     var fd = new FormData(form);
 
-    var areaName = fd.get('area');
-    var area = deliveryAreas.find(function(a) { return a.name === areaName; });
+    var areaId = fd.get('area');
+    var area = deliveryAreas.find(function(a) { return a.id === areaId; });
 
     var payload = {
         name: fd.get('name'),
