@@ -655,7 +655,7 @@ async function renderAreas() {
             '<td style="font-size:12px;">' + (boys || '<span style="color:var(--text3);">No one assigned</span>') + '</td>' +
             '<td><strong style="font-family:var(--mono);">' + area.ordersToday + '</strong></td>' +
             '<td>' + statusBadge(area.status) + '</td>' +
-            '<td><button class="view-btn btn-sm" onclick="editArea(\'' + area.id + '\')">Edit</button></td>' +
+            '<td><button class="view-btn btn-sm" style="margin-right:8px;" onclick="viewAreaOverview(\'' + area.id + '\')">View Area</button><button class="view-btn btn-sm" onclick="editArea(\'' + area.id + '\')">Edit</button></td>' +
         '</tr>';
     }).join('') || '<tr><td colspan="6"><div class="empty-state"><span class="es-icon">🗺️</span><p>No areas defined. Add your Navi Mumbai delivery areas below.</p></div></td></tr>';
 
@@ -687,6 +687,48 @@ async function addArea(e) {
     } catch(e) {
         toast('❌ Error: ' + e.message, 'error');
     }
+}
+
+function viewAreaOverview(areaId) {
+    var area = deliveryAreas.find(function(a) { return a.id === areaId; });
+    if (!area) return;
+
+    document.getElementById('area-load-title').textContent = 'Overview: ' + area.name + (area.pincode ? ' (' + area.pincode + ')' : '');
+
+    var areaSubs = (typeof allSubs !== 'undefined' ? allSubs : []).filter(function(s) {
+        return s.area_id && (typeof s.area_id === 'object' ? s.area_id._id === areaId : s.area_id === areaId);
+    });
+
+    var areaOrders = (typeof allOrders !== 'undefined' ? allOrders : []).filter(function(o) {
+        return o.area_id && (typeof o.area_id === 'object' ? o.area_id._id === areaId : o.area_id === areaId) &&
+               ['pending', 'confirmed', 'assigned', 'out_for_delivery'].includes(o.status);
+    });
+
+    var ml = { cow: '🥛 Cow', buffalo: '🍼 Buffalo', organic: '🌿 Organic' };
+    var sl = { daily: '📅 Daily', alternate: '📆 Alt Days', weekdays: '🗓 Weekdays', custom: '✏️ Custom' };
+
+    document.getElementById('area-load-subs').innerHTML = areaSubs.map(function(s) {
+        return '<tr>' +
+            '<td><strong style="font-family:var(--mono);color:var(--accent);font-size:12px;">#' + s.subscriptionId + '</strong></td>' +
+            '<td><div style="font-weight:600;">' + s.name + '</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono);">' + s.phone + '</div></td>' +
+            '<td>' + (ml[s.milkType] || s.milkType) + '</td>' +
+            '<td><strong style="font-family:var(--mono);">' + s.qty + ' L</strong></td>' +
+            '<td>' + (sl[s.schedule] || s.schedule) + '</td>' +
+            '<td>' + statusBadge(s.status) + '</td>' +
+        '</tr>';
+    }).join('') || '<tr><td colspan="6"><div class="empty-state" style="padding:15px;"><p style="margin:0;font-size:13px;">No subscriptions mapped to this area.</p></div></td></tr>';
+
+    document.getElementById('area-load-orders').innerHTML = areaOrders.map(function(o) {
+        return '<tr>' +
+            '<td><strong style="font-family:var(--mono);color:var(--accent);font-size:12px;">#' + o.orderId + '</strong></td>' +
+            '<td><div style="font-weight:600;">' + o.customer.name + '</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono);">' + o.customer.phone + '</div></td>' +
+            '<td>' + o.items.map(function(i) { return i.qty + 'x ' + i.name; }).join(', ') + '</td>' +
+            '<td><strong style="font-family:var(--mono);">' + payBadge(o.paymentMethod) + '</strong></td>' +
+            '<td>' + statusBadge(o.status) + '</td>' +
+        '</tr>';
+    }).join('') || '<tr><td colspan="5"><div class="empty-state" style="padding:15px;"><p style="margin:0;font-size:13px;">No active orders mapped to this area.</p></div></td></tr>';
+
+    document.getElementById('area-load-modal').classList.add('open');
 }
 
 async function editArea(areaId) {

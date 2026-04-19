@@ -814,6 +814,25 @@
     </div>
   </div>
 
+  <div class="detail-modal" id="area-load-modal">
+    <div class="detail-box" style="max-width: 800px;">
+      <div class="detail-box-head">
+        <div style="font-size:16px;font-weight:800;" id="area-load-title">Area Overview</div>
+        <button class="detail-close" onclick="document.getElementById('area-load-modal').classList.remove('open')">✕</button>
+      </div>
+      <div class="detail-body" id="area-load-content" style="padding: 10px 20px 20px;">
+        <h4 style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:10px;text-transform:uppercase;">Active Subscriptions</h4>
+        <div class="table-responsive" style="margin-bottom: 20px;">
+          <table class="data-table"><tbody id="area-load-subs"></tbody></table>
+        </div>
+        <h4 style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-top:10px;text-transform:uppercase;">Today's Orders</h4>
+        <div class="table-responsive">
+          <table class="data-table"><tbody id="area-load-orders"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- REAL-TIME ORDER NOTIFICATION BANNER -->
   <div class="rt-notif-banner" id="rt-notif-banner">
     <div class="rt-notif-inner">
