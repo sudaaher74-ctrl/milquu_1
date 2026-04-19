@@ -1,5 +1,6 @@
 const express = require('express');
 const Subscription = require('../models/Subscription');
+const Admin = require('../models/Admin');
 const { createRateLimiter } = require('../middleware/rateLimit');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const { generatePublicId } = require('../utils/public-id');
@@ -35,6 +36,15 @@ router.post('/', publicSubscriptionLimiter, async (req, res) => {
         }
 
         const subscriptionId = generatePublicId('SUB');
+
+        let assigned_delivery_boy_id = undefined;
+        if (cleanAreaId) {
+            const deliveryBoy = await Admin.findOne({ role: 'delivery_staff', assigned_area: cleanAreaId });
+            if (deliveryBoy) {
+                assigned_delivery_boy_id = deliveryBoy._id;
+            }
+        }
+
         const sub = new Subscription({
             subscriptionId,
             name: cleanName,
@@ -48,6 +58,7 @@ router.post('/', publicSubscriptionLimiter, async (req, res) => {
             monthlyTotal: cleanMonthlyTotal,
             paymentMethod: cleanPaymentMethod || 'cod',
             area_id: cleanAreaId,
+            assigned_delivery_boy_id,
             status: 'active'
         });
 
@@ -70,9 +81,13 @@ router.get('/', verifyToken, requireRole(...SUBSCRIPTION_ROLES), async (req, res
         const safePage = Math.max(1, parseInt(page, 10) || 1);
         const safeLimit = Math.min(500, Math.max(1, parseInt(limit, 10) || 200));
         const filter = status ? { status } : {};
+        if (req.admin && req.admin.role === 'delivery_staff') {
+            filter.assigned_delivery_boy_id = req.admin._id;
+        }
 
         const subs = await Subscription.find(filter)
             .populate('area_id', 'name')
+            .populate('assigned_delivery_boy_id', 'name phone')
             .sort({ createdAt: -1 })
             .skip((safePage - 1) * safeLimit)
             .limit(safeLimit);
@@ -95,10 +110,17 @@ router.patch('/:subscriptionId/status', verifyToken, requireRole(...SUBSCRIPTION
             { subscriptionId: req.params.subscriptionId },
             { status },
             { new: true }
-        );
+        ).populate('area_id', 'name').populate('assigned_delivery_boy_id', 'name phone');
+        
         if (!sub) {
             return res.status(404).json({ success: false, message: 'Subscription not found.' });
         }
+        
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('sub_status_update', sub);
+        }
+        
         res.json({ success: true, message: 'Subscription updated.', subscription: sub });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });

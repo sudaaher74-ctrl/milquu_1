@@ -190,6 +190,42 @@ function initSocketIO() {
             }
         });
 
+        // ── SUBSCRIPTION STATUS EVENT ──────────────────────────
+        milquSocket.on('sub_status_update', function (sub) {
+            console.log('[Socket.IO] Subscription status changed:', sub.subscriptionId, '→', sub.status);
+
+            // Give a toast notification
+            let customerName = sub.name || 'Customer';
+            if (sub.status === 'paused') {
+                toast(`⚠️ Subscription #${sub.subscriptionId} (${customerName}) has been paused!`, 'error');
+                playOrderSound(); 
+            } else if (sub.status === 'active') {
+                toast(`✅ Subscription #${sub.subscriptionId} is active again!`, 'success');
+            }
+
+            // Update in allSubs array
+            var idx = allSubs.findIndex(function (s) { return s.subscriptionId === sub.subscriptionId; });
+            if (idx >= 0) {
+                allSubs[idx] = sub;
+            } else {
+                allSubs.unshift(sub);
+            }
+
+            // Update badges
+            var activeCount = allSubs.filter(function (s) {
+                return s.status === 'active';
+            }).length;
+            setBadge('nb-subs', activeCount);
+
+            // Refresh view
+            var activePanel = getActivePanelId();
+            if (activePanel === 'subscriptions') {
+                renderSubs();
+            } else if (activePanel === 'overview') {
+                renderOverview();
+            }
+        });
+
     } catch (err) {
         console.error('[Socket.IO] Init error:', err);
         updateSocketStatus('error');

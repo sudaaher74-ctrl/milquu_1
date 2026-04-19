@@ -14,6 +14,7 @@ const SubscriptionSchema = new mongoose.Schema({
   monthlyTotal:   { type: String },
   paymentMethod:  { type: String, enum: ['upi', 'card', 'netbanking', 'cod'], default: 'cod' },
   area_id:        { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: false },
+  assigned_delivery_boy_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: false },
   status:         { type: String, enum: ['active', 'paused', 'cancelled'], default: 'active' }
 }, { timestamps: true });
 

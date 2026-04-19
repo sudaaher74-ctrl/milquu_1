@@ -261,22 +261,32 @@ function filterSubs() {
     const filtered = allSubs.filter(s => { const mQ = !q || s.name?.toLowerCase().includes(q) || s.phone?.includes(q); return mQ && (!st || s.status === st); });
     const ml = { cow: '🥛 Cow', buffalo: '🍼 Buffalo', organic: '🌿 Organic' };
     const sl = { daily: '📅 Daily', alternate: '📆 Alt Days', weekdays: '🗓 Weekdays', custom: '✏️ Custom' };
-    document.getElementById('subs-body').innerHTML = filtered.map(s => `
-    <tr>
-      <td><span style="font-family:var(--mono);color:var(--accent);font-size:12px;">#${s.subscriptionId}</span></td>
-      <td><div style="font-weight:600;">${s.name}</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${s.phone}</div></td>
-      <td>${ml[s.milkType] || s.milkType}</td>
-      <td><strong style="font-family:var(--mono);">${s.qty} L</strong></td>
-      <td>${sl[s.schedule] || s.schedule}</td>
-      <td><strong style="font-family:var(--mono);color:var(--accent);">${s.monthlyTotal || '—'}</strong></td>
-      <td>${statusBadge(s.status)}</td>
-      <td style="font-size:12px;color:var(--text3);font-family:var(--mono);">${s.startDate || fmtDate(s.createdAt)}</td>
-      <td>
-        <select onchange="updateSubStatus('${s.subscriptionId}',this.value)" style="background:var(--bg2);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:12px;font-family:var(--font);cursor:pointer;">
-          <option value="">Change…</option><option value="active">Activate</option><option value="paused">Pause</option><option value="cancelled">Cancel</option>
-        </select>
-      </td>
-    </tr>`).join('') || '<tr><td colspan="9"><div class="empty-state"><span class="es-icon">📦</span><p>No subscriptions</p></div></td></tr>';
+    const isDeliveryStaff = currentAdmin && currentAdmin.role === 'delivery_staff';
+    
+    // Hide the designated column if the active user is delivery_staff
+    const thDeliveryRoute = document.querySelector('.hide-delivery-route');
+    if (thDeliveryRoute) thDeliveryRoute.style.display = isDeliveryStaff ? 'none' : '';
+
+    document.getElementById('subs-body').innerHTML = filtered.map(s => {
+      const assignedName = s.assigned_delivery_boy_id ? s.assigned_delivery_boy_id.name : (s.area_id ? s.area_id.name : 'Unassigned');
+      return `
+      <tr>
+        <td><span style="font-family:var(--mono);color:var(--accent);font-size:12px;">#${s.subscriptionId}</span></td>
+        <td><div style="font-weight:600;">${s.name}</div><div style="font-size:11px;color:var(--text3);font-family:var(--mono);">${s.phone}</div></td>
+        <td>${ml[s.milkType] || s.milkType}</td>
+        <td><strong style="font-family:var(--mono);">${s.qty} L</strong></td>
+        <td>${sl[s.schedule] || s.schedule}</td>
+        <td><strong style="font-family:var(--mono);color:var(--accent);">${s.monthlyTotal || '—'}</strong></td>
+        ${isDeliveryStaff ? '' : `<td style="font-size:12px;font-family:var(--mono);color:var(--text2);">${assignedName}</td>`}
+        <td>${statusBadge(s.status)}</td>
+        <td style="font-size:12px;color:var(--text3);font-family:var(--mono);">${s.startDate || fmtDate(s.createdAt)}</td>
+        <td>
+          <select onchange="updateSubStatus('${s.subscriptionId}',this.value)" style="background:var(--bg2);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:12px;font-family:var(--font);cursor:pointer;">
+            <option value="">Change…</option><option value="active">Activate</option><option value="paused">Pause</option><option value="cancelled">Cancel</option>
+          </select>
+        </td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="${isDeliveryStaff ? 9 : 10}"><div class="empty-state"><span class="es-icon">📦</span><p>No subscriptions</p></div></td></tr>`;
     document.getElementById('subs-pg-info').textContent = `Showing ${filtered.length} of ${allSubs.length}`;
 }
 async function updateSubStatus(id, status) {
