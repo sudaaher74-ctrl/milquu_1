@@ -324,13 +324,23 @@
             </div>
             <div id="live-map" class="live-map-container"></div>
           </div>
-          <div class="pcard live-sidebar-card">
-            <div class="pcard-head">
-              <h3>Active Delivery Boys</h3>
-              <span class="count-tag" id="active-db-count">0</span>
+          <div style="display:flex; flex-direction:column; gap:18px; max-height: calc(100vh - var(--topbar-h) - 90px);">
+            <div class="pcard live-sidebar-card" style="flex:1; min-height:0;">
+              <div class="pcard-head">
+                <h3>Active Delivery Boys</h3>
+                <span class="count-tag" id="active-db-count">0</span>
+              </div>
+              <div id="live-db-list" class="live-db-list">
+                <div class="empty-state"><span class="es-icon">🏍️</span><p>No active delivery boys</p></div>
+              </div>
             </div>
-            <div id="live-db-list" class="live-db-list">
-              <div class="empty-state"><span class="es-icon">🏍️</span><p>No active delivery boys</p></div>
+            <div class="pcard live-sidebar-card" style="flex:1; min-height:0;">
+              <div class="pcard-head">
+                <h3>🔥 Live Area Heatmap</h3>
+              </div>
+              <div id="live-area-heatmap" style="padding:15px; overflow-y:auto; flex:1;">
+                <div class="empty-state"><span class="es-icon">🗺️</span><p>Loading heatmap…</p></div>
+              </div>
             </div>
           </div>
         </div>

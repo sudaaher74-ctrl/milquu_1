@@ -392,6 +392,7 @@ async function renderLiveTracking() {
     if (!deliveryDataLoaded) await loadDeliveryData();
     renderLiveDBList();
     initLiveMap();
+    renderAreaHeatmap();
 }
 
 function initLiveMap() {
@@ -489,6 +490,7 @@ function addMapMarkers() {
 function refreshMapPositions() {
     loadDeliveryData().then(function() {
         addMapMarkers();
+        renderAreaHeatmap();
         toast('✅ Map positions refreshed');
     });
 }
@@ -754,25 +756,27 @@ async function editArea(areaId) {
 }
 
 function renderAreaHeatmap() {
-    var container = document.getElementById('area-heatmap');
-    if (!container) return;
+    ['area-heatmap', 'live-area-heatmap'].forEach(function(id) {
+        var container = document.getElementById(id);
+        if (!container) return;
 
-    if (deliveryAreas.length === 0) {
-        container.innerHTML = '<div class="empty-state"><span class="es-icon">🗺️</span><p>No area data yet</p></div>';
-        return;
-    }
+        if (deliveryAreas.length === 0) {
+            container.innerHTML = '<div class="empty-state"><span class="es-icon">🗺️</span><p>No area data yet</p></div>';
+            return;
+        }
 
-    var maxOrders = Math.max.apply(null, deliveryAreas.map(function(a) { return a.ordersToday; })) || 1;
+        var maxOrders = Math.max.apply(null, deliveryAreas.map(function(a) { return a.ordersToday; })) || 1;
 
-    container.innerHTML = deliveryAreas.map(function(area) {
-        var pct = Math.round((area.ordersToday / maxOrders) * 100) || 5;
-        var fillClass = pct > 70 ? 'high' : (pct > 40 ? 'medium' : '');
+        container.innerHTML = deliveryAreas.map(function(area) {
+            var pct = Math.round((area.ordersToday / maxOrders) * 100) || 5;
+            var fillClass = pct > 70 ? 'high' : (pct > 40 ? 'medium' : '');
 
-        return '<div class="heatmap-bar">' +
-            '<div class="heatmap-label">' + area.name + '</div>' +
-            '<div class="heatmap-track"><div class="heatmap-fill ' + fillClass + '" style="width:' + Math.max(pct, 8) + '%"><span class="heatmap-val">' + area.ordersToday + '</span></div></div>' +
-        '</div>';
-    }).join('');
+            return '<div class="heatmap-bar">' +
+                '<div class="heatmap-label">' + area.name + '</div>' +
+                '<div class="heatmap-track"><div class="heatmap-fill ' + fillClass + '" style="width:' + Math.max(pct, 8) + '%"><span class="heatmap-val">' + area.ordersToday + '</span></div></div>' +
+            '</div>';
+        }).join('');
+    });
 }
 
 // ══════════════════════════════════════════════════════
