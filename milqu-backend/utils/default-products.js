@@ -47,7 +47,7 @@ module.exports = [
         price: 120,
         category: 'milk',
         description: 'Certified organic milk from free-range cows on pesticide-free pastures.',
-        imageUrl: 'images/CowMilk.png',
+        imageUrl: 'images/Organicmilk.png',
         stock: 100,
         status: 'active',
         emoji: '🌿',
