@@ -37,7 +37,7 @@ const IMG = 'images/';
 const P = [
 
   // MILK
-  { id: 'm1', name: 'Cow Milk', e: '🥛', img: 'cow-milk.png', price: 60, unit: '/L', cat: 'milk', badge: 'Fresh', desc: 'Pure A2 cow milk, collected fresh each morning.', nut: [['Calories', '62 kcal'], ['Protein', '3.2g'], ['Fat', '3.7g'], ['Carbs', '4.8g'], ['Calcium', '120mg'], ['Vit D', '40 IU']] },
+  { id: 'm1', name: 'Cow Milk', e: '🥛', img: 'frontend/images/DDC5CD26-FB96-452A-A255-11356D102C97 copy.png', price: 60, unit: '/L', cat: 'milk', badge: 'Fresh', desc: 'Pure A2 cow milk, collected fresh each morning.', nut: [['Calories', '62 kcal'], ['Protein', '3.2g'], ['Fat', '3.7g'], ['Carbs', '4.8g'], ['Calcium', '120mg'], ['Vit D', '40 IU']] },
   { id: 'm2', name: 'Buffalo Milk', e: '🐃', img: 'buffalo-milk.png', price: 75, unit: '/L', cat: 'milk', badge: 'Popular', desc: 'Rich, creamy buffalo milk — perfect for curd and sweets.', nut: [['Calories', '97 kcal'], ['Protein', '3.7g'], ['Fat', '6.9g'], ['Carbs', '5.2g'], ['Calcium', '195mg'], ['Phosphorus', '130mg']] },
   { id: 'm3', name: 'Organic Milk', e: '🐂', img: 'buffalo-milk.png', price: 120, unit: '/L', cat: 'milk', badge: 'Organic', desc: 'Certified organic milk from free-range cows on pesticide-free pastures.', nut: [['Calories', '64 kcal'], ['Protein', '3.4g'], ['Fat', '3.9g'], ['Carbs', '4.9g'], ['Omega-3', '0.3g'], ['Vit B12', '1.1µg']] },
 
@@ -361,18 +361,18 @@ async function placeOrder() {
       status: 'pending',
       createdAt: new Date().toISOString()
     };
-    
+
     // Save to persistent local storage array
     let existingDemoOrders = [];
     try {
-        existingDemoOrders = JSON.parse(localStorage.getItem('milqu_demo_orders_list')) || [];
-    } catch(e) {}
+      existingDemoOrders = JSON.parse(localStorage.getItem('milqu_demo_orders_list')) || [];
+    } catch (e) { }
     existingDemoOrders.unshift(mockOrderPayload);
     localStorage.setItem('milqu_demo_orders_list', JSON.stringify(existingDemoOrders));
 
     // Dispatch mock storage event for real-time dashboard banner
     localStorage.setItem('milqu_demo_new_order', JSON.stringify(mockOrderPayload));
-    
+
     setTimeout(() => {
       btn.disabled = false; btn.textContent = '💵 Confirm & Place Order';
       document.getElementById('final-order-id').textContent = '#' + mockOrderId;
