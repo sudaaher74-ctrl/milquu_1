@@ -161,36 +161,40 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, message: 'Internal server error.' });
 });
 
-const server = httpServer.listen(PORT, () => {
-    console.log(`[Socket.IO] Real-time sync enabled`);
-    if (allowedCorsOrigins.size === 0) {
-        console.warn('CORS_ORIGIN is not set. Cross-origin requests are currently allowed from any origin.');
-    }
-    if (isAdminAuthDisabled()) {
-        console.warn('ADMIN_AUTH_DISABLED is enabled. Do not use this setting in production.');
-    }
-    console.log(`Milqu Fresh backend running on http://localhost:${PORT}`);
-    console.log(`Health: http://localhost:${PORT}/api/health`);
-});
-
-// Graceful shutdown
-function gracefulShutdown(signal) {
-    console.log(`${signal} received. Shutting down gracefully...`);
-    server.close(async () => {
-        try {
-            await mongoose.connection.close();
-            console.log('MongoDB connection closed.');
-        } catch (err) {
-            console.error('Error closing MongoDB connection:', err);
+if (require.main === module) {
+    const server = httpServer.listen(PORT, () => {
+        console.log(`[Socket.IO] Real-time sync enabled`);
+        if (allowedCorsOrigins.size === 0) {
+            console.warn('CORS_ORIGIN is not set. Cross-origin requests are currently allowed from any origin.');
         }
-        process.exit(0);
+        if (isAdminAuthDisabled()) {
+            console.warn('ADMIN_AUTH_DISABLED is enabled. Do not use this setting in production.');
+        }
+        console.log(`Milqu Fresh backend running on http://localhost:${PORT}`);
+        console.log(`Health: http://localhost:${PORT}/api/health`);
     });
-    // Force exit if graceful shutdown takes too long
-    setTimeout(() => {
-        console.error('Forced shutdown after timeout.');
-        process.exit(1);
-    }, 10000);
+
+    // Graceful shutdown
+    const gracefulShutdown = (signal) => {
+        console.log(`${signal} received. Shutting down gracefully...`);
+        server.close(async () => {
+            try {
+                await mongoose.connection.close();
+                console.log('MongoDB connection closed.');
+            } catch (err) {
+                console.error('Error closing MongoDB connection:', err);
+            }
+            process.exit(0);
+        });
+        // Force exit if graceful shutdown takes too long
+        setTimeout(() => {
+            console.error('Forced shutdown after timeout.');
+            process.exit(1);
+        }, 10000);
+    };
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 }
 
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+module.exports = app;
