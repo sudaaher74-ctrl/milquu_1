@@ -98,15 +98,39 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
     maxAge: '7d'
 }));
 
-mongoose.connect(getRequiredEnv('MONGO_URI'))
-    .then(async () => {
+// MongoDB Connection (Serverless optimized)
+let cachedDb = null;
+
+async function connectToDatabase() {
+    if (cachedDb) {
+        return cachedDb;
+    }
+    try {
+        // We use process.env directly here to avoid global crashing if it's missing momentarily
+        const uri = process.env.MONGO_URI || getRequiredEnv('MONGO_URI');
+        const db = await mongoose.connect(uri, {
+            serverSelectionTimeoutMS: 5000 // Timeout after 5s instead of 30s
+        });
         await ensureDefaultProducts();
         console.log('MongoDB connected to milqu_fresh database');
-    })
-    .catch((err) => {
-        console.error('MongoDB connection failed. Continuing without database so frontend can still be served locally:', err.message);
-        // Removed process.exit(1) to allow the server to keep running for offline demo purposes.
-    });
+        cachedDb = db;
+        return db;
+    } catch (err) {
+        console.error('MongoDB connection failed. Please ensure MONGO_URI is set:', err.message);
+        throw err;
+    }
+}
+
+// Add a middleware to ensure database connection before API routes
+app.use('/api', async (req, res, next) => {
+    try {
+        await connectToDatabase();
+        next();
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Database connection failed. Please check Vercel Environment Variables.' });
+    }
+});
+
 
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/areas', require('./routes/areas'));
