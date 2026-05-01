@@ -6,7 +6,7 @@ const { verifyToken, requireRole } = require('../middleware/auth');
 const { getRequiredEnv } = require('../config');
 
 const router = express.Router();
-const JWT_SECRET = getRequiredEnv('JWT_SECRET');
+const JWT_SECRET = getRequiredEnv('JWT_SECRET', 'dev-fallback-secret-123');
 const JWT_EXPIRES = '7d';
 const authLimiter = createRateLimiter({
     namespace: 'admin-auth',

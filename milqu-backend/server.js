@@ -194,6 +194,14 @@ if (require.main === module) {
         if (isAdminAuthDisabled()) {
             console.warn('ADMIN_AUTH_DISABLED is enabled. Do not use this setting in production.');
         }
+
+        // JWT_SECRET Check Log
+        if (process.env.JWT_SECRET) {
+            console.log('[Config] JWT_SECRET is loaded successfully.');
+        } else {
+            console.warn('[Config] WARNING: JWT_SECRET is NOT set! Authentication will use development fallback or fail.');
+        }
+
         console.log(`Milqu Fresh backend running on http://localhost:${PORT}`);
         console.log(`Health: http://localhost:${PORT}/api/health`);
     });

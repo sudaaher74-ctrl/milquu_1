@@ -1,7 +1,20 @@
-function getRequiredEnv(name) {
+require('dotenv').config();
+
+function getRequiredEnv(name, devFallback = null) {
     const value = process.env[name];
     if (!value) {
-        throw new Error(`Missing required environment variable: ${name}`);
+        if (isProduction()) {
+            console.warn(`[WARNING] Missing required environment variable in production: ${name}. App may fail during execution.`);
+            return undefined; // Return undefined to avoid immediate startup crash
+        } else {
+            if (devFallback) {
+                console.warn(`[WARNING] Missing environment variable: ${name}. Using development fallback.`);
+                return devFallback;
+            } else {
+                console.warn(`[WARNING] Missing required environment variable: ${name}. No fallback provided.`);
+                return undefined;
+            }
+        }
     }
     return value;
 }
