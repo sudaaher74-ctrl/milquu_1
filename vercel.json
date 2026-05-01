@@ -1,7 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "milqu-backend/server.js": {
+    "api/index.js": {
       "memory": 1024,
       "maxDuration": 10
     }
@@ -9,11 +9,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "/milqu-backend/server.js"
+      "destination": "/api/index.js"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "/milqu-backend/server.js"
+      "destination": "/api/index.js"
     },
     {
       "source": "/admin",
