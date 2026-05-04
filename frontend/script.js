@@ -86,8 +86,19 @@ function productImg(p, size) {
 //  PRODUCT CARD
 // ============================================================
 function card(p) {
+  const c = getCart(), it = c.find(i => i.id === p.id);
+  const qty = it ? it.qty : 0;
+  
+  const actionBtn = qty > 0 
+    ? `<div class="qty-control" style="margin:0; gap:5px;">
+        <button style="width:28px;height:28px;" onclick="upQty('${p.id}', -1); event.stopPropagation();">−</button>
+        <span class="qty-num" style="font-size:14px; min-width:16px;">${qty}</span>
+        <button style="width:28px;height:28px;" onclick="upQty('${p.id}', 1); event.stopPropagation();">+</button>
+       </div>`
+    : `<button class="add-cart-btn" onclick="addToCart({id:'${p.id}',name:'${p.name}',price:${p.price},e:'${p.e}',unit:'${p.unit}'}); event.stopPropagation();">+</button>`;
+
   return `
-<div class="product-card fade-in" data-cat="${p.cat}">
+<div class="product-card fade-in" data-cat="${p.cat}" data-id="${p.id}">
   <div class="product-img" onclick="detail('${p.id}')" style="padding:0;overflow:hidden;background:#f0fdf4;position:relative;cursor:pointer;">
     ${p.badge ? `<span class="product-badge" style="position:absolute;top:10px;left:10px;z-index:2;">${p.badge}</span>` : ''}
     ${productImg(p, 'card')}
@@ -98,7 +109,7 @@ function card(p) {
     <div class="product-desc">${p.desc}</div>
     <div class="product-footer">
       <div class="product-price">₹${p.price}<span>${p.unit}</span></div>
-      <button class="add-cart-btn" onclick="addToCart({id:'${p.id}',name:'${p.name}',price:${p.price},e:'${p.e}',unit:'${p.unit}'})">+</button>
+      ${actionBtn}
     </div>
   </div>
 </div>`;
@@ -207,8 +218,13 @@ function addToCart(item) {
 function removeFromCart(id) { saveCart(getCart().filter(i => i.id !== id)); updateCart(); }
 
 function upQty(id, d) {
-  const c = getCart(), it = c.find(i => i.id === id);
-  if (it) { it.qty = Math.max(1, it.qty + d); saveCart(c); }
+  let c = getCart();
+  const it = c.find(i => i.id === id);
+  if (it) {
+    it.qty += d;
+    if (it.qty <= 0) c = c.filter(i => i.id !== id);
+    saveCart(c);
+  }
   updateCart();
 }
 
@@ -219,6 +235,26 @@ function updateCart() {
   const mobileCount = document.getElementById('mobile-cart-count');
   if (mobileCount) mobileCount.textContent = tot;
   renderCart();
+
+  // Dynamically update product cards UI to show quantity controls without a full re-render
+  document.querySelectorAll('.product-card').forEach(cardEl => {
+    const id = cardEl.dataset.id;
+    if (!id) return;
+    const p = P.find(x => x.id === id);
+    const it = c.find(i => i.id === id);
+    const qty = it ? it.qty : 0;
+    const footer = cardEl.querySelector('.product-footer');
+    if (p && footer) {
+      const actionBtn = qty > 0 
+        ? `<div class="qty-control" style="margin:0; gap:5px;">
+            <button style="width:28px;height:28px;" onclick="upQty('${p.id}', -1); event.stopPropagation();">−</button>
+            <span class="qty-num" style="font-size:14px; min-width:16px;">${qty}</span>
+            <button style="width:28px;height:28px;" onclick="upQty('${p.id}', 1); event.stopPropagation();">+</button>
+           </div>`
+        : `<button class="add-cart-btn" onclick="addToCart({id:'${p.id}',name:'${p.name}',price:${p.price},e:'${p.e}',unit:'${p.unit}'}); event.stopPropagation();">+</button>`;
+      footer.innerHTML = `<div class="product-price">₹${p.price}<span>${p.unit}</span></div>${actionBtn}`;
+    }
+  });
 }
 
 function renderCart() {
