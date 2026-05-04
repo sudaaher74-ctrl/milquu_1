@@ -90,12 +90,12 @@ function card(p) {
   const qty = it ? it.qty : 0;
   
   const actionBtn = qty > 0 
-    ? `<div class="qty-control" style="margin:0; gap:5px;">
-        <button style="width:28px;height:28px;" onclick="upQty('${p.id}', -1); event.stopPropagation();">−</button>
-        <span class="qty-num" style="font-size:14px; min-width:16px;">${qty}</span>
-        <button style="width:28px;height:28px;" onclick="upQty('${p.id}', 1); event.stopPropagation();">+</button>
+    ? `<div class="qty-control" style="margin:0; background:var(--green); color:var(--white); border-radius:10px; display:flex; align-items:center; justify-content:space-between; width:76px; height:38px; padding:0 4px; box-sizing:border-box; box-shadow:0 4px 10px rgba(34,197,94,0.2);">
+        <button style="width:26px; height:26px; border:none; background:transparent; color:var(--white); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;" onclick="upQty('${p.id}', -1); event.stopPropagation();">−</button>
+        <span class="qty-num" style="font-size:15px; font-weight:700; color:var(--white);">${qty}</span>
+        <button style="width:26px; height:26px; border:none; background:transparent; color:var(--white); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;" onclick="upQty('${p.id}', 1); event.stopPropagation();">+</button>
        </div>`
-    : `<button class="add-cart-btn" onclick="addToCart({id:'${p.id}',name:'${p.name}',price:${p.price},e:'${p.e}',unit:'${p.unit}'}); event.stopPropagation();">+</button>`;
+    : `<button class="add-cart-btn" onclick="addToCart({id:'${p.id}',name:'${p.name}',price:${p.price},e:'${p.e}',unit:'${p.unit}'}); event.stopPropagation();" style="width:76px; font-size:14px; font-weight:700; border-radius:10px;">ADD</button>`;
 
   return `
 <div class="product-card fade-in" data-cat="${p.cat}" data-id="${p.id}">
@@ -246,12 +246,12 @@ function updateCart() {
     const footer = cardEl.querySelector('.product-footer');
     if (p && footer) {
       const actionBtn = qty > 0 
-        ? `<div class="qty-control" style="margin:0; gap:5px;">
-            <button style="width:28px;height:28px;" onclick="upQty('${p.id}', -1); event.stopPropagation();">−</button>
-            <span class="qty-num" style="font-size:14px; min-width:16px;">${qty}</span>
-            <button style="width:28px;height:28px;" onclick="upQty('${p.id}', 1); event.stopPropagation();">+</button>
+        ? `<div class="qty-control" style="margin:0; background:var(--green); color:var(--white); border-radius:10px; display:flex; align-items:center; justify-content:space-between; width:76px; height:38px; padding:0 4px; box-sizing:border-box; box-shadow:0 4px 10px rgba(34,197,94,0.2);">
+            <button style="width:26px; height:26px; border:none; background:transparent; color:var(--white); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;" onclick="upQty('${p.id}', -1); event.stopPropagation();">−</button>
+            <span class="qty-num" style="font-size:15px; font-weight:700; color:var(--white);">${qty}</span>
+            <button style="width:26px; height:26px; border:none; background:transparent; color:var(--white); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center;" onclick="upQty('${p.id}', 1); event.stopPropagation();">+</button>
            </div>`
-        : `<button class="add-cart-btn" onclick="addToCart({id:'${p.id}',name:'${p.name}',price:${p.price},e:'${p.e}',unit:'${p.unit}'}); event.stopPropagation();">+</button>`;
+        : `<button class="add-cart-btn" onclick="addToCart({id:'${p.id}',name:'${p.name}',price:${p.price},e:'${p.e}',unit:'${p.unit}'}); event.stopPropagation();" style="width:76px; font-size:14px; font-weight:700; border-radius:10px;">ADD</button>`;
       footer.innerHTML = `<div class="product-price">₹${p.price}<span>${p.unit}</span></div>${actionBtn}`;
     }
   });
