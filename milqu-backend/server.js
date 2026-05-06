@@ -48,16 +48,21 @@ if (isProduction()) {
     });
 }
 
-app.use(cors({
-    origin(origin, callback) {
-        if (!origin || allowedCorsOrigins.size === 0 || allowedCorsOrigins.has(origin)) {
-            return callback(null, true);
-        }
-        return callback(new Error('CORS_NOT_ALLOWED'));
-    },
-    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use((req, res, next) => {
+    cors({
+        origin(origin, callback) {
+            const host = req.get('host');
+            if (!origin) return callback(null, true);
+            if (host && origin.includes(host)) return callback(null, true);
+            if (allowedCorsOrigins.size === 0 || allowedCorsOrigins.has(origin)) return callback(null, true);
+            if (origin.endsWith('.vercel.app')) return callback(null, true);
+            
+            return callback(new Error('CORS_NOT_ALLOWED'));
+        },
+        methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
+        allowedHeaders: ['Content-Type', 'Authorization']
+    })(req, res, next);
+});
 
 // Security headers via helmet (includes Content-Security-Policy)
 app.use(helmet({
