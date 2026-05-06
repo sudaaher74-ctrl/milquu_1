@@ -545,10 +545,16 @@ document.getElementById('pay-modal').addEventListener('click', function (e) { if
 // ============================================================
 function initAccount() {
   const savedPhone = localStorage.getItem('mq_customer_phone');
+  const emptySec = document.getElementById('account-empty-state');
+  const mainSec = document.getElementById('account-main-content');
+
   if (savedPhone) {
+    if (emptySec) emptySec.style.display = 'none';
+    if (mainSec) mainSec.style.display = 'block';
     showAccountDashboard(savedPhone);
   } else {
-    // If somehow they get here without a phone, show the main auth modal
+    if (emptySec) emptySec.style.display = 'block';
+    if (mainSec) mainSec.style.display = 'none';
     document.getElementById('auth-modal').classList.add('open');
   }
 }
@@ -632,10 +638,11 @@ function logoutCustomer() {
 }
 
 async function showAccountDashboard(phone) {
-  const loginSec = document.getElementById('account-login-section');
-  const dashSec = document.getElementById('account-dashboard-section');
-  if (loginSec) loginSec.style.display = 'none';
-  if (dashSec) dashSec.style.display = 'block';
+  const emptySec = document.getElementById('account-empty-state');
+  const mainSec = document.getElementById('account-main-content');
+  if (emptySec) emptySec.style.display = 'none';
+  if (mainSec) mainSec.style.display = 'block';
+  
   const phEl = document.getElementById('acc-customer-phone');
   if (phEl) phEl.textContent = '📞 ' + phone;
   

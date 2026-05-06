@@ -1047,55 +1047,55 @@
     <section style="padding:60px 0; background: var(--light-gray); min-height: 500px;">
       <div class="container">
         
-        <!-- Login Section (Only visible if not 'logged in') -->
-        <div id="account-login-section" class="card-box" style="max-width: 450px; margin: 0 auto; text-align: center;">
-          <div style="font-size: 48px; margin-bottom: 20px;">👤</div>
-          <h3>Welcome Back!</h3>
-          <p style="margin-bottom: 24px;">Enter your registered phone number to view your order history.</p>
-          <form id="account-login-form">
-            <div class="form-group">
-              <input type="tel" id="account-phone" placeholder="Enter 10-digit phone number" required 
-                style="width:100%; text-align:center; font-size: 18px; letter-spacing: 1px;">
-            </div>
-            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">View My History →</button>
-          </form>
-        </div>
-
         <!-- Dashboard Section (Visible if 'logged in') -->
-        <div id="account-dashboard-section" style="display: none;">
-          <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
-            <div>
-              <h2 style="font-size: 28px;">Hello, <span id="acc-customer-name">Customer</span>! 👋</h2>
-              <p id="acc-customer-phone" style="color: var(--gray);"></p>
-            </div>
-            <button class="btn btn-outline btn-sm" onclick="logoutCustomer()" style="padding: 8px 16px; font-size: 13px;">🚪 Logout</button>
+        <div id="account-dashboard-section">
+          
+          <!-- State 1: Not Logged In -->
+          <div style="text-align:center; padding:60px 0;" id="account-empty-state">
+            <div style="font-size: 48px; margin-bottom: 20px;">👤</div>
+            <h3>Please Login to View Your Orders</h3>
+            <p style="margin-bottom: 24px;">We need to verify your phone number to show your history.</p>
+            <button class="btn btn-primary" onclick="document.getElementById('auth-modal').classList.add('open')" style="margin: 0 auto;">Login / Verify Phone →</button>
           </div>
 
-          <div class="account-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px;">
-            <!-- Left: Orders -->
-            <div class="card-box">
-              <h3 style="margin-bottom: 20px; display:flex; align-items:center; gap:10px;">📦 Recent Orders</h3>
-              <div id="acc-orders-list" class="acc-list">
-                <div class="loading-placeholder">Fetching your orders...</div>
+          <!-- State 2: Logged In -->
+          <div id="account-main-content" style="display: none;">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+              <div>
+                <h2 style="font-size: 28px;">Hello, <span id="acc-customer-name">Customer</span>! 👋</h2>
+                <p id="acc-customer-phone" style="color: var(--gray);"></p>
               </div>
+              <button class="btn btn-outline btn-sm" onclick="logoutCustomer()" style="padding: 8px 16px; font-size: 13px;">🚪 Logout</button>
             </div>
 
-            <!-- Right: Subscriptions -->
-            <div>
-              <div class="card-box" style="background: var(--green-light); border: 1px solid var(--green);">
-                <h3 style="margin-bottom: 16px; display:flex; align-items:center; gap:10px;">🗓 Active Subscription</h3>
-                <div id="acc-subs-list">
-                  <div class="loading-placeholder">Checking subscriptions...</div>
+            <div class="account-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px;">
+              <!-- Left: Orders -->
+              <div class="card-box">
+                <h3 style="margin-bottom: 20px; display:flex; align-items:center; gap:10px;">📦 Recent Orders</h3>
+                <div id="acc-orders-list" class="acc-list">
+                  <div class="loading-placeholder">Fetching your orders...</div>
                 </div>
               </div>
-              
-              <div class="card-box" style="margin-top: 24px;">
-                <h4>Need Help?</h4>
-                <p style="font-size: 14px; color: var(--gray); margin-bottom: 16px;">For any changes to your delivery address or custom schedules, please contact us.</p>
-                <a href="https://wa.me/910000000000" target="_blank" class="btn btn-primary btn-sm" style="width:100%; justify-content:center;">💬 WhatsApp Support</a>
+
+              <!-- Right: Subscriptions -->
+              <div>
+                <div class="card-box" style="background: var(--green-light); border: 1px solid var(--green);">
+                  <h3 style="margin-bottom: 16px; display:flex; align-items:center; gap:10px;">🗓 Active Subscription</h3>
+                  <div id="acc-subs-list">
+                    <div class="loading-placeholder">Checking subscriptions...</div>
+                  </div>
+                </div>
+                
+                <div class="card-box" style="margin-top: 24px;">
+                  <h4>Need Help?</h4>
+                  <p style="font-size: 14px; color: var(--gray); margin-bottom: 16px;">For any changes to your delivery address or custom schedules, please contact us.</p>
+                  <a href="https://wa.me/910000000000" target="_blank" class="btn btn-primary btn-sm" style="width:100%; justify-content:center;">💬 WhatsApp Support</a>
+                </div>
               </div>
             </div>
           </div>
+
+        </div>
         </div>
 
       </div>
