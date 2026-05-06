@@ -41,7 +41,9 @@ async function renderReportsPanel() {
         loadCustomerAnalyticsSection(),
         loadReportHistory(),
         loadExpenseSection(),
-        loadAiInsightsSection()
+        loadAiInsightsSection(),
+        loadAreaDetailedTable(),
+        loadDeliveryDetailedTable()
     ]);
 }
 
@@ -379,6 +381,54 @@ async function loadAnalyticsCharts() {
     } catch (e) {
         console.error('Charts error:', e);
     }
+}
+
+async function loadAreaDetailedTable() {
+    var container = document.getElementById('rpt-area-details');
+    if (!container) return;
+    try {
+        var data = await apiFetch('/analytics/areas' + currentAnalyticsQuery());
+        var areas = data.salesByLocation || [];
+        container.innerHTML = 
+            '<div class="rpt-section-head"><h3>🗺️ Area-wise Sales Breakdown</h3><span class="count-tag">' + areas.length + ' zones</span></div>' +
+            '<table class="data-table"><thead><tr><th>Area Name</th><th>Orders</th><th>Revenue</th><th>AOV</th><th>Top Product</th><th>Delivery Cost</th><th>Growth</th></tr></thead><tbody>' +
+            areas.map(function(a) {
+                var growthColor = a.growth >= 0 ? 'var(--green)' : 'var(--red)';
+                var tp = a.topProduct ? (a.topProduct.emoji + ' ' + a.topProduct.name) : '—';
+                return '<tr>' +
+                    '<td><strong>' + a.name + '</strong></td>' +
+                    '<td style="font-family:var(--mono);">' + a.orders + '</td>' +
+                    '<td style="font-family:var(--mono);font-weight:700;color:var(--accent);">₹' + a.revenue.toLocaleString('en-IN') + '</td>' +
+                    '<td style="font-family:var(--mono);">₹' + (a.avgOrderValue || 0).toLocaleString('en-IN') + '</td>' +
+                    '<td style="font-size:12px;">' + tp + '</td>' +
+                    '<td style="font-family:var(--mono);color:var(--red);">₹' + (a.deliveryCost || 0).toLocaleString('en-IN') + '</td>' +
+                    '<td style="font-family:var(--mono);font-weight:700;color:'+growthColor+';">' + (a.growth >= 0 ? '+' : '') + a.growth + '%</td>' +
+                    '</tr>';
+            }).join('') + '</tbody></table>';
+    } catch (e) { container.innerHTML = '<p>Failed to load area details</p>'; }
+}
+
+async function loadDeliveryDetailedTable() {
+    var container = document.getElementById('rpt-delivery-details');
+    if (!container) return;
+    try {
+        var data = await apiFetch('/analytics/delivery' + currentAnalyticsQuery());
+        var staff = data.deliveryPerformance || [];
+        container.innerHTML = 
+            '<div class="rpt-section-head"><h3>🚚 Delivery Staff Leaderboard</h3><span class="count-tag">' + staff.length + ' active</span></div>' +
+            '<table class="data-table"><thead><tr><th>Staff Name</th><th>Orders</th><th>Delivered</th><th>Success Rate</th><th>Avg Time</th><th>Rating</th></tr></thead><tbody>' +
+            staff.map(function(s) {
+                var rateColor = s.successRate >= 90 ? 'var(--green)' : (s.successRate >= 70 ? 'var(--amber)' : 'var(--red)');
+                return '<tr>' +
+                    '<td><strong>' + s.name + '</strong><br><span style="font-size:11px;color:var(--text3);">' + s.phone + '</span></td>' +
+                    '<td style="font-family:var(--mono);">' + s.orders + '</td>' +
+                    '<td style="font-family:var(--mono);font-weight:700;color:var(--green);">' + s.delivered + '</td>' +
+                    '<td style="font-family:var(--mono);font-weight:700;color:'+rateColor+';">' + s.successRate + '%</td>' +
+                    '<td style="font-family:var(--mono);">' + (s.avgMinutes || 0).toFixed(1) + ' min</td>' +
+                    '<td>' + '⭐'.repeat(Math.round(s.rating || 5)) + '</td>' +
+                    '</tr>';
+            }).join('') + '</tbody></table>';
+    } catch (e) { container.innerHTML = '<p>Failed to load delivery details</p>'; }
 }
 
 function segCard(icon, label, count, color) {

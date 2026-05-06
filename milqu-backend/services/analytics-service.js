@@ -291,7 +291,8 @@ function summarizeOrders(orders, productSnapshot) {
                 cancelledOrders: 0,
                 deliveryCost: 0,
                 packagingCost: 0,
-                customerPhones: new Set()
+                customerPhones: new Set(),
+                productSales: new Map()
             };
             metric.revenue += orderTotal;
             metric.orders += 1;
@@ -351,6 +352,16 @@ function summarizeOrders(orders, productSnapshot) {
             categoryMetric.totalRevenue += itemRevenue;
             categoryMetric.totalQty += num(item.qty);
             categorySales.set(category, categoryMetric);
+
+            if (areaId) {
+                const areaMetric = areaMetrics.get(areaId);
+                if (areaMetric) {
+                    const apMetric = areaMetric.productSales.get(item.name) || { qty: 0, revenue: 0, emoji: item.e || '📦' };
+                    apMetric.qty += num(item.qty);
+                    apMetric.revenue += itemRevenue;
+                    areaMetric.productSales.set(item.name, apMetric);
+                }
+            }
         });
     });
 
@@ -461,7 +472,10 @@ async function hydrateAreaMetrics(areaMetricMap, expenseSummary) {
             customerCount: metrics.customerPhones.size,
             avgOrderValue: metrics.orders > 0 ? round(metrics.revenue / metrics.orders) : 0,
             deliveryCost: round(metrics.deliveryCost + num(expenseMetric.total)),
-            packagingCost: round(metrics.packagingCost)
+            packagingCost: round(metrics.packagingCost),
+            topProduct: Array.from(metrics.productSales.entries())
+                .map(([name, data]) => ({ name, ...data }))
+                .sort((a, b) => b.revenue - a.revenue)[0] || null
         };
     }).sort((a, b) => b.revenue - a.revenue);
 
