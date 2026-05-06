@@ -548,22 +548,87 @@ function initAccount() {
   if (savedPhone) {
     showAccountDashboard(savedPhone);
   } else {
-    document.getElementById('account-login-section').style.display = 'block';
-    document.getElementById('account-dashboard-section').style.display = 'none';
+    // If somehow they get here without a phone, show the main auth modal
+    document.getElementById('auth-modal').classList.add('open');
   }
 }
 
-document.getElementById('account-login-form')?.addEventListener('submit', e => {
+// Global Auth Handlers
+function showAuthStep(step) {
+  document.getElementById('auth-step-1').style.display = step === 1 ? 'block' : 'none';
+  document.getElementById('auth-step-2').style.display = step === 2 ? 'block' : 'none';
+}
+
+document.getElementById('auth-phone-form')?.addEventListener('submit', async e => {
   e.preventDefault();
-  const phone = document.getElementById('account-phone').value.trim();
-  if (!/^[6-9]\d{9}$/.test(phone)) { notif('Enter a valid 10-digit phone number ⚠️'); return; }
-  localStorage.setItem('mq_customer_phone', phone);
-  showAccountDashboard(phone);
+  const phone = document.getElementById('auth-phone-input').value.trim();
+  const btn = e.target.querySelector('button');
+  btn.disabled = true; btn.textContent = 'Sending...';
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('auth-display-phone').textContent = '+91 ' + phone;
+      if (data.mock) {
+        notif(`Demo Mode: OTP is ${data.code}`);
+        document.getElementById('auth-otp-input').value = data.code; // Pre-fill for demo ease
+      }
+      showAuthStep(2);
+    } else {
+      notif('❌ ' + data.message);
+    }
+  } catch (e) {
+    notif('❌ Server error. Try again.');
+  }
+  btn.disabled = false; btn.textContent = 'Get OTP →';
+});
+
+document.getElementById('auth-otp-form')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const phone = document.getElementById('auth-phone-input').value.trim();
+  const code = document.getElementById('auth-otp-input').value.trim();
+  const btn = e.target.querySelector('button');
+  btn.disabled = true; btn.textContent = 'Verifying...';
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, code })
+    });
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('mq_customer_phone', phone);
+      document.getElementById('auth-modal').classList.remove('open');
+      notif('🎉 Welcome back!');
+      
+      // Auto-fill phone in other forms
+      const subPhone = document.getElementById('sub-phone');
+      if (subPhone) subPhone.value = phone;
+      const payPhone = document.getElementById('pay-phone');
+      if (payPhone) payPhone.value = phone;
+
+      // If they are on account page, refresh it
+      if (document.getElementById('page-account').classList.contains('active')) {
+        initAccount();
+      }
+    } else {
+      notif('❌ ' + data.message);
+    }
+  } catch (e) {
+    notif('❌ Verification failed.');
+  }
+  btn.disabled = false; btn.textContent = 'Verify & Enter';
 });
 
 function logoutCustomer() {
   localStorage.removeItem('mq_customer_phone');
-  nav('account');
+  location.reload(); // Hard reload to trigger auth modal again
 }
 
 async function showAccountDashboard(phone) {
@@ -682,3 +747,17 @@ renderGrid('home-grid');
 initTabs('home-tabs', 'home-grid');
 updateCart();
 initFade();
+
+// Check Auth on Start
+(function() {
+  const phone = localStorage.getItem('mq_customer_phone');
+  if (!phone) {
+    document.getElementById('auth-modal').classList.add('open');
+  } else {
+    // Pre-fill phone fields
+    setTimeout(() => {
+      const sp = document.getElementById('sub-phone'); if(sp) sp.value = phone;
+      const pp = document.getElementById('pay-phone'); if(pp) pp.value = phone;
+    }, 500);
+  }
+})();

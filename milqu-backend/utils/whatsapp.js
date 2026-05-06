@@ -130,10 +130,33 @@ async function sendSubscriptionNotification(subscription, type = 'confirmation')
     return sendWhatsAppMessage(subscription.phone, formatSubscriptionMessage(subscription, type));
 }
 
+async function sendSMS(to, body) {
+    try {
+        if (!client || !to || !body) {
+            return null;
+        }
+        // Ensure number has country code for Twilio
+        let formattedTo = to.replace(/\D/g, '');
+        if (formattedTo.length === 10) formattedTo = `+91${formattedTo}`;
+        else if (!formattedTo.startsWith('+')) formattedTo = `+${formattedTo}`;
+
+        const message = await client.messages.create({
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: formattedTo,
+            body
+        });
+        return message.sid;
+    } catch (err) {
+        console.error('[SMS] Send failed:', err.message);
+        return null;
+    }
+}
+
 module.exports = {
     sendAdminOrderNotification,
     sendDeliveryStatusUpdate,
     sendOrderConfirmation,
     sendSubscriptionNotification,
-    sendWhatsAppMessage
+    sendWhatsAppMessage,
+    sendSMS
 };
