@@ -103,6 +103,10 @@ function nav(page, cat, closeMob) {
     initSub();
   }
 
+  if (page === 'account') {
+    initAccount();
+  }
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
   initFade();
   return false;
@@ -980,6 +984,221 @@ document.addEventListener('keydown', event => {
   }
 });
 
+// ============================================================
+//  MY ACCOUNT / CUSTOMER PORTAL
+// ============================================================
+function initAccount() {
+  const savedPhone = localStorage.getItem('mq_customer_phone');
+  const emptySec = document.getElementById('account-empty-state');
+  const mainSec = document.getElementById('account-main-content');
+
+  if (savedPhone) {
+    if (emptySec) emptySec.style.display = 'none';
+    if (mainSec) mainSec.style.display = 'block';
+    showAccountDashboard(savedPhone);
+  } else {
+    if (emptySec) emptySec.style.display = 'block';
+    if (mainSec) mainSec.style.display = 'none';
+    const authModal = document.getElementById('auth-modal');
+    if (authModal) authModal.classList.add('open');
+  }
+}
+
+// Global Auth Handlers
+function showAuthStep(step) {
+  const step1 = document.getElementById('auth-step-1');
+  const step2 = document.getElementById('auth-step-2');
+  if (step1) step1.style.display = step === 1 ? 'block' : 'none';
+  if (step2) step2.style.display = step === 2 ? 'block' : 'none';
+}
+
+document.getElementById('auth-phone-form')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const phoneInput = document.getElementById('auth-phone-input');
+  if (!phoneInput) return;
+  const phone = phoneInput.value.trim();
+  const btn = e.target.querySelector('button');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const displayPhone = document.getElementById('auth-display-phone');
+      if (displayPhone) displayPhone.textContent = '+91 ' + phone;
+      if (data.mock) {
+        notif(`Demo Mode: OTP is ${data.code}`);
+        const otpInput = document.getElementById('auth-otp-input');
+        if (otpInput) otpInput.value = data.code; 
+      }
+      showAuthStep(2);
+    } else {
+      notif('❌ ' + data.message);
+    }
+  } catch (e) {
+    notif('❌ Server error. Try again.');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Get OTP →'; }
+});
+
+document.getElementById('auth-otp-form')?.addEventListener('submit', async e => {
+  e.preventDefault();
+  const phoneInput = document.getElementById('auth-phone-input');
+  const otpInput = document.getElementById('auth-otp-input');
+  if (!phoneInput || !otpInput) return;
+  const phone = phoneInput.value.trim();
+  const code = otpInput.value.trim();
+  const btn = e.target.querySelector('button');
+  if (btn) { btn.disabled = true; btn.textContent = 'Verifying...'; }
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, code })
+    });
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('mq_customer_phone', phone);
+      const authModal = document.getElementById('auth-modal');
+      if (authModal) authModal.classList.remove('open');
+      notif('🎉 Welcome back!');
+      
+      // Auto-fill phone in other forms
+      const subPhone = document.getElementById('sub-phone');
+      if (subPhone) subPhone.value = phone;
+      const payPhone = document.getElementById('pay-phone');
+      if (payPhone) payPhone.value = phone;
+
+      // If they are on account page, refresh it
+      const accPage = document.getElementById('page-account');
+      if (accPage && accPage.classList.contains('active')) {
+        initAccount();
+      }
+    } else {
+      notif('❌ ' + data.message);
+    }
+  } catch (e) {
+    notif('❌ Verification failed.');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Verify & Enter'; }
+});
+
+function logoutCustomer() {
+  localStorage.removeItem('mq_customer_phone');
+  location.reload(); 
+}
+
+async function showAccountDashboard(phone) {
+  const emptySec = document.getElementById('account-empty-state');
+  const mainSec = document.getElementById('account-main-content');
+  if (emptySec) emptySec.style.display = 'none';
+  if (mainSec) mainSec.style.display = 'block';
+  
+  const phEl = document.getElementById('acc-customer-phone');
+  if (phEl) phEl.textContent = '📞 ' + phone;
+  
+  fetchCustomerData(phone);
+}
+
+async function fetchCustomerData(phone) {
+  const ordersList = document.getElementById('acc-orders-list');
+  const subsList = document.getElementById('acc-subs-list');
+
+  try {
+    // Fetch Orders
+    const oRes = await fetch(`${API_BASE}/orders/customer/${phone}`);
+    const oData = await oRes.json();
+    
+    if (oData.success && oData.orders.length > 0) {
+      const nameEl = document.getElementById('acc-customer-name');
+      if (nameEl) nameEl.textContent = oData.orders[0].customer.name.split(' ')[0];
+      if (ordersList) {
+        ordersList.innerHTML = oData.orders.map(o => `
+          <div class="acc-order-item" style="display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid var(--border); transition:0.3s;">
+            <div>
+              <div style="font-weight:700; margin-bottom:4px;">Order #${o.orderId.split('-').pop()}</div>
+              <div style="font-size:12px; color:#6b7280;">${new Date(o.createdAt).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'})} · ₹${o.total}</div>
+            </div>
+            <div class="badge" style="background:${getStatusColor(o.status)}15; color:${getStatusColor(o.status)}; border:1px solid ${getStatusColor(o.status)}44; font-size:11px; text-transform:capitalize; padding:4px 8px; border-radius:100px;">${o.status.replace(/_/g, ' ')}</div>
+          </div>
+        `).join('');
+      }
+    } else if (ordersList) {
+      ordersList.innerHTML = '<div class="empty-state" style="padding:40px; text-align:center; color:#6b7280;">No orders found yet. <br><button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="nav(\'products\')">Shop Now</button></div>';
+    }
+
+    // Fetch Subscriptions
+    const sRes = await fetch(`${API_BASE}/subscriptions/customer/${phone}`);
+    const sData = await sRes.json();
+
+    if (sData.success && sData.subscriptions.length > 0) {
+      if (subsList) {
+        subsList.innerHTML = sData.subscriptions.map(s => `
+          <div class="acc-sub-card" style="background:white; border:1px solid #e5e7eb; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;">
+              <strong style="text-transform:capitalize;">${s.milkType} Milk</strong>
+              <span class="badge" style="background:${s.status === 'active' ? '#22c55e' : '#6b7280'}15; color:${s.status === 'active' ? '#16a34a' : '#6b7280'}; padding:4px 8px; border-radius:100px; font-size:11px; font-weight:700;">${s.status.toUpperCase()}</span>
+            </div>
+            <div style="font-size:13px; color:#6b7280; margin-bottom:16px;">
+              ${s.qty}L delivered ${s.schedule}<br>
+              Monthly Total: ${s.monthlyTotal}
+            </div>
+            <button class="btn ${s.status === 'active' ? 'btn-outline' : 'btn-primary'} btn-sm" 
+              onclick="updateSubStatus('${s.subscriptionId}', '${s.phone}', '${s.status === 'active' ? 'paused' : 'active'}')"
+              style="width:100%; justify-content:center; padding:8px; font-size:13px;">
+              ${s.status === 'active' ? '⏸ Pause Subscription' : '▶️ Resume Delivery'}
+            </button>
+          </div>
+        `).join('');
+      }
+    } else if (subsList) {
+      subsList.innerHTML = '<div class="empty-state" style="padding:20px; text-align:center; color:#6b7280; font-size:13px;">No active subscriptions. <br><button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="nav(\'subscription\')">Subscribe Now</button></div>';
+    }
+
+  } catch (e) {
+    console.error('Account data fetch error', e);
+  }
+}
+
+async function updateSubStatus(subscriptionId, phone, newStatus) {
+  if (!confirm(`Are you sure you want to ${newStatus === 'paused' ? 'pause' : 'resume'} your milk delivery?`)) return;
+  try {
+    const res = await fetch(`${API_BASE}/subscriptions/status-customer`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscriptionId, phone, status: newStatus })
+    });
+    const data = await res.json();
+    if (data.success) {
+      notif(`✅ Subscription ${newStatus === 'paused' ? 'paused' : 'resumed'}!`);
+      fetchCustomerData(phone);
+    } else {
+      notif('❌ ' + data.message);
+    }
+  } catch (e) {
+    notif('❌ Failed to update subscription.');
+  }
+}
+
+function getStatusColor(s) {
+  const colors = {
+    pending: '#f59e0b',
+    confirmed: '#2563eb',
+    assigned: '#8b5cf6',
+    out_for_delivery: '#10b981',
+    delivered: '#16a34a',
+    failed: '#ef4444',
+    cancelled: '#64748b'
+  };
+  return colors[s] || '#64748b';
+}
+
+// Initial Startup
 Promise.all([loadProducts(), loadContent()])
   .then(() => {
     renderCmsUpdates();
@@ -989,6 +1208,16 @@ Promise.all([loadProducts(), loadContent()])
     updateCart();
     initSub();
     initFade();
+    
+    // Auth Check after data loads
+    const phone = localStorage.getItem('mq_customer_phone');
+    const authModal = document.getElementById('auth-modal');
+    if (!phone && authModal) {
+      authModal.classList.add('open');
+    } else if (phone) {
+      const sp = document.getElementById('sub-phone'); if(sp) sp.value = phone;
+      const pp = document.getElementById('pay-phone'); if(pp) pp.value = phone;
+    }
   })
   .catch(err => {
     console.error(err);
@@ -1002,3 +1231,4 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
