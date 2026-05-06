@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Admin = require('../models/Admin');
+const InventoryLog = require('../models/InventoryLog');
 const { upload } = require('../utils/cloudinary');
 const { createRateLimiter } = require('../middleware/rateLimit');
 const { sendWhatsAppNotification } = require('../utils/whatsapp');
@@ -228,7 +229,9 @@ router.post('/', publicOrderLimiter, async (req, res) => {
 
             stockAdjustments.push({
                 productId: product._id.toString(),
-                qty: item.qty
+                qty: item.qty,
+                previousStock: reservedProduct.stock + item.qty,
+                newStock: reservedProduct.stock
             });
 
             orderItems.push({
@@ -268,6 +271,18 @@ router.post('/', publicOrderLimiter, async (req, res) => {
 
         try {
             await order.save();
+            // ── Create Inventory Logs ──
+            for (const adj of stockAdjustments) {
+                await InventoryLog.create({
+                    productId: adj.productId,
+                    action: 'order_deduction',
+                    quantity: adj.qty,
+                    previousStock: adj.previousStock,
+                    newStock: adj.newStock,
+                    reason: `Order #${orderId}`,
+                    performedBy: null // Public order
+                });
+            }
         } catch (err) {
             await rollbackStockAdjustments(stockAdjustments);
             throw err;

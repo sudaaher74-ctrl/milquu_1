@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "crons": [
+    { "path": "/api/reports/cron/daily", "schedule": "0 1 * * *" },
+    { "path": "/api/reports/cron/weekly", "schedule": "0 2 * * 0" },
+    { "path": "/api/reports/cron/monthly", "schedule": "0 3 1 * *" }
+  ],
   "functions": {
     "api/index.js": {
       "memory": 1024,

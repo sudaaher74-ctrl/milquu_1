@@ -466,6 +466,7 @@ function showPanel(id, btn) {
         livetracking: '📍 Live Tracking', deliveryboys: '🏍️ Delivery Boys', areas: '🗺️ Areas / Zones',
         subscriptions: '📦 Subscriptions', messages: '💬 Messages', products: '🥛 Products',
         customers: '👥 Customers', inventory: '📋 Inventory', analytics: '📈 Analytics',
+        reports: '📑 Reports & Analytics',
         cashcollection: '💵 Cash Collection', cms: '🎨 CMS', settings: '⚙️ Settings'
     };
     document.getElementById('panel-title').textContent = titles[id] || id;
@@ -475,7 +476,7 @@ function showPanel(id, btn) {
     if (id === 'messages') renderMessages();
     if (id === 'products') renderProductsPanel();
     if (id === 'customers') renderCustomers();
-    if (id === 'inventory') renderInventory();
+    if (id === 'inventory') { if (typeof renderEnhancedInventory === 'function') renderEnhancedInventory(); else renderInventory(); }
     if (id === 'cms') renderCMS();
     if (id === 'delivery') renderDeliveryPanel();
     if (id === 'livetracking') renderLiveTracking();
@@ -483,6 +484,7 @@ function showPanel(id, btn) {
     if (id === 'areas') renderAreas();
     if (id === 'analytics') renderAnalytics();
     if (id === 'cashcollection') renderCashCollection();
+    if (id === 'reports') { if (typeof renderReportsPanel === 'function') renderReportsPanel(); }
     if (id === 'settings') renderSettings();
 
     // Close sidebar on mobile

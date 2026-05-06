@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const Product = require('../models/Product');
+const InventoryLog = require('../models/InventoryLog');
 const { verifyToken, optionalVerifyToken, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
@@ -134,9 +135,24 @@ router.put('/:id', verifyToken, requireRole(...PRODUCT_MANAGERS), upload.single(
             update.imageUrl = '';
         }
 
-        const product = await Product.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
-        if (!product) {
+        const oldProduct = await Product.findById(req.params.id);
+        if (!oldProduct) {
             return res.status(404).json({ success: false, message: 'Product not found.' });
+        }
+
+        const product = await Product.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true });
+        
+        // ── Log Stock Adjustment ──
+        if (stock !== undefined && parseInt(stock) !== oldProduct.stock) {
+            await InventoryLog.create({
+                productId: product._id,
+                action: 'manual_adjustment',
+                quantity: Math.abs(parseInt(stock) - oldProduct.stock),
+                previousStock: oldProduct.stock,
+                newStock: product.stock,
+                reason: 'Manual dashboard update',
+                performedBy: req.admin?._id
+            });
         }
 
         res.json({ success: true, message: 'Product updated!', product });

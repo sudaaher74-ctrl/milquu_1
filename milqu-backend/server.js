@@ -136,6 +136,11 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/reports', require('./routes/reports'));
+app.use('/api/expenses', require('./routes/expenses'));
+app.use('/api/inventory', require('./routes/inventory'));
+app.use('/api/export', require('./routes/export'));
 
 app.get('/api/health', async (req, res) => {
     const dbState = mongoose.connection.readyState;

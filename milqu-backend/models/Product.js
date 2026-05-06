@@ -14,6 +14,10 @@ const ProductSchema = new mongoose.Schema({
     unit: { type: String, default: '/unit' },    // e.g. /L, /kg, /500g
     badge: { type: String, default: '' },        // Fresh, Popular, Organic, etc.
     nutrition: { type: [[String]], default: [] },
+    lowStockThreshold: { type: Number, default: 10 },
+    expiryDays: { type: Number, default: null },       // shelf life in days (null = no expiry)
+    costPrice: { type: Number, default: 0 },           // cost price for profit margin calculation
+    lastRestockedAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now }
 });
 
