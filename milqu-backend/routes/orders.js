@@ -1018,4 +1018,23 @@ router.post('/bulk-assign', verifyToken, requireRole('super_admin', 'manager'), 
     }
 });
 
+router.get('/customer/:phone', publicOrderLimiter, async (req, res) => {
+    try {
+        const { phone } = req.params;
+        if (!phone) {
+            return res.status(400).json({ success: false, message: 'Phone number is required.' });
+        }
+
+        const orders = await Order.find({ 'customer.phone': phone })
+            .populate('area_id', 'name')
+            .sort({ createdAt: -1 })
+            .limit(50);
+
+        res.json({ success: true, orders });
+    } catch (err) {
+        console.error('Customer orders error:', err);
+        res.status(500).json({ success: false, message: 'Failed to fetch order history.' });
+    }
+});
+
 module.exports = router;

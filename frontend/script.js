@@ -131,6 +131,7 @@ function nav(page, cat, closeMob) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (closeMob) { document.getElementById('mobile-menu').classList.remove('open'); document.body.style.overflow = ''; }
   if (page === 'home') { renderGrid('home-grid'); initTabs('home-tabs', 'home-grid'); }
+  if (page === 'account') initAccount();
   if (page === 'products') {
     renderGrid('prod-grid', cat || 'all');
     initTabs('prod-tabs', 'prod-grid');
@@ -538,6 +539,141 @@ document.getElementById('cart-overlay').addEventListener('click', closeCart);
 document.getElementById('cart-close').addEventListener('click', closeCart);
 document.getElementById('checkout-btn').addEventListener('click', openPayModal);
 document.getElementById('pay-modal').addEventListener('click', function (e) { if (e.target === this) closePayModal(); });
+
+// ============================================================
+//  MY ACCOUNT / CUSTOMER PORTAL
+// ============================================================
+function initAccount() {
+  const savedPhone = localStorage.getItem('mq_customer_phone');
+  if (savedPhone) {
+    showAccountDashboard(savedPhone);
+  } else {
+    document.getElementById('account-login-section').style.display = 'block';
+    document.getElementById('account-dashboard-section').style.display = 'none';
+  }
+}
+
+document.getElementById('account-login-form')?.addEventListener('submit', e => {
+  e.preventDefault();
+  const phone = document.getElementById('account-phone').value.trim();
+  if (!/^[6-9]\d{9}$/.test(phone)) { notif('Enter a valid 10-digit phone number ⚠️'); return; }
+  localStorage.setItem('mq_customer_phone', phone);
+  showAccountDashboard(phone);
+});
+
+function logoutCustomer() {
+  localStorage.removeItem('mq_customer_phone');
+  nav('account');
+}
+
+async function showAccountDashboard(phone) {
+  const loginSec = document.getElementById('account-login-section');
+  const dashSec = document.getElementById('account-dashboard-section');
+  if (loginSec) loginSec.style.display = 'none';
+  if (dashSec) dashSec.style.display = 'block';
+  const phEl = document.getElementById('acc-customer-phone');
+  if (phEl) phEl.textContent = '📞 ' + phone;
+  
+  fetchCustomerData(phone);
+}
+
+async function fetchCustomerData(phone) {
+  const ordersList = document.getElementById('acc-orders-list');
+  const subsList = document.getElementById('acc-subs-list');
+
+  try {
+    // Fetch Orders
+    const oRes = await fetch(`${API_BASE}/orders/customer/${phone}`);
+    const oData = await oRes.json();
+    
+    if (oData.success && oData.orders.length > 0) {
+      const nameEl = document.getElementById('acc-customer-name');
+      if (nameEl) nameEl.textContent = oData.orders[0].customer.name.split(' ')[0];
+      if (ordersList) {
+        ordersList.innerHTML = oData.orders.map(o => `
+          <div class="acc-order-item" style="display:flex; justify-content:space-between; align-items:center; padding:16px; border-bottom:1px solid var(--border); transition:var(--transition);">
+            <div>
+              <div style="font-weight:700; margin-bottom:4px;">Order #${o.orderId.split('-').pop()}</div>
+              <div style="font-size:12px; color:var(--gray);">${new Date(o.createdAt).toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'})} · ₹${o.total}</div>
+            </div>
+            <div class="badge" style="background:${getStatusColor(o.status)}15; color:${getStatusColor(o.status)}; border:1px solid ${getStatusColor(o.status)}44; font-size:11px; text-transform:capitalize; padding:4px 8px; border-radius:100px;">${o.status.replace(/_/g, ' ')}</div>
+          </div>
+        `).join('');
+      }
+    } else if (ordersList) {
+      ordersList.innerHTML = '<div class="empty-state" style="padding:40px; text-align:center; color:var(--gray);">No orders found yet. <br><button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="nav(\'products\')">Shop Now</button></div>';
+    }
+
+    // Fetch Subscriptions
+    const sRes = await fetch(`${API_BASE}/subscriptions/customer/${phone}`);
+    const sData = await sRes.json();
+
+    if (sData.success && sData.subscriptions.length > 0) {
+      if (subsList) {
+        subsList.innerHTML = sData.subscriptions.map(s => `
+          <div class="acc-sub-card" style="background:var(--white); border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05); margin-bottom:16px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;">
+              <strong style="text-transform:capitalize;">${s.milkType} Milk</strong>
+              <span class="badge" style="background:${s.status === 'active' ? 'var(--green)' : 'var(--gray)'}15; color:${s.status === 'active' ? 'var(--green-dark)' : 'var(--gray)'}; padding:4px 8px; border-radius:100px; font-size:11px; font-weight:700;">${s.status.toUpperCase()}</span>
+            </div>
+            <div style="font-size:13px; color:var(--gray); margin-bottom:16px;">
+              ${s.qty}L delivered ${s.schedule}<br>
+              Monthly Total: ${s.monthlyTotal}
+            </div>
+            <button class="btn ${s.status === 'active' ? 'btn-outline' : 'btn-primary'} btn-sm" 
+              onclick="updateSubStatus('${s.subscriptionId}', '${s.phone}', '${s.status === 'active' ? 'paused' : 'active'}')"
+              style="width:100%; justify-content:center; padding:8px; font-size:13px;">
+              ${s.status === 'active' ? '⏸ Pause Subscription' : '▶️ Resume Delivery'}
+            </button>
+            <p style="font-size:10px; color:var(--gray); margin-top:8px; text-align:center;">
+              ${s.status === 'active' ? 'Pause before 10 PM for tomorrow' : 'Deliveries will resume from tomorrow morning'}
+            </p>
+          </div>
+        `).join('');
+      }
+    } else if (subsList) {
+      subsList.innerHTML = '<div class="empty-state" style="padding:20px; text-align:center; color:var(--gray); font-size:13px;">No active subscriptions. <br><button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="nav(\'subscription\')">Subscribe Now</button></div>';
+    }
+
+  } catch (e) {
+    console.error('Account data fetch error', e);
+    notif('❌ Error loading your data.');
+  }
+}
+
+async function updateSubStatus(subscriptionId, phone, newStatus) {
+  if (!confirm(`Are you sure you want to ${newStatus === 'paused' ? 'pause' : 'resume'} your milk delivery?`)) return;
+  
+  try {
+    const res = await fetch(`${API_BASE}/subscriptions/status-customer`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscriptionId, phone, status: newStatus })
+    });
+    const data = await res.json();
+    if (data.success) {
+      notif(`✅ Subscription ${newStatus === 'paused' ? 'paused' : 'resumed'}!`);
+      fetchCustomerData(phone);
+    } else {
+      notif('❌ ' + data.message);
+    }
+  } catch (e) {
+    notif('❌ Failed to update subscription.');
+  }
+}
+
+function getStatusColor(s) {
+  const colors = {
+    pending: '#f59e0b',
+    confirmed: '#2563eb',
+    assigned: '#8b5cf6',
+    out_for_delivery: '#10b981',
+    delivered: '#16a34a',
+    failed: '#ef4444',
+    cancelled: '#64748b'
+  };
+  return colors[s] || '#64748b';
+}
 
 // ============================================================
 //  INIT

@@ -986,8 +986,6 @@ h4 {
   gap: 14px;
   flex-wrap: wrap;
 }
-
-/* FOOTER */
 .footer {
   background: #0f172a;
   color: rgba(255, 255, 255, 0.7);
@@ -1093,6 +1091,42 @@ h4 {
 
 .social-link:hover {
   background: var(--green);
+}
+
+/* ACCOUNT DASHBOARD */
+.acc-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 32px;
+}
+
+.acc-sidebar {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.acc-nav {
+  list-style: none;
+}
+
+.acc-nav li {
+  padding: 12px 0;
+  cursor: pointer;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+}
+
+.acc-nav li:hover {
+  color: var(--green);
+}
+
+.acc-sub-card {
+  background: var(--light-gray);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 16px;
 }
 
 /* CART */
@@ -2711,6 +2745,38 @@ textarea.form-input {
   font-weight: 700;
 }
 
+/* ACCOUNT PAGE STYLES */
+.acc-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.acc-order-item:hover {
+  background: var(--light-gray);
+}
+
+.acc-sub-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 16px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .account-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
 /* ============================================================
    NOT SERVICEABLE MODAL
 ============================================================ */
@@ -2980,5 +3046,34 @@ textarea.form-input {
   .ns-area-chip {
     font-size: 11px;
     padding: 5px 10px;
+  }
+}
+/* ACCOUNT PAGE STYLES */
+.acc-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.acc-order-item:hover {
+  background: var(--light-gray);
+}
+
+.acc-sub-card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .account-grid {
+    grid-template-columns: 1fr !important;
   }
 }

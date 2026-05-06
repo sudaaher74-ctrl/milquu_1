@@ -84,6 +84,7 @@
             </div>
           </div>
           <a href="#" onclick="return nav('subscription')" class="nl" data-p="subscription">Subscribe</a>
+          <a href="#" onclick="return nav('account')" class="nl" data-p="account">My Orders</a>
           <a href="#" onclick="return nav('about')" class="nl" data-p="about">About</a>
           <a href="#" onclick="return nav('contact')" class="nl" data-p="contact">Contact</a>
           <a href="#" class="btn btn-primary" onclick="return nav('subscription')">Subscribe Now</a>
@@ -104,6 +105,7 @@
     <a href="#" onclick="return nav('home',null,true)">🏠 Home</a>
     <a href="#" onclick="return nav('products',null,true)">🛍 Products</a>
     <a href="#" onclick="return nav('subscription',null,true)">📦 Subscribe</a>
+    <a href="#" onclick="return nav('account',null,true)">📋 My Orders</a>
     <a href="#" onclick="return nav('about',null,true)">🌾 About</a>
     <a href="#" onclick="return nav('contact',null,true)">📞 Contact</a>
   </div>
@@ -1029,6 +1031,73 @@
             width="100%" height="360" style="border:0;" allowfullscreen loading="lazy"
             title="Milqu Fresh Location"></iframe>
         </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- MY ACCOUNT PAGE -->
+  <div id="page-account" class="page">
+    <div class="page-hero">
+      <div class="container">
+        <div class="itag">Customer Portal</div>
+        <h1>My Orders & Subscriptions</h1>
+        <p>Track your fresh deliveries and manage your subscriptions in one place.</p>
+      </div>
+    </div>
+    <section style="padding:60px 0; background: var(--light-gray); min-height: 500px;">
+      <div class="container">
+        
+        <!-- Login Section (Only visible if not 'logged in') -->
+        <div id="account-login-section" class="card-box" style="max-width: 450px; margin: 0 auto; text-align: center;">
+          <div style="font-size: 48px; margin-bottom: 20px;">👤</div>
+          <h3>Welcome Back!</h3>
+          <p style="margin-bottom: 24px;">Enter your registered phone number to view your order history.</p>
+          <form id="account-login-form">
+            <div class="form-group">
+              <input type="tel" id="account-phone" placeholder="Enter 10-digit phone number" required 
+                style="width:100%; text-align:center; font-size: 18px; letter-spacing: 1px;">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">View My History →</button>
+          </form>
+        </div>
+
+        <!-- Dashboard Section (Visible if 'logged in') -->
+        <div id="account-dashboard-section" style="display: none;">
+          <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h2 style="font-size: 28px;">Hello, <span id="acc-customer-name">Customer</span>! 👋</h2>
+              <p id="acc-customer-phone" style="color: var(--gray);"></p>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="logoutCustomer()" style="padding: 8px 16px; font-size: 13px;">🚪 Logout</button>
+          </div>
+
+          <div class="account-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px;">
+            <!-- Left: Orders -->
+            <div class="card-box">
+              <h3 style="margin-bottom: 20px; display:flex; align-items:center; gap:10px;">📦 Recent Orders</h3>
+              <div id="acc-orders-list" class="acc-list">
+                <div class="loading-placeholder">Fetching your orders...</div>
+              </div>
+            </div>
+
+            <!-- Right: Subscriptions -->
+            <div>
+              <div class="card-box" style="background: var(--green-light); border: 1px solid var(--green);">
+                <h3 style="margin-bottom: 16px; display:flex; align-items:center; gap:10px;">🗓 Active Subscription</h3>
+                <div id="acc-subs-list">
+                  <div class="loading-placeholder">Checking subscriptions...</div>
+                </div>
+              </div>
+              
+              <div class="card-box" style="margin-top: 24px;">
+                <h4>Need Help?</h4>
+                <p style="font-size: 14px; color: var(--gray); margin-bottom: 16px;">For any changes to your delivery address or custom schedules, please contact us.</p>
+                <a href="https://wa.me/910000000000" target="_blank" class="btn btn-primary btn-sm" style="width:100%; justify-content:center;">💬 WhatsApp Support</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
   </div>

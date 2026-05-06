@@ -146,4 +146,53 @@ router.patch('/:subscriptionId/status', verifyToken, requireRole(...SUBSCRIPTION
     }
 });
 
+router.get('/customer/:phone', publicSubscriptionLimiter, async (req, res) => {
+    try {
+        const { phone } = req.params;
+        if (!phone) {
+            return res.status(400).json({ success: false, message: 'Phone number is required.' });
+        }
+
+        const subs = await Subscription.find({ phone: phone })
+            .populate('area_id', 'name')
+            .sort({ createdAt: -1 });
+
+        res.json({ success: true, subscriptions: subs });
+    } catch (err) {
+        console.error('Customer subs error:', err);
+        res.status(500).json({ success: false, message: 'Failed to fetch subscriptions.' });
+    }
+});
+
+// Customer self-pause/resume (requires both phone and subId for minimal security)
+router.patch('/status-customer', publicSubscriptionLimiter, async (req, res) => {
+    try {
+        const { subscriptionId, phone, status } = req.body;
+        const allowed = ['active', 'paused'];
+        if (!allowed.includes(status)) {
+            return res.status(400).json({ success: false, message: 'Invalid status requested.' });
+        }
+
+        const sub = await Subscription.findOneAndUpdate(
+            { subscriptionId, phone },
+            { status },
+            { new: true }
+        ).populate('area_id', 'name');
+
+        if (!sub) {
+            return res.status(404).json({ success: false, message: 'Subscription not found or phone mismatch.' });
+        }
+
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('sub_status_update', sub);
+        }
+
+        res.json({ success: true, message: `Subscription ${status === 'active' ? 'resumed' : 'paused'} successfully.`, subscription: sub });
+    } catch (err) {
+        console.error('Customer sub update error:', err);
+        res.status(500).json({ success: false, message: 'Failed to update subscription.' });
+    }
+});
+
 module.exports = router;
