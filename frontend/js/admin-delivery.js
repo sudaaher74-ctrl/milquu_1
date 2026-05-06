@@ -8,8 +8,6 @@
 // ── Data Store (fetched from API)
 var deliveryBoys = [];
 var deliveryAreas = [];
-var liveMap = null;
-var liveMapMarkers = [];
 var areaChart = null, successChart = null, avgTimeChart = null;
 var deliveryDataLoaded = false;
 
@@ -386,143 +384,6 @@ async function autoAssignByLoad() {
 }
 
 // ══════════════════════════════════════════════════════
-//  LIVE TRACKING PANEL
-// ══════════════════════════════════════════════════════
-async function renderLiveTracking() {
-    if (!deliveryDataLoaded) await loadDeliveryData();
-    renderLiveDBList();
-    initLiveMap();
-    renderAreaHeatmap();
-}
-
-function initLiveMap() {
-    var container = document.getElementById('live-map');
-    if (!container) return;
-
-    if (liveMap) {
-        liveMap.invalidateSize();
-        addMapMarkers();
-        return;
-    }
-
-    try {
-        // Navi Mumbai center coordinates
-        liveMap = L.map('live-map').setView([19.033, 73.029], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap',
-            maxZoom: 18
-        }).addTo(liveMap);
-
-        addMapMarkers();
-        setTimeout(function() { liveMap.invalidateSize(); }, 300);
-    } catch(e) {
-        container.innerHTML = '<div class="empty-state" style="padding:80px 20px;"><span class="es-icon">🗺️</span><p>Map loading... Please wait</p></div>';
-    }
-}
-
-function addMapMarkers() {
-    if (!liveMap) return;
-
-    liveMapMarkers.forEach(function(m) { liveMap.removeLayer(m); });
-    liveMapMarkers = [];
-
-    // Navi Mumbai area coordinates
-    var areaCoords = {
-        'New Panvel':  [18.9936, 73.1200],
-        'Old Panvel':  [18.9894, 73.1175],
-        'Kamothe':     [19.0228, 73.0675],
-        'Karanjade':   [18.9700, 73.0900],
-        'Kharghar':    [19.0472, 73.0682],
-        'Belapur':     [19.0235, 73.0410]
-    };
-
-    // Delivery boy markers
-    var activeDBs = deliveryBoys.filter(function(d) { return d.status === 'active'; });
-    activeDBs.forEach(function(db) {
-        var coords = areaCoords[db.area] || [19.033 + (Math.random() * 0.04 - 0.02), 73.029 + (Math.random() * 0.04 - 0.02)];
-        var lat = coords[0] + (Math.random() * 0.008 - 0.004);
-        var lng = coords[1] + (Math.random() * 0.008 - 0.004);
-
-        var icon = L.divIcon({
-            className: 'custom-marker',
-            html: '<div style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.35);">' + db.name.charAt(0) + '</div>',
-            iconSize: [34, 34],
-            iconAnchor: [17, 17]
-        });
-
-        var marker = L.marker([lat, lng], { icon: icon })
-            .addTo(liveMap)
-            .bindPopup(
-                '<div style="font-family:Inter,sans-serif;min-width:150px;">' +
-                '<strong style="font-size:14px;">' + db.name + '</strong><br>' +
-                '<span style="font-size:12px;color:#64748b;">📍 ' + db.area + '</span><br>' +
-                '<span style="font-size:12px;color:#64748b;">📦 ' + db.currentLoad + ' active orders</span><br>' +
-                (db.successRate > 0 ? '<span style="font-size:12px;color:#16a34a;">✅ ' + db.successRate + '% success</span>' : '') +
-                '</div>'
-            );
-        liveMapMarkers.push(marker);
-    });
-
-    // Area cluster markers showing order count
-    deliveryAreas.forEach(function(area) {
-        var coords = areaCoords[area.name] || [19.033, 73.029];
-
-        var clusterIcon = L.divIcon({
-            className: 'cluster-marker',
-            html: '<div style="background:rgba(37,99,235,.9);color:#fff;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.25);font-family:monospace;">' + area.ordersToday + '</div>',
-            iconSize: [38, 38],
-            iconAnchor: [19, 19]
-        });
-
-        var marker = L.marker(coords, { icon: clusterIcon })
-            .addTo(liveMap)
-            .bindPopup(
-                '<div style="font-family:Inter,sans-serif;">' +
-                '<strong>' + area.name + '</strong><br>' +
-                '<span style="font-size:12px;color:#64748b;">📦 ' + area.ordersToday + ' orders today</span><br>' +
-                '<span style="font-size:12px;color:#64748b;">📮 Pincode: ' + (area.pincode || area.pincodes?.join(', ') || '') + '</span>' +
-                '</div>'
-            );
-        liveMapMarkers.push(marker);
-    });
-}
-
-function refreshMapPositions() {
-    loadDeliveryData().then(function() {
-        addMapMarkers();
-        renderAreaHeatmap();
-        toast('✅ Map positions refreshed');
-    });
-}
-
-function renderLiveDBList() {
-    var container = document.getElementById('live-db-list');
-    if (!container) return;
-
-    var activeDBs = deliveryBoys.filter(function(d) { return d.status === 'active'; });
-    document.getElementById('active-db-count').textContent = activeDBs.length + ' active';
-
-    container.innerHTML = activeDBs.map(function(db) {
-        return '<div class="live-db-item" onclick="focusDeliveryBoy(\'' + db.id + '\')">' +
-            '<div class="live-db-avatar">' + db.name.charAt(0) + '</div>' +
-            '<div class="live-db-info">' +
-                '<div class="live-db-name">' + db.name + '</div>' +
-                '<div class="live-db-meta">' + db.area + ' · ' + db.vehicle + '</div>' +
-                '<div class="live-db-orders">📦 ' + db.currentLoad + ' orders' +
-                    (db.successRate > 0 ? ' · ✅ ' + db.successRate + '%' : '') + '</div>' +
-            '</div>' +
-            '<span class="badge badge-green" style="font-size:9px;">Live</span>' +
-        '</div>';
-    }).join('') || '<div class="empty-state"><span class="es-icon">🏍️</span><p>No active delivery boys. Add delivery boys via the Delivery Boys panel.</p></div>';
-}
-
-function focusDeliveryBoy(dbId) {
-    var db = deliveryBoys.find(function(d) { return d.id === dbId; });
-    if (!db) return;
-    toast('📍 Tracking ' + db.name + ' in ' + db.area);
-}
-
-// ══════════════════════════════════════════════════════
 //  DELIVERY BOYS PANEL
 // ══════════════════════════════════════════════════════
 async function renderDeliveryBoys() {
@@ -756,7 +617,7 @@ async function editArea(areaId) {
 }
 
 function renderAreaHeatmap() {
-    ['area-heatmap', 'live-area-heatmap'].forEach(function(id) {
+    ['area-heatmap'].forEach(function(id) {
         var container = document.getElementById(id);
         if (!container) return;
 

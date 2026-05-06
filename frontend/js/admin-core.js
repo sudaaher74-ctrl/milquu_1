@@ -479,7 +479,7 @@ function showPanel(id, btn) {
     if (id === 'inventory') { if (typeof renderEnhancedInventory === 'function') renderEnhancedInventory(); else renderInventory(); }
     if (id === 'cms') renderCMS();
     if (id === 'delivery') renderDeliveryPanel();
-    if (id === 'livetracking') renderLiveTracking();
+    if (id === 'heatmap') { if (typeof initOrderHeatmap === 'function') initOrderHeatmap(); }
     if (id === 'deliveryboys') renderDeliveryBoys();
     if (id === 'areas') renderAreas();
     if (id === 'analytics') renderAnalytics();

@@ -56,8 +56,8 @@
       <div class="nav-section-label">Delivery & Logistics</div>
       <button class="nav-item" data-panel="delivery" onclick="showPanel('delivery',this)"><span class="ni">🚚</span>
         Delivery Management</button>
-      <button class="nav-item" data-panel="livetracking" onclick="showPanel('livetracking',this)"><span
-          class="ni">📍</span> Live Tracking</button>
+      <button class="nav-item" data-panel="heatmap" onclick="showPanel('heatmap',this)"><span
+          class="ni">🔥</span> Order Heatmap</button>
       <button class="nav-item" data-panel="deliveryboys" onclick="showPanel('deliveryboys',this)"><span
           class="ni">🏍️</span> Delivery Boys</button>
       <button class="nav-item" data-panel="areas" onclick="showPanel('areas',this)"><span class="ni">🗺️</span>
@@ -372,36 +372,43 @@
       </div>
 
       <!-- ═══ LIVE TRACKING PANEL (NEW) ═══ -->
-      <div class="panel" id="panel-livetracking">
+      <div class="panel" id="panel-heatmap">
         <div class="live-tracking-layout">
           <div class="pcard live-map-card">
             <div class="pcard-head">
-              <h3>📍 Live Delivery Map</h3>
+              <h3>🔥 Order Density Heatmap</h3>
               <div class="pcard-actions">
-                <button class="btn-primary btn-sm" onclick="refreshMapPositions()">🔄 Refresh Map</button>
+                <button class="btn-primary btn-sm" onclick="initOrderHeatmap()">🔄 Refresh Data</button>
               </div>
             </div>
-            <div id="live-map" class="live-map-container"></div>
+            <div id="heatmap-map" class="live-map-container" style="height: 600px; background: #f8f9fa; border-radius: 12px; overflow: hidden;"></div>
           </div>
-          <div style="display:flex; flex-direction:column; gap:18px; max-height: calc(100vh - var(--topbar-h) - 90px);">
-            <div class="pcard live-sidebar-card" style="flex:1; min-height:0;">
+          <div style="display:flex; flex-direction:column; gap:18px;">
+            <div class="pcard live-sidebar-card">
               <div class="pcard-head">
-                <h3>Active Delivery Boys</h3>
-                <span class="count-tag" id="active-db-count">0</span>
+                <h3>🗺️ Zone Performance</h3>
+                <span class="count-tag" id="heatmap-zone-count">0</span>
               </div>
-              <div id="live-db-list" class="live-db-list">
-                <div class="empty-state"><span class="es-icon">🏍️</span>
-                  <p>No active delivery boys</p>
-                </div>
+              <div id="heatmap-stats-list" class="live-db-list">
+                <div class="empty-state"><p>Loading zone metrics...</p></div>
               </div>
             </div>
-            <div class="pcard live-sidebar-card" style="flex:1; min-height:0;">
+            <div class="pcard live-sidebar-card">
               <div class="pcard-head">
-                <h3>🔥 Live Area Heatmap</h3>
+                <h3>💡 Map Legend</h3>
               </div>
-              <div id="live-area-heatmap" style="padding:15px; overflow-y:auto; flex:1;">
-                <div class="empty-state"><span class="es-icon">🗺️</span>
-                  <p>Loading heatmap…</p>
+              <div style="padding: 15px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                  <div style="width:16px; height:16px; background:#dc2626; border-radius:50%;"></div>
+                  <span style="font-size:12px;">High Volume (> 50 orders)</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                  <div style="width:16px; height:16px; background:#f59e0b; border-radius:50%;"></div>
+                  <span style="font-size:12px;">Medium Volume (10 - 50)</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <div style="width:16px; height:16px; background:#16a34a; border-radius:50%;"></div>
+                  <span style="font-size:12px;">Low Volume (< 10 orders)</span>
                 </div>
               </div>
             </div>
@@ -1152,6 +1159,7 @@
   <script src="js/admin-core.js"></script>
   <script src="js/admin-panels.js"></script>
   <script src="js/admin-delivery.js"></script>
+  <script src="js/admin-heatmap.js"></script>
   <script src="js/admin-realtime.js"></script>
   <script src="js/admin-analytics.js"></script>
   <script src="js/admin-export.js"></script>
