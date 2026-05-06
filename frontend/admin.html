@@ -377,8 +377,18 @@
           <div class="pcard live-map-card">
             <div class="pcard-head">
               <h3>🔥 Order Density Heatmap</h3>
-              <div class="pcard-actions">
-                <button class="btn-primary btn-sm" onclick="initOrderHeatmap()">🔄 Refresh Data</button>
+              <div class="pcard-actions" style="display:flex; gap:10px;">
+                <select id="heatmap-period" class="btn-sm" onchange="initOrderHeatmap()" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text);">
+                  <option value="today">Today</option>
+                  <option value="7d">Last 7 Days</option>
+                  <option value="30d" selected>Last 30 Days</option>
+                  <option value="90d">Last 90 Days</option>
+                </select>
+                <select id="heatmap-metric" class="btn-sm" onchange="initOrderHeatmap()" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text);">
+                  <option value="orders">By Orders</option>
+                  <option value="revenue">By Revenue</option>
+                </select>
+                <button class="btn-primary btn-sm" onclick="initOrderHeatmap()">🔄 Refresh</button>
               </div>
             </div>
             <div id="heatmap-map" class="live-map-container" style="height: 600px; background: #f8f9fa; border-radius: 12px; overflow: hidden;"></div>

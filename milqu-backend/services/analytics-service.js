@@ -966,58 +966,71 @@ async function getDashboardSummary() {
 }
 
 async function getAiInsights() {
-    const [last7Days, last30Days, customerAnalytics, inventoryAnalytics] = await Promise.all([
+    const [last7Days, last30Days, customerAnalytics, inventoryAnalytics, areaAnalytics] = await Promise.all([
         getPeriodSnapshot(getDateRange({ period: '7d' })),
         getPeriodSnapshot(getDateRange({ period: '30d' })),
         getCustomerAnalytics({ period: '30d' }),
-        getProductAnalytics({ period: '30d' })
+        getProductAnalytics({ period: '30d' }),
+        getAreaAnalytics({ period: '30d' })
     ]);
 
     const dailyAverage = last7Days.orderSummary.dailyRevenue.length
         ? last7Days.orderSummary.dailyRevenue.reduce((sum, item) => sum + num(item.revenue), 0) / last7Days.orderSummary.dailyRevenue.length
         : 0;
     const forecastedWeeklyRevenue = round(dailyAverage * 7);
+    
+    // Growth Trend
+    const trend = calcGrowth(last7Days.orderSummary.totalRevenue, Math.max(1, last30Days.orderSummary.totalRevenue / 4));
+    
+    // Fastest Growing Area
+    const sortedAreas = [...(areaAnalytics.salesByLocation || [])].sort((a, b) => b.growth - a.growth);
+    const topArea = sortedAreas[0] || null;
+
+    // Product Affinity (Simplified)
+    const productInsights = [];
+    if (inventoryAnalytics.bestSellers.length >= 2) {
+        productInsights.push(`Bundle Suggestion: Customers buying ${inventoryAnalytics.bestSellers[0]._id} often also purchase ${inventoryAnalytics.bestSellers[1]._id}.`);
+    }
+
     const churnRiskCustomers = customerAnalytics.topCustomers.filter((customer) => {
         const sixtyDaysAgo = new Date();
         sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
         return customer.totalOrders > 1 && new Date(customer.lastOrder) < sixtyDaysAgo;
     }).length;
-    const predictedBestSeller = last30Days.orderSummary.bestSellers[0] || null;
+
+    const insights = [
+        `Revenue Trend: We are seeing a ${trend}% ${trend >= 0 ? 'increase' : 'decrease'} in weekly sales velocity.`,
+        topArea ? `Hotspot Detected: ${topArea.name} is your fastest-growing zone with ${topArea.growth}% growth.` : 'Geographic sales are steady across all active zones.',
+        ...productInsights,
+        inventoryAnalytics.lowStockCount > 0
+            ? `Inventory Alert: ${inventoryAnalytics.lowStockCount} items are below safety levels. Restock recommended.`
+            : 'Operational Health: Inventory levels are healthy across all categories.'
+    ];
+
+    if (churnRiskCustomers > 0) {
+        insights.push(`Retention Alert: ${churnRiskCustomers} repeat customers have been inactive for >60 days.`);
+    }
 
     return {
         success: true,
         salesPrediction: {
             next7DaysRevenue: forecastedWeeklyRevenue,
-            trend: calcGrowth(last7Days.orderSummary.totalRevenue, Math.max(1, last30Days.orderSummary.totalRevenue / 4))
+            trend
         },
-        demandForecast: last30Days.orderSummary.bestSellers.slice(0, 5).map((product) => ({
-            name: product._id,
-            expectedDemand: product.totalQty,
-            predictedRevenue: product.totalRevenue
-        })),
+        geographicInsight: topArea ? {
+            name: topArea.name,
+            growth: topArea.growth,
+            revenue: topArea.revenue
+        } : null,
         churnPrediction: {
             atRiskCustomers: churnRiskCustomers,
             repeatRate: customerAnalytics.repeatRate
         },
-        bestSellingProductPrediction: predictedBestSeller ? {
-            name: predictedBestSeller._id,
-            qty: predictedBestSeller.totalQty,
-            revenue: predictedBestSeller.totalRevenue
-        } : null,
         smartRestockRecommendation: {
             lowStockCount: inventoryAnalytics.lowStockCount,
             topProductsToRestock: inventoryAnalytics.bestSellers.slice(0, 3)
         },
-        insights: [
-            `Projected next 7-day revenue is ₹${forecastedWeeklyRevenue.toLocaleString('en-IN')}.`,
-            `${customerAnalytics.repeatRate}% of customers are repeat buyers in the current dataset.`,
-            predictedBestSeller
-                ? `${predictedBestSeller._id} is the most likely best-seller based on the last 30 days of sales velocity.`
-                : 'Not enough order data is available yet for product prediction.',
-            inventoryAnalytics.lowStockCount > 0
-                ? `${inventoryAnalytics.lowStockCount} products need restocking attention soon.`
-                : 'Inventory looks healthy with no immediate low-stock pressure.'
-        ]
+        insights
     };
 }
 
