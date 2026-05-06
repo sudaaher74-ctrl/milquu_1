@@ -9,6 +9,11 @@ const AdminSchema = new mongoose.Schema({
     role: { type: String, enum: ['super_admin', 'manager', 'delivery_staff'], default: 'manager' },
     phone: { type: String, required: false, trim: true },
     assigned_area: { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: false },
+    permissions: { type: [String], default: [] },
+    isActive: { type: Boolean, default: true },
+    loginCount: { type: Number, default: 0 },
+    lastLoginAt: { type: Date, default: null },
+    lastSeenAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now }
 });
 

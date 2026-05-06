@@ -5,6 +5,8 @@ const { createRateLimiter } = require('../middleware/rateLimit');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const { generatePublicId } = require('../utils/public-id');
 const { sanitizeMultilineText, sanitizeText } = require('../utils/sanitize');
+const { sendSubscriptionNotification } = require('../utils/whatsapp');
+const { logActivity } = require('../services/activity-log');
 
 const router = express.Router();
 const SUBSCRIPTION_ROLES = ['super_admin', 'manager', 'delivery_staff'];
@@ -63,6 +65,15 @@ router.post('/', publicSubscriptionLimiter, async (req, res) => {
         });
 
         await sub.save();
+        sendSubscriptionNotification(sub, 'confirmation').catch(() => { });
+        await logActivity(req, {
+            module: 'subscriptions',
+            action: 'create_subscription',
+            entityType: 'subscription',
+            entityId: subscriptionId,
+            message: `Created subscription ${subscriptionId}`,
+            metadata: { schedule: cleanSchedule, monthlyTotal: cleanMonthlyTotal }
+        });
         res.status(201).json({
             success: true,
             message: `Subscription ${subscriptionId} confirmed!`,
@@ -120,6 +131,14 @@ router.patch('/:subscriptionId/status', verifyToken, requireRole(...SUBSCRIPTION
         if (io) {
             io.emit('sub_status_update', sub);
         }
+        sendSubscriptionNotification(sub, status === 'active' ? 'confirmation' : 'payment_reminder').catch(() => { });
+        await logActivity(req, {
+            module: 'subscriptions',
+            action: 'update_subscription_status',
+            entityType: 'subscription',
+            entityId: sub.subscriptionId,
+            message: `Updated subscription ${sub.subscriptionId} to ${status}`
+        });
         
         res.json({ success: true, message: 'Subscription updated.', subscription: sub });
     } catch (err) {

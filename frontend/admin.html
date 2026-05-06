@@ -805,7 +805,7 @@
       <!-- ═══ REPORTS & ANALYTICS PANEL ═══ -->
       <div class="panel" id="panel-reports">
         <div class="analytics-header">
-          <div><h2 class="analytics-title">📑 Reports & Analytics</h2><p class="analytics-subtitle">Advanced revenue, customer, and product analytics with export</p></div>
+          <div><h2 class="analytics-title">📑 Reports & Analytics</h2><p class="analytics-subtitle">Advanced revenue, profit, customer, delivery, inventory, and area analytics with export</p></div>
           <div class="pcard-actions">
             <button class="rpt-period-btn active" data-period="7d" onclick="setAnalyticsChartPeriod('7d')">7 Days</button>
             <button class="rpt-period-btn" data-period="30d" onclick="setAnalyticsChartPeriod('30d')">30 Days</button>
@@ -833,6 +833,10 @@
           <div class="pcard"><div class="pcard-head"><h3>💰 Revenue vs Expenses</h3></div><div class="chart-container" style="height:280px;"><canvas id="rpt-rev-vs-exp-chart"></canvas></div></div>
           <div class="pcard"><div class="pcard-head"><h3>🥧 Sales by Category</h3></div><div class="chart-container" style="height:280px;"><canvas id="rpt-product-sales-pie"></canvas></div></div>
         </div>
+        <div class="grid2" style="margin-bottom:20px;">
+          <div class="pcard"><div class="pcard-head"><h3>🗺️ Area-wise Sales</h3></div><div class="chart-container"><canvas id="rpt-area-sales-chart"></canvas></div></div>
+          <div class="pcard"><div class="pcard-head"><h3>🚚 Delivery Performance</h3></div><div class="chart-container"><canvas id="rpt-delivery-performance-chart"></canvas></div></div>
+        </div>
         <!-- Export Toolbar -->
         <div class="pcard" style="margin-bottom:20px;">
           <div class="pcard-head"><h3>↓ Export Reports</h3></div>
@@ -840,10 +844,14 @@
             <div class="export-group"><span class="export-label">Orders</span><button class="export-btn pdf" onclick="exportToPDF('orders')">PDF</button><button class="export-btn xlsx" onclick="exportToExcel('orders')">Excel</button><button class="export-btn csv" onclick="exportToCSV('orders')">CSV</button></div>
             <div class="export-group"><span class="export-label">Revenue</span><button class="export-btn pdf" onclick="exportToPDF('revenue')">PDF</button><button class="export-btn xlsx" onclick="exportToExcel('revenue')">Excel</button><button class="export-btn csv" onclick="exportToCSV('revenue')">CSV</button></div>
             <div class="export-group"><span class="export-label">Customers</span><button class="export-btn pdf" onclick="exportToPDF('customers')">PDF</button><button class="export-btn xlsx" onclick="exportToExcel('customers')">Excel</button><button class="export-btn csv" onclick="exportToCSV('customers')">CSV</button></div>
+            <div class="export-group"><span class="export-label">Products</span><button class="export-btn pdf" onclick="exportToPDF('products')">PDF</button><button class="export-btn xlsx" onclick="exportToExcel('products')">Excel</button><button class="export-btn csv" onclick="exportToCSV('products')">CSV</button></div>
             <div class="export-group"><span class="export-label">Inventory</span><button class="export-btn pdf" onclick="exportToPDF('inventory')">PDF</button><button class="export-btn xlsx" onclick="exportToExcel('inventory')">Excel</button><button class="export-btn csv" onclick="exportToCSV('inventory')">CSV</button></div>
+            <div class="export-group"><span class="export-label">GST</span><button class="export-btn pdf" onclick="exportToPDF('gst')">PDF</button><button class="export-btn xlsx" onclick="exportToExcel('gst')">Excel</button><button class="export-btn csv" onclick="exportToCSV('gst')">CSV</button></div>
+            <div class="export-group"><span class="export-label">Subscriptions</span><button class="export-btn pdf" onclick="exportToPDF('subscriptions')">PDF</button><button class="export-btn xlsx" onclick="exportToExcel('subscriptions')">Excel</button><button class="export-btn csv" onclick="exportToCSV('subscriptions')">CSV</button></div>
             <div class="export-group"><span class="export-label">Analytics</span><button class="export-btn pdf" onclick="exportToPDF('analytics')">PDF</button><button class="export-btn xlsx" onclick="exportToExcel('analytics')">Excel</button><button class="export-btn csv" onclick="exportToCSV('analytics')">CSV</button></div>
           </div>
         </div>
+        <div class="pcard" style="margin-bottom:20px;"><div id="rpt-ai-insights" style="padding:20px;"><div class="empty-state"><p>Loading AI insights…</p></div></div></div>
         <!-- Customer Analytics -->
         <div class="pcard" style="margin-bottom:20px;"><div id="rpt-customer-analytics" style="padding:20px;"><div class="empty-state"><p>Loading customer analytics…</p></div></div></div>
         <!-- Expense Tracker -->
@@ -851,7 +859,7 @@
           <div class="pcard" style="grid-column: span 2;"><div id="rpt-expenses" style="padding:20px;"><div class="empty-state"><p>Loading expenses…</p></div></div></div>
           <div class="pcard"><div class="pcard-head"><h3>➕ Add Expense</h3></div>
             <div style="padding:20px;"><form id="expense-form" onsubmit="addExpenseEntry(event)">
-              <div class="form-group"><label>Category *</label><select name="category" required><option value="">Select…</option><option value="rent">🏠 Rent</option><option value="salary">💼 Salary</option><option value="packaging">📦 Packaging</option><option value="logistics">🚚 Logistics</option><option value="utilities">💡 Utilities</option><option value="maintenance">🔧 Maintenance</option><option value="marketing">📢 Marketing</option><option value="other">📋 Other</option></select></div>
+              <div class="form-group"><label>Category *</label><select name="category" required><option value="">Select…</option><option value="milk_purchase">🥛 Milk Purchase</option><option value="packaging">📦 Packaging</option><option value="staff_salary">💼 Staff Salary</option><option value="delivery_fuel">⛽ Delivery Fuel</option><option value="electricity">🔌 Electricity</option><option value="farm">🌾 Farm Expense</option><option value="rent">🏠 Rent</option><option value="marketing">📢 Marketing</option><option value="misc">📋 Misc</option><option value="other">📋 Other</option></select></div>
               <div class="form-group"><label>Amount (₹) *</label><input name="amount" type="number" required min="1"></div>
               <div class="form-group"><label>Description</label><input name="description" placeholder="What was this for?"></div>
               <div class="form-group"><label>Date</label><input name="date" type="date"></div>
@@ -866,6 +874,7 @@
               <button class="btn-primary btn-sm" onclick="generateReportOnDemand('daily')">📅 Daily</button>
               <button class="btn-primary btn-sm" onclick="generateReportOnDemand('weekly')">📆 Weekly</button>
               <button class="btn-primary btn-sm" onclick="generateReportOnDemand('monthly')">🗓️ Monthly</button>
+              <button class="btn-primary btn-sm" onclick="cleanupOldReports()">🧹 Cleanup</button>
             </div>
           </div>
           <div id="rpt-history" style="padding:10px 20px;"><div class="empty-state"><p>Loading reports…</p></div></div>
@@ -1136,7 +1145,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/admin-core.js"></script>
   <script src="js/admin-panels.js"></script>

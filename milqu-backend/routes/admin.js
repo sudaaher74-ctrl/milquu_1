@@ -1,9 +1,11 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
+const ActivityLog = require('../models/ActivityLog');
 const { createRateLimiter } = require('../middleware/rateLimit');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const { getRequiredEnv } = require('../config');
+const { logActivity } = require('../services/activity-log');
 
 const router = express.Router();
 const JWT_SECRET = getRequiredEnv('JWT_SECRET', 'dev-fallback-secret-123');
@@ -86,6 +88,14 @@ router.post('/register', authLimiter, async (req, res) => {
         });
 
         await admin.save();
+        await logActivity(req, {
+            module: 'admin',
+            action: 'register_admin',
+            entityType: 'admin',
+            entityId: String(admin._id),
+            message: `Registered admin ${admin.email}`,
+            metadata: { role: admin.role }
+        });
 
         const token = generateToken(admin);
         res.status(201).json({
@@ -117,6 +127,20 @@ router.post('/login', authLimiter, async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({ success: false, message: 'Invalid email or password.' });
         }
+
+        admin.lastLoginAt = new Date();
+        admin.lastSeenAt = new Date();
+        admin.loginCount = (admin.loginCount || 0) + 1;
+        await admin.save();
+
+        await logActivity(req, {
+            module: 'admin',
+            action: 'login',
+            entityType: 'admin',
+            entityId: String(admin._id),
+            message: `Admin ${admin.email} logged in`,
+            metadata: { role: admin.role }
+        });
 
         const token = generateToken(admin);
         res.json({
@@ -168,7 +192,16 @@ router.put('/credentials', verifyToken, async (req, res) => {
         }
 
         admin.password = newPassword;
+        admin.lastSeenAt = new Date();
         await admin.save();
+
+        await logActivity(req, {
+            module: 'admin',
+            action: 'update_credentials',
+            entityType: 'admin',
+            entityId: String(admin._id),
+            message: `Updated credentials for ${admin.email}`
+        });
 
         const token = generateToken(admin);
         res.json({
@@ -180,6 +213,43 @@ router.put('/credentials', verifyToken, async (req, res) => {
     } catch (err) {
         console.error('Admin update credentials error:', err);
         res.status(500).json({ success: false, message: 'Server error while updating credentials.' });
+    }
+});
+
+router.get('/activity-logs', verifyToken, requireRole('super_admin', 'manager'), async (req, res) => {
+    try {
+        const { module, action, page = 1, limit = 50 } = req.query;
+        const filter = {};
+        if (module) filter.module = module;
+        if (action) filter.action = action;
+
+        const safePage = Math.max(1, parseInt(page, 10) || 1);
+        const safeLimit = Math.min(200, Math.max(1, parseInt(limit, 10) || 50));
+        const [logs, total] = await Promise.all([
+            ActivityLog.find(filter)
+                .sort({ createdAt: -1 })
+                .skip((safePage - 1) * safeLimit)
+                .limit(safeLimit),
+            ActivityLog.countDocuments(filter)
+        ]);
+
+        res.json({ success: true, total, page: safePage, logs });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/login-history', verifyToken, requireRole('super_admin', 'manager'), async (req, res) => {
+    try {
+        const logs = await ActivityLog.find({
+            module: 'admin',
+            action: 'login'
+        })
+            .sort({ createdAt: -1 })
+            .limit(100);
+        res.json({ success: true, total: logs.length, logs });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
 });
 
@@ -199,6 +269,13 @@ router.put('/:id', verifyToken, requireRole('super_admin'), async (req, res) => 
         const { password, ...updateData } = req.body; // Don't allow password update here
         const admin = await Admin.findByIdAndUpdate(req.params.id, updateData, { new: true }).select('-password');
         if (!admin) return res.status(404).json({ success: false, message: 'Admin not found.' });
+        await logActivity(req, {
+            module: 'admin',
+            action: 'update_admin',
+            entityType: 'admin',
+            entityId: String(admin._id),
+            message: `Updated admin ${admin.email}`
+        });
         res.json({ success: true, admin });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
@@ -212,6 +289,13 @@ router.delete('/:id', verifyToken, requireRole('super_admin'), async (req, res) 
         }
         const admin = await Admin.findByIdAndDelete(req.params.id);
         if (!admin) return res.status(404).json({ success: false, message: 'Admin not found.' });
+        await logActivity(req, {
+            module: 'admin',
+            action: 'delete_admin',
+            entityType: 'admin',
+            entityId: String(admin._id),
+            message: `Deleted admin ${admin.email}`
+        });
         res.json({ success: true, message: 'Admin deleted successfully.' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });

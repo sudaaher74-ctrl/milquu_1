@@ -3,17 +3,25 @@ const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Admin = require('../models/Admin');
+const DeliveryTracking = require('../models/DeliveryTracking');
 const InventoryLog = require('../models/InventoryLog');
 const { upload } = require('../utils/cloudinary');
 const { createRateLimiter } = require('../middleware/rateLimit');
-const { sendWhatsAppNotification } = require('../utils/whatsapp');
+const {
+    sendAdminOrderNotification,
+    sendDeliveryStatusUpdate,
+    sendOrderConfirmation
+} = require('../utils/whatsapp');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const { generatePublicId } = require('../utils/public-id');
 const { sanitizeMultilineText, sanitizeText } = require('../utils/sanitize');
+const { logActivity } = require('../services/activity-log');
 
 const router = express.Router();
 const ORDER_ACCESS_ROLES = ['super_admin', 'manager', 'delivery_staff'];
 const COD_HANDLING_FEE = 1;
+const DEFAULT_PACKAGING_COST = Number(process.env.DEFAULT_PACKAGING_COST || 2);
+const DEFAULT_DELIVERY_COST = Number(process.env.DEFAULT_DELIVERY_COST || 8);
 const publicOrderLimiter = createRateLimiter({
     namespace: 'orders-post',
     windowMs: 60 * 1000,
@@ -91,6 +99,106 @@ function denyOrderAccess(res) {
     return res.status(403).json({ success: false, message: 'You can only access orders assigned to you.' });
 }
 
+function buildFinancials(subtotal, total, paymentMethod) {
+    const grossRevenue = total;
+    const gstAmount = Number((grossRevenue * 0.05 / 1.05).toFixed(2));
+    const refundAmount = 0;
+    return {
+        subtotal,
+        grossRevenue,
+        discountAmount: 0,
+        packagingCost: DEFAULT_PACKAGING_COST,
+        deliveryCost: paymentMethod === 'cod' ? DEFAULT_DELIVERY_COST : 0,
+        gstRate: 0.05,
+        gstAmount,
+        refundAmount,
+        netRevenue: Number((grossRevenue - gstAmount - refundAmount).toFixed(2))
+    };
+}
+
+function buildStatusTimestamps(nextStatus) {
+    const now = new Date();
+    const updates = {};
+    if (nextStatus === 'assigned') updates.assignedAt = now;
+    if (nextStatus === 'out_for_delivery') updates.outForDeliveryAt = now;
+    if (nextStatus === 'delivered') updates.deliveredAt = now;
+    if (nextStatus === 'failed') updates.failedAt = now;
+    if (nextStatus === 'cancelled') updates.cancelledAt = now;
+    return updates;
+}
+
+function buildDeliveryHistoryEvent(status, note = '', location = null) {
+    return {
+        status,
+        note,
+        location: {
+            lat: location?.lat ?? null,
+            lng: location?.lng ?? null,
+            label: location?.label || ''
+        },
+        timestamp: new Date()
+    };
+}
+
+async function upsertDeliveryTracking(order, updates = {}) {
+    return DeliveryTracking.findOneAndUpdate(
+        { orderRef: order._id },
+        {
+            $set: {
+                orderId: order.orderId,
+                deliveryBoyId: order.assigned_delivery_boy_id || null,
+                areaId: order.area_id || null,
+                scheduleSlot: order.deliveryWindow || 'morning',
+                routeSequence: order.routeSequence || 0,
+                assignedAt: order.assignedAt || null,
+                outForDeliveryAt: order.outForDeliveryAt || null,
+                deliveredAt: order.deliveredAt || null,
+                failedAt: order.failedAt || null,
+                etaMinutes: order.deliveryEtaMinutes || 0,
+                currentLocation: updates.currentLocation || order.trackingLocation || undefined,
+                otp: {
+                    code: order.deliveryOtp?.code || '',
+                    issuedAt: order.deliveryOtp?.issuedAt || null,
+                    verifiedAt: order.deliveryOtp?.verifiedAt || null,
+                    isVerified: !!order.deliveryOtp?.verifiedAt
+                }
+            },
+            ...(updates.historyEvent ? { $push: { statusHistory: updates.historyEvent } } : {})
+        },
+        {
+            upsert: true,
+            new: true,
+            setDefaultsOnInsert: true
+        }
+    );
+}
+
+function emitRealtimeOpsEvents(req, payload = {}) {
+    const io = req.app.get('io');
+    if (!io) return;
+
+    if (payload.order) {
+        io.emit('revenue_updated', {
+            orderId: payload.order.orderId,
+            status: payload.order.status,
+            total: payload.order.total,
+            financials: payload.order.financials || {}
+        });
+    }
+
+    if (payload.stock) {
+        io.emit('stock_updated', payload.stock);
+    }
+
+    if (payload.delivery) {
+        io.emit('delivery_tracking_updated', payload.delivery);
+    }
+}
+
+function generateDeliveryOtp() {
+    return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 async function restoreOrderStock(order) {
     for (const item of order.items || []) {
         if (!item.productId || !item.qty) {
@@ -119,7 +227,7 @@ async function restoreOrderStock(order) {
 
 router.post('/', publicOrderLimiter, async (req, res) => {
     try {
-        const { customer, items, paymentMethod, area_id } = req.body;
+        const { customer, items, paymentMethod, area_id, deliveryWindow } = req.body;
         const cleanCustomer = {
             name: sanitizeText(customer && customer.name),
             phone: sanitizeText(customer && customer.phone),
@@ -128,6 +236,10 @@ router.post('/', publicOrderLimiter, async (req, res) => {
             notes: sanitizeMultilineText(customer && customer.notes)
         };
         const cleanPaymentMethod = sanitizeText(paymentMethod).toLowerCase();
+        const requestedWindow = sanitizeText(deliveryWindow).toLowerCase();
+        const cleanDeliveryWindow = ['morning', 'evening', 'flexible'].includes(requestedWindow)
+            ? requestedWindow
+            : 'morning';
 
         if (!customer || !Array.isArray(items) || items.length === 0 || !cleanPaymentMethod) {
             return res.status(400).json({ success: false, message: 'Missing required order fields.' });
@@ -256,17 +368,21 @@ router.post('/', publicOrderLimiter, async (req, res) => {
 
         const total = cleanPaymentMethod === 'cod' ? subtotal + COD_HANDLING_FEE : subtotal;
         const orderId = generatePublicId('MQ');
+        const financials = buildFinancials(subtotal, total, cleanPaymentMethod);
 
         const order = new Order({
             orderId,
             customer: cleanCustomer,
             items: orderItems,
             total,
+            financials,
             paymentMethod: cleanPaymentMethod,
             status: assigned_delivery_boy_id ? 'assigned' : 'pending',
             paymentStatus: cleanPaymentMethod === 'cod' ? 'pending' : 'paid',
             area_id,
-            assigned_delivery_boy_id
+            assigned_delivery_boy_id,
+            deliveryWindow: cleanDeliveryWindow,
+            ...(assigned_delivery_boy_id ? { assignedAt: new Date() } : {})
         });
 
         try {
@@ -288,7 +404,14 @@ router.post('/', publicOrderLimiter, async (req, res) => {
             throw err;
         }
 
-        sendWhatsAppNotification(order).catch(() => { });
+        sendAdminOrderNotification(order).catch(() => { });
+        sendOrderConfirmation(order).catch(() => { });
+
+        if (assigned_delivery_boy_id) {
+            await upsertDeliveryTracking(order, {
+                historyEvent: buildDeliveryHistoryEvent('assigned', 'Auto-assigned on order creation')
+            });
+        }
 
         // ── Emit real-time event for admin dashboard ──
         const io = req.app.get('io');
@@ -297,7 +420,23 @@ router.post('/', publicOrderLimiter, async (req, res) => {
                 .populate('area_id', 'name')
                 .populate('assigned_delivery_boy_id', 'name phone');
             io.emit('new_order', populatedOrder || order);
+            emitRealtimeOpsEvents(req, {
+                order: populatedOrder || order,
+                stock: {
+                    orderId,
+                    items: orderItems.map((item) => ({ productId: item.productId, qty: item.qty }))
+                }
+            });
         }
+
+        await logActivity(req, {
+            module: 'orders',
+            action: 'create_order',
+            entityType: 'order',
+            entityId: orderId,
+            message: `Created order ${orderId}`,
+            metadata: { total, paymentMethod: cleanPaymentMethod, deliveryWindow: cleanDeliveryWindow }
+        });
 
         res.status(201).json({
             success: true,
@@ -463,13 +602,14 @@ router.patch('/:orderId/status', verifyToken, requireRole(...ORDER_ACCESS_ROLES)
             return res.status(400).json({ success: false, message: 'Cancelled orders cannot be reopened.' });
         }
 
-        const updateData = { status: nextStatus };
+        const updateData = { status: nextStatus, ...buildStatusTimestamps(nextStatus) };
         if (nextStatus === 'cancelled' && existingOrder.status !== 'cancelled') {
             await restoreOrderStock(existingOrder);
             updateData.stockRestoredAt = new Date();
             if (existingOrder.paymentMethod === 'cod') {
                 updateData.paymentStatus = 'failed';
             }
+            updateData['financials.refundAmount'] = existingOrder.total;
         }
         if (nextStatus === 'delivered' && existingOrder.paymentMethod === 'cod') {
             updateData.paymentStatus = 'paid';
@@ -484,11 +624,33 @@ router.patch('/:orderId/status', verifyToken, requireRole(...ORDER_ACCESS_ROLES)
             return res.status(404).json({ success: false, message: 'Order not found.' });
         }
 
+        await upsertDeliveryTracking(order, {
+            historyEvent: buildDeliveryHistoryEvent(nextStatus, `Status updated to ${nextStatus}`)
+        });
+        sendDeliveryStatusUpdate(order).catch(() => { });
+
         // ── Emit real-time status change ──
         const io = req.app.get('io');
         if (io) {
             io.emit('order_status_changed', { orderId: order.orderId, status: nextStatus, order });
+            emitRealtimeOpsEvents(req, {
+                order,
+                delivery: {
+                    orderId: order.orderId,
+                    status: order.status,
+                    trackingLocation: order.trackingLocation || null
+                }
+            });
         }
+
+        await logActivity(req, {
+            module: 'orders',
+            action: 'update_status',
+            entityType: 'order',
+            entityId: order.orderId,
+            message: `Updated order ${order.orderId} to ${nextStatus}`,
+            metadata: { previousStatus: existingOrder.status, nextStatus }
+        });
 
         res.json({ success: true, message: 'Order status updated.', order });
     } catch (err) {
@@ -550,7 +712,7 @@ router.patch('/:orderId/delivery-status', verifyToken, requireRole(...ORDER_ACCE
             return res.status(400).json({ success: false, message: 'Cancelled orders cannot be reopened.' });
         }
 
-        const updateData = { status: nextStatus };
+        const updateData = { status: nextStatus, ...buildStatusTimestamps(nextStatus) };
         if (req.file && req.file.path) {
             updateData.photo_proof_url = req.file.path;
         }
@@ -566,6 +728,7 @@ router.patch('/:orderId/delivery-status', verifyToken, requireRole(...ORDER_ACCE
             if (existingOrder.paymentMethod === 'cod') {
                 updateData.paymentStatus = 'failed';
             }
+            updateData['financials.refundAmount'] = existingOrder.total;
         }
         if (nextStatus === 'delivered' && existingOrder.paymentMethod === 'cod') {
             updateData.paymentStatus = 'paid';
@@ -580,7 +743,126 @@ router.patch('/:orderId/delivery-status', verifyToken, requireRole(...ORDER_ACCE
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found.' });
         }
+        await upsertDeliveryTracking(order, {
+            historyEvent: buildDeliveryHistoryEvent(nextStatus, 'Delivery workflow status update')
+        });
+        sendDeliveryStatusUpdate(order).catch(() => { });
+        emitRealtimeOpsEvents(req, {
+            order,
+            delivery: {
+                orderId: order.orderId,
+                status: order.status,
+                trackingLocation: order.trackingLocation || null
+            }
+        });
+        await logActivity(req, {
+            module: 'delivery',
+            action: 'update_delivery_status',
+            entityType: 'order',
+            entityId: order.orderId,
+            message: `Updated delivery status for ${order.orderId} to ${nextStatus}`,
+            metadata: { nextStatus }
+        });
         res.json({ success: true, message: 'Delivery status updated.', order });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.post('/:orderId/delivery-otp', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res) => {
+    try {
+        const order = await Order.findOne({ orderId: req.params.orderId });
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found.' });
+        }
+        if (!canAccessOrder(req, order)) {
+            return denyOrderAccess(res);
+        }
+
+        order.deliveryOtp = {
+            code: generateDeliveryOtp(),
+            issuedAt: new Date(),
+            verifiedAt: null
+        };
+        await order.save();
+        await upsertDeliveryTracking(order, {
+            historyEvent: buildDeliveryHistoryEvent('otp_issued', 'Delivery OTP issued')
+        });
+        sendDeliveryStatusUpdate(order).catch(() => { });
+        emitRealtimeOpsEvents(req, {
+            delivery: { orderId: order.orderId, status: order.status, otpIssued: true }
+        });
+        res.json({ success: true, otp: order.deliveryOtp.code, orderId: order.orderId });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.post('/:orderId/verify-otp', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res) => {
+    try {
+        const submittedOtp = sanitizeText(req.body.otp);
+        const order = await Order.findOne({ orderId: req.params.orderId });
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found.' });
+        }
+        if (!canAccessOrder(req, order)) {
+            return denyOrderAccess(res);
+        }
+        if (!submittedOtp || submittedOtp !== order.deliveryOtp?.code) {
+            return res.status(400).json({ success: false, message: 'Invalid OTP.' });
+        }
+
+        order.deliveryOtp.verifiedAt = new Date();
+        await order.save();
+        await upsertDeliveryTracking(order, {
+            historyEvent: buildDeliveryHistoryEvent('otp_verified', 'Delivery OTP verified')
+        });
+        emitRealtimeOpsEvents(req, {
+            delivery: { orderId: order.orderId, status: order.status, otpVerified: true }
+        });
+        res.json({ success: true, message: 'OTP verified successfully.', order });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.patch('/:orderId/location', verifyToken, requireRole(...ORDER_ACCESS_ROLES), async (req, res) => {
+    try {
+        const order = await Order.findOne({ orderId: req.params.orderId });
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found.' });
+        }
+        if (!canAccessOrder(req, order)) {
+            return denyOrderAccess(res);
+        }
+
+        const lat = Number(req.body.lat);
+        const lng = Number(req.body.lng);
+        const label = sanitizeText(req.body.label);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            return res.status(400).json({ success: false, message: 'Valid latitude and longitude are required.' });
+        }
+
+        order.trackingLocation = {
+            lat,
+            lng,
+            label,
+            updatedAt: new Date()
+        };
+        await order.save();
+        await upsertDeliveryTracking(order, {
+            currentLocation: order.trackingLocation,
+            historyEvent: buildDeliveryHistoryEvent('location_ping', 'Live location update', order.trackingLocation)
+        });
+        emitRealtimeOpsEvents(req, {
+            delivery: {
+                orderId: order.orderId,
+                status: order.status,
+                trackingLocation: order.trackingLocation
+            }
+        });
+        res.json({ success: true, order });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
@@ -648,7 +930,11 @@ router.patch('/:orderId/assign', verifyToken, requireRole('super_admin', 'manage
 
         const order = await Order.findOneAndUpdate(
             { orderId: req.params.orderId },
-            { assigned_delivery_boy_id: delivery_boy_id, status: 'assigned' },
+            {
+                assigned_delivery_boy_id: delivery_boy_id,
+                status: 'assigned',
+                assignedAt: new Date()
+            },
             { new: true }
         ).populate('area_id assigned_delivery_boy_id');
 
@@ -660,7 +946,23 @@ router.patch('/:orderId/assign', verifyToken, requireRole('super_admin', 'manage
         const io = req.app.get('io');
         if (io) {
             io.emit('order_status_changed', { orderId: order.orderId, status: 'assigned', order });
+            emitRealtimeOpsEvents(req, {
+                order,
+                delivery: { orderId: order.orderId, status: order.status }
+            });
         }
+
+        await upsertDeliveryTracking(order, {
+            historyEvent: buildDeliveryHistoryEvent('assigned', `Assigned to ${deliveryBoy.name}`)
+        });
+        await logActivity(req, {
+            module: 'delivery',
+            action: 'assign_delivery_staff',
+            entityType: 'order',
+            entityId: order.orderId,
+            message: `Assigned ${deliveryBoy.name} to ${order.orderId}`,
+            metadata: { deliveryBoyId: delivery_boy_id }
+        });
 
         res.json({ success: true, message: `Order assigned to ${deliveryBoy.name}.`, order });
     } catch (err) {
@@ -692,10 +994,23 @@ router.post('/bulk-assign', verifyToken, requireRole('super_admin', 'manager'), 
             if (deliveryBoy) {
                 order.assigned_delivery_boy_id = deliveryBoy._id;
                 order.status = 'assigned';
+                order.assignedAt = new Date();
                 await order.save();
+                await upsertDeliveryTracking(order, {
+                    historyEvent: buildDeliveryHistoryEvent('assigned', `Bulk assigned to ${deliveryBoy.name}`)
+                });
                 assigned++;
             }
         }
+
+        await logActivity(req, {
+            module: 'delivery',
+            action: 'bulk_assign_orders',
+            entityType: 'order',
+            entityId: 'bulk',
+            message: `Bulk assigned ${assigned} orders`,
+            metadata: { total: unassigned.length, assigned }
+        });
 
         res.json({ success: true, assigned, total: unassigned.length, message: `Assigned ${assigned} orders.` });
     } catch (err) {

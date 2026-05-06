@@ -4,7 +4,15 @@ const InventoryLogSchema = new mongoose.Schema({
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     action: {
         type: String,
-        enum: ['order_deduction', 'restock', 'manual_adjustment', 'expiry_removal', 'cancellation_restore'],
+        enum: [
+            'order_deduction',
+            'restock',
+            'manual_adjustment',
+            'expiry_removal',
+            'cancellation_restore',
+            'wastage',
+            'batch_adjustment'
+        ],
         required: true
     },
     quantity: { type: Number, required: true },
@@ -12,6 +20,9 @@ const InventoryLogSchema = new mongoose.Schema({
     newStock: { type: Number, required: true },
     reason: { type: String, default: '' },
     orderId: { type: String, required: false },
+    batchCode: { type: String, default: '' },
+    expiryDate: { type: Date, default: null },
+    costImpact: { type: Number, default: 0 },
     performedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: false }
 }, { timestamps: true });
 

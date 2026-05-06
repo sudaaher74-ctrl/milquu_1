@@ -29,7 +29,38 @@ const OrderSchema = new mongoose.Schema({
     area_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Area', required: false },
     assigned_delivery_boy_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: false },
     photo_proof_url: { type: String, required: false },
-    stockRestoredAt: { type: Date, required: false }
+    stockRestoredAt: { type: Date, required: false },
+    deliveryWindow: { type: String, enum: ['morning', 'evening', 'flexible'], default: 'morning' },
+    assignedAt: { type: Date, default: null },
+    outForDeliveryAt: { type: Date, default: null },
+    deliveredAt: { type: Date, default: null },
+    failedAt: { type: Date, default: null },
+    cancelledAt: { type: Date, default: null },
+    deliveryNotes: { type: String, default: '' },
+    routeSequence: { type: Number, default: 0 },
+    deliveryEtaMinutes: { type: Number, default: 0 },
+    trackingLocation: {
+        lat: { type: Number, default: null },
+        lng: { type: Number, default: null },
+        label: { type: String, default: '' },
+        updatedAt: { type: Date, default: null }
+    },
+    deliveryOtp: {
+        code: { type: String, default: '' },
+        issuedAt: { type: Date, default: null },
+        verifiedAt: { type: Date, default: null }
+    },
+    financials: {
+        subtotal: { type: Number, default: 0 },
+        grossRevenue: { type: Number, default: 0 },
+        discountAmount: { type: Number, default: 0 },
+        packagingCost: { type: Number, default: 0 },
+        deliveryCost: { type: Number, default: 0 },
+        gstRate: { type: Number, default: 0.05 },
+        gstAmount: { type: Number, default: 0 },
+        refundAmount: { type: Number, default: 0 },
+        netRevenue: { type: Number, default: 0 }
+    }
 }, { timestamps: true });
 
 OrderSchema.index({ status: 1, createdAt: -1 });

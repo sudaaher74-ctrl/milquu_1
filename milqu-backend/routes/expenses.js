@@ -1,6 +1,7 @@
 const express = require('express');
 const Expense = require('../models/Expense');
 const { verifyToken, requireRole } = require('../middleware/auth');
+const { logActivity } = require('../services/activity-log');
 
 const router = express.Router();
 const EXPENSE_ROLES = ['super_admin', 'manager'];
@@ -8,7 +9,7 @@ const EXPENSE_ROLES = ['super_admin', 'manager'];
 // Add expense
 router.post('/', verifyToken, requireRole(...EXPENSE_ROLES), async (req, res) => {
     try {
-        const { category, amount, description, date } = req.body;
+        const { category, amount, description, date, vendor, quantity, unitCost, gstAmount, area_id } = req.body;
         if (!category || !amount) {
             return res.status(400).json({ success: false, message: 'Category and amount are required.' });
         }
@@ -17,10 +18,24 @@ router.post('/', verifyToken, requireRole(...EXPENSE_ROLES), async (req, res) =>
             category,
             amount: parseFloat(amount),
             description: description || '',
+            vendor: vendor || '',
+            quantity: quantity ? parseFloat(quantity) : 0,
+            unitCost: unitCost ? parseFloat(unitCost) : 0,
+            gstAmount: gstAmount ? parseFloat(gstAmount) : 0,
+            area_id: area_id || null,
             date: date ? new Date(date) : new Date(),
             createdBy: req.admin?._id
         });
         await expense.save();
+
+        await logActivity(req, {
+            module: 'expenses',
+            action: 'create_expense',
+            entityType: 'expense',
+            entityId: String(expense._id),
+            message: `Created ${expense.category} expense`,
+            metadata: { amount: expense.amount }
+        });
 
         res.status(201).json({ success: true, message: 'Expense added.', expense });
     } catch (err) {
@@ -85,6 +100,14 @@ router.delete('/:id', verifyToken, requireRole(...EXPENSE_ROLES), async (req, re
     try {
         const expense = await Expense.findByIdAndDelete(req.params.id);
         if (!expense) return res.status(404).json({ success: false, message: 'Expense not found.' });
+        await logActivity(req, {
+            module: 'expenses',
+            action: 'delete_expense',
+            entityType: 'expense',
+            entityId: String(expense._id),
+            message: `Deleted ${expense.category} expense`,
+            metadata: { amount: expense.amount }
+        });
         res.json({ success: true, message: 'Expense deleted.' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });

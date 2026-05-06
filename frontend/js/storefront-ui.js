@@ -994,3 +994,11 @@ Promise.all([loadProducts(), loadContent()])
     console.error(err);
     notif('Failed to load products. Please refresh.');
   });
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js').catch(function (err) {
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}

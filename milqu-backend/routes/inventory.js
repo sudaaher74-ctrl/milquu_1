@@ -3,6 +3,7 @@ const Product = require('../models/Product');
 const InventoryLog = require('../models/InventoryLog');
 const NotificationModel = require('../models/Notification');
 const { verifyToken, requireRole } = require('../middleware/auth');
+const { logActivity } = require('../services/activity-log');
 
 const router = express.Router();
 const INVENTORY_ROLES = ['super_admin', 'manager'];
@@ -91,6 +92,23 @@ router.post('/restock/:productId', verifyToken, requireRole(...INVENTORY_ROLES),
         product.lastRestockedAt = new Date();
         await product.save();
         await InventoryLog.create({ productId: product._id, action: 'restock', quantity: parseInt(quantity), previousStock, newStock: product.stock, reason: `Manual restock of ${quantity} units`, performedBy: req.admin?._id });
+        await logActivity(req, {
+            module: 'inventory',
+            action: 'restock_product',
+            entityType: 'product',
+            entityId: String(product._id),
+            message: `Restocked ${product.name}`,
+            metadata: { quantity: parseInt(quantity, 10), previousStock, newStock: product.stock }
+        });
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('stock_updated', {
+                productId: String(product._id),
+                name: product.name,
+                stock: product.stock,
+                action: 'restock'
+            });
+        }
         res.json({ success: true, message: `Restocked ${product.name} with ${quantity} units.`, product });
     } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });

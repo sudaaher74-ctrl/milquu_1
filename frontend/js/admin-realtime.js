@@ -186,7 +186,43 @@ function initSocketIO() {
                     renderOrdersPage();
                 } else if (activePanel === 'delivery') {
                     renderDeliveryPanel();
+                } else if (activePanel === 'reports') {
+                    loadDashboardSummaryCards();
+                    loadRevenueSummaryCards();
                 }
+            }
+        });
+
+        milquSocket.on('revenue_updated', function () {
+            var activePanel = getActivePanelId();
+            if (activePanel === 'overview') {
+                renderOverview();
+            }
+            if (activePanel === 'reports') {
+                loadDashboardSummaryCards();
+                loadRevenueSummaryCards();
+            }
+        });
+
+        milquSocket.on('stock_updated', function () {
+            var activePanel = getActivePanelId();
+            if (activePanel === 'inventory') {
+                if (typeof renderInventoryPanel === 'function') {
+                    renderInventoryPanel();
+                }
+            }
+            if (activePanel === 'reports') {
+                loadDashboardSummaryCards();
+            }
+        });
+
+        milquSocket.on('delivery_tracking_updated', function () {
+            var activePanel = getActivePanelId();
+            if (activePanel === 'delivery' || activePanel === 'livetracking') {
+                renderDeliveryPanel();
+            }
+            if (activePanel === 'reports') {
+                loadAnalyticsCharts();
             }
         });
 

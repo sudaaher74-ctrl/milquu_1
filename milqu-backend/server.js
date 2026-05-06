@@ -8,6 +8,7 @@ const compression = require('compression');
 const path = require('path');
 const { Server: SocketIOServer } = require('socket.io');
 const { getAllowedCorsOrigins, getRequiredEnv, isAdminAuthDisabled, isProduction } = require('./config');
+const { initReportScheduler } = require('./jobs/report-cron');
 const { ensureDefaultProducts } = require('./utils/seed-default-products');
 
 const app = express();
@@ -27,6 +28,7 @@ const io = new SocketIOServer(httpServer, {
 
 // Make io accessible in routes via req.app.get('io')
 app.set('io', io);
+app.set('connectToDatabase', connectToDatabase);
 
 io.on('connection', (socket) => {
     console.log(`[Socket.IO] Client connected: ${socket.id}`);
@@ -204,6 +206,12 @@ if (require.main === module) {
 
         console.log(`Milqu Fresh backend running on http://localhost:${PORT}`);
         console.log(`Health: http://localhost:${PORT}/api/health`);
+
+        connectToDatabase()
+            .then(() => initReportScheduler({ connectToDatabase }))
+            .catch((err) => {
+                console.error('[Startup] Database warmup failed:', err.message);
+            });
     });
 
     // Graceful shutdown
