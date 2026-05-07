@@ -6,9 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description"
     content="Milqu Fresh – Premium farm-fresh milk, vegetables, fruits &amp; dairy products delivered daily to your doorstep.">
-  <meta name="keywords" content="milk delivery, dairy delivery, fresh vegetables, fresh fruits, subscription milk, Navi Mumbai dairy">
+  <meta name="keywords"
+    content="milk delivery, dairy delivery, fresh vegetables, fresh fruits, subscription milk, Navi Mumbai dairy">
   <meta property="og:title" content="Milqu Fresh | Farm-to-Home Delivery">
-  <meta property="og:description" content="Farm-fresh milk, dairy, fruits, and vegetables delivered daily to your doorstep.">
+  <meta property="og:description"
+    content="Farm-fresh milk, dairy, fruits, and vegetables delivered daily to your doorstep.">
   <meta property="og:type" content="website">
   <meta property="og:image" content="images/new-logo.jpeg">
   <meta property="og:url" content="/">
@@ -36,7 +38,7 @@
       "image": "images/new-logo.jpeg",
       "description": "Farm-fresh milk, dairy, fruits and vegetables delivered daily.",
       "areaServed": "Navi Mumbai",
-      "telephone": "+91-0000000000",
+      "telephone": "+91-8767067884",
       "url": "/",
       "priceRange": "₹₹",
       "makesOffer": [
@@ -1046,26 +1048,29 @@
     </div>
     <section style="padding:60px 0; background: var(--light-gray); min-height: 500px;">
       <div class="container">
-        
+
         <!-- Dashboard Section (Visible if 'logged in') -->
         <div id="account-dashboard-section">
-          
+
           <!-- State 1: Not Logged In -->
           <div style="text-align:center; padding:60px 0;" id="account-empty-state">
             <div style="font-size: 48px; margin-bottom: 20px;">👤</div>
             <h3>Please Login to View Your Orders</h3>
             <p style="margin-bottom: 24px;">We need to verify your phone number to show your history.</p>
-            <button class="btn btn-primary" onclick="document.getElementById('auth-modal').classList.add('open')" style="margin: 0 auto;">Login / Verify Phone →</button>
+            <button class="btn btn-primary" onclick="document.getElementById('auth-modal').classList.add('open')"
+              style="margin: 0 auto;">Login / Verify Phone →</button>
           </div>
 
           <!-- State 2: Logged In -->
           <div id="account-main-content" style="display: none;">
-            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+            <div
+              style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
               <div>
                 <h2 style="font-size: 28px;">Hello, <span id="acc-customer-name">Customer</span>! 👋</h2>
                 <p id="acc-customer-phone" style="color: var(--gray);"></p>
               </div>
-              <button class="btn btn-outline btn-sm" onclick="logoutCustomer()" style="padding: 8px 16px; font-size: 13px;">🚪 Logout</button>
+              <button class="btn btn-outline btn-sm" onclick="logoutCustomer()"
+                style="padding: 8px 16px; font-size: 13px;">🚪 Logout</button>
             </div>
 
             <div class="account-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px;">
@@ -1080,26 +1085,29 @@
               <!-- Right: Subscriptions -->
               <div>
                 <div class="card-box" style="background: var(--green-light); border: 1px solid var(--green);">
-                  <h3 style="margin-bottom: 16px; display:flex; align-items:center; gap:10px;">🗓 Active Subscription</h3>
+                  <h3 style="margin-bottom: 16px; display:flex; align-items:center; gap:10px;">🗓 Active Subscription
+                  </h3>
                   <div id="acc-subs-list">
                     <div class="loading-placeholder">Checking subscriptions...</div>
                   </div>
                 </div>
-                
+
                 <div class="card-box" style="margin-top: 24px;">
                   <h4>Need Help?</h4>
-                  <p style="font-size: 14px; color: var(--gray); margin-bottom: 16px;">For any changes to your delivery address or custom schedules, please contact us.</p>
-                  <a href="https://wa.me/910000000000" target="_blank" class="btn btn-primary btn-sm" style="width:100%; justify-content:center;">💬 WhatsApp Support</a>
+                  <p style="font-size: 14px; color: var(--gray); margin-bottom: 16px;">For any changes to your delivery
+                    address or custom schedules, please contact us.</p>
+                  <a href="https://wa.me/918767067884" target="_blank" class="btn btn-primary btn-sm"
+                    style="width:100%; justify-content:center;">💬 WhatsApp Support</a>
                 </div>
               </div>
             </div>
           </div>
 
         </div>
-        </div>
-
       </div>
-    </section>
+
+  </div>
+  </section>
   </div>
 
   <!-- FOOTER -->
@@ -1202,34 +1210,42 @@
   <div class="modal-overlay" id="auth-modal" style="z-index: 2000;">
     <div class="modal-box" style="max-width: 400px; text-align: center; padding: 40px 30px;">
       <div id="auth-step-1">
-        <img src="images/new-logo.jpeg" alt="Logo" style="width: 80px; height: 80px; border-radius: 20px; margin-bottom: 24px;">
+        <img src="images/new-logo.jpeg" alt="Logo"
+          style="width: 80px; height: 80px; border-radius: 20px; margin-bottom: 24px;">
         <h2 style="font-size: 24px; margin-bottom: 12px;">Welcome to Milqu Fresh!</h2>
-        <p style="color: var(--gray); font-size: 15px; margin-bottom: 32px;">Enter your mobile number to explore fresh products in your area.</p>
-        
+        <p style="color: var(--gray); font-size: 15px; margin-bottom: 32px;">Enter your mobile number to explore fresh
+          products in your area.</p>
+
         <form id="auth-phone-form">
           <div class="form-group" style="margin-bottom: 20px;">
             <div style="position: relative;">
-              <span style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-weight: 600; color: var(--gray);">+91</span>
-              <input type="tel" id="auth-phone-input" placeholder="9876543210" required 
+              <span
+                style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-weight: 600; color: var(--gray);">+91</span>
+              <input type="tel" id="auth-phone-input" placeholder="9876543210" required
                 style="padding-left: 55px; width: 100%; font-size: 18px; letter-spacing: 2px; font-weight: 600;">
             </div>
           </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 16px; font-size: 16px;">Get OTP →</button>
+          <button type="submit" class="btn btn-primary"
+            style="width: 100%; justify-content: center; padding: 16px; font-size: 16px;">Get OTP →</button>
         </form>
       </div>
 
       <div id="auth-step-2" style="display: none;">
         <h2 style="font-size: 24px; margin-bottom: 12px;">Verify Phone</h2>
-        <p style="color: var(--gray); font-size: 15px; margin-bottom: 32px;">Enter the 6-digit code sent to <br><strong id="auth-display-phone">+91 0000000000</strong></p>
-        
+        <p style="color: var(--gray); font-size: 15px; margin-bottom: 32px;">Enter the 6-digit code sent to <br><strong
+            id="auth-display-phone">+91 0000000000</strong></p>
+
         <form id="auth-otp-form">
           <div class="form-group" style="margin-bottom: 20px;">
-            <input type="text" id="auth-otp-input" placeholder="000000" maxlength="6" inputmode="numeric" required 
+            <input type="text" id="auth-otp-input" placeholder="000000" maxlength="6" inputmode="numeric" required
               style="width: 100%; text-align: center; font-size: 28px; letter-spacing: 8px; font-weight: 700; border-color: var(--green);">
           </div>
-          <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 16px; font-size: 16px;">Verify & Enter</button>
+          <button type="submit" class="btn btn-primary"
+            style="width: 100%; justify-content: center; padding: 16px; font-size: 16px;">Verify & Enter</button>
         </form>
-        <button class="btn-link" onclick="showAuthStep(1)" style="margin-top: 20px; font-size: 13px; color: var(--gray); background: none; border: none; text-decoration: underline;">Change Phone Number</button>
+        <button class="btn-link" onclick="showAuthStep(1)"
+          style="margin-top: 20px; font-size: 13px; color: var(--gray); background: none; border: none; text-decoration: underline;">Change
+          Phone Number</button>
       </div>
     </div>
   </div>
