@@ -57,7 +57,12 @@ app.use(cors({
 }));
 
 // Security headers via helmet (includes Content-Security-Policy)
-const cspOrigins = [...allowedCorsOrigins, 'https://*.vercel.app', 'https://*.onrender.com'];
+const cspOrigins = [
+    ...allowedCorsOrigins, 
+    'https://milquu-1-muhj.vercel.app', 
+    'https://*.vercel.app', 
+    'https://*.onrender.com'
+];
 
 app.use(helmet({
     contentSecurityPolicy: {
