@@ -57,16 +57,18 @@ app.use(cors({
 }));
 
 // Security headers via helmet (includes Content-Security-Policy)
+const cspOrigins = [...allowedCorsOrigins, 'https://*.vercel.app', 'https://*.onrender.com'];
+
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.socket.io"],
-            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.socket.io", "https://cdn.jsdelivr.net", ...cspOrigins],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://unpkg.com", "https://cdn.jsdelivr.net"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "blob:"],
-            connectSrc: ["'self'", "ws:", "wss:"],
-            frameSrc: ["'none'"],
+            imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "blob:", "https://*.openstreetmap.org", "https://cdn-icons-png.flaticon.com"],
+            connectSrc: ["'self'", "ws:", "wss:", ...cspOrigins],
+            frameSrc: ["'self'", "https://www.google.com"],
             objectSrc: ["'none'"],
             baseUri: ["'self'"],
             formAction: ["'self'"],
