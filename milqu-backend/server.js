@@ -15,7 +15,11 @@ const app = express();
 const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 5001;
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
-const allowedCorsOrigins = new Set(getAllowedCorsOrigins());
+const allowedCorsOrigins = new Set([
+    ...getAllowedCorsOrigins(),
+    'https://milquu-1-muhj.vercel.app',
+    'https://milquu-1-1.onrender.com'
+]);
 
 // ── Socket.IO setup ─────────────────────────────────────────
 const io = new SocketIOServer(httpServer, {
@@ -51,9 +55,16 @@ if (isProduction()) {
 }
 
 app.use(cors({
-    origin: true,
+    origin: function (origin, callback) {
+        if (!origin || allowedCorsOrigins.has(origin) || origin.endsWith('.vercel.app')) {
+            callback(null, true);
+        } else {
+            callback(null, new Error('Not allowed by CORS'));
+        }
+    },
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
 
 // Security headers via helmet (includes Content-Security-Policy)
