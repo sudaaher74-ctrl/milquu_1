@@ -576,9 +576,7 @@ async function loadAll(silent) {
         var nextMsgs = baseResponses[2].messages || [];
         var nextProducts = baseResponses[3].products || [];
         var previousOrderIdSet = new Set(knownOrderIds);
-        var newOrders = hasLoadedDashboardData
-            ? nextOrders.filter(function (order) { return !previousOrderIdSet.has(order.orderId); })
-            : [];
+        var newOrders = nextOrders.filter(function (order) { return !previousOrderIdSet.has(order.orderId); });
 
         allOrders = nextOrders;
         allSubs = nextSubs;
@@ -626,28 +624,6 @@ async function loadAll(silent) {
             setApiStatus(false, 'Offline');
             if (!silent) {
                 toast(err.message || 'Cannot reach server', 'error');
-            }
-        }
-        
-        // [OFFLINE MOCKUP] - Pure empty state connected to LocalStorage checkout
-        if (!hasLoadedDashboardData) {
-            try {
-                var storedOrders = JSON.parse(localStorage.getItem('milqu_demo_db_orders')) || [];
-                allOrders = storedOrders;
-            } catch(e) {
-                allOrders = [];
-            }
-            
-            allSubs = [];
-            allMsgs = [];
-            allProducts = [];
-            
-            hasLoadedDashboardData = true;
-            renderOverview();
-            if (activePanelId !== 'overview') refreshVisiblePanel(activePanelId);
-            
-            if (typeof updateSocketStatus !== 'undefined') {
-                 setTimeout(() => updateSocketStatus('connected'), 100);
             }
         }
     } finally {

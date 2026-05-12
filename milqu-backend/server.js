@@ -15,17 +15,29 @@ const app = express();
 const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 5001;
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
-const allowedCorsOrigins = new Set([
-    ...getAllowedCorsOrigins(),
-    'https://milquu-1-muhj.vercel.app',
-    'https://milquu-1-1.onrender.com'
-]);
+const allowedCorsOrigins = new Set(getAllowedCorsOrigins());
+
+function isOriginAllowed(origin) {
+    if (!origin) return true; // Allow non-browser requests
+    if (allowedCorsOrigins.has(origin)) return true;
+    if (origin.endsWith('.vercel.app')) return true;
+    if (origin.includes('onrender.com')) return true;
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return true;
+    return false;
+}
 
 // ── Socket.IO setup ─────────────────────────────────────────
 const io = new SocketIOServer(httpServer, {
     cors: {
-        origin: allowedCorsOrigins.size > 0 ? [...allowedCorsOrigins] : '*',
-        methods: ['GET', 'POST']
+        origin: (origin, callback) => {
+            if (isOriginAllowed(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'), false);
+            }
+        },
+        methods: ['GET', 'POST'],
+        credentials: true
     },
     transports: ['websocket', 'polling']
 });
@@ -56,10 +68,10 @@ if (isProduction()) {
 
 app.use(cors({
     origin: function (origin, callback) {
-        if (!origin || allowedCorsOrigins.has(origin) || origin.endsWith('.vercel.app')) {
+        if (isOriginAllowed(origin)) {
             callback(null, true);
         } else {
-            callback(null, new Error('Not allowed by CORS'));
+            callback(new Error('Not allowed by CORS'));
         }
     },
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],

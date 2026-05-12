@@ -7,10 +7,10 @@
 
     window.MILQU_CONFIG = {
         IS_LOCAL_DEV: isLocalDev,
-        API_BASE: configuredApiBase
-            ? configuredApiBase.replace(/\/$/, '')
-            : (isLocalDev
-                ? 'http://localhost:5001/api'
+        API_BASE: (isLocalDev && !window.location.search.includes('force_prod'))
+            ? 'http://localhost:5001/api'
+            : (configuredApiBase
+                ? configuredApiBase.replace(/\/$/, '')
                 : `${window.location.origin.replace(/\/$/, '')}/api`),
         ADMIN_AUTH_DISABLED: false
     };

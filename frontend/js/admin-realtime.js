@@ -183,7 +183,7 @@ function initSocketIO() {
                 if (activePanel === 'overview') {
                     renderOverview();
                 } else if (activePanel === 'orders') {
-                    renderOrdersPage();
+                    renderOrders();
                 } else if (activePanel === 'delivery') {
                     renderDeliveryPanel();
                 } else if (activePanel === 'reports') {

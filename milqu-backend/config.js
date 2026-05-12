@@ -50,21 +50,27 @@ function isAdminAuthDisabled() {
 
 function getAllowedCorsOrigins() {
     const configuredOrigins = getListEnv('CORS_ORIGIN');
-    if (configuredOrigins.length > 0) {
+    const defaults = [
+        'http://localhost:3000',
+        'http://localhost:5000',
+        'http://localhost:5001',
+        'http://localhost:5173',
+        'http://localhost:5500',
+        'http://localhost:5501',
+        'http://localhost:5511',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:5000',
+        'http://127.0.0.1:5001',
+        'http://127.0.0.1:5500',
+        'http://127.0.0.1:5511',
+        'null'
+    ];
+
+    if (isProduction()) {
         return configuredOrigins;
     }
 
-    if (!isProduction()) {
-        return [
-            'http://localhost:3000',
-            'http://localhost:5000',
-            'http://127.0.0.1:3000',
-            'http://127.0.0.1:5000',
-            'null'
-        ];
-    }
-
-    return [];
+    return [...new Set([...configuredOrigins, ...defaults])];
 }
 
 module.exports = {
