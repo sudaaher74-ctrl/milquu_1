@@ -1649,3 +1649,245 @@ body {
     .chart-container { height: 200px; }
 }
 
+/* ═══════════════════════════════════════════
+   MOBILE RESPONSIVE — Full Dashboard
+   ═══════════════════════════════════════════ */
+
+/* ── Tablet (≤ 768px) Enhancements ── */
+@media (max-width: 768px) {
+    :root {
+        --sidebar-w: 280px;
+        --topbar-h: 52px;
+    }
+
+    body { overflow-x: hidden; }
+
+    /* Sidebar: off-canvas drawer */
+    .sidebar {
+        width: var(--sidebar-w);
+        position: fixed;
+        left: 0; top: 0; bottom: 0;
+        transform: translateX(-100%);
+        z-index: 1000;
+        box-shadow: none;
+        transition: transform .3s cubic-bezier(.4,0,.2,1);
+    }
+    .sidebar.open {
+        transform: translateX(0);
+        box-shadow: 8px 0 30px rgba(0,0,0,.18);
+    }
+
+    .sidebar-toggle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Topbar */
+    .topbar {
+        padding: 8px 12px;
+        gap: 8px;
+        min-height: 48px;
+    }
+    .topbar-title { font-size: 14px; }
+    .topbar-search { display: none; }
+
+    .topbar-right { gap: 6px; }
+    .topbar-right .api-status { display: none; }
+    .topbar-right .live-label { display: none; }
+
+    .refresh-btn { padding: 6px 10px; font-size: 11px; }
+    .logout-btn { padding: 5px 10px; font-size: 11px; }
+
+    /* Content area */
+    .content { padding: 12px; }
+
+    /* Stats grid */
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .stat-card { padding: 14px 12px 10px; }
+    .stat-val { font-size: 22px; }
+    .stat-label { font-size: 9px; letter-spacing: 1px; }
+    .stat-sub { font-size: 10px; }
+    .stat-icon { font-size: 16px; top: 10px; right: 10px; }
+
+    /* Grid layouts */
+    .grid2, .grid3 { grid-template-columns: 1fr; gap: 12px; }
+
+    /* Panel cards */
+    .pcard-head { padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
+    .pcard-head h3 { font-size: 13px; }
+    .pcard-actions { flex-wrap: wrap; gap: 6px; }
+
+    /* Tables */
+    .table-responsive { margin: 0 -12px; border-radius: 0; }
+    .data-table th { padding: 8px 10px; font-size: 9px; }
+    .data-table td { padding: 8px 10px; font-size: 12px; }
+
+    /* Table controls */
+    .table-controls { padding: 10px 12px; gap: 8px; }
+    .search-input { min-width: 120px; font-size: 12px; padding: 7px 10px; }
+    .filter-sel { font-size: 12px; padding: 7px 10px; }
+
+    /* Quick actions */
+    .quick-actions { gap: 8px; margin-bottom: 14px; }
+    .qa-btn { padding: 7px 10px; font-size: 11px; gap: 6px; }
+
+    /* Modals */
+    .detail-modal { padding: 8px; }
+    .detail-box { max-width: 100%; max-height: 94vh; border-radius: 12px; }
+    .detail-box-head { padding: 12px 16px; }
+    .detail-body { padding: 14px; }
+    .detail-section h4 { font-size: 9px; }
+    .detail-row { font-size: 12px; padding: 6px 0; flex-wrap: wrap; gap: 4px; }
+
+    /* Status buttons */
+    .status-update-row { gap: 6px; }
+    .status-btn { padding: 6px 10px; font-size: 11px; }
+
+    /* Order timeline */
+    .order-timeline { gap: 0; margin: 10px 0; }
+    .timeline-dot { width: 22px; height: 22px; font-size: 10px; }
+    .timeline-label { font-size: 8px; }
+
+    /* Forms */
+    .form-row { grid-template-columns: 1fr; gap: 10px; }
+    .form-group input, .form-group select, .form-group textarea { font-size: 14px; padding: 10px 12px; }
+
+    /* Pagination */
+    .pagination { padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
+    .pg-info { font-size: 11px; }
+    .pg-btn { width: 28px; height: 28px; font-size: 12px; }
+
+    /* Messages */
+    .msg-preview { max-width: 200px; }
+    .msg-item { padding: 10px 12px; }
+    .msg-name { font-size: 13px; }
+
+    /* Toast */
+    .toast { right: 12px; left: 12px; bottom: 16px; max-width: none; font-size: 12px; }
+
+    /* Status bar */
+    .status-bar { padding: 6px 12px; font-size: 10px; flex-wrap: wrap; gap: 8px; }
+    .status-bar-right { display: none; }
+
+    /* Revenue cards */
+    .rev-cards-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .rev-card { padding: 14px; }
+    .rev-card-amount { font-size: 18px; }
+    .rev-card-label { font-size: 9px; }
+
+    /* Live tracking */
+    .live-tracking-layout { grid-template-columns: 1fr; height: auto; }
+    .live-map-container { min-height: 280px; }
+    .live-sidebar-card { max-height: 250px; }
+
+    /* Notifications dropdown */
+    .notif-dropdown { width: 280px; right: -40px; }
+
+    /* Login */
+    .login-box { padding: 32px 24px; margin: 16px; }
+
+    /* Analytics */
+    .analytics-header { flex-direction: column; gap: 10px; }
+    .analytics-title { font-size: 18px; }
+
+    /* Reports */
+    .rpt-cards-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .rpt-card-val { font-size: 20px; }
+
+    /* Segments */
+    .seg-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .seg-card { padding: 10px 12px; }
+    .seg-count { font-size: 18px; }
+
+    /* Export */
+    .export-toolbar { padding: 12px; gap: 10px; }
+    .export-group { flex-wrap: wrap; }
+
+    /* Load visualization */
+    .load-viz { padding: 12px; gap: 10px; }
+    .load-viz-item { min-width: 140px; padding: 10px; }
+
+    /* Heatmap */
+    .heatmap-bar { flex-direction: column; align-items: stretch; gap: 4px; }
+    .heatmap-label { min-width: unset; font-size: 12px; }
+
+    /* Peak hours */
+    .peak-hour-item { flex-direction: column; align-items: stretch; gap: 6px; }
+    .peak-hour-time { min-width: unset; text-align: center; }
+
+    /* Assign dropdown */
+    .assign-select { min-width: 100px; font-size: 11px; }
+}
+
+/* ── Small Phone (≤ 480px) ── */
+@media (max-width: 480px) {
+    .content { padding: 8px; }
+
+    /* Single column stats */
+    .stats-grid { grid-template-columns: 1fr; gap: 8px; }
+    .stat-card {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 14px; flex-direction: row;
+    }
+    .stat-card::before { display: none; }
+    .stat-icon { position: static; opacity: .6; font-size: 22px; order: -1; }
+    .stat-val { font-size: 20px; margin-bottom: 0; }
+    .stat-label { margin-bottom: 2px; }
+
+    /* Topbar */
+    .topbar { padding: 6px 10px; }
+    .topbar-title { font-size: 13px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+    .refresh-btn { padding: 5px 8px; font-size: 10px; }
+    .notif-bell { font-size: 16px; }
+
+    /* Tables: card-style on mobile */
+    .data-table th { padding: 6px 8px; font-size: 8px; letter-spacing: .8px; }
+    .data-table td { padding: 6px 8px; font-size: 11px; }
+
+    /* Revenue */
+    .rev-cards-grid { grid-template-columns: 1fr; }
+    .rev-card-amount { font-size: 20px; }
+
+    /* Report cards */
+    .rpt-cards-grid { grid-template-columns: 1fr 1fr; }
+
+    /* Segments */
+    .seg-grid { grid-template-columns: 1fr; }
+
+    /* Quick actions: horizontal scroll */
+    .quick-actions { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
+    .qa-btn { flex-shrink: 0; }
+
+    /* Modal fullscreen */
+    .detail-modal { padding: 0; }
+    .detail-box { border-radius: 0; max-height: 100vh; }
+    .detail-body { padding: 12px; }
+
+    /* Notification dropdown */
+    .notif-dropdown { position: fixed; top: 48px; left: 8px; right: 8px; width: auto; }
+
+    /* Charts */
+    .chart-container { height: 180px; padding: 10px; }
+    .chart-tabs { gap: 4px; }
+    .chart-tab { padding: 4px 8px; font-size: 10px; }
+
+    /* Status bar hide on very small */
+    .status-bar { display: none; }
+
+    /* Pagination compact */
+    .pagination { justify-content: center; }
+    .pg-info { width: 100%; text-align: center; }
+}
+
+/* ── Touch-friendly tap targets ── */
+@media (hover: none) and (pointer: coarse) {
+    .nav-item { padding: 10px 12px; min-height: 42px; }
+    .status-btn { padding: 8px 14px; min-height: 38px; }
+    .qa-btn { min-height: 38px; }
+    .pg-btn { width: 34px; height: 34px; }
+    .view-btn { padding: 7px 14px; }
+    .filter-sel { padding: 10px 12px; }
+    .search-input { padding: 10px 14px; }
+    .form-group input, .form-group select { min-height: 44px; }
+}
