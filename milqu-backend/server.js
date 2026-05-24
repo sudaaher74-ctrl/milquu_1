@@ -205,7 +205,7 @@ app.get('/api/health', async (req, res) => {
     });
 });
 
-app.use(express.static(FRONTEND_DIR));
+app.use(express.static(FRONTEND_DIR, { extensions: ['html'] }));
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
@@ -222,7 +222,7 @@ app.use((req, res) => {
     const isApiRoute = req.originalUrl.startsWith('/api/');
     const acceptsHtml = req.accepts('html');
     if (!isApiRoute && acceptsHtml) {
-        return res.status(404).sendFile(path.join(FRONTEND_DIR, 'index.html'));
+        return res.status(200).sendFile(path.join(FRONTEND_DIR, 'index.html'));
     }
     res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found.` });
 });
