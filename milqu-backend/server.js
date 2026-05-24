@@ -19,10 +19,26 @@ const allowedCorsOrigins = new Set(getAllowedCorsOrigins());
 
 function isOriginAllowed(origin) {
     if (!origin) return true; // Allow non-browser requests
+    
+    // 1. Allowed origins from CORS_ORIGIN environment variable
     if (allowedCorsOrigins.has(origin)) return true;
+    
+    // 2. Explicitly allow production domains
+    const allowedDomains = [
+        'https://milquufresh.in',
+        'https://www.milquufresh.in'
+    ];
+    if (allowedDomains.includes(origin)) return true;
+    
+    // 3. Allow Vercel preview domains
     if (origin.endsWith('.vercel.app')) return true;
-    if (origin.includes('onrender.com')) return true;
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return true;
+    
+    // 4. Allow Render domains
+    if (origin.endsWith('.onrender.com')) return true;
+    
+    // 5. Allow Localhost during development
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) return true;
+    
     return false;
 }
 
@@ -82,6 +98,8 @@ app.use(cors({
 // Security headers via helmet (includes Content-Security-Policy)
 const cspOrigins = [
     ...allowedCorsOrigins, 
+    'https://milquufresh.in',
+    'https://www.milquufresh.in',
     'https://milquu-1-muhj.vercel.app', 
     'https://*.vercel.app', 
     'https://*.onrender.com'
