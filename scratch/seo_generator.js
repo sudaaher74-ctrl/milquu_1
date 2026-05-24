@@ -268,7 +268,7 @@ ${urls.map(url => `  <url>
     <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>${url === '/' ? '1.0' : '0.8'}</priority>
-  </url>`).join('\\n')}
+  </url>`).join('\n')}
 </urlset>`;
 
 fs.writeFileSync(path.join(FRONTEND_DIR, 'sitemap.xml'), sitemap);
