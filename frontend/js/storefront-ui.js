@@ -1018,31 +1018,24 @@ document.getElementById('auth-phone-form')?.addEventListener('submit', async e =
   if (!phoneInput) return;
   const phone = phoneInput.value.trim();
   const btn = e.target.querySelector('button');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Logging in...'; }
 
-  try {
-    const res = await fetch(`${API_BASE}/auth/send-otp`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone })
-    });
-    const data = await res.json();
-    if (data.success) {
-      const displayPhone = document.getElementById('auth-display-phone');
-      if (displayPhone) displayPhone.textContent = '+91 ' + phone;
-      if (data.mock) {
-        notif(`Demo Mode: OTP is ${data.code}`);
-        const otpInput = document.getElementById('auth-otp-input');
-        if (otpInput) otpInput.value = data.code; 
-      }
-      showAuthStep(2);
-    } else {
-      notif('❌ ' + data.message);
-    }
-  } catch (e) {
-    notif('❌ Server error. Try again.');
+  localStorage.setItem('mq_customer_phone', phone);
+  const authModal = document.getElementById('auth-modal');
+  if (authModal) authModal.classList.remove('open');
+  notif('🎉 Welcome!');
+
+  const subPhone = document.getElementById('sub-phone');
+  if (subPhone) subPhone.value = phone;
+  const payPhone = document.getElementById('pay-phone');
+  if (payPhone) payPhone.value = phone;
+
+  const accPage = document.getElementById('page-account');
+  if (accPage && accPage.classList.contains('active')) {
+    initAccount();
   }
-  if (btn) { btn.disabled = false; btn.textContent = 'Get OTP →'; }
+
+  if (btn) { btn.disabled = false; btn.textContent = 'Login →'; }
 });
 
 document.getElementById('auth-otp-form')?.addEventListener('submit', async e => {
