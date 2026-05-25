@@ -14,7 +14,11 @@ const { ensureDefaultProducts } = require('./utils/seed-default-products');
 const app = express();
 const httpServer = http.createServer(app);
 const PORT = process.env.PORT || 5001;
-const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
+// Use React build (frontend-react/dist) if it exists, else fall back to old frontend
+const fs = require('fs');
+const REACT_DIST = path.join(__dirname, '..', 'frontend-react', 'dist');
+const OLD_FRONTEND = path.join(__dirname, '..', 'frontend');
+const FRONTEND_DIR = fs.existsSync(REACT_DIST) ? REACT_DIST : OLD_FRONTEND;
 const allowedCorsOrigins = new Set(getAllowedCorsOrigins());
 
 function isOriginAllowed(origin) {
@@ -205,23 +209,26 @@ app.get('/api/health', async (req, res) => {
     });
 });
 
-app.use(express.static(FRONTEND_DIR, { extensions: ['html'] }));
+// Serve React SPA static assets
+app.use(express.static(FRONTEND_DIR, {
+    extensions: ['html'],
+    maxAge: '1d',
+    setHeaders(res, filePath) {
+        // Never cache the entry point — React Router needs the latest index.html
+        if (filePath.endsWith('index.html')) {
+            res.setHeader('Cache-Control', 'no-store');
+        }
+    },
+}));
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(FRONTEND_DIR, 'index.html'));
-});
-
-app.get('/admin', (req, res) => {
-    res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
-    res.sendFile(path.join(FRONTEND_DIR, 'admin.html'));
-});
-
+// React Router SPA catch-all — serves index.html for all non-API browser routes
+// (React Router handles /admin, /products, /subscription, etc. client-side)
 app.use((req, res) => {
-    // Serve index.html for browser navigation (non-API routes)
     const isApiRoute = req.originalUrl.startsWith('/api/');
+    const isUpload  = req.originalUrl.startsWith('/uploads/');
     const acceptsHtml = req.accepts('html');
-    if (!isApiRoute && acceptsHtml) {
+    if (!isApiRoute && !isUpload && acceptsHtml) {
+        res.setHeader('Cache-Control', 'no-store');
         return res.status(200).sendFile(path.join(FRONTEND_DIR, 'index.html'));
     }
     res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found.` });

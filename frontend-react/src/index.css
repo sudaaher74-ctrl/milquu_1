@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+
+  --color-navy: #0B192C;
+  --color-navy-hover: #152B4A;
+  --color-cream: #F9F8F4;
+  --color-cream-dark: #EFECE1;
+  --color-gold: #C8A97E;
+  --color-gold-hover: #B5956A;
+  --color-green: #2f7a38;
+  --color-green-dark: #1d5c23;
+  --color-green-light: #e8f5e9;
+  --color-dark: #1a1a2e;
+  --color-gray: #6b7280;
+  --color-border: #e5e7eb;
+
+  --radius-card: 16px;
+  --radius-btn: 50px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-cream);
+  color: var(--color-navy);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Leaflet CSS override — prevents map z-index issues */
+.leaflet-container {
+  z-index: 1;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Admin sidebar scrollbar */
+.admin-sidebar::-webkit-scrollbar { width: 4px; }
+.admin-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
