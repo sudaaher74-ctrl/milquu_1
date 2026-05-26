@@ -1216,26 +1216,10 @@ function CTASection({ navigate }) {
 export default function Home() {
   const navigate = useNavigate();
 
-  // Luxury cursor
-  useEffect(() => {
-    const cursor = document.getElementById('luxury-cursor');
-    const ring   = document.getElementById('luxury-cursor-ring');
-    if (!cursor || !ring) return;
-    const move = (e) => {
-      cursor.style.left = e.clientX + 'px';
-      cursor.style.top  = e.clientY + 'px';
-      ring.style.left   = e.clientX + 'px';
-      ring.style.top    = e.clientY + 'px';
-    };
-    window.addEventListener('mousemove', move, { passive: true });
-    return () => window.removeEventListener('mousemove', move);
-  }, []);
+
 
   return (
     <>
-      {/* Custom cursor */}
-      <div id="luxury-cursor" aria-hidden="true" />
-      <div id="luxury-cursor-ring" aria-hidden="true" />
 
       {/* WhatsApp FAB */}
       <motion.a
