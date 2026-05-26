@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../../stores/cartStore';
 
 export default function FloatingCartBar({ onClick }) {
-  const cart = useCartStore((s) => s.cart);
+  const cart = useCartStore((s) => s.items) || [];
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
   
   if (totalItems === 0) return null;
