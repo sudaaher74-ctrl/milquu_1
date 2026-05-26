@@ -36,10 +36,10 @@ const STORY_STEPS = [
 ];
 
 const CATEGORIES = [
-  { src: '/images/milk-products.png',    label: 'Pure Milk',      sub: 'Cow, Buffalo & A2 Organic', filter: 'milk',       accent: '#C8A97E' },
-  { src: '/images/vegitables.png',       label: 'Vegetables',     sub: 'Farm-picked daily',         filter: 'vegetables', accent: '#4a9e5c' },
-  { src: '/images/milk-by-products.png', label: 'Dairy Products', sub: 'Ghee, Paneer, Butter',      filter: 'dairy',      accent: '#e8c99e' },
-  { src: '/images/fruits.png',           label: 'Fresh Fruits',   sub: 'Seasonal & Tropical',       filter: 'fruits',     accent: '#a8d5a2' },
+  { src: '/images/milk-products.png',    label: 'Pure Milk',      sub: 'Cow, Buffalo & A2 Organic', filter: 'milk',       accent: '#C8A97E', icon: '🥛' },
+  { src: '/images/vegitables.png',       label: 'Vegetables',     sub: 'Farm-picked daily',         filter: 'vegetables', accent: '#4a9e5c', icon: '🥦' },
+  { src: '/images/milk-by-products.png', label: 'Dairy Products', sub: 'Ghee, Paneer, Butter',      filter: 'dairy',      accent: '#e8c99e', icon: '🧀' },
+  { src: '/images/fruits.png',           label: 'Fresh Fruits',   sub: 'Seasonal & Tropical',       filter: 'fruits',     accent: '#a8d5a2', icon: '🍑' },
 ];
 
 const WHY_ITEMS = [
@@ -425,7 +425,7 @@ function StorytellingSection() {
 }
 
 /* ══════════════════════════════════════════════
-   SECTION 3 — COLLECTION (3D tilt grid)
+   SECTION 3 — COLLECTION (premium 4-card grid)
 ══════════════════════════════════════════════ */
 function CollectionSection({ navigate }) {
   const gsapRef = useRef(null);
@@ -434,75 +434,120 @@ function CollectionSection({ navigate }) {
     if (!gsapRef.current) return;
     const items = gsapRef.current.querySelectorAll('.cat-card');
     items.forEach((el, i) => {
-      gsap.fromTo(el, { opacity: 0, y: 45, scale: 0.96 }, {
-        opacity: 1, y: 0, scale: 1, duration: 0.75, ease: 'power3.out',
-        delay: i * 0.09,
+      gsap.fromTo(el, { opacity: 0, y: 48, scale: 0.96 }, {
+        opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out',
+        delay: i * 0.1,
         scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' },
       });
     });
   }, []);
 
-  // 3D tilt handler
   const handleTilt = (e, el) => {
     const rect = el.getBoundingClientRect();
-    const cx = rect.left + rect.width  / 2;
-    const cy = rect.top  + rect.height / 2;
-    const dx = (e.clientX - cx) / (rect.width  / 2);
-    const dy = (e.clientY - cy) / (rect.height / 2);
-    el.style.transform = `perspective(900px) rotateY(${dx * 7}deg) rotateX(${-dy * 5}deg) scale(1.03)`;
+    const dx = (e.clientX - rect.left - rect.width  / 2) / (rect.width  / 2);
+    const dy = (e.clientY - rect.top  - rect.height / 2) / (rect.height / 2);
+    el.style.transform = `perspective(1000px) rotateY(${dx * 6}deg) rotateX(${-dy * 4}deg) scale(1.025)`;
     el.style.transition = 'transform 0.08s ease-out';
   };
   const resetTilt = (el) => {
-    el.style.transform = 'perspective(900px) rotateY(0deg) rotateX(0deg) scale(1)';
-    el.style.transition = 'transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94)';
+    el.style.transform = 'perspective(1000px) rotateY(0deg) rotateX(0deg) scale(1)';
+    el.style.transition = 'transform 0.55s cubic-bezier(0.25,0.46,0.45,0.94)';
   };
 
   return (
-    <section className="py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg,#050d1a,#071426)' }}>
-      <div className="absolute top-0 right-0 w-[600px] h-[400px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse,rgba(200,169,126,0.055),transparent 70%)', filter: 'blur(80px)' }} />
+    <section className="py-32 relative overflow-hidden"
+      style={{ background: 'linear-gradient(180deg,#050d1a 0%,#071426 100%)' }}>
+
+      {/* Ambient orbs */}
+      <div className="absolute top-0 right-0 w-[560px] h-[380px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse,rgba(200,169,126,0.06),transparent 70%)', filter: 'blur(72px)' }} />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[280px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse,rgba(74,158,92,0.04),transparent 70%)', filter: 'blur(60px)' }} />
+      {/* Dot grid */}
+      <div className="absolute inset-0 pointer-events-none opacity-35"
+        style={{ backgroundImage: 'radial-gradient(rgba(200,169,126,0.04) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
 
       <div className="max-w-7xl mx-auto px-6 sm:px-10">
+        {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-16 gap-8">
           <FadeUp>
             <Eyebrow>Our Collection</Eyebrow>
-            <h2 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-none">
+            <h2 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-[0.95]">
               The<br />Precision<br /><GoldText>Palette.</GoldText>
             </h2>
           </FadeUp>
-          <FadeUp delay={0.1}>
-            <p className="text-white/28 text-sm max-w-xs font-sans leading-relaxed lg:text-right lg:pb-2">
+          <FadeUp delay={0.1} className="max-w-xs lg:pb-2">
+            <p className="text-white/28 text-sm font-sans leading-relaxed lg:text-right">
               Elevating dairy to a premium lifestyle — crafted with precision and organic soul.
             </p>
           </FadeUp>
         </div>
 
+        {/* 4-card staggered grid */}
         <div ref={gsapRef} className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           {CATEGORIES.map((cat, i) => (
             <div key={cat.filter} className="cat-card opacity-0"
-              style={{ marginTop: i % 2 === 1 ? '28px' : '0' }}>
+              style={{ marginTop: i % 2 === 1 ? '32px' : '0' }}>
               <div
-                className="group relative rounded-3xl overflow-hidden cursor-pointer"
-                style={{ transformStyle: 'preserve-3d' }}
+                className="group relative rounded-[24px] overflow-hidden cursor-pointer"
+                style={{ transformStyle: 'preserve-3d', willChange: 'transform' }}
                 onMouseMove={(e) => handleTilt(e, e.currentTarget)}
                 onMouseLeave={(e) => resetTilt(e.currentTarget)}
                 onClick={() => navigate(`/products?cat=${cat.filter}`)}>
-                <div className="relative bg-[#0a1e36] border border-white/5 group-hover:border-[#C8A97E]/22 transition-all duration-500 rounded-3xl overflow-hidden">
-                  <div className="relative overflow-hidden" style={{ aspectRatio: i % 2 === 0 ? '3/4' : '4/3' }}>
-                    <img src={cat.src} alt={`Milqu Fresh ${cat.label} — Navi Mumbai`}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      loading="lazy" />
-                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(7,20,38,0.72),transparent 55%)' }} />
+
+                {/* Gold glow ring on hover */}
+                <div className="absolute -inset-[1.5px] rounded-[25px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-30"
+                  style={{ background: `linear-gradient(135deg, ${cat.accent}50, transparent 40%, ${cat.accent}22 80%)` }} />
+
+                {/* Card body */}
+                <div className="relative rounded-[24px] overflow-hidden border border-white/[0.06] group-hover:border-transparent transition-colors duration-500"
+                  style={{ background: '#0a1422', boxShadow: '0 16px 48px rgba(0,0,0,0.45)' }}>
+
+                  {/* Image */}
+                  <div className="relative overflow-hidden"
+                    style={{ aspectRatio: i % 2 === 0 ? '3/4' : '4/3' }}>
+                    <img
+                      src={cat.src}
+                      alt={`Milqu Fresh ${cat.label} — Premium Navi Mumbai delivery`}
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.08]"
+                      loading="lazy"
+                    />
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0"
+                      style={{ background: 'linear-gradient(to top,rgba(5,13,26,0.85) 0%,rgba(5,13,26,0.1) 55%,transparent 100%)' }} />
+                    {/* Accent shimmer on hover */}
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                      style={{ background: `radial-gradient(ellipse at 50% 80%, ${cat.accent}15, transparent 70%)` }} />
+                      style={{ background: `radial-gradient(ellipse at 50% 90%, ${cat.accent}18, transparent 65%)` }} />
+                    {/* Top vignette */}
+                    <div className="absolute inset-x-0 top-0 h-12"
+                      style={{ background: 'linear-gradient(to bottom,rgba(10,20,34,0.4),transparent)' }} />
                   </div>
-                  <div className="p-5">
-                    <h3 className="font-serif text-white font-bold text-xl mb-1">{cat.label}</h3>
-                    <p className="text-white/28 text-xs font-sans mb-4">{cat.sub}</p>
-                    <div className="flex items-center gap-1.5 text-[10.5px] font-bold tracking-widest uppercase"
-                      style={{ color: cat.accent }}>
-                      Explore
-                      <motion.span animate={{ x: [0, 4, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>→</motion.span>
+
+                  {/* Text panel */}
+                  <div className="p-5" style={{ background: 'linear-gradient(to bottom,rgba(10,20,34,0.95),rgba(7,20,38,1))' }}>
+                    {/* Top accent line */}
+                    <div className="h-px mb-4 rounded-full"
+                      style={{ background: `linear-gradient(to right, ${cat.accent}60, transparent 70%)` }} />
+
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-serif text-white font-bold text-lg sm:text-xl mb-0.5 leading-tight">{cat.label}</h3>
+                        <p className="text-white/30 text-[11px] font-sans">{cat.sub}</p>
+                      </div>
+                      {/* Icon badge */}
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base transition-transform duration-300 group-hover:scale-110"
+                        style={{ background: `${cat.accent}15`, border: `1px solid ${cat.accent}28` }}>
+                        {cat.icon}
+                      </div>
+                    </div>
+
+                    {/* Hover-reveal explore row */}
+                    <div className="mt-4 h-5 overflow-hidden">
+                      <div className="flex items-center gap-2 translate-y-5 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out">
+                        <span className="text-[10.5px] font-bold tracking-[0.28em] uppercase" style={{ color: cat.accent }}>Explore</span>
+                        <motion.span className="text-xs font-bold" style={{ color: cat.accent }}
+                          animate={{ x: [0, 4, 0] }} transition={{ duration: 1.4, repeat: Infinity }}>→</motion.span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -511,8 +556,20 @@ function CollectionSection({ navigate }) {
           ))}
         </div>
 
-        <FadeUp delay={0.2} className="text-center mt-16">
-          <PremiumBtn onClick={() => navigate('/products')} outline>View All Products</PremiumBtn>
+        {/* Footer bar */}
+        <FadeUp delay={0.22}>
+          <div className="mt-16 pt-10 flex flex-col sm:flex-row items-center justify-between gap-6"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <div className="hidden sm:flex items-center gap-7">
+              {[['🥛','Pure Dairy'],['🥦','Organic Veg'],['🍑','Fresh Fruits'],['🧀','Artisan Products']].map(([ic, t]) => (
+                <div key={t} className="flex items-center gap-1.5 text-white/20 text-[10.5px] font-bold tracking-wider uppercase">
+                  <span>{ic}</span><span>{t}</span>
+                </div>
+              ))}
+            </div>
+            <span className="text-white/15 text-[11px] sm:hidden">4 categories · 50+ products</span>
+            <PremiumBtn onClick={() => navigate('/products')} outline>View All Products</PremiumBtn>
+          </div>
         </FadeUp>
       </div>
     </section>
