@@ -1,23 +1,22 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../../stores/cartStore';
 
-export default function FloatingCartBar({ onClick }) {
+export default function FloatingCartBar({ onClick, isHidden }) {
   const cart = useCartStore((s) => s.items) || [];
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
   
-  if (totalItems === 0) return null;
-
   // Get up to 3 distinct items for the stacked images
   const previewItems = cart.slice(0, 3);
 
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-6 left-0 right-0 z-50 px-4 pointer-events-none flex justify-center"
-      >
+      {totalItems > 0 && !isHidden && (
+        <motion.div
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 100, opacity: 0 }}
+          className="fixed bottom-6 left-0 right-0 z-50 px-4 pointer-events-none flex justify-center"
+        >
         <div 
           onClick={onClick}
           className="pointer-events-auto cursor-pointer w-full max-w-md bg-[#0a182d] border border-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.4)] backdrop-blur-md rounded-full p-2 pl-4 flex items-center justify-between overflow-hidden"
@@ -58,7 +57,8 @@ export default function FloatingCartBar({ onClick }) {
             </svg>
           </div>
         </div>
-      </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>
   );
 }

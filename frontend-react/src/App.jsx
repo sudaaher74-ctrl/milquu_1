@@ -61,7 +61,7 @@ function StorefrontLayout({ children }) {
           {children}
         </motion.div>
       </main>
-      <FloatingCartBar onClick={() => setCartOpen(true)} />
+      <FloatingCartBar onClick={() => setCartOpen(true)} isHidden={cartOpen} />
       <Footer />
     </>
   );
