@@ -6,9 +6,9 @@ import { useCartStore } from '../../stores/cartStore';
 const NAV_LINKS = [
   { label: 'HOME', to: '/' },
   { label: 'PRODUCTS', to: '/products' },
-  { label: 'ABOUT US', to: '/about' },
   { label: 'SUBSCRIPTIONS', to: '/subscription' },
   { label: 'CONTACT', to: '/contact' },
+  { label: 'ABOUT US', to: '/about' },
   { label: 'MY ORDERS', to: '/account' },
 ];
 
