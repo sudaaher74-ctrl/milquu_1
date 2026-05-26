@@ -7,7 +7,7 @@ const NAV_LINKS = [
   { label: 'HOME', to: '/' },
   { label: 'PRODUCTS', to: '/products' },
   { label: 'ABOUT US', to: '/about' },
-  { label: 'PROCESS', to: '/subscription' }, // Mapped from screenshot
+  { label: 'SUBSCRIPTIONS', to: '/subscription' },
   { label: 'CONTACT', to: '/contact' },
   { label: 'MY ORDERS', to: '/account' },
 ];
@@ -49,9 +49,6 @@ export default function Navbar({ onCartOpen }) {
                   {l.label}
                 </Link>
               ))}
-              <Link to="/subscription" className={`text-xs font-bold tracking-wider px-6 py-2.5 rounded-[2rem] transition-colors ml-2 shadow-md ${isTransparent ? 'bg-[var(--color-gold)] text-[var(--color-navy)] hover:bg-white' : 'bg-[var(--color-navy)] hover:bg-[var(--color-navy-hover)] text-white'}`}>
-                ORDER NOW
-              </Link>
             </div>
 
             {/* Actions */}
