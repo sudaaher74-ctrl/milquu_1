@@ -19,18 +19,29 @@ export const FALLBACK_PRODUCTS = [
 ];
 
 function mapProduct(p, apiBase) {
+  const fallback = FALLBACK_PRODUCTS.find(f => f.name.toLowerCase() === p.name?.toLowerCase());
+  
+  let imgUrl = null;
+  if (p.image) {
+    imgUrl = `${apiBase.replace('/api', '')}/uploads/${p.image}`;
+  } else if (p.imageUrl) {
+    imgUrl = p.imageUrl;
+  } else if (fallback && fallback.img) {
+    imgUrl = fallback.img;
+  }
+
   return {
     id: p.productCode || p._id,
     productId: p._id,
     name: p.name,
-    e: p.emoji || '📦',
-    img: p.image ? `${apiBase.replace('/api', '')}/uploads/${p.image}` : (p.imageUrl || null),
+    e: p.emoji || fallback?.e || '📦',
+    img: imgUrl,
     price: p.price,
-    unit: p.unit || '/unit',
-    cat: p.category,
-    badge: p.badge || null,
-    desc: p.description || '',
-    nut: Array.isArray(p.nutrition) ? p.nutrition : [],
+    unit: p.unit || fallback?.unit || '/unit',
+    cat: p.category || fallback?.cat,
+    badge: p.badge || fallback?.badge || null,
+    desc: p.description || fallback?.desc || '',
+    nut: Array.isArray(p.nutrition) && p.nutrition.length > 0 ? p.nutrition : (fallback?.nut || []),
   };
 }
 
