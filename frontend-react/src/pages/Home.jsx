@@ -76,27 +76,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Stats at the bottom, on a dark bar */}
-        <div className="relative z-10 w-full mt-auto bg-[var(--color-navy)] py-8 border-t border-white/5">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-wrap justify-between items-center gap-6">
-            <div className="text-center flex-1">
-              <div className="font-serif text-3xl sm:text-5xl text-[var(--color-gold)] font-bold mb-1">100%</div>
-              <div className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Purity Guaranteed</div>
-            </div>
-            <div className="text-center flex-1">
-              <div className="font-serif text-3xl sm:text-5xl text-[var(--color-gold)] font-bold mb-1">4:00 AM</div>
-              <div className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Daily Delivery</div>
-            </div>
-            <div className="text-center flex-1">
-              <div className="font-serif text-3xl sm:text-5xl text-[var(--color-gold)] font-bold mb-1">50+</div>
-              <div className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Farm Partners</div>
-            </div>
-            <div className="text-center flex-1">
-              <div className="font-serif text-3xl sm:text-5xl text-[var(--color-gold)] font-bold mb-1">0</div>
-              <div className="text-[10px] text-white/50 font-bold uppercase tracking-widest">Preservatives</div>
-            </div>
-          </div>
-        </div>
+
       </section>
 
       {/* ── Our Collection (Categories Dark Edition) ── */}
