@@ -363,68 +363,6 @@ function HeroSection({ navigate }) {
 }
 
 /* ══════════════════════════════════════════════
-   SECTION 2 — STORYTELLING
-══════════════════════════════════════════════ */
-function StorytellingSection() {
-  const containerRef = useRef(null);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const cards = containerRef.current.querySelectorAll('.story-card');
-    cards.forEach((card, i) => {
-      gsap.fromTo(card,
-        { opacity: 0, y: 55, scale: 0.97 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out',
-          delay: (i % 3) * 0.11,
-          scrollTrigger: { trigger: card, start: 'top 88%', toggleActions: 'play none none none' } }
-      );
-    });
-    return () => ScrollTrigger.getAll().forEach(t => t.kill());
-  }, []);
-
-  return (
-    <section className="py-32 relative overflow-hidden" style={{ background: 'linear-gradient(160deg,#071426,#0a1f38 55%,#071426)' }}>
-      <div className="absolute inset-0 pointer-events-none opacity-40"
-        style={{ backgroundImage: 'radial-gradient(rgba(200,169,126,0.035) 1px,transparent 1px)', backgroundSize: '44px 44px' }} />
-
-      <div className="max-w-7xl mx-auto px-6 sm:px-10">
-        <FadeUp className="text-center mb-20">
-          <Eyebrow>Farm to Doorstep</Eyebrow>
-          <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-4 leading-tight">
-            Every Drop Has a <GoldText>Story.</GoldText>
-          </h2>
-          <p className="text-white/38 text-sm max-w-sm mx-auto font-sans leading-relaxed">
-            Watch your milk's journey — from ethical farms to your family's table, in under 3 hours.
-          </p>
-        </FadeUp>
-
-        <div ref={containerRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {STORY_STEPS.map((s) => (
-            <div key={s.label} className="story-card group relative rounded-3xl overflow-hidden cursor-pointer opacity-0"
-              style={{ aspectRatio: '4/3' }}>
-              <img src={s.img} alt={`Milqu Fresh — ${s.label} dairy process`}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(7,20,38,0.97) 0%,rgba(7,20,38,0.3) 50%,transparent 100%)' }} />
-              {/* hover border glow */}
-              <div className="absolute inset-0 rounded-3xl border border-transparent group-hover:border-[#C8A97E]/28 transition-all duration-500"
-                style={{ boxShadow: 'inset 0 0 0 0 rgba(200,169,126,0)' }} />
-              <div className="absolute bottom-0 left-0 right-0 p-6">
-                <div className="flex items-center gap-2.5 mb-2">
-                  <span className="text-xl">{s.icon}</span>
-                  <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#C8A97E]">{s.time}</span>
-                </div>
-                <h3 className="font-serif text-[1.2rem] font-bold text-white mb-1.5">{s.label}</h3>
-                <p className="text-white/40 text-xs font-sans leading-relaxed max-h-0 group-hover:max-h-20 overflow-hidden transition-all duration-300">{s.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ══════════════════════════════════════════════
    SECTION 3 — COLLECTION
 ══════════════════════════════════════════════ */
 function CollectionSection({ navigate }) {
@@ -1100,7 +1038,6 @@ export default function Home() {
 
       {/* All sections */}
       <HeroSection navigate={navigate} />
-      <StorytellingSection />
       <CollectionSection navigate={navigate} />
       <WhySection />
       <TrustSection />
