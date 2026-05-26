@@ -10,6 +10,7 @@ import Toast from './components/ui/Toast';
 import ProtectedRoute from './components/ui/ProtectedRoute';
 import CartSidebar from './components/cart/CartSidebar';
 import CheckoutModal from './components/cart/CheckoutModal';
+import FloatingCartBar from './components/cart/FloatingCartBar';
 
 // Storefront Pages
 import Home from './pages/Home';
@@ -60,6 +61,7 @@ function StorefrontLayout({ children }) {
           {children}
         </motion.div>
       </main>
+      <FloatingCartBar onClick={() => setCartOpen(true)} />
       <Footer />
     </>
   );
