@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import Lenis from 'lenis';
 
 // Layout
 import Navbar from './components/layout/Navbar';
@@ -69,6 +70,36 @@ export default function App() {
   const loadProducts = useProductStore((s) => s.load);
   const syncWithCatalog = useCartStore((s) => s.syncWithCatalog);
   const products = useProductStore((s) => s.products);
+  const lenisRef = useRef(null);
+
+  /* ── Lenis smooth scroll ── */
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.35,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      smoothWheel: true,
+      touchMultiplier: 1.8,
+    });
+    lenisRef.current = lenis;
+
+    let rafId;
+    function raf(time) {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    }
+    rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+    };
+  }, []);
+
+  /* ── Stop scroll during route changes ── */
+  useEffect(() => {
+    lenisRef.current?.scrollTo(0, { immediate: true });
+  }, [location.pathname]);
 
   useEffect(() => {
     loadProducts();
