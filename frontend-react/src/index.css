@@ -48,3 +48,67 @@ body {
 /* Admin sidebar scrollbar */
 .admin-sidebar::-webkit-scrollbar { width: 4px; }
 .admin-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+
+/* ─── Luxury Animations ─── */
+
+/* Cinematic slow zoom (used on hero bg) */
+@keyframes cinematic-zoom {
+  from { transform: scale(1.12); }
+  to   { transform: scale(1.0); }
+}
+.animate-cinematic-zoom {
+  animation: cinematic-zoom 8s ease-out forwards;
+}
+
+/* Ambient glow pulse */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%       { opacity: 1;   transform: scale(1.08); }
+}
+.animate-glow-pulse {
+  animation: glow-pulse 6s ease-in-out infinite;
+}
+
+/* Floating particle */
+@keyframes float-up {
+  0%, 100% { transform: translateY(0); opacity: 0.2; }
+  50%       { transform: translateY(-28px); opacity: 0.5; }
+}
+.animate-float {
+  animation: float-up 6s ease-in-out infinite;
+}
+
+/* Shimmer animated border */
+@keyframes border-shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-border-shimmer {
+  background: linear-gradient(90deg, #C8A97E, #fff8e7, #C8A97E, #a8895e);
+  background-size: 300% 300%;
+  animation: border-shimmer 3s ease infinite;
+}
+
+/* Ping live indicator (Tailwind's animate-ping is used inline) */
+
+/* Scroll-in fade utility */
+.scroll-fade-in {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.scroll-fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Card depth hover (complement to framer-motion) */
+.card-depth {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+.card-depth:hover {
+  transform: translateY(-6px) scale(1.015);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18), 0 8px 16px rgba(200, 169, 126, 0.1);
+}
+
