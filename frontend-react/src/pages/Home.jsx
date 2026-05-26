@@ -488,40 +488,30 @@ function CollectionSection({ navigate }) {
                 onClick={() => navigate(`/products?cat=${cat.filter}`)}>
 
                 {/* Card */}
-                <div className="relative rounded-2xl overflow-hidden border border-white/[0.08] transition-all duration-400 group-hover:border-[#C8A97E]/30 h-full flex flex-col"
+                <div className="relative rounded-[32px] overflow-hidden border border-white/[0.04] transition-all duration-400 group-hover:border-[#C8A97E]/30 h-full flex flex-col p-4 sm:p-5"
                   style={{
-                    background: 'linear-gradient(180deg, #0d1f3a 0%, #0a1628 100%)',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                    backgroundColor: '#16283d', // Solid navy matching the screenshot
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
                   }}>
 
-                  {/* Image — square aspect ratio for all cards */}
-                  <div className="relative overflow-hidden" style={{ aspectRatio: '1/1' }}>
+                  {/* Image — inset with border radius */}
+                  <div className="relative overflow-hidden rounded-[20px]" style={{ aspectRatio: '4/3' }}>
                     <img
                       src={cat.src}
                       alt={`Milqu Fresh ${cat.label}`}
-                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.07]"
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.05]"
                       loading="lazy"
                     />
-                    {/* Very subtle bottom fade into card bg */}
-                    <div className="absolute inset-x-0 bottom-0 h-10"
-                      style={{ background: 'linear-gradient(to bottom, transparent, rgba(10,22,40,0.55))' }} />
-                    {/* Hover shimmer */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                      style={{ background: `radial-gradient(ellipse at 50% 100%, ${cat.accent}14, transparent 65%)` }} />
                   </div>
 
                   {/* Text below image */}
-                  <div className="px-4 py-4 flex-1 flex flex-col justify-center text-center">
-                    <h3 className="font-serif font-bold text-white mb-1"
-                      style={{ fontSize: 'clamp(1rem, 2vw, 1.25rem)' }}>
+                  <div className="pt-6 pb-2 flex-1 flex flex-col justify-center text-center">
+                    <h3 className="font-serif font-bold text-white mb-1.5"
+                      style={{ fontSize: 'clamp(1.1rem, 2vw, 1.4rem)' }}>
                       {cat.label}
                     </h3>
-                    <p className="text-white/40 text-xs font-sans leading-relaxed">{cat.sub}</p>
+                    <p className="text-[#8ba0b8] text-xs sm:text-sm font-sans">{cat.sub}</p>
                   </div>
-
-                  {/* Bottom gold accent line — appears on hover */}
-                  <div className="absolute bottom-0 inset-x-0 h-[2px] scale-x-0 group-hover:scale-x-100 transition-transform duration-400 origin-left"
-                    style={{ background: `linear-gradient(to right, ${cat.accent}, transparent)` }} />
                 </div>
               </div>
             </div>
