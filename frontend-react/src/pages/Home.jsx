@@ -425,100 +425,254 @@ function StorytellingSection() {
 }
 
 /* ══════════════════════════════════════════════
-   SECTION 3 — COLLECTION (3D tilt)
+   SECTION 3 — COLLECTION (editorial asymmetric)
 ══════════════════════════════════════════════ */
-function CollectionSection({ navigate }) {
-  const gsapRef = useRef(null);
 
-  useEffect(() => {
-    if (!gsapRef.current) return;
-    const items = gsapRef.current.querySelectorAll('.cat-card');
-    items.forEach((el, i) => {
-      gsap.fromTo(el, { opacity: 0, y: 45, scale: 0.96 }, {
-        opacity: 1, y: 0, scale: 1, duration: 0.75, ease: 'power3.out',
-        delay: i * 0.09,
-        scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' },
-      });
-    });
-  }, []);
+/** Single editorial card — image-fill, text overlay */
+function EditorialCard({ src, label, sub, ctaText, accent = '#C8A97E', onClick, className = '', style = {}, imgClass = '' }) {
+  const [parallax, setParallax] = useState({ x: 0, y: 0 });
+  const cardRef = useRef(null);
 
-  // 3D tilt handler
-  const handleTilt = (e, el) => {
-    const rect = el.getBoundingClientRect();
-    const cx = rect.left + rect.width  / 2;
-    const cy = rect.top  + rect.height / 2;
-    const dx = (e.clientX - cx) / (rect.width  / 2);
-    const dy = (e.clientY - cy) / (rect.height / 2);
-    el.style.transform = `perspective(900px) rotateY(${dx * 7}deg) rotateX(${-dy * 5}deg) scale(1.03)`;
-    el.style.transition = 'transform 0.08s ease-out';
+  const handleMouseMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const dx = ((e.clientX - rect.left) / rect.width  - 0.5) * 14;
+    const dy = ((e.clientY - rect.top)  / rect.height - 0.5) * 10;
+    setParallax({ x: dx, y: dy });
   };
-  const resetTilt = (el) => {
-    el.style.transform = 'perspective(900px) rotateY(0deg) rotateX(0deg) scale(1)';
-    el.style.transition = 'transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94)';
-  };
+  const handleMouseLeave = () => setParallax({ x: 0, y: 0 });
 
   return (
-    <section className="py-32 relative overflow-hidden" style={{ background: 'linear-gradient(180deg,#050d1a,#071426)' }}>
-      <div className="absolute top-0 right-0 w-[600px] h-[400px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse,rgba(200,169,126,0.055),transparent 70%)', filter: 'blur(80px)' }} />
+    <motion.div
+      ref={cardRef}
+      className={`group relative overflow-hidden cursor-pointer ${className}`}
+      style={{
+        borderRadius: '28px',
+        border: '1px solid rgba(255,255,255,0.06)',
+        boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+        ...style,
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onClick={onClick}
+      whileHover={{ y: -8, boxShadow: `0 36px 80px rgba(0,0,0,0.6), 0 0 0 1px ${accent}30` }}
+      transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+    >
+      {/* Image with parallax */}
+      <div className="absolute inset-0 overflow-hidden" style={{ borderRadius: '28px' }}>
+        <motion.img
+          src={src}
+          alt={`Milqu Fresh — ${label}`}
+          className={`w-full h-full object-cover ${imgClass}`}
+          style={{ scale: 1.08, willChange: 'transform' }}
+          animate={{ x: parallax.x, y: parallax.y, scale: 1.08 }}
+          transition={{ type: 'spring', stiffness: 120, damping: 28 }}
+          loading="lazy"
+        />
+        {/* Cinematic gradient overlays */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(5,13,26,0.92) 0%, rgba(5,13,26,0.45) 45%, rgba(5,13,26,0.12) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, rgba(5,13,26,0.3) 0%, transparent 60%)' }} />
+        {/* Hover gold shimmer */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+          style={{ background: `radial-gradient(ellipse at 60% 90%, ${accent}14, transparent 65%)` }} />
+      </div>
+
+      {/* Noise texture */}
+      <div className="absolute inset-0 pointer-events-none z-[1] opacity-30"
+        style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E\")" }} />
+
+      {/* Content overlay */}
+      <div className="absolute inset-0 z-10 flex flex-col justify-end p-7">
+        {/* Category tag */}
+        <motion.div
+          className="inline-flex items-center gap-2 self-start mb-4 rounded-full px-3 py-1.5"
+          style={{ background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.1)' }}
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          viewport={{ once: true }}
+        >
+          <span className="block w-1.5 h-1.5 rounded-full" style={{ background: accent }} />
+          <span className="text-[9px] font-bold uppercase tracking-[0.32em] text-white/65">{sub}</span>
+        </motion.div>
+
+        {/* Title */}
+        <h3 className="font-serif font-black text-white leading-tight mb-5"
+          style={{ fontSize: 'clamp(1.4rem, 3vw, 2.2rem)', textShadow: '0 2px 20px rgba(0,0,0,0.6)' }}>
+          {label}
+        </h3>
+
+        {/* CTA — fades in on hover */}
+        <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 translate-y-3 group-hover:translate-y-0 transition-all duration-400">
+          <span className="text-[11px] font-bold tracking-[0.28em] uppercase" style={{ color: accent }}>{ctaText}</span>
+          <motion.div className="flex-1 h-px" style={{ background: `linear-gradient(to right, ${accent}60, transparent)` }}
+            initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} transition={{ duration: 0.6, delay: 0.1 }} />
+        </div>
+      </div>
+
+      {/* Subtle gold top edge glow on hover */}
+      <div className="absolute inset-x-0 top-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{ background: `linear-gradient(to right, transparent, ${accent}55, transparent)` }} />
+    </motion.div>
+  );
+}
+
+function CollectionSection({ navigate }) {
+  const sectionRef = useRef(null);
+
+  useEffect(() => {
+    if (!sectionRef.current) return;
+    // Stagger the editorial blocks in
+    gsap.fromTo(sectionRef.current.querySelectorAll('.ed-block'), 
+      { opacity: 0, y: 55 },
+      { opacity: 1, y: 0, stagger: 0.14, duration: 0.9, ease: 'power3.out',
+        scrollTrigger: { trigger: sectionRef.current, start: 'top 82%', toggleActions: 'play none none none' } }
+    );
+  }, []);
+
+  return (
+    <section className="py-36 relative overflow-hidden" style={{ background: 'linear-gradient(180deg,#050d1a 0%,#071426 100%)' }}>
+      {/* Ambient glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse, rgba(200,169,126,0.05) 0%, transparent 70%)', filter: 'blur(80px)' }} />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[300px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse, rgba(74,158,92,0.04) 0%, transparent 70%)', filter: 'blur(60px)' }} />
 
       <div className="max-w-7xl mx-auto px-6 sm:px-10">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-16 gap-8">
+
+        {/* Header — editorial asymmetric */}
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between mb-20 gap-8">
           <FadeUp>
-            <Eyebrow>Our Collection</Eyebrow>
-            <h2 className="font-serif text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-none">
+            <Eyebrow>The Collection</Eyebrow>
+            <h2 className="font-serif font-black text-white leading-[0.95]" style={{ fontSize: 'clamp(3.2rem, 7vw, 6.5rem)' }}>
               The<br />Precision<br /><GoldText>Palette.</GoldText>
             </h2>
           </FadeUp>
-          <FadeUp delay={0.1}>
-            <p className="text-white/28 text-sm max-w-xs font-sans leading-relaxed lg:text-right lg:pb-2">
-              Elevating dairy to a premium lifestyle — crafted with precision and organic soul.
+          <FadeUp delay={0.12} className="max-w-xs lg:pb-3">
+            <p className="text-white/30 text-sm font-sans leading-relaxed lg:text-right">
+              A curated edit of nature's finest — dairy, produce, and seasonal harvest. Farm-sourced. Ethically grown. Delivered daily.
             </p>
           </FadeUp>
         </div>
 
-        <div ref={gsapRef} className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-          {CATEGORIES.map((cat, i) => (
-            <div key={cat.filter} className="cat-card opacity-0"
-              style={{ marginTop: i % 2 === 1 ? '28px' : '0' }}>
-              <div
-                className="group relative rounded-3xl overflow-hidden cursor-pointer"
-                style={{ transformStyle: 'preserve-3d' }}
-                onMouseMove={(e) => handleTilt(e, e.currentTarget)}
-                onMouseLeave={(e) => resetTilt(e.currentTarget)}
-                onClick={() => navigate(`/products?cat=${cat.filter}`)}>
-                {/* Gold border glow on hover */}
-                <div className="absolute -inset-[1px] rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-20 pointer-events-none"
-                  style={{ background: `linear-gradient(135deg,${cat.accent}45,transparent 45%,${cat.accent}18)` }} />
+        {/* ─── EDITORIAL LAYOUT ─── */}
+        <div ref={sectionRef} className="flex flex-col gap-4">
 
-                <div className="relative bg-[#0a1e36] border border-white/5 group-hover:border-[#C8A97E]/22 transition-all duration-500 rounded-3xl overflow-hidden"
-                  style={{ boxShadow: '0 0 0 0 rgba(200,169,126,0)' }}>
-                  <div className="relative overflow-hidden" style={{ aspectRatio: i % 2 === 0 ? '3/4' : '4/3' }}>
-                    <img src={cat.src} alt={`Milqu Fresh ${cat.label} — Navi Mumbai`}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      loading="lazy" />
-                    <div className="absolute inset-0" style={{ background: 'linear-gradient(to top,rgba(7,20,38,0.72),transparent 55%)' }} />
-                    {/* Floating shimmer overlay on hover */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                      style={{ background: `radial-gradient(ellipse at 50% 80%, ${cat.accent}15, transparent 70%)` }} />
+          {/* ROW 1: Large Feature + 2 stacked mediums */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-4">
+
+            {/* FEATURED — Pure Milk (tall, dominant) */}
+            <div className="ed-block opacity-0">
+              <EditorialCard
+                src="/images/milk-products.png"
+                label="Pure Milk"
+                sub="Cow · Buffalo · A2 Organic"
+                ctaText="Discover Collection"
+                accent="#C8A97E"
+                onClick={() => navigate('/products?cat=milk')}
+                style={{ height: '580px', background: '#06111f' }}
+              />
+            </div>
+
+            {/* RIGHT STACK */}
+            <div className="flex flex-col gap-4">
+              {/* Vegetables */}
+              <div className="ed-block opacity-0" style={{ flex: 1 }}>
+                <EditorialCard
+                  src="/images/vegitables.png"
+                  label="Farm Vegetables"
+                  sub="Harvested Daily"
+                  ctaText="Explore Freshness"
+                  accent="#4a9e5c"
+                  onClick={() => navigate('/products?cat=vegetables')}
+                  style={{ height: '276px', background: '#06120e' }}
+                />
+              </div>
+              {/* Fresh Fruits */}
+              <div className="ed-block opacity-0" style={{ flex: 1 }}>
+                <EditorialCard
+                  src="/images/fruits.png"
+                  label="Fresh Fruits"
+                  sub="Seasonal & Tropical"
+                  ctaText="View Selection"
+                  accent="#e8c99e"
+                  onClick={() => navigate('/products?cat=fruits')}
+                  style={{ height: '276px', background: '#10100a' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ROW 2: Horizontal Dairy Products card — full width, cinematic */}
+          <div className="ed-block opacity-0">
+            <div
+              className="group relative overflow-hidden cursor-pointer"
+              style={{
+                borderRadius: '28px',
+                border: '1px solid rgba(255,255,255,0.06)',
+                height: '220px',
+                background: '#0a0d18',
+                boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
+              }}
+              onClick={() => navigate('/products?cat=dairy')}
+            >
+              {/* Full-bleed image */}
+              <motion.img
+                src="/images/milk-by-products.png"
+                alt="Milqu Fresh — Premium Dairy Products Navi Mumbai"
+                className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-105"
+                loading="lazy"
+              />
+              {/* Layered overlays */}
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(5,13,26,0.95) 0%, rgba(5,13,26,0.6) 45%, rgba(5,13,26,0.25) 100%)' }} />
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(5,13,26,0.5) 0%, transparent 60%)' }} />
+              {/* Gold shimmer on hover */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                style={{ background: 'radial-gradient(ellipse at 30% 50%, rgba(200,169,126,0.1), transparent 60%)' }} />
+              {/* Gold top edge */}
+              <div className="absolute inset-x-0 top-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{ background: 'linear-gradient(to right, transparent, rgba(200,169,126,0.5), transparent)' }} />
+
+              {/* Content — horizontal layout */}
+              <div className="absolute inset-0 z-10 flex items-center px-10 sm:px-14">
+                <div className="flex-1">
+                  <div className="inline-flex items-center gap-2 mb-4 rounded-full px-3 py-1.5"
+                    style={{ background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                    <span className="block w-1.5 h-1.5 rounded-full bg-[#e8c99e]" />
+                    <span className="text-[9px] font-bold uppercase tracking-[0.32em] text-white/60">Artisanal Dairy</span>
                   </div>
-                  <div className="p-5">
-                    <h3 className="font-serif text-white font-bold text-xl mb-1">{cat.label}</h3>
-                    <p className="text-white/28 text-xs font-sans mb-4">{cat.sub}</p>
-                    <div className="flex items-center gap-1.5 text-[10.5px] font-bold tracking-widest uppercase"
-                      style={{ color: cat.accent }}>
-                      Explore
-                      <motion.span animate={{ x: [0, 4, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>→</motion.span>
-                    </div>
+                  <h3 className="font-serif font-black text-white mb-2" style={{ fontSize: 'clamp(1.6rem, 3.5vw, 2.4rem)', textShadow: '0 2px 20px rgba(0,0,0,0.6)' }}>
+                    Premium Dairy Products
+                  </h3>
+                  <p className="text-white/40 text-sm font-sans max-w-sm leading-relaxed hidden sm:block">
+                    Ghee, Paneer, Butter & more — crafted from single-origin farm milk.
+                  </p>
+                </div>
+
+                {/* Right CTA */}
+                <div className="flex-shrink-0 ml-8 hidden sm:flex flex-col items-end gap-3">
+                  <div className="opacity-0 group-hover:opacity-100 translate-x-4 group-hover:translate-x-0 transition-all duration-400">
+                    <span className="inline-flex items-center gap-3 text-[11px] font-bold tracking-[0.28em] uppercase text-[#C8A97E]">
+                      View Selection
+                      <span className="text-base">→</span>
+                    </span>
                   </div>
+                  {/* Decorative vertical line */}
+                  <div className="w-px h-16" style={{ background: 'linear-gradient(to bottom, transparent, rgba(200,169,126,0.3), transparent)' }} />
                 </div>
               </div>
             </div>
-          ))}
+          </div>
         </div>
 
-        <FadeUp delay={0.2} className="text-center mt-16">
-          <PremiumBtn onClick={() => navigate('/products')} outline>View All Products</PremiumBtn>
+        {/* Footer CTA */}
+        <FadeUp delay={0.3} className="flex flex-col sm:flex-row items-center justify-between gap-6 mt-20 pt-12"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div>
+            <p className="text-white/22 text-xs font-sans uppercase tracking-widest mb-1">Curated for premium families</p>
+            <p className="text-white/45 text-sm font-sans">4 categories · 50+ products · Delivered daily</p>
+          </div>
+          <PremiumBtn onClick={() => navigate('/products')} outline>Browse Full Catalogue</PremiumBtn>
         </FadeUp>
       </div>
     </section>
