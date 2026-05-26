@@ -533,102 +533,6 @@ function WhySection() {
 }
 
 /* ══════════════════════════════════════════════
-   SECTION 5 — TRUST TIMELINE
-══════════════════════════════════════════════ */
-function TrustSection() {
-  const [active, setActive] = useState(null);
-  const timelineRef = useRef(null);
-
-  useEffect(() => {
-    if (!timelineRef.current) return;
-    gsap.fromTo(timelineRef.current.querySelectorAll('.tl-item'),
-      { opacity: 0, x: -28 },
-      { opacity: 1, x: 0, stagger: 0.14, duration: 0.7, ease: 'power3.out',
-        scrollTrigger: { trigger: timelineRef.current, start: 'top 82%' } }
-    );
-  }, []);
-
-  return (
-    <section className="py-32 relative overflow-hidden" style={{ background: 'linear-gradient(160deg,#071426,#0a1f38 55%,#071426)' }}>
-      <div className="absolute inset-0 opacity-40 pointer-events-none"
-        style={{ backgroundImage: 'radial-gradient(rgba(200,169,126,0.03) 1px,transparent 1px)', backgroundSize: '40px 40px' }} />
-
-      <div className="max-w-7xl mx-auto px-6 sm:px-10">
-        <FadeUp className="text-center mb-16">
-          <Eyebrow>Trust & Transparency</Eyebrow>
-          <h2 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-4 leading-tight">
-            Freshness You Can<br /><GoldText>Trace in Real Time.</GoldText>
-          </h2>
-          <p className="text-white/36 text-sm max-w-md mx-auto font-sans leading-relaxed">
-            Every minute of your milk's journey is documented, tested and fully transparent.
-          </p>
-        </FadeUp>
-
-        <div ref={timelineRef} className="max-w-2xl mx-auto mb-20">
-          <div className="relative pl-16 sm:pl-20">
-            <div className="absolute left-6 sm:left-8 top-5 bottom-5 w-[2px] timeline-line" />
-            <div className="space-y-5">
-              {TRUST_STEPS.map((step, i) => (
-                <div key={step.time} className="tl-item relative opacity-0 cursor-pointer"
-                  onClick={() => setActive(active === i ? null : i)}>
-                  {/* Dot */}
-                  <div className="absolute -left-10 sm:-left-12 top-5">
-                    <motion.div className="w-12 h-12 rounded-full flex items-center justify-center text-xl"
-                      style={{ background: 'linear-gradient(135deg,rgba(200,169,126,0.25),rgba(200,169,126,0.05))', border: '1px solid rgba(200,169,126,0.35)' }}
-                      animate={{ boxShadow: active === i ? '0 0 0 8px rgba(200,169,126,0.12), 0 0 40px rgba(200,169,126,0.4)' : '0 0 20px rgba(200,169,126,0.2)' }}>
-                      {step.icon}
-                    </motion.div>
-                  </div>
-                  {/* Card */}
-                  <motion.div className="glass rounded-2xl p-5 cursor-pointer"
-                    animate={{ borderColor: active === i ? 'rgba(200,169,126,0.42)' : 'rgba(255,255,255,0.06)' }}
-                    style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-[#C8A97E]">{step.time}</span>
-                      <motion.span className="text-white/22 text-xs" animate={{ rotate: active === i ? 180 : 0 }}>▼</motion.span>
-                    </div>
-                    <h4 className="font-serif text-white font-bold text-lg">{step.label}</h4>
-                    <AnimatePresence>
-                      {active === i && (
-                        <motion.p initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                          animate={{ opacity: 1, height: 'auto', marginTop: 8 }}
-                          exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                          className="text-white/42 text-xs font-sans leading-relaxed overflow-hidden">
-                          {step.desc}
-                        </motion.p>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <FadeUp>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { ic: '🧪', t: 'Lab Tested',      s: 'Every single batch'  },
-              { ic: '🌿', t: 'No Preservatives', s: 'Guaranteed always'   },
-              { ic: '💉', t: 'Hormone Free',     s: 'Ethically raised'    },
-              { ic: '🏆', t: 'FSSAI Certified',  s: 'Quality assured'     },
-            ].map(b => (
-              <motion.div key={b.t} className="glass rounded-2xl p-5 text-center cursor-default"
-                whileHover={{ y: -6, borderColor: 'rgba(200,169,126,0.3)', boxShadow: '0 20px 40px rgba(0,0,0,0.3)' }}
-                transition={{ duration: 0.28 }}>
-                <div className="text-3xl mb-3">{b.ic}</div>
-                <div className="text-white font-bold text-sm mb-1">{b.t}</div>
-                <div className="text-white/32 text-[11px]">{b.s}</div>
-              </motion.div>
-            ))}
-          </div>
-        </FadeUp>
-      </div>
-    </section>
-  );
-}
-
-/* ══════════════════════════════════════════════
    SECTION 6 — FOUNDER STORY (new)
 ══════════════════════════════════════════════ */
 function FounderSection() {
@@ -1040,7 +944,6 @@ export default function Home() {
       <HeroSection navigate={navigate} />
       <CollectionSection navigate={navigate} />
       <WhySection />
-      <TrustSection />
       <FounderSection />
       <PlansSection navigate={navigate} />
       <TestimonialsSection />
