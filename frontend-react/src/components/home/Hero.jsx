@@ -23,7 +23,7 @@ const Hero = () => {
               <img 
                 src="/img/home3.png" 
                 alt="MILQUU FRESH Premium Farm" 
-                className="w-full h-[45vh] lg:h-auto object-cover lg:object-contain object-top lg:object-center drop-shadow-2xl scale-110 lg:scale-125 origin-bottom lg:origin-center"
+                className="w-full h-[40vh] lg:h-auto object-contain object-bottom lg:object-center drop-shadow-xl"
               />
             </motion.div>
           </motion.div>
