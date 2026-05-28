@@ -9,7 +9,7 @@ const Hero = () => {
       <div className="w-full grid grid-cols-1 lg:grid-cols-2 h-full min-h-screen">
         
         {/* Left Side: Split Image (home2.png) */}
-        <div className="relative w-full flex items-center justify-center order-2 lg:order-1 p-4 lg:p-8">
+        <div className="relative w-full flex items-center justify-center order-2 lg:order-1 p-4 lg:pl-12 lg:pr-4 xl:pl-20 xl:pr-8">
           <motion.div 
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -21,16 +21,16 @@ const Hero = () => {
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
             >
               <img 
-                src="/img/home2.png" 
+                src="/img/home1.png" 
                 alt="MILQUU FRESH Premium Farm" 
-                className="w-full h-auto object-contain drop-shadow-2xl"
+                className="w-full h-auto object-contain drop-shadow-2xl scale-110 lg:scale-125 origin-center"
               />
             </motion.div>
           </motion.div>
         </div>
 
         {/* Right Side: Content */}
-        <div className="flex flex-col justify-center px-6 lg:px-16 xl:px-24 py-12 lg:py-0 z-10 bg-milquu-cream order-1 lg:order-2">
+        <div className="flex flex-col justify-center px-6 lg:pl-8 lg:pr-12 xl:pl-12 xl:pr-24 py-12 lg:py-0 z-10 bg-milquu-cream order-1 lg:order-2">
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -39,10 +39,10 @@ const Hero = () => {
             <span className="inline-block py-1 px-3 rounded-full bg-milquu-green/10 text-milquu-green font-sans text-xs md:text-sm font-semibold tracking-wider mb-4 lg:mb-6 mt-8 lg:mt-0">
               100% ORGANIC & PURE
             </span>
-            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-serif font-bold text-milquu-dark leading-tight mb-4 lg:mb-6">
+            <h1 className="text-3xl lg:text-4xl xl:text-5xl font-serif font-bold text-milquu-dark leading-tight mb-4 lg:mb-6">
               Pure Farm Fresh Dairy <br/><span className="text-milquu-gold italic font-light">Delivered Daily.</span>
             </h1>
-            <p className="text-lg text-gray-600 font-sans mb-10 max-w-xl leading-relaxed">
+            <p className="text-base text-gray-600 font-sans mb-10 max-w-xl leading-relaxed">
               Premium quality milk and dairy products processed hygienically and delivered fresh to your doorstep every morning.
             </p>
             
