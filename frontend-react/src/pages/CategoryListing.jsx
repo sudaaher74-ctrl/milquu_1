@@ -162,27 +162,15 @@ const CategoryListing = () => {
                     </div>
 
                     {/* Product Info */}
-                    <div className="flex flex-col flex-grow items-center text-center w-full max-w-[280px]">
-                      <h3 className="text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-3">
+                    <div className="flex flex-col items-center text-center w-full max-w-[280px]">
+                      <h3 className="text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-6">
                         {product.name}
                       </h3>
-                      <p className="text-gray-500 font-sans text-sm leading-relaxed mb-6">
-                        {product.description}
-                      </p>
                       
-                      <div className="flex flex-col items-center space-y-2 mb-8">
-                        <p className="text-gray-400 font-sans text-sm">
-                          Unit: <span className="font-semibold text-milquu-dark">{product.unit}</span>
-                        </p>
-                        <p className="text-gray-400 font-sans text-sm">
-                          Price: <span className="font-bold text-lg text-milquu-dark">{product.price}</span>
-                        </p>
-                      </div>
-
                       {/* Minimal Text CTA Button */}
                       <button 
                         onClick={() => addToCart(product)}
-                        className="group/btn flex items-center justify-center space-x-2 font-sans font-bold text-milquu-gold hover:text-milquu-green transition-colors uppercase tracking-widest text-sm mt-auto"
+                        className="group/btn flex items-center justify-center space-x-2 font-sans font-bold text-milquu-gold hover:text-milquu-green transition-colors uppercase tracking-widest text-sm"
                       >
                         <span>Add To Cart</span>
                         <motion.span
