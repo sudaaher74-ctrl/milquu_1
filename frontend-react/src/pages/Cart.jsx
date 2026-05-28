@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
+import { categoryData } from './CategoryListing';
 import { Link } from 'react-router-dom';
-import { Minus, Plus, Trash2, ArrowLeft, CheckCircle, ArrowRight } from 'lucide-react';
+import { Minus, Plus, Trash2, ArrowLeft, CheckCircle, ArrowRight, ShoppingCart } from 'lucide-react';
 
 const Cart = () => {
-  const { cartItems, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { cartItems, updateQuantity, removeFromCart, clearCart, addToCart } = useCart();
   const [step, setStep] = useState(1); // 1: View Cart, 2: Checkout Form, 3: Success
   const [formData, setFormData] = useState({
     name: '', phone: '', address: '', city: '', pincode: ''
   });
+
+  const allProducts = [...categoryData['milk'].products, ...categoryData['by-products'].products];
+  const recommendedProducts = allProducts.filter(p => !cartItems.find(item => item.id === p.id));
 
   // Calculate totals
   const subtotal = cartItems.reduce((total, item) => {
@@ -184,6 +188,31 @@ const Cart = () => {
                   >
                     Proceed to Checkout <ArrowRight size={16} className="ml-2" />
                   </button>
+
+                  {/* Recommended Products */}
+                  {recommendedProducts.length > 0 && (
+                    <div className="pt-6 mt-6 border-t border-gray-100">
+                      <h3 className="text-lg font-serif font-bold text-milquu-dark mb-4">You Might Also Like</h3>
+                      <div className="flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar">
+                        {recommendedProducts.map(product => (
+                          <div key={product.id} className="min-w-[140px] max-w-[140px] bg-gray-50/50 border border-gray-100 rounded-2xl p-3 snap-start shadow-sm flex flex-col hover:shadow-md transition-shadow">
+                            <img src={product.image} className="h-16 object-contain mx-auto mb-3 drop-shadow-md" alt={product.name} />
+                            <h4 className="font-serif font-bold text-sm text-milquu-dark leading-tight mb-1">{product.name}</h4>
+                            <p className="text-[10px] text-gray-500 font-sans mb-2">{product.unit}</p>
+                            <div className="flex justify-between items-center mt-auto">
+                              <span className="font-sans font-bold text-sm text-milquu-dark">{product.price}</span>
+                              <button 
+                                onClick={() => addToCart(product)} 
+                                className="bg-milquu-green/10 text-milquu-green p-1.5 rounded-full hover:bg-milquu-green hover:text-white transition-colors"
+                              >
+                                <ShoppingCart size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               )}
 

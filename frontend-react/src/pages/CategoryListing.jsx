@@ -5,7 +5,7 @@ import { ArrowLeft, ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 // Product database grouped by category with rich premium details
-const categoryData = {
+export const categoryData = {
   'milk': {
     title: 'Pure Farm Milk',
     description: '100% organic, freshly milked and delivered within hours. Experience the rich, natural taste of authentic farm-fresh dairy.',
