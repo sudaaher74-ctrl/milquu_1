@@ -31,7 +31,7 @@ const Products = () => {
         </div>
 
         {/* Categories (Raw Floating Images) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 lg:gap-24 items-center justify-items-center">
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-4 sm:gap-16 lg:gap-24 items-center justify-items-center">
           {categories.map((category, index) => (
             <motion.div
               key={index}
