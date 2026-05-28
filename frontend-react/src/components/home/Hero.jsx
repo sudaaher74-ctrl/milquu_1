@@ -21,9 +21,9 @@ const Hero = () => {
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
             >
               <img 
-                src="/img/home3.png" 
+                src="/img/home2.png" 
                 alt="MILQUU FRESH Premium Farm" 
-                className="w-full max-h-[45vh] lg:h-auto lg:max-h-none object-contain drop-shadow-xl"
+                className="w-full h-auto object-contain drop-shadow-xl"
               />
             </motion.div>
           </motion.div>
