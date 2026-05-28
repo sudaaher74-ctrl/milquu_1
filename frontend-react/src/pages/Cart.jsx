@@ -91,7 +91,7 @@ const Cart = () => {
             </Link>
           </div>
         ) : (
-          <div className="flex flex-col lg:flex-row gap-8">
+          <div className="flex flex-col-reverse lg:flex-row gap-8">
             
             {/* Left: Cart Items */}
             <div className="lg:w-[55%] space-y-4">
