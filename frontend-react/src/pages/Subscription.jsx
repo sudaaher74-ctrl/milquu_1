@@ -102,28 +102,28 @@ const Subscription = () => {
                 <h3 className="text-2xl font-serif font-bold text-milquu-dark">Step 1: Choose Your Milk</h3>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 {products.map(product => (
                   <button
                     key={product.id}
                     type="button"
                     onClick={() => setSelectedProduct(product.id)}
-                    className={`relative p-6 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center text-center ${
+                    className={`relative p-2 sm:p-6 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center text-center ${
                       selectedProduct === product.id 
                       ? 'border-milquu-gold bg-[#FFFDF9] shadow-md scale-[1.02]' 
                       : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
                     }`}
                   >
                     {selectedProduct === product.id && (
-                      <div className="absolute top-4 right-4 text-milquu-gold z-10">
-                        <CheckCircle2 size={20} />
+                      <div className="absolute top-2 sm:top-4 right-2 sm:right-4 text-milquu-gold z-10">
+                        <CheckCircle2 size={16} className="sm:w-5 sm:h-5" />
                       </div>
                     )}
-                    <div className="h-24 w-full flex items-center justify-center mb-4">
+                    <div className="h-16 sm:h-24 w-full flex items-center justify-center mb-2 sm:mb-4">
                       <img src={product.image} alt={product.name} className="h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span className="font-sans font-bold text-milquu-dark mb-1">{product.name}</span>
-                    <span className="text-sm font-sans font-medium text-gray-500">{product.price}</span>
+                    <span className="font-sans font-bold text-[10px] sm:text-base text-milquu-dark mb-0.5 sm:mb-1 leading-tight">{product.name}</span>
+                    <span className="text-[9px] sm:text-sm font-sans font-medium text-gray-500">{product.price}</span>
                   </button>
                 ))}
               </div>
@@ -138,25 +138,25 @@ const Subscription = () => {
                 <h3 className="text-2xl font-serif font-bold text-milquu-dark">Step 2: Choose Frequency</h3>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 {frequencies.map(freq => (
                   <button
                     key={freq.id}
                     type="button"
                     onClick={() => setSelectedFreq(freq.id)}
-                    className={`relative p-5 rounded-2xl border-2 transition-all duration-300 text-left ${
+                    className={`relative p-2 sm:p-5 rounded-2xl border-2 transition-all duration-300 text-center sm:text-left ${
                       selectedFreq === freq.id 
                       ? 'border-milquu-green bg-[#F7FCF8] shadow-md scale-[1.02]' 
                       : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
                     }`}
                   >
                     {selectedFreq === freq.id && (
-                      <div className="absolute top-4 right-4 text-milquu-green">
-                        <CheckCircle2 size={20} />
+                      <div className="absolute top-2 sm:top-4 right-2 sm:right-4 text-milquu-green">
+                        <CheckCircle2 size={16} className="sm:w-5 sm:h-5" />
                       </div>
                     )}
-                    <span className="block font-sans font-bold text-milquu-dark mb-1">{freq.name}</span>
-                    <span className="block text-sm font-sans font-medium text-gray-500">{freq.desc}</span>
+                    <span className="block font-sans font-bold text-[10px] sm:text-base text-milquu-dark mb-0.5 sm:mb-1">{freq.name}</span>
+                    <span className="block text-[9px] sm:text-sm font-sans font-medium text-gray-500 leading-tight sm:leading-normal">{freq.desc}</span>
                   </button>
                 ))}
               </div>
@@ -171,25 +171,25 @@ const Subscription = () => {
                 <h3 className="text-2xl font-serif font-bold text-milquu-dark">Step 3: Preferred Time</h3>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
                 {timeSlots.map(time => (
                   <button
                     key={time.id}
                     type="button"
                     onClick={() => setSelectedTime(time.id)}
-                    className={`relative p-5 rounded-2xl border-2 transition-all duration-300 flex justify-between items-center ${
+                    className={`relative p-3 sm:p-5 rounded-2xl border-2 transition-all duration-300 flex flex-col sm:flex-row justify-between items-center text-center sm:text-left ${
                       selectedTime === time.id 
                       ? 'border-milquu-gold bg-[#FFFDF9] shadow-md scale-[1.02]' 
                       : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
                     }`}
                   >
-                    <div className="text-left">
-                      <span className="block font-sans font-bold text-milquu-dark mb-1">{time.name}</span>
-                      <span className="block text-sm font-sans font-medium text-gray-500">{time.desc}</span>
+                    <div className="text-center sm:text-left mb-2 sm:mb-0">
+                      <span className="block font-sans font-bold text-[11px] sm:text-base text-milquu-dark mb-0.5 sm:mb-1">{time.name}</span>
+                      <span className="block text-[10px] sm:text-sm font-sans font-medium text-gray-500 leading-tight sm:leading-normal">{time.desc}</span>
                     </div>
                     {selectedTime === time.id && (
                       <div className="text-milquu-gold">
-                        <CheckCircle2 size={24} />
+                        <CheckCircle2 size={18} className="sm:w-6 sm:h-6" />
                       </div>
                     )}
                   </button>
