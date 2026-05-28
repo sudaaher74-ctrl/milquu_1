@@ -163,9 +163,18 @@ const CategoryListing = () => {
 
                     {/* Product Info */}
                     <div className="flex flex-col items-center text-center w-full max-w-[280px]">
-                      <h3 className="text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-6">
+                      <h3 className="text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-4">
                         {product.name}
                       </h3>
+                      
+                      <div className="flex flex-col items-center space-y-1.5 mb-8">
+                        <p className="text-gray-500 font-sans text-sm">
+                          Price: <span className="font-semibold text-milquu-dark">{product.price}</span>
+                        </p>
+                        <p className="text-gray-500 font-sans text-sm">
+                          Unit: <span className="font-semibold text-milquu-dark">{product.unit}</span>
+                        </p>
+                      </div>
                       
                       {/* Minimal Text CTA Button */}
                       <button 
