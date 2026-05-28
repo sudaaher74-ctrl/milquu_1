@@ -131,69 +131,68 @@ const CategoryListing = () => {
                   transition={{ duration: 0.8, delay: index * 0.15, ease: "easeOut" }}
                   className="group h-full"
                 >
-                  {/* Premium Luxury Card */}
-                  <div className="bg-white/70 backdrop-blur-2xl rounded-[32px] p-6 lg:p-8 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] hover:bg-white/90 h-full flex flex-col relative overflow-hidden">
+                  {/* Transparent Boxless Card */}
+                  <div className="h-full flex flex-col items-center text-center relative group-hover:-translate-y-2 transition-transform duration-500">
                     
-                    {/* Labels */}
-                    <div className="flex flex-wrap gap-2 mb-6 relative z-20">
+                    {/* Labels removed for cleaner look, or just kept minimal if needed */}
+                    <div className="flex flex-wrap justify-center gap-2 mb-4 relative z-20">
                       {product.labels.map(label => (
-                        <span key={label} className="px-2 py-0.5 bg-white/80 border border-gray-100 rounded-full text-[10px] uppercase tracking-wider font-sans font-semibold text-milquu-dark shadow-sm">
+                        <span key={label} className="text-[10px] uppercase tracking-widest font-sans font-bold text-milquu-green">
                           {label}
                         </span>
                       ))}
                     </div>
 
                     {/* Floating Image */}
-                    <div className="relative h-[180px] lg:h-[220px] mb-6 flex justify-center items-center w-full">
-                      {/* Card specific soft glow */}
-                      <div className={`absolute w-3/4 h-3/4 rounded-full blur-[60px] ${category.blobColor} opacity-50 mix-blend-multiply group-hover:opacity-70 transition-opacity duration-500`}></div>
+                    <div className="relative h-[220px] lg:h-[280px] w-full flex justify-center items-center mb-8">
+                      {/* Very subtle glow */}
+                      <div className={`absolute w-[80%] h-[80%] rounded-full blur-[80px] ${category.blobColor} opacity-40 mix-blend-multiply group-hover:opacity-70 transition-opacity duration-500`}></div>
                       
                       <motion.div
-                        animate={{ y: [0, -12, 0] }}
+                        animate={{ y: [0, -15, 0] }}
                         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 }}
-                        className="relative z-10 h-full w-full flex justify-center items-center"
+                        className="relative z-10 h-full flex justify-center items-center"
                       >
                         <img 
                           src={product.image} 
                           alt={product.name} 
-                          className="max-h-full max-w-full object-contain drop-shadow-2xl scale-125 lg:scale-[1.35] origin-bottom"
+                          className="h-full object-contain drop-shadow-2xl scale-125 lg:scale-[1.3] origin-center"
                         />
                       </motion.div>
                     </div>
 
                     {/* Product Info */}
-                    <div className="flex flex-col flex-grow text-center">
-                      <h3 className="text-xl lg:text-2xl font-serif font-bold text-milquu-dark mb-2">
+                    <div className="flex flex-col flex-grow items-center text-center w-full max-w-[280px]">
+                      <h3 className="text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-3">
                         {product.name}
                       </h3>
-                      <p className="text-gray-500 font-sans text-xs leading-relaxed mb-4 flex-grow">
+                      <p className="text-gray-500 font-sans text-sm leading-relaxed mb-6">
                         {product.description}
                       </p>
                       
-                      <div className="flex flex-col space-y-4 w-full pt-4 border-t border-gray-100/80">
-                        <div className="flex justify-between items-center px-2">
-                          <span className="text-gray-400 font-sans text-sm font-medium">
-                            {product.unit}
-                          </span>
-                          <span className="text-xl font-sans font-bold text-milquu-dark">
-                            {product.price}
-                          </span>
-                        </div>
-
-                        {/* Premium CTA Button */}
-                        <button 
-                          onClick={() => addToCart(product)}
-                          className="w-full relative group/btn overflow-hidden rounded-full p-[1px]"
-                        >
-                          <span className="absolute inset-0 bg-gradient-to-r from-milquu-cream via-milquu-gold/30 to-milquu-cream rounded-full opacity-70 group-hover/btn:opacity-100 transition-opacity duration-300"></span>
-                          <div className="relative bg-gradient-to-r from-[#FFFDF9] to-[#FFF8ED] px-4 py-3 rounded-full flex items-center justify-center space-x-2 transition-all duration-300 group-hover/btn:bg-opacity-0 group-hover/btn:shadow-[0_0_20px_rgba(212,175,55,0.3)]">
-                            <ShoppingCart size={18} className="text-milquu-gold" />
-                            <span className="font-sans font-bold text-milquu-dark uppercase tracking-wide text-sm">
-                              Add to Cart
-                            </span>
-                          </div>
-                        </button>
+                      <div className="flex flex-col items-center space-y-2 mb-8">
+                        <p className="text-gray-400 font-sans text-sm">
+                          Unit: <span className="font-semibold text-milquu-dark">{product.unit}</span>
+                        </p>
+                        <p className="text-gray-400 font-sans text-sm">
+                          Price: <span className="font-bold text-lg text-milquu-dark">{product.price}</span>
+                        </p>
                       </div>
+
+                      {/* Minimal Text CTA Button */}
+                      <button 
+                        onClick={() => addToCart(product)}
+                        className="group/btn flex items-center justify-center space-x-2 font-sans font-bold text-milquu-gold hover:text-milquu-green transition-colors uppercase tracking-widest text-sm mt-auto"
+                      >
+                        <span>Add To Cart</span>
+                        <motion.span
+                          className="inline-block"
+                          initial={{ x: 0 }}
+                          whileHover={{ x: 5 }}
+                        >
+                          →
+                        </motion.span>
+                      </button>
                     </div>
 
                   </div>
