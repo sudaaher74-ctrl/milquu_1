@@ -121,7 +121,7 @@ const CategoryListing = () => {
             </div>
 
             {/* Products Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-6">
               {category.products.map((product, index) => (
                 <motion.div
                   key={product.id}
@@ -144,34 +144,34 @@ const CategoryListing = () => {
                     </div>
 
                     {/* Floating Image */}
-                    <div className="relative h-[220px] lg:h-[280px] w-full flex justify-center items-center mb-8">
+                    <div className="relative h-[120px] sm:h-[180px] lg:h-[280px] w-full flex justify-center items-center mb-4 sm:mb-8">
                       {/* Very subtle glow */}
-                      <div className={`absolute w-[80%] h-[80%] rounded-full blur-[80px] ${category.blobColor} opacity-40 mix-blend-multiply group-hover:opacity-70 transition-opacity duration-500`}></div>
+                      <div className={`absolute w-[80%] h-[80%] rounded-full blur-[40px] sm:blur-[80px] ${category.blobColor} opacity-40 mix-blend-multiply group-hover:opacity-70 transition-opacity duration-500`}></div>
                       
                       <motion.div
-                        animate={{ y: [0, -15, 0] }}
+                        animate={{ y: [0, -10, 0] }}
                         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 }}
                         className="relative z-10 h-full flex justify-center items-center"
                       >
                         <img 
                           src={product.image} 
                           alt={product.name} 
-                          className="h-full object-contain drop-shadow-2xl scale-125 lg:scale-[1.3] origin-center"
+                          className="h-full object-contain drop-shadow-xl sm:drop-shadow-2xl scale-125 lg:scale-[1.3] origin-center"
                         />
                       </motion.div>
                     </div>
 
                     {/* Product Info */}
                     <div className="flex flex-col items-center text-center w-full max-w-[280px]">
-                      <h3 className="text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-4">
+                      <h3 className="text-base sm:text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-2 sm:mb-4 leading-tight">
                         {product.name}
                       </h3>
                       
-                      <div className="flex flex-col items-center space-y-1.5 mb-8">
-                        <p className="text-gray-500 font-sans text-sm">
+                      <div className="flex flex-col items-center space-y-0.5 sm:space-y-1.5 mb-4 sm:mb-8">
+                        <p className="text-gray-500 font-sans text-[10px] sm:text-sm">
                           Price: <span className="font-semibold text-milquu-dark">{product.price}</span>
                         </p>
-                        <p className="text-gray-500 font-sans text-sm">
+                        <p className="text-gray-500 font-sans text-[10px] sm:text-sm">
                           Unit: <span className="font-semibold text-milquu-dark">{product.unit}</span>
                         </p>
                       </div>
@@ -179,7 +179,7 @@ const CategoryListing = () => {
                       {/* Minimal Text CTA Button */}
                       <button 
                         onClick={() => addToCart(product)}
-                        className="group/btn flex items-center justify-center space-x-2 font-sans font-bold text-milquu-gold hover:text-milquu-green transition-colors uppercase tracking-widest text-sm"
+                        className="group/btn flex items-center justify-center space-x-1 sm:space-x-2 font-sans font-bold text-milquu-gold hover:text-milquu-green transition-colors uppercase tracking-widest text-[10px] sm:text-sm"
                       >
                         <span>Add To Cart</span>
                         <motion.span
