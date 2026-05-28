@@ -92,8 +92,8 @@ const CategoryListing = () => {
       <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
         
         {/* Header Section */}
-        <div className="mb-16 text-center max-w-3xl mx-auto">
-          <Link to="/" className="inline-flex items-center text-gray-400 hover:text-milquu-dark font-sans mb-8 transition-colors absolute left-6 lg:left-12 top-0">
+        <div className="mb-12 text-center max-w-3xl mx-auto relative pt-8">
+          <Link to="/" className="inline-flex items-center text-gray-500 hover:text-milquu-dark font-sans mb-8 transition-colors absolute left-0 top-0">
             <ArrowLeft size={20} className="mr-2" />
             Home
           </Link>
@@ -102,8 +102,9 @@ const CategoryListing = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
+            className="mt-8 md:mt-0"
           >
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-milquu-dark mb-6 leading-tight">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold text-milquu-dark mb-4 md:mb-6 leading-tight">
               Farm Fresh Products
             </h1>
             <p className="text-lg md:text-xl text-gray-500 font-sans leading-relaxed">
@@ -133,15 +134,6 @@ const CategoryListing = () => {
                 >
                   {/* Transparent Boxless Card */}
                   <div className="h-full flex flex-col items-center text-center relative group-hover:-translate-y-2 transition-transform duration-500">
-                    
-                    {/* Labels removed for cleaner look, or just kept minimal if needed */}
-                    <div className="flex flex-wrap justify-center gap-2 mb-4 relative z-20">
-                      {product.labels.map(label => (
-                        <span key={label} className="text-[10px] uppercase tracking-widest font-sans font-bold text-milquu-green">
-                          {label}
-                        </span>
-                      ))}
-                    </div>
 
                     {/* Floating Image */}
                     <div className="relative h-[120px] sm:h-[180px] lg:h-[280px] w-full flex justify-center items-center mb-4 sm:mb-8">
@@ -163,7 +155,7 @@ const CategoryListing = () => {
 
                     {/* Product Info */}
                     <div className="flex flex-col items-center text-center w-full max-w-[280px]">
-                      <h3 className="text-base sm:text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-2 sm:mb-4 leading-tight">
+                      <h3 className="text-sm sm:text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-1 sm:mb-4 leading-tight">
                         {product.name}
                       </h3>
                       

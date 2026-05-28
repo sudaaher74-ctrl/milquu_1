@@ -8,8 +8,8 @@ const Hero = () => {
       
       <div className="w-full h-full flex flex-col lg:grid lg:grid-cols-2">
         
-        {/* Left Side: Split Image (home1.png) */}
-        <div className="relative w-full flex-grow lg:h-full flex items-end lg:items-center justify-center order-2 lg:order-1 px-4 pb-0 lg:pl-12 lg:pr-4 xl:pl-20 xl:pr-8 overflow-hidden">
+        {/* Left Side: Split Image (home3.png) */}
+        <div className="relative w-full flex-grow lg:h-full flex items-end lg:items-center justify-center order-1 lg:order-1 px-4 pb-0 lg:pl-12 lg:pr-4 xl:pl-20 xl:pr-8 overflow-hidden">
           <motion.div 
             initial={{ opacity: 0, scale: 1.1 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -21,7 +21,7 @@ const Hero = () => {
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
             >
               <img 
-                src="/img/home1.png" 
+                src="/img/home3.png" 
                 alt="MILQUU FRESH Premium Farm" 
                 className="w-full h-[45vh] lg:h-auto object-cover lg:object-contain object-top lg:object-center drop-shadow-2xl scale-110 lg:scale-125 origin-bottom lg:origin-center"
               />
@@ -30,7 +30,7 @@ const Hero = () => {
         </div>
 
         {/* Right Side: Content */}
-        <div className="flex flex-col justify-center px-6 lg:pl-8 lg:pr-12 xl:pl-12 xl:pr-24 pt-4 lg:py-0 z-10 bg-milquu-cream order-1 lg:order-2 flex-shrink-0">
+        <div className="flex flex-col justify-center px-6 lg:pl-8 lg:pr-12 xl:pl-12 xl:pr-24 pt-4 pb-12 lg:py-0 z-10 bg-milquu-cream order-2 lg:order-2 flex-shrink-0">
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
