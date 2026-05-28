@@ -4,6 +4,9 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import Home from './pages/Home';
 import CategoryListing from './pages/CategoryListing';
+import ContactUs from './pages/ContactUs';
+import Subscription from './pages/Subscription';
+import Cart from './pages/Cart';
 
 // Helper to scroll to top on navigation
 const ScrollToTop = () => {
@@ -24,6 +27,9 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/category/:categoryId" element={<CategoryListing />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/subscribe" element={<Subscription />} />
+          <Route path="/cart" element={<Cart />} />
         </Routes>
       </main>
 
