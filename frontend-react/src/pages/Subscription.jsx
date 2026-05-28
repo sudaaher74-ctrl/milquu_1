@@ -40,7 +40,7 @@ const Subscription = () => {
       <motion.div 
         animate={{ y: [0, -30, 0], rotate: [0, 10, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-32 lg:top-40 left-10 lg:left-32 w-[150px] lg:w-[180px] opacity-100 drop-shadow-2xl pointer-events-none z-0"
+        className="absolute top-24 lg:top-40 -left-6 lg:left-32 w-[90px] sm:w-[120px] lg:w-[180px] opacity-60 lg:opacity-100 drop-shadow-2xl pointer-events-none z-0"
       >
         <img src="/img/cowmilk.png" alt="Cow Milk Background" className="w-full h-auto object-contain" />
       </motion.div>
@@ -48,7 +48,7 @@ const Subscription = () => {
       <motion.div 
         animate={{ y: [0, 40, 0], rotate: [0, -15, 0] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        className="absolute bottom-40 lg:bottom-60 right-10 lg:right-20 w-[160px] lg:w-[200px] opacity-100 drop-shadow-2xl pointer-events-none z-0"
+        className="absolute bottom-60 lg:bottom-60 -right-8 lg:right-20 w-[100px] sm:w-[140px] lg:w-[200px] opacity-60 lg:opacity-100 drop-shadow-2xl pointer-events-none z-0"
       >
         <img src="/img/buffalomilk.png" alt="Buffalo Milk Background" className="w-full h-auto object-contain" />
       </motion.div>
@@ -56,7 +56,7 @@ const Subscription = () => {
       <motion.div 
         animate={{ y: [0, -20, 0], rotate: [0, -8, 0] }}
         transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 4 }}
-        className="absolute top-60 right-20 lg:right-40 w-[140px] lg:w-[160px] opacity-100 drop-shadow-2xl pointer-events-none z-0"
+        className="absolute top-48 lg:top-60 right-0 lg:right-40 w-[80px] sm:w-[120px] lg:w-[160px] opacity-60 lg:opacity-100 drop-shadow-2xl pointer-events-none z-0"
       >
         <img src="/img/A2milk.png" alt="A2 Milk Background" className="w-full h-auto object-contain" />
       </motion.div>
@@ -64,7 +64,7 @@ const Subscription = () => {
       <div className="max-w-4xl mx-auto px-6 lg:px-12 relative z-10">
         
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
