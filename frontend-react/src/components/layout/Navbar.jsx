@@ -19,7 +19,7 @@ const Navbar = () => {
 
   const navLinks = [
     { name: 'Home', href: '/' },
-    { name: 'Products', href: '/#products' },
+    { name: 'Products', href: '/products' },
     { name: 'About Us', href: '/#about' },
     { name: 'Contact Us', href: '/contact' },
     { name: 'Subscriptions', href: '/subscribe' },
@@ -46,30 +46,15 @@ const Navbar = () => {
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
             {navLinks.map((link) => (
-              link.name === 'Products' ? (
-                <div key={link.name} className="relative group py-6 -my-6 flex items-center">
-                  <span className={`cursor-pointer text-sm font-medium font-sans uppercase tracking-wider transition-colors duration-200 ${
-                    isScrolled ? 'text-milquu-dark group-hover:text-milquu-gold' : 'text-milquu-dark group-hover:text-milquu-gold'
-                  }`}>
-                    {link.name}
-                  </span>
-                  {/* Dropdown Menu */}
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 overflow-hidden transform translate-y-2 group-hover:translate-y-0 flex flex-col py-2">
-                    <Link to="/category/milk" className="px-5 py-3 hover:bg-milquu-gold/5 hover:text-milquu-gold text-milquu-dark font-sans text-sm font-semibold transition-colors">Pure Milk</Link>
-                    <Link to="/category/by-products" className="px-5 py-3 hover:bg-milquu-gold/5 hover:text-milquu-gold text-milquu-dark font-sans text-sm font-semibold transition-colors">By-Products</Link>
-                  </div>
-                </div>
-              ) : (
-                <Link
-                  key={link.name}
-                  to={link.href}
-                  className={`text-sm font-medium font-sans uppercase tracking-wider transition-colors duration-200 ${
-                    isScrolled ? 'text-milquu-dark hover:text-milquu-gold' : 'text-milquu-dark hover:text-milquu-gold'
-                  }`}
-                >
-                  {link.name}
-                </Link>
-              )
+              <Link
+                key={link.name}
+                to={link.href}
+                className={`text-sm font-medium font-sans uppercase tracking-wider transition-colors duration-200 ${
+                  isScrolled ? 'text-milquu-dark hover:text-milquu-gold' : 'text-milquu-dark hover:text-milquu-gold'
+                }`}
+              >
+                {link.name}
+              </Link>
             ))}
           </div>
 
@@ -120,26 +105,14 @@ const Navbar = () => {
             className="fixed inset-0 z-40 bg-white/95 backdrop-blur-xl flex flex-col items-center justify-center space-y-8 md:hidden"
           >
             {navLinks.map((link) => (
-              link.name === 'Products' ? (
-                <div key={link.name} className="flex flex-col items-center space-y-4">
-                  <span className="text-2xl font-serif text-milquu-dark/70">
-                    {link.name}
-                  </span>
-                  <div className="flex flex-col items-center space-y-4 bg-gray-50/50 w-full py-4 rounded-3xl">
-                    <Link to="/category/milk" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-serif text-milquu-dark hover:text-milquu-gold transition-colors">Pure Milk</Link>
-                    <Link to="/category/by-products" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-serif text-milquu-dark hover:text-milquu-gold transition-colors">By-Products</Link>
-                  </div>
-                </div>
-              ) : (
-                <Link
-                  key={link.name}
-                  to={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-2xl font-serif text-milquu-dark hover:text-milquu-gold transition-colors"
-                >
-                  {link.name}
-                </Link>
-              )
+              <Link
+                key={link.name}
+                to={link.href}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-2xl font-serif text-milquu-dark hover:text-milquu-gold transition-colors"
+              >
+                {link.name}
+              </Link>
             ))}
             <Link to="/subscribe" onClick={() => setIsMobileMenuOpen(false)}>
               <button className="mt-4 bg-milquu-gold text-white px-8 py-3 rounded-full font-sans text-lg font-semibold shadow-lg">

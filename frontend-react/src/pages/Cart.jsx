@@ -76,7 +76,7 @@ const Cart = () => {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 relative z-10">
         
         {step === 1 ? (
-          <Link to="/category/milk" className="inline-flex items-center text-gray-400 hover:text-milquu-dark font-sans text-sm mb-6 transition-colors">
+          <Link to="/products" className="inline-flex items-center text-gray-400 hover:text-milquu-dark font-sans text-sm mb-6 transition-colors">
             <ArrowLeft size={16} className="mr-2" />
             Continue Shopping
           </Link>
@@ -90,7 +90,7 @@ const Cart = () => {
         {cartItems.length === 0 && step === 1 ? (
           <div className="text-center py-12 bg-white/50 backdrop-blur-lg rounded-[24px] border border-white/60 shadow-sm">
             <h2 className="text-xl font-serif text-gray-400 mb-4">Your cart is perfectly empty.</h2>
-            <Link to="/category/milk">
+            <Link to="/products">
               <button className="bg-milquu-gold hover:bg-milquu-green text-white px-6 py-2.5 rounded-full font-sans text-sm font-bold shadow-md transition-colors">
                 Explore Farm Fresh Products
               </button>
