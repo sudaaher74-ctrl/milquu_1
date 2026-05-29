@@ -1,77 +1,61 @@
-import pkg from 'whatsapp-web.js';
-const { Client, RemoteAuth } = pkg;
-import wwebjsMongo from 'wwebjs-mongo';
-const { MongoStore } = wwebjsMongo;
-import mongoose from 'mongoose';
-import qrcode from 'qrcode';
+import axios from 'axios';
 
-let client;
-let qrCodeData = null;
-let status = 'disconnected'; // disconnected, qr, connected
-
-export const initWhatsApp = async () => {
-    try {
-        console.log('Initializing WhatsApp Client...');
-        const store = new MongoStore({ mongoose: mongoose });
-        
-        client = new Client({
-            authStrategy: new RemoteAuth({
-                store: store,
-                backupSyncIntervalMs: 300000
-            }),
-            puppeteer: {
-                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-                headless: true
-            }
-        });
-
-        client.on('qr', async (qr) => {
-            console.log('QR RECEIVED');
-            qrCodeData = await qrcode.toDataURL(qr);
-            status = 'qr';
-        });
-
-        client.on('ready', () => {
-            console.log('WhatsApp Client is ready!');
-            qrCodeData = null;
-            status = 'connected';
-        });
-
-        client.on('remote_session_saved', () => {
-            console.log('WhatsApp session saved securely in MongoDB');
-        });
-
-        client.on('disconnected', (reason) => {
-            console.log('WhatsApp Client disconnected', reason);
-            status = 'disconnected';
-            qrCodeData = null;
-            // Optionally, we could destroy and reinitialize here, but let's keep it simple
-        });
-
-        client.initialize();
-    } catch (error) {
-        console.error('Error initializing WhatsApp:', error);
-    }
-};
+let totalMessagesSent = 0;
 
 export const getWhatsAppStatus = () => {
-    return { status, qr: qrCodeData };
+    // If the tokens are present in env, we consider it 'connected' for the frontend's sake.
+    const isConfigured = !!process.env.WHATSAPP_ACCESS_TOKEN && !!process.env.WHATSAPP_PHONE_ID;
+    
+    return { 
+        status: isConfigured ? 'connected' : 'disconnected', 
+        qr: null,
+        messagesSent: totalMessagesSent
+    };
 };
 
 export const sendWhatsAppMessage = async (mobileNo, message) => {
-    if (status !== 'connected') {
-        console.log('Cannot send message: WhatsApp is not connected');
+    const token = process.env.WHATSAPP_ACCESS_TOKEN;
+    const phoneId = process.env.WHATSAPP_PHONE_ID;
+
+    if (!token || !phoneId) {
+        console.log('Cannot send Meta WhatsApp message: API Keys are not configured in .env');
         return false;
     }
+
     try {
-        // Format the mobile number to match WhatsApp ID (e.g. 91xxxxxxxxxx@c.us)
+        // Meta API requires the phone number without '+' but with country code.
         const countryCode = mobileNo.startsWith('91') ? '' : '91';
-        const formattedNumber = `${countryCode}${mobileNo}@c.us`;
-        await client.sendMessage(formattedNumber, message);
-        console.log(`Message sent to ${formattedNumber}`);
-        return true;
+        const formattedNumber = `${countryCode}${mobileNo}`;
+
+        const payload = {
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+            to: formattedNumber,
+            type: "text",
+            text: {
+                preview_url: false,
+                body: message
+            }
+        };
+
+        const response = await axios.post(
+            `https://graph.facebook.com/v19.0/${phoneId}/messages`,
+            payload,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        if (response.status === 200) {
+            console.log(`Meta WhatsApp Message sent to ${formattedNumber}`);
+            totalMessagesSent++;
+            return true;
+        }
     } catch (error) {
-        console.error('Failed to send WhatsApp message:', error);
+        console.error('Failed to send Meta WhatsApp message:', error.response?.data || error.message);
         return false;
     }
 };

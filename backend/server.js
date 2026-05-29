@@ -2,7 +2,6 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './config/db.js';
-import { initWhatsApp } from './utils/whatsappClient.js';
 import productRoutes from './routes/productRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
@@ -19,10 +18,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Connect to database
-connectDB().then(() => {
-    // Initialize WhatsApp Client after DB connection so MongoStore works
-    initWhatsApp();
-});
+connectDB();
 
 const app = express();
 
