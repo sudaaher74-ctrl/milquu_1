@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../utils/api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Filter, MoreVertical, Edit, Trash2, MapPin, Phone, Mail, X, Bike, CheckCircle2 } from 'lucide-react';
 
@@ -15,7 +15,7 @@ const DeliveryBoys = () => {
 
   const fetchBoys = async () => {
     try {
-      const { data } = await axios.get('https://milquu-backend.onrender.com/api/erp/delivery-staff');
+      const { data } = await api.get('/api/erp/delivery-staff');
       setBoys(data);
       setLoading(false);
     } catch (error) {
@@ -49,7 +49,7 @@ const DeliveryBoys = () => {
         image: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`
       };
       
-      const { data } = await axios.post('https://milquu-backend.onrender.com/api/erp/delivery-staff', newBoy);
+      const { data } = await api.post('/api/erp/delivery-staff', newBoy);
       setBoys([data, ...boys]);
       setIsModalOpen(false);
       setFormData({
@@ -65,7 +65,7 @@ const DeliveryBoys = () => {
   const handleDelete = async (staffId) => {
     if (window.confirm('Are you sure you want to delete this delivery boy?')) {
       try {
-        await axios.delete(`https://milquu-backend.onrender.com/api/erp/delivery-staff/${staffId}`);
+        await api.delete(`/api/erp/delivery-staff/${staffId}`);
         setBoys(boys.filter(boy => boy.staffId !== staffId));
       } catch (error) {
         console.error('Error deleting staff:', error);

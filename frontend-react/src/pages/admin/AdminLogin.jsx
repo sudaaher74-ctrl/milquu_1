@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../utils/api.js';
 import { Mail, Lock, LogIn, ShieldAlert } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -17,7 +17,7 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     try {
-      const { data } = await axios.post('https://milquu-backend.onrender.com/api/admin/login', {
+      const { data } = await api.post('/api/admin/login', {
         email,
         password
       });

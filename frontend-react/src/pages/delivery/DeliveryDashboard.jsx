@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../utils/api.js';
 import { MapPin, Phone, CheckCircle, Navigation, Package, Camera, FileText, ChevronDown, CheckCircle2, PackageCheck, Truck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -13,7 +13,7 @@ const DeliveryDashboard = () => {
 
   const fetchTasks = async () => {
     try {
-      const { data } = await axios.get('https://milquu-backend.onrender.com/api/delivery/my-deliveries');
+      const { data } = await api.get('/api/delivery/my-deliveries');
       // For now, map DB orders to task structure
       const formattedTasks = data.map(order => ({
         id: order.orderId || order._id,
@@ -56,8 +56,29 @@ const DeliveryDashboard = () => {
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`, '_blank');
   };
 
+  const [isTracking, setIsTracking] = useState(false);
+  const [location, setLocation] = useState(null);
+
+  useEffect(() => {
+    let watchId;
+    if (isTracking && 'geolocation' in navigator) {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
+          setLocation(coords);
+          console.log("Live Location Sent to Server:", coords);
+          // In a real app, send this to the server via WebSocket or API
+        },
+        (error) => console.error(error),
+        { enableHighAccuracy: true, maximumAge: 10000 }
+      );
+    }
+    return () => {
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [isTracking]);
+
   const handlePhotoUpload = (e) => {
-    // Mock upload
     if (e.target.files && e.target.files[0]) {
       const reader = new FileReader();
       reader.onload = (event) => setProofImage(event.target.result);
@@ -67,6 +88,22 @@ const DeliveryDashboard = () => {
 
   return (
     <div className="p-4 relative">
+      
+      {/* Live Tracking Toggle */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-4 flex justify-between items-center">
+        <div>
+          <h3 className="font-bold text-gray-800 text-sm flex items-center">
+            <Navigation size={16} className="mr-2 text-milquu-blue" /> Live GPS Tracking
+          </h3>
+          <p className="text-[10px] text-gray-500 mt-1">Keep active during route</p>
+        </div>
+        <button 
+          onClick={() => setIsTracking(!isTracking)}
+          className={`w-12 h-6 rounded-full relative transition-colors ${isTracking ? 'bg-green-500' : 'bg-gray-300'}`}
+        >
+          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${isTracking ? 'right-1' : 'left-1'}`}></div>
+        </button>
+      </div>
       
       {/* Stats Summary */}
       <div className="grid grid-cols-3 gap-3 mb-6">

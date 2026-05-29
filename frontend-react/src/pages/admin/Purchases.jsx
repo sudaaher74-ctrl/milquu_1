@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../utils/api.js';
 import { motion } from 'framer-motion';
 import { 
   ShoppingCart, Plus, Search, Filter, Download, 
@@ -46,7 +46,7 @@ const Purchases = () => {
         totalCost,
         poNumber: `PO-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
       };
-      const { data } = await axios.post('https://milquu-backend.onrender.com/api/erp/purchases', newPurchase);
+      const { data } = await api.post('/api/erp/purchases', newPurchase);
       setPurchaseData([data, ...purchaseData]);
       setIsModalOpen(false);
       setFormData({
@@ -67,7 +67,7 @@ const Purchases = () => {
   useEffect(() => {
     const fetchPurchases = async () => {
       try {
-        const { data } = await axios.get('https://milquu-backend.onrender.com/api/erp/purchases');
+        const { data } = await api.get('/api/erp/purchases');
         setPurchaseData(data);
         setLoading(false);
       } catch (error) {

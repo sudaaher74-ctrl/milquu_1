@@ -1,5 +1,6 @@
 import express from 'express';
 import Product from '../models/Product.js';
+import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -12,6 +13,19 @@ router.get('/', async (req, res) => {
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+});
+
+// @route   POST /api/products
+// @desc    Create a product
+// @access  Private/Admin
+router.post('/', protect, admin, async (req, res) => {
+  try {
+    const product = new Product(req.body);
+    const createdProduct = await product.save();
+    res.status(201).json(createdProduct);
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid product data', error: error.message });
   }
 });
 

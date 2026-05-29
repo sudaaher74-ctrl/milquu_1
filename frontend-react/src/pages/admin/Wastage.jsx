@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../utils/api.js';
 import { 
   Trash2, Plus, Search, Filter, Download, 
   TrendingDown, AlertOctagon, PackageX
@@ -18,7 +18,7 @@ const Wastage = () => {
   useEffect(() => {
     const fetchWastages = async () => {
       try {
-        const { data } = await axios.get('https://milquu-backend.onrender.com/api/erp/wastages');
+        const { data } = await api.get('/api/erp/wastages');
         
         // Map backend fields to frontend expectations
         const mappedData = data.map(item => ({

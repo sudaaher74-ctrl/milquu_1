@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../../utils/api.js';
 import { Mail, Lock, LogIn, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -17,7 +17,7 @@ const DeliveryLogin = () => {
     setIsLoading(true);
 
     try {
-      const { data } = await axios.post('https://milquu-backend.onrender.com/api/delivery/login', {
+      const { data } = await api.post('/api/delivery/login', {
         email,
         password
       });

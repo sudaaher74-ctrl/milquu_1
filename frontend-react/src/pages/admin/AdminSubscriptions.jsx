@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../utils/api.js';
 import { Users, CalendarCheck, RefreshCw, AlertCircle, Search, Filter, TrendingDown, IndianRupee } from 'lucide-react';
 
 const StatCard = ({ title, value, subtitle, icon, color }) => (
@@ -23,7 +23,7 @@ const AdminSubscriptions = () => {
   useEffect(() => {
     const fetchSubscriptions = async () => {
       try {
-        const { data } = await axios.get('https://milquu-backend.onrender.com/api/subscriptions');
+        const { data } = await api.get('/api/subscriptions');
         const mappedData = data.map(sub => ({
           ...sub,
           id: sub._id,

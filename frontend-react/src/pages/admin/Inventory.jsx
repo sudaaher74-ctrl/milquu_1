@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../utils/api.js';
 import { 
   Boxes, AlertTriangle, TrendingUp, DollarSign, Package, 
   PackageX, Database, Search, Download
@@ -83,7 +83,7 @@ const Inventory = () => {
   useEffect(() => {
     const fetchInventory = async () => {
       try {
-        const { data } = await axios.get('https://milquu-backend.onrender.com/api/products');
+        const { data } = await api.get('/api/products');
         const mappedData = data.map(item => {
           const minLevel = item.category === 'milk' ? 10 : 5;
           let status = 'Healthy';

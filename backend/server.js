@@ -7,6 +7,8 @@ import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import erpRoutes from './routes/erpRoutes.js'; // Added ERP routes
 import deliveryRoutes from './routes/deliveryRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
+import { startSubscriptionEngine } from './cron/subscriptionEngine.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -19,6 +21,9 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Connect to database
 connectDB();
+
+// Start cron jobs
+startSubscriptionEngine();
 
 const app = express();
 
@@ -39,6 +44,7 @@ app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/erp', erpRoutes); // Mounted ERP routes
 app.use('/api/delivery', deliveryRoutes);
+app.use('/api/upload', uploadRoutes);
 
 const PORT = process.env.PORT || 5001;
 

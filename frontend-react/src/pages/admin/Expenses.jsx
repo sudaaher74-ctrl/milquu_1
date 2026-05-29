@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../utils/api.js';
 import { 
   Receipt, Plus, Filter, Download, Search, 
   IndianRupee, TrendingDown, TrendingUp, PieChart as PieChartIcon
@@ -41,7 +41,7 @@ const Expenses = () => {
         amount: Number(formData.amount),
         expenseId: `EXP-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
       };
-      const { data } = await axios.post('https://milquu-backend.onrender.com/api/erp/expenses', newExpense);
+      const { data } = await api.post('/api/erp/expenses', newExpense);
       setExpenseData([data, ...expenseData]);
       setIsModalOpen(false);
       setFormData({
@@ -61,7 +61,7 @@ const Expenses = () => {
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
-        const { data } = await axios.get('https://milquu-backend.onrender.com/api/erp/expenses');
+        const { data } = await api.get('/api/erp/expenses');
         setExpenseData(data);
         setLoading(false);
       } catch (error) {

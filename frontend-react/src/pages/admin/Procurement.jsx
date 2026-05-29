@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../../utils/api.js';
 import { 
   Users, Plus, Search, Filter, Download, Droplet, 
   Activity, TrendingUp, Sun, Moon
@@ -15,7 +15,7 @@ const Procurement = () => {
   useEffect(() => {
     const fetchProcurements = async () => {
       try {
-        const { data } = await axios.get('https://milquu-backend.onrender.com/api/erp/procurements');
+        const { data } = await api.get('/api/erp/procurements');
         setProcurementData(data);
         setLoading(false);
       } catch (error) {

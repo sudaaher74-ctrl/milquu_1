@@ -1,11 +1,12 @@
 import express from 'express';
 import Subscription from '../models/Subscription.js';
+import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 // @route   POST /api/subscriptions
 // @desc    Create a new subscription/order
-// @access  Public (for now)
+// @access  Public (Guest Checkout)
 router.post('/', async (req, res) => {
   try {
     const { name, phone, items, totalAmount, deliveryAddress, frequency, status, monthlyTotal } = req.body;
@@ -30,8 +31,8 @@ router.post('/', async (req, res) => {
 
 // @route   GET /api/subscriptions
 // @desc    Get all subscriptions
-// @access  Public
-router.get('/', async (req, res) => {
+// @access  Private/Admin
+router.get('/', protect, admin, async (req, res) => {
   try {
     const subscriptions = await Subscription.find({}).sort({ createdAt: -1 });
     res.json(subscriptions);
