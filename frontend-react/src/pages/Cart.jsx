@@ -164,7 +164,7 @@ const Cart = () => {
                     <AnimatePresence>
                       {cartItems.map((item) => (
                         <motion.div 
-                          key={item.id}
+                          key={item._id || item.id}
                           layout
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
@@ -183,11 +183,11 @@ const Cart = () => {
 
                           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-6">
                             <div className="flex items-center space-x-2 bg-gray-50/80 rounded-full px-2 sm:px-3 py-1 sm:py-1.5 border border-gray-100">
-                              <button onClick={() => updateQuantity(item.id, -1)} className="text-gray-400 hover:text-milquu-dark">
+                              <button onClick={() => updateQuantity(item._id || item.id, -1)} className="text-gray-400 hover:text-milquu-dark">
                                 <Minus size={14} />
                               </button>
                               <span className="font-sans font-bold text-sm w-4 text-center">{item.quantity}</span>
-                              <button onClick={() => updateQuantity(item.id, 1)} className="text-gray-400 hover:text-milquu-dark">
+                              <button onClick={() => updateQuantity(item._id || item.id, 1)} className="text-gray-400 hover:text-milquu-dark">
                                 <Plus size={14} />
                               </button>
                             </div>
@@ -195,7 +195,7 @@ const Cart = () => {
                               <span className="text-sm sm:text-base font-sans font-bold text-milquu-dark">
                                 ₹{(typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.-]+/g,"")) : item.price) * item.quantity}
                               </span>
-                              <button onClick={() => removeFromCart(item.id)} className="text-gray-300 hover:text-red-400">
+                              <button onClick={() => removeFromCart(item._id || item.id)} className="text-gray-300 hover:text-red-400">
                                 <Trash2 size={16} />
                               </button>
                             </div>
@@ -234,7 +234,7 @@ const Cart = () => {
                       <h3 className="text-lg font-serif font-bold text-milquu-dark mb-4">You Might Also Like</h3>
                       <div className="flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar">
                         {recommendedProducts.map(product => (
-                          <div key={product.id} className="min-w-[140px] max-w-[140px] bg-gray-50/50 border border-gray-100 rounded-2xl p-3 snap-start shadow-sm flex flex-col hover:shadow-md transition-shadow">
+                          <div key={product._id || product.id} className="min-w-[140px] max-w-[140px] bg-gray-50/50 border border-gray-100 rounded-2xl p-3 snap-start shadow-sm flex flex-col hover:shadow-md transition-shadow">
                             <img src={product.image} className="h-16 object-contain mx-auto mb-3 drop-shadow-md" alt={product.name} />
                             <h4 className="font-serif font-bold text-sm text-milquu-dark leading-tight mb-1">{product.name}</h4>
                             <p className="text-[10px] text-gray-500 font-sans mb-2">{product.unit}</p>

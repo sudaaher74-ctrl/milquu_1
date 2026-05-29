@@ -10,7 +10,7 @@ export const CartProvider = ({ children }) => {
   const addToCart = (product) => {
     setCartItems((prevItems) => {
       // Check if product already exists
-      const existingItemIndex = prevItems.findIndex(item => item.id === product.id);
+      const existingItemIndex = prevItems.findIndex(item => (item._id || item.id) === (product._id || product.id));
       
       if (existingItemIndex >= 0) {
         // Increase quantity
@@ -27,7 +27,7 @@ export const CartProvider = ({ children }) => {
   const updateQuantity = (productId, amount) => {
     setCartItems((prevItems) => {
       return prevItems.map((item) => {
-        if (item.id === productId) {
+        if ((item._id || item.id) === productId) {
           const newQuantity = Math.max(1, item.quantity + amount); // Prevent going below 1
           return { ...item, quantity: newQuantity };
         }
@@ -37,7 +37,7 @@ export const CartProvider = ({ children }) => {
   };
 
   const removeFromCart = (productId) => {
-    setCartItems((prevItems) => prevItems.filter(item => item.id !== productId));
+    setCartItems((prevItems) => prevItems.filter(item => (item._id || item.id) !== productId));
   };
 
   const clearCart = () => {
