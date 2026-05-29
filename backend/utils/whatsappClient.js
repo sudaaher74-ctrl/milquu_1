@@ -1,5 +1,7 @@
-import { Client, RemoteAuth } from 'whatsapp-web.js';
-import { MongoStore } from 'wwebjs-mongo';
+import pkg from 'whatsapp-web.js';
+const { Client, RemoteAuth } = pkg;
+import wwebjsMongo from 'wwebjs-mongo';
+const { MongoStore } = wwebjsMongo;
 import mongoose from 'mongoose';
 import qrcode from 'qrcode';
 
