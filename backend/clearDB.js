@@ -14,7 +14,11 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const clearDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://admin:milquu123@milquufresh.k8312.mongodb.net/milquu_fresh?retryWrites=true&w=majority');
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI is missing from environment variables");
+    }
+    
+    await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to DB');
 
     await Purchase.deleteMany({});
