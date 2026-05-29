@@ -14,18 +14,24 @@ const Orders = () => {
   const itemsPerPage = 8;
 
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchOrdersAndStaff = async () => {
       try {
-        const res = await fetch('https://milquu-backend.onrender.com/api/erp/orders');
-        const data = await res.json();
+        const [ordersRes, staffRes] = await Promise.all([
+          fetch('https://milquu-backend.onrender.com/api/erp/orders'),
+          fetch('https://milquu-backend.onrender.com/api/erp/delivery-staff')
+        ]);
+        const data = await ordersRes.json();
+        const staffData = await staffRes.json();
         
-        // Mocking Auto-assignment logic based on area
-        const mappedData = data.map(order => {
-          let area = 'Panvel';
-          let boy = 'Rahul Patil';
+        // Auto-assign from real database staff
+        const mappedData = data.map((order, index) => {
+          let area = order.shippingAddress?.city || 'Panvel';
           
-          if (order.shippingAddress?.city?.toLowerCase().includes('kamothe')) { area = 'Kamothe'; boy = 'Amit Jadhav'; }
-          else if (order.shippingAddress?.city?.toLowerCase().includes('kharghar')) { area = 'Kharghar'; boy = 'Suresh More'; }
+          // Try to find a staff member matching the area, otherwise just pick one round-robin
+          const areaStaff = staffData.filter(s => s.area?.toLowerCase().includes(area.toLowerCase()) || s.city?.toLowerCase().includes(area.toLowerCase()));
+          const selectedStaff = areaStaff.length > 0 
+            ? areaStaff[index % areaStaff.length] 
+            : (staffData.length > 0 ? staffData[index % staffData.length] : { name: 'Unassigned' });
           
           const deliveryStatuses = ['Assigned', 'Picked Up', 'Out For Delivery', 'Delivered'];
           const randomStatus = order.status === 'Delivered' ? 'Delivered' : deliveryStatuses[Math.floor(Math.random() * (deliveryStatuses.length - 1))];
@@ -33,7 +39,7 @@ const Orders = () => {
           return {
             ...order,
             deliveryArea: area,
-            assignedBoy: boy,
+            assignedBoy: selectedStaff.name,
             deliveryStatus: order.status === 'Pending' ? 'Pending Assignment' : randomStatus
           };
         });
@@ -45,7 +51,7 @@ const Orders = () => {
         setLoading(false);
       }
     };
-    fetchOrders();
+    fetchOrdersAndStaff();
   }, []);
 
   // Filter & Search Logic
