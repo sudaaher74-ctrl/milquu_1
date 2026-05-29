@@ -1,0 +1,122 @@
+import React from 'react';
+import { Users, CalendarCheck, RefreshCw, AlertCircle, Search, Filter, TrendingDown, IndianRupee } from 'lucide-react';
+
+const mockSubscriptions = [
+  { id: 'SUB-4D7893', name: 'Sudarshan Aher', product: 'Premium A2 Cow Milk', qty: '1L', freq: 'Daily', status: 'Active', nextDelivery: 'Tomorrow, 6:00 AM', renewal: 'In 14 days' },
+  { id: 'SUB-A165CF', name: 'Rushikesh Patil', product: 'Organic Cow Milk', qty: '2L', freq: 'Alternate Days', status: 'Active', nextDelivery: 'Wednesday, 6:30 AM', renewal: 'In 5 days' },
+  { id: 'SUB-954DCB', name: 'Priya Sharma', product: 'Buffalo Milk', qty: '1.5L', freq: 'Daily', status: 'Paused', nextDelivery: '-', renewal: 'Paused by user' },
+  { id: 'SUB-B42199', name: 'Amit Kumar', product: 'A2 Cow Milk + Paneer', qty: 'Custom', freq: 'Weekly', status: 'Active', nextDelivery: 'Sunday, 7:00 AM', renewal: 'In 2 days (Alert)' },
+];
+
+const StatCard = ({ title, value, subtitle, icon, color }) => (
+  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start space-x-4 relative overflow-hidden">
+    <div className={`p-4 rounded-xl ${color} bg-opacity-10`}>
+      {icon}
+    </div>
+    <div>
+      <h3 className="text-gray-500 text-sm font-medium mb-1">{title}</h3>
+      <p className="text-2xl font-bold text-milquu-dark">{value}</p>
+      {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
+    </div>
+  </div>
+);
+
+const AdminSubscriptions = () => {
+  return (
+    <div className="max-w-7xl mx-auto pb-10">
+      
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Subscriptions</h1>
+          <p className="text-gray-500 text-sm mt-1">Manage recurring orders and monthly subscribers.</p>
+        </div>
+        <button className="bg-milquu-blue text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors shadow-md shadow-milquu-blue/20">
+          Create Subscription
+        </button>
+      </div>
+
+      {/* Top Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5 mb-8">
+        <div className="xl:col-span-1"><StatCard title="Active Plans" value="284" subtitle="+12 this week" icon={<CalendarCheck size={20} className="text-green-600" />} color="bg-green-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Upcoming Deliveries" value="142" subtitle="For tomorrow" icon={<RefreshCw size={20} className="text-blue-600" />} color="bg-blue-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Monthly Subs" value="156" subtitle="55% of base" icon={<Users size={20} className="text-purple-600" />} color="bg-purple-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Renewal Alerts" value="8" subtitle="Exp. in 3 days" icon={<AlertCircle size={20} className="text-orange-600" />} color="bg-orange-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Sub Revenue" value="₹42K" subtitle="This Month" icon={<IndianRupee size={20} className="text-milquu-blue" />} color="bg-milquu-blue" /></div>
+        <div className="xl:col-span-1"><StatCard title="Churn Rate" value="2.1%" subtitle="-0.5% vs last" icon={<TrendingDown size={20} className="text-red-600" />} color="bg-red-500" /></div>
+      </div>
+
+      {/* Main Table Area */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        
+        {/* Toolbar */}
+        <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center bg-gray-50 rounded-lg px-3 py-2 w-full sm:w-80 border border-gray-200 focus-within:border-milquu-blue transition-colors">
+            <Search size={16} className="text-gray-400 mr-2" />
+            <input 
+              type="text" 
+              placeholder="Search by name, ID or product..." 
+              className="bg-transparent border-none outline-none text-sm w-full font-sans"
+            />
+          </div>
+          <div className="flex space-x-2 w-full sm:w-auto">
+            <button className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+              <Filter size={16} />
+              <span>Filter</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50/50 text-gray-500 text-xs uppercase tracking-wider">
+              <tr>
+                <th className="px-6 py-4 font-semibold">Subscriber</th>
+                <th className="px-6 py-4 font-semibold">Plan Details</th>
+                <th className="px-6 py-4 font-semibold">Frequency</th>
+                <th className="px-6 py-4 font-semibold">Next Delivery</th>
+                <th className="px-6 py-4 font-semibold">Status/Renewal</th>
+                <th className="px-6 py-4 font-semibold text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {mockSubscriptions.map((sub, i) => (
+                <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-bold text-milquu-dark">{sub.name}</p>
+                    <p className="text-xs text-gray-400">{sub.id}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-medium text-gray-800">{sub.product}</p>
+                    <p className="text-xs text-gray-500">Qty: {sub.qty}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-800">
+                      {sub.freq}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">{sub.nextDelivery}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className={`w-2 h-2 rounded-full ${sub.status === 'Active' ? 'bg-green-500' : 'bg-orange-500'}`}></span>
+                      <span className="text-sm font-semibold text-gray-700">{sub.status}</span>
+                    </div>
+                    <p className={`text-xs ${sub.renewal.includes('Alert') ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+                      {sub.renewal}
+                    </p>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <button className="text-milquu-blue text-sm font-medium hover:underline">Manage</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AdminSubscriptions;

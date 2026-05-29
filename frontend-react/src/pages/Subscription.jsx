@@ -23,6 +23,46 @@ const Subscription = () => {
   const [selectedProduct, setSelectedProduct] = useState('a2');
   const [selectedFreq, setSelectedFreq] = useState('daily');
   const [selectedTime, setSelectedTime] = useState('morning');
+  const [formData, setFormData] = useState({
+    name: '', phone: '', address: '', city: '', pincode: ''
+  });
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const selectedProdDetails = products.find(p => p.id === selectedProduct);
+      const priceNum = parseFloat(selectedProdDetails.price.replace(/[^0-9.-]+/g,""));
+      
+      const orderData = {
+        name: formData.name,
+        phone: formData.phone,
+        deliveryAddress: `${formData.address}, ${formData.city}, ${formData.pincode}`,
+        frequency: selectedFreq === 'daily' ? 'Daily' : selectedFreq === 'alt' ? 'Alternate Days' : 'Weekly',
+        totalAmount: priceNum * 30, // Estimating 30 days
+        items: []
+      };
+
+      const res = await fetch('http://localhost:5001/api/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData)
+      });
+
+      if (res.ok) {
+        alert("Subscription created successfully!");
+        setFormData({ name: '', phone: '', address: '', city: '', pincode: '' });
+      } else {
+        alert("Failed to submit subscription.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error submitting subscription.");
+    }
+  };
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -91,7 +131,7 @@ const Subscription = () => {
         >
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-milquu-gold/10 to-transparent opacity-50 rounded-bl-[150px] pointer-events-none"></div>
 
-          <form className="space-y-12 relative z-10">
+          <form onSubmit={handleSubmit} className="space-y-12 relative z-10">
             
             {/* Step 1: Product Selection */}
             <div>
@@ -208,7 +248,11 @@ const Subscription = () => {
                   <div>
                     <label className="block text-sm font-sans font-semibold text-gray-700 mb-2">Full Name</label>
                     <input 
+                      required
                       type="text" 
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
                       placeholder="Jane Doe"
                       className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans"
                     />
@@ -216,7 +260,11 @@ const Subscription = () => {
                   <div>
                     <label className="block text-sm font-sans font-semibold text-gray-700 mb-2">Phone Number</label>
                     <input 
+                      required
                       type="tel" 
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
                       placeholder="+91 98765 43210"
                       className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans"
                     />
@@ -226,7 +274,11 @@ const Subscription = () => {
                 <div>
                   <label className="block text-sm font-sans font-semibold text-gray-700 mb-2">Complete Delivery Address</label>
                   <textarea 
+                    required
                     rows="3" 
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
                     placeholder="Apartment, Society, Street..."
                     className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans resize-none"
                   ></textarea>
@@ -236,7 +288,11 @@ const Subscription = () => {
                   <div>
                     <label className="block text-sm font-sans font-semibold text-gray-700 mb-2">City</label>
                     <input 
+                      required
                       type="text" 
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
                       placeholder="City Name"
                       className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans"
                     />
@@ -244,7 +300,11 @@ const Subscription = () => {
                   <div>
                     <label className="block text-sm font-sans font-semibold text-gray-700 mb-2">Pincode</label>
                     <input 
+                      required
                       type="text" 
+                      name="pincode"
+                      value={formData.pincode}
+                      onChange={handleInputChange}
                       placeholder="e.g., 400001"
                       className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans"
                     />
@@ -257,7 +317,7 @@ const Subscription = () => {
             {/* Submit */}
             <div className="pt-6">
               <button 
-                type="button" 
+                type="submit" 
                 className="w-full relative group/btn overflow-hidden rounded-full p-[1px]"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-milquu-cream via-milquu-gold/40 to-milquu-cream rounded-full opacity-80 group-hover/btn:opacity-100 transition-opacity duration-300"></span>

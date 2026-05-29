@@ -30,13 +30,38 @@ const Cart = () => {
   const deliveryFee = 0; // Free delivery for now
   const total = subtotal + deliveryFee;
 
-  const handleCheckoutSubmit = (e) => {
+  const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
-    // Simulate API call for COD
-    setTimeout(() => {
-      setStep(3); // Success page
-      clearCart();
-    }, 1500);
+    try {
+      const orderData = {
+        name: formData.name,
+        phone: formData.phone,
+        deliveryAddress: `${formData.address}, ${formData.city}, ${formData.pincode}`,
+        items: cartItems.map(item => ({
+          product: item._id || item.id,
+          quantity: item.quantity,
+          price: typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.-]+/g,"")) : item.price
+        })),
+        totalAmount: total,
+        frequency: 'One-time'
+      };
+
+      const res = await fetch('http://localhost:5001/api/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData)
+      });
+
+      if (res.ok) {
+        setStep(3); // Success page
+        clearCart();
+      } else {
+        alert("Failed to submit order.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred while submitting order.");
+    }
   };
 
   const handleInputChange = (e) => {

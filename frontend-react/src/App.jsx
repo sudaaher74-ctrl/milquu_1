@@ -12,6 +12,14 @@ import Overview from './pages/admin/Overview';
 import Orders from './pages/admin/Orders';
 import Customers from './pages/admin/Customers';
 
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminSubscriptions from './pages/admin/AdminSubscriptions';
+import Deliveries from './pages/admin/Deliveries';
+import Revenue from './pages/admin/Revenue';
+import Inventory from './pages/admin/Inventory';
+import Notifications from './pages/admin/Notifications';
+import Settings from './pages/admin/Settings';
+
 // Helper to scroll to top on navigation
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -43,6 +51,13 @@ function App() {
             <Route index element={<Overview />} />
             <Route path="orders" element={<Orders />} />
             <Route path="customers" element={<Customers />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="subscriptions" element={<AdminSubscriptions />} />
+            <Route path="deliveries" element={<Deliveries />} />
+            <Route path="revenue" element={<Revenue />} />
+            <Route path="inventory" element={<Inventory />} />
+            <Route path="notifications" element={<Notifications />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>
       </main>

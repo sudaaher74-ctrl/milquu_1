@@ -8,18 +8,17 @@ const router = express.Router();
 // @access  Public (for now)
 router.post('/', async (req, res) => {
   try {
-    const { user, items, totalAmount, deliveryAddress, frequency } = req.body;
-
-    if (!items || items.length === 0) {
-      return res.status(400).json({ message: 'No items provided' });
-    }
+    const { name, phone, items, totalAmount, deliveryAddress, frequency, status, monthlyTotal } = req.body;
 
     const subscription = new Subscription({
-      user, // Should be an ObjectId referencing a User
-      items,
-      totalAmount,
+      name,
+      phone,
+      items: items || [],
+      totalAmount: totalAmount || 0,
       deliveryAddress,
-      frequency
+      frequency,
+      status: status || 'Pending',
+      monthlyTotal
     });
 
     const createdSubscription = await subscription.save();
