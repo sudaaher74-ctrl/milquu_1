@@ -3,9 +3,9 @@ import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, CalendarDays, Milk, Clock } from 'lucide-react';
 
 const products = [
-  { id: 'a2', name: 'A2 Cow Milk', price: '₹95/L', image: '/img/A2milk.png' },
-  { id: 'buffalo', name: 'Premium Buffalo Milk', price: '₹105/L', image: '/img/buffalomilk.png' },
-  { id: 'cow', name: 'Pure Cow Milk', price: '₹85/L', image: '/img/cowmilk.png' },
+  { id: 'a2', name: 'A2 Cow Milk', price: '₹95/L', image: '/img/A2milk.webp' },
+  { id: 'buffalo', name: 'Premium Buffalo Milk', price: '₹105/L', image: '/img/buffalomilk.webp' },
+  { id: 'cow', name: 'Pure Cow Milk', price: '₹85/L', image: '/img/cowmilk.webp' },
 ];
 
 const frequencies = [
@@ -82,7 +82,7 @@ const Subscription = () => {
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         className="absolute top-24 lg:top-40 -left-6 lg:left-32 w-[90px] sm:w-[120px] lg:w-[180px] opacity-60 lg:opacity-100 drop-shadow-2xl pointer-events-none z-0"
       >
-        <img src="/img/cowmilk.png" alt="Cow Milk Background" className="w-full h-auto object-contain" />
+        <img src="/img/cowmilk.webp" alt="Cow Milk Background" className="w-full h-auto object-contain" />
       </motion.div>
 
       <motion.div 
@@ -90,7 +90,7 @@ const Subscription = () => {
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
         className="absolute bottom-60 lg:bottom-60 -right-8 lg:right-20 w-[100px] sm:w-[140px] lg:w-[200px] opacity-60 lg:opacity-100 drop-shadow-2xl pointer-events-none z-0"
       >
-        <img src="/img/buffalomilk.png" alt="Buffalo Milk Background" className="w-full h-auto object-contain" />
+        <img src="/img/buffalomilk.webp" alt="Buffalo Milk Background" className="w-full h-auto object-contain" />
       </motion.div>
 
       <motion.div 
@@ -98,7 +98,7 @@ const Subscription = () => {
         transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 4 }}
         className="absolute top-48 lg:top-60 right-0 lg:right-40 w-[80px] sm:w-[120px] lg:w-[160px] opacity-60 lg:opacity-100 drop-shadow-2xl pointer-events-none z-0"
       >
-        <img src="/img/A2milk.png" alt="A2 Milk Background" className="w-full h-auto object-contain" />
+        <img src="/img/A2milk.webp" alt="A2 Milk Background" className="w-full h-auto object-contain" />
       </motion.div>
 
       <div className="max-w-4xl mx-auto px-6 lg:px-12 relative z-10">
