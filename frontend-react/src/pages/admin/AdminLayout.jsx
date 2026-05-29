@@ -35,7 +35,6 @@ const AdminLayout = () => {
     { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={20} /> },
     { name: 'Notifications', path: '/admin/notifications', icon: <Bell size={20} /> },
     { name: 'Settings', path: '/admin/settings', icon: <Settings size={20} /> },
-    { name: 'WhatsApp Bot', path: '/admin/whatsapp-settings', icon: <MessageCircle size={20} /> },
   ];
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);

@@ -19,7 +19,6 @@ import Revenue from './pages/admin/Revenue';
 import Inventory from './pages/admin/Inventory';
 import Notifications from './pages/admin/Notifications';
 import Settings from './pages/admin/Settings';
-import WhatsAppSettings from './pages/admin/WhatsAppSettings';
 import DeliveryBoys from './pages/admin/DeliveryBoys';
 import BusinessOverview from './pages/admin/BusinessOverview';
 import POS from './pages/admin/POS';
@@ -94,7 +93,6 @@ function App() {
 
             <Route path="notifications" element={<Notifications />} />
             <Route path="settings" element={<Settings />} />
-            <Route path="whatsapp-settings" element={<WhatsAppSettings />} />
           </Route>
           {/* Delivery Boy Portal Routes */}
           <Route path="/delivery/login" element={<DeliveryLogin />} />

@@ -6,8 +6,7 @@ import {
   getWastages, createWastage,
   getOrders, createOrder,
   getDashboardAnalytics,
-  getDeliveryStaff, createDeliveryStaff, deleteDeliveryStaff,
-  getWhatsAppStatusData
+  getDeliveryStaff, createDeliveryStaff, deleteDeliveryStaff
 } from '../controllers/erpControllers.js';
 
 const router = express.Router();
@@ -21,6 +20,5 @@ router.route('/delivery-staff').get(getDeliveryStaff).post(createDeliveryStaff);
 router.route('/delivery-staff/:id').delete(deleteDeliveryStaff);
 
 router.get('/analytics', getDashboardAnalytics);
-router.get('/whatsapp/status', getWhatsAppStatusData);
 
 export default router;

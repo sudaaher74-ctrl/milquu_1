@@ -3,7 +3,6 @@ import Expense from '../models/Expense.js';
 import Procurement from '../models/Procurement.js';
 import Wastage from '../models/Wastage.js';
 import Order from '../models/Order.js';
-import { getWhatsAppStatus, sendWhatsAppMessage } from '../utils/whatsappClient.js';
 
 // --- PURCHASES ---
 export const getPurchases = async (req, res) => {
@@ -100,31 +99,9 @@ export const createOrder = async (req, res) => {
     const order = new Order(req.body);
     const createdOrder = await order.save();
 
-    // Send WhatsApp Invoice
-    if (order.shippingAddress && order.shippingAddress.phone) {
-      let itemsList = '';
-      order.orderItems.forEach(item => {
-        itemsList += `- ${item.qty}x ${item.name} (₹${item.price})\n`;
-      });
-      const message = `*MILQUU FRESH - ORDER CONFIRMED* ✅\n\nHi ${order.user ? 'Customer' : 'Customer'},\nYour order #${createdOrder.orderId || createdOrder._id.toString().substring(0,6).toUpperCase()} has been placed successfully.\n\n*Order Details:*\n${itemsList}\n*Total Price:* ₹${order.totalPrice}\n\nThank you for choosing MilQuu Fresh! 🥛`;
-      
-      // Async call so it doesn't block response
-      sendWhatsAppMessage(order.shippingAddress.phone, message);
-    }
-
     res.status(201).json(createdOrder);
   } catch (error) {
     res.status(400).json({ message: 'Invalid order data', error: error.message });
-  }
-};
-
-// --- WHATSAPP STATUS ---
-export const getWhatsAppStatusData = async (req, res) => {
-  try {
-    const statusData = getWhatsAppStatus();
-    res.json(statusData);
-  } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
 
