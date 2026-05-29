@@ -171,3 +171,30 @@ export const deleteDeliveryStaff = async (req, res) => {
     res.status(500).json({ message: 'Server Error' });
   }
 };
+
+export const updateStaffLocation = async (req, res) => {
+  try {
+    const { id } = req.params; // Using staffId for lookup
+    const { lat, lng } = req.body;
+    
+    const staff = await DeliveryStaff.findOneAndUpdate(
+      { staffId: id },
+      { 
+        location: {
+          lat,
+          lng,
+          lastUpdated: new Date()
+        }
+      },
+      { new: true }
+    );
+    
+    if (!staff) {
+      return res.status(404).json({ message: 'Staff not found' });
+    }
+    
+    res.json(staff);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};

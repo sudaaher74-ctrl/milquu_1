@@ -25,6 +25,8 @@ const Deliveries = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let intervalId;
+    
     const fetchLiveTracking = async () => {
       try {
         const [ordersRes, staffRes] = await Promise.all([
@@ -37,8 +39,6 @@ const Deliveries = () => {
 
         // Group orders by staff
         const deliveriesByStaff = staff.map(boy => {
-          // In a real app we'd have a 'assignedBoy' field or ID in orders.
-          // For now, let's just create a dummy "Live Tracker" view based on staff.
           return {
             boy: boy.name,
             route: boy.area,
@@ -47,7 +47,8 @@ const Deliveries = () => {
             completed: Math.floor(Math.random() * 10),
             battery: Math.floor(Math.random() * 60) + 40,
             signal: 'Strong',
-            speed: '12 km/h'
+            speed: '12 km/h',
+            location: boy.location || null
           };
         }).filter(d => d.status === 'Active');
 
@@ -58,7 +59,13 @@ const Deliveries = () => {
         setLoading(false);
       }
     };
+    
     fetchLiveTracking();
+    intervalId = setInterval(fetchLiveTracking, 10000); // Poll every 10 seconds
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, []);
 
   return (
@@ -106,18 +113,25 @@ const Deliveries = () => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution="&copy; OpenStreetMap contributors"
               />
-              {mockDeliveries.map((delivery, idx) => (
-                <Marker 
-                  key={idx} 
-                  position={[19.0760 + (Math.random() * 0.1 - 0.05), 72.8777 + (Math.random() * 0.1 - 0.05)]}
-                >
-                  <Popup>
-                    <strong>{delivery.boy}</strong><br/>
-                    Status: {delivery.status}<br/>
-                    Route: {delivery.route}
-                  </Popup>
-                </Marker>
-              ))}
+              {mockDeliveries.map((delivery, idx) => {
+                if (!delivery.location || !delivery.location.lat) return null;
+                
+                return (
+                  <Marker 
+                    key={idx} 
+                    position={[delivery.location.lat, delivery.location.lng]}
+                  >
+                    <Popup>
+                      <strong>{delivery.boy}</strong><br/>
+                      Status: {delivery.status}<br/>
+                      Route: {delivery.route}<br/>
+                      <span className="text-xs text-gray-500">
+                        Last Updated: {new Date(delivery.location.lastUpdated).toLocaleTimeString()}
+                      </span>
+                    </Popup>
+                  </Marker>
+                );
+              })}
             </MapContainer>
             
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-900/80 backdrop-blur-md px-4 py-2 rounded-full shadow-lg text-white text-xs font-medium flex items-center z-[1000]">

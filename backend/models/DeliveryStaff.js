@@ -12,7 +12,12 @@ const deliveryStaffSchema = new mongoose.Schema({
   area: { type: String, required: true },
   status: { type: String, enum: ['Active', 'Inactive'], default: 'Active' },
   delivered: { type: Number, default: 0 },
-  image: { type: String }
+  image: { type: String },
+  location: {
+    lat: { type: Number },
+    lng: { type: Number },
+    lastUpdated: { type: Date }
+  }
 }, {
   timestamps: true
 });

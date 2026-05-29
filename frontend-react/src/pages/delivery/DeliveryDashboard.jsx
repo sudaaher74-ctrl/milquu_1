@@ -58,16 +58,24 @@ const DeliveryDashboard = () => {
 
   const [isTracking, setIsTracking] = useState(false);
   const [location, setLocation] = useState(null);
+  
+  // Hardcoded for now. In a real app, this comes from login/auth context.
+  const driverId = 'STAFF-001';
 
   useEffect(() => {
     let watchId;
     if (isTracking && 'geolocation' in navigator) {
       watchId = navigator.geolocation.watchPosition(
-        (position) => {
+        async (position) => {
           const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
           setLocation(coords);
           console.log("Live Location Sent to Server:", coords);
-          // In a real app, send this to the server via WebSocket or API
+          
+          try {
+            await api.put(`/api/erp/delivery-staff/${driverId}/location`, coords);
+          } catch (error) {
+            console.error("Failed to update location to server", error);
+          }
         },
         (error) => console.error(error),
         { enableHighAccuracy: true, maximumAge: 10000 }

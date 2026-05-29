@@ -6,7 +6,8 @@ import {
   getWastages, createWastage,
   getOrders, createOrder,
   getDashboardAnalytics,
-  getDeliveryStaff, createDeliveryStaff, deleteDeliveryStaff
+  getDeliveryStaff, createDeliveryStaff, deleteDeliveryStaff,
+  updateStaffLocation
 } from '../controllers/erpControllers.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -19,6 +20,7 @@ router.route('/wastages').get(protect, admin, getWastages).post(protect, admin, 
 router.route('/orders').get(protect, admin, getOrders).post(protect, admin, createOrder);
 router.route('/delivery-staff').get(protect, admin, getDeliveryStaff).post(protect, admin, createDeliveryStaff);
 router.route('/delivery-staff/:id').delete(protect, admin, deleteDeliveryStaff);
+router.route('/delivery-staff/:id/location').put(protect, admin, updateStaffLocation);
 
 router.get('/analytics', protect, admin, getDashboardAnalytics);
 
