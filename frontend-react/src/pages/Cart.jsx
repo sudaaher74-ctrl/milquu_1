@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
-import { categoryData } from './CategoryListing';
 import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2, ArrowLeft, CheckCircle, ArrowRight, ShoppingCart } from 'lucide-react';
 
@@ -11,13 +10,20 @@ const Cart = () => {
   const [formData, setFormData] = useState({
     name: '', phone: '', address: '', city: '', pincode: ''
   });
+  const [allProducts, setAllProducts] = useState([]);
 
-  const allProducts = [...categoryData['milk'].products, ...categoryData['by-products'].products];
-  const recommendedProducts = allProducts.filter(p => !cartItems.find(item => item.id === p.id));
+  useEffect(() => {
+    fetch('http://localhost:5001/api/products')
+      .then(res => res.json())
+      .then(data => setAllProducts(data))
+      .catch(err => console.error(err));
+  }, []);
+
+  const recommendedProducts = allProducts.filter(p => !cartItems.find(item => item._id === p._id || item.id === p.id));
 
   // Calculate totals
   const subtotal = cartItems.reduce((total, item) => {
-    const priceNum = parseFloat(item.price.replace('₹', ''));
+    const priceNum = typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.-]+/g,"")) : item.price;
     return total + (priceNum * item.quantity);
   }, 0);
   
@@ -154,7 +160,7 @@ const Cart = () => {
                             </div>
                             <div className="flex items-center gap-3">
                               <span className="text-sm sm:text-base font-sans font-bold text-milquu-dark">
-                                ₹{parseFloat(item.price.replace('₹', '')) * item.quantity}
+                                ₹{(typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.-]+/g,"")) : item.price) * item.quantity}
                               </span>
                               <button onClick={() => removeFromCart(item.id)} className="text-gray-300 hover:text-red-400">
                                 <Trash2 size={16} />
@@ -200,7 +206,7 @@ const Cart = () => {
                             <h4 className="font-serif font-bold text-sm text-milquu-dark leading-tight mb-1">{product.name}</h4>
                             <p className="text-[10px] text-gray-500 font-sans mb-2">{product.unit}</p>
                             <div className="flex justify-between items-center mt-auto">
-                              <span className="font-sans font-bold text-sm text-milquu-dark">{product.price}</span>
+                              <span className="font-sans font-bold text-sm text-milquu-dark">₹{typeof product.price === 'number' ? product.price : product.price.replace('₹','')}</span>
                               <button 
                                 onClick={() => addToCart(product)} 
                                 className="bg-milquu-green/10 text-milquu-green p-1.5 rounded-full hover:bg-milquu-green hover:text-white transition-colors"

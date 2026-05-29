@@ -3,83 +3,56 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useEffect, useState } from 'react';
 
-// Product database grouped by category with rich premium details
-export const categoryData = {
+// Product category metadata
+const categoryMeta = {
   'milk': {
     title: 'Pure Farm Milk',
     description: '100% organic, freshly milked and delivered within hours.',
     bgLight: 'bg-milquu-green/5',
     blobColor: 'bg-milquu-green/20',
-    products: [
-      { 
-        id: 'a2-milk', 
-        name: 'A2 Cow Milk', 
-        description: 'Rich in A2 protein, easily digestible and highly nutritious.',
-        price: '₹95', 
-        unit: '1 Litre', 
-        image: '/img/A2milk.png',
-        labels: ['Farm Fresh', 'A2 Protein']
-      },
-      { 
-        id: 'buffalo-milk', 
-        name: 'Premium Buffalo Milk', 
-        description: 'Thick, creamy, and perfect for making rich curds and ghee.',
-        price: '₹105', 
-        unit: '1 Litre', 
-        image: '/img/buffalomilk.png',
-        labels: ['High Fat', 'Creamy']
-      },
-      { 
-        id: 'cow-milk', 
-        name: 'Pure Cow Milk', 
-        description: 'Light, healthy, and packed with essential vitamins for daily use.',
-        price: '₹85', 
-        unit: '1 Litre', 
-        image: '/img/cowmilk.png',
-        labels: ['Organic', 'Daily Health']
-      },
-    ]
   },
   'by-products': {
     title: 'Authentic Dairy Delights',
     description: 'Traditional dairy products crafted from pure farm-fresh milk.',
     bgLight: 'bg-milquu-gold/5',
     blobColor: 'bg-milquu-gold/20',
-    products: [
-      { 
-        id: 'dahi', 
-        name: 'Fresh Dahi', 
-        description: 'Thick, naturally set curd with a smooth, velvety texture.',
-        price: '₹60', 
-        unit: '500g', 
-        image: '/img/Dahi.png',
-        labels: ['Farm Fresh', 'Probiotic']
-      },
-      { 
-        id: 'lassi', 
-        name: 'Sweet Lassi', 
-        description: 'Traditional churned yogurt drink, refreshing and lightly sweetened.',
-        price: '₹40', 
-        unit: '250ml', 
-        image: '/img/lassi.png',
-        labels: ['Traditional', 'Refreshing']
-      },
-      { 
-        id: 'paneer', 
-        name: 'Soft Paneer', 
-        description: 'Melt-in-mouth cottage cheese, rich in protein and incredibly soft.',
-        price: '₹120', 
-        unit: '200g', 
-        image: '/img/panner.png',
-        labels: ['High Protein', 'Pure']
-      },
-    ]
   }
 };
 
 const CategoryListing = () => {
   const { addToCart } = useCart();
+  const [categories, setCategories] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('http://localhost:5001/api/products');
+        const data = await res.json();
+        
+        // Group by category
+        const grouped = {
+          'milk': { ...categoryMeta['milk'], products: [] },
+          'by-products': { ...categoryMeta['by-products'], products: [] }
+        };
+        
+        data.forEach(p => {
+          if (grouped[p.category]) {
+            grouped[p.category].products.push(p);
+          }
+        });
+        
+        setCategories(grouped);
+      } catch (error) {
+        console.error('Error fetching products', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-24 pb-16 relative overflow-hidden">
@@ -113,7 +86,10 @@ const CategoryListing = () => {
           </motion.div>
         </div>
 
-        {Object.entries(categoryData).map(([key, category]) => (
+        {loading ? (
+          <div className="text-center py-20 text-gray-500">Loading fresh products...</div>
+        ) : (
+          Object.entries(categories).map(([key, category]) => (
           <div key={key} className="mb-20">
             <div className="flex items-center justify-center mb-10">
               <div className="h-px w-12 bg-milquu-gold/50 mr-4"></div>
@@ -148,7 +124,7 @@ const CategoryListing = () => {
                         <img 
                           src={product.image} 
                           alt={product.name} 
-                          className="h-full object-contain drop-shadow-xl sm:drop-shadow-2xl scale-125 lg:scale-[1.3] origin-center"
+                          className="h-full object-contain drop-shadow-xl sm:drop-shadow-2xl scale-100 sm:scale-125 lg:scale-[1.3] origin-center"
                         />
                       </motion.div>
                     </div>
@@ -161,7 +137,7 @@ const CategoryListing = () => {
                       
                       <div className="flex flex-col items-center space-y-0.5 sm:space-y-1.5 mb-4 sm:mb-8">
                         <p className="text-gray-500 font-sans text-[10px] sm:text-sm">
-                          Price: <span className="font-semibold text-milquu-dark">{product.price}</span>
+                          Price: <span className="font-semibold text-milquu-dark">₹{product.price}</span>
                         </p>
                         <p className="text-gray-500 font-sans text-[10px] sm:text-sm">
                           Unit: <span className="font-semibold text-milquu-dark">{product.unit}</span>
@@ -189,7 +165,8 @@ const CategoryListing = () => {
               ))}
             </div>
           </div>
-        ))}
+          ))
+        )}
 
       </div>
     </div>

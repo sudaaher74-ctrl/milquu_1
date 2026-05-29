@@ -7,6 +7,10 @@ import CategoryListing from './pages/CategoryListing';
 import ContactUs from './pages/ContactUs';
 import Subscription from './pages/Subscription';
 import Cart from './pages/Cart';
+import AdminLayout from './pages/admin/AdminLayout';
+import Overview from './pages/admin/Overview';
+import Orders from './pages/admin/Orders';
+import Customers from './pages/admin/Customers';
 
 // Helper to scroll to top on navigation
 const ScrollToTop = () => {
@@ -18,9 +22,12 @@ const ScrollToTop = () => {
 };
 
 function App() {
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith('/admin');
+
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col">
-      <Navbar />
+      {!isAdmin && <Navbar />}
       <ScrollToTop />
       
       <main className="flex-grow">
@@ -30,10 +37,17 @@ function App() {
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/subscribe" element={<Subscription />} />
           <Route path="/cart" element={<Cart />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Overview />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="customers" element={<Customers />} />
+          </Route>
         </Routes>
       </main>
 
-      <Footer />
+      {!isAdmin && <Footer />}
     </div>
   );
 }
