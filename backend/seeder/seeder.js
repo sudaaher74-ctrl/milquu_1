@@ -80,6 +80,24 @@ const categoryData = {
         labels: ['High Protein', 'Pure'],
         category: 'by-products'
       },
+      { 
+        name: 'A2 Cow Ghee', 
+        description: 'Premium bilona churned A2 cow ghee with rich aroma, highly nutritious and healthy.',
+        price: 850, 
+        unit: '500g', 
+        image: '/img/A2ghee.png',
+        labels: ['Bilona Churned', 'A2 Milk'],
+        category: 'by-products'
+      },
+      { 
+        name: 'Pure Cow Ghee', 
+        description: 'Traditional pure cow ghee with golden texture, perfect for daily cooking.',
+        price: 650, 
+        unit: '500g', 
+        image: '/img/cowghee.png',
+        labels: ['Traditional', 'Aromatic'],
+        category: 'by-products'
+      },
     ]
   }
 };

@@ -7,10 +7,11 @@ const mockProducts = [
   { id: 1, name: 'Premium A2 Cow Milk', category: 'Milk', price: '₹95/L', stock: 120, dailySales: 45, revenue: 4275, image: '/img/A2milk.png', status: 'In Stock' },
   { id: 2, name: 'Farm Fresh Buffalo Milk', category: 'Milk', price: '₹105/L', stock: 85, dailySales: 38, revenue: 3990, image: '/img/buffalomilk.png', status: 'Low Stock' },
   { id: 3, name: 'Pure Cow Milk', category: 'Milk', price: '₹85/L', stock: 200, dailySales: 92, revenue: 7820, image: '/img/cowmilk.png', status: 'In Stock' },
-  { id: 4, name: 'Fresh Malai Paneer', category: 'By-Products', price: '₹120/200g', stock: 40, dailySales: 15, revenue: 1800, image: '/img/PANEER.png', status: 'Low Stock' },
-  { id: 5, name: 'Thick Farm Dahi', category: 'By-Products', price: '₹60/500g', stock: 65, dailySales: 28, revenue: 1680, image: '/img/dahi.png', status: 'In Stock' },
+  { id: 4, name: 'Fresh Malai Paneer', category: 'By-Products', price: '₹120/200g', stock: 40, dailySales: 15, revenue: 1800, image: '/img/panner.png', status: 'Low Stock' },
+  { id: 5, name: 'Thick Farm Dahi', category: 'By-Products', price: '₹60/500g', stock: 65, dailySales: 28, revenue: 1680, image: '/img/Dahi.png', status: 'In Stock' },
   { id: 6, name: 'Traditional Lassi', category: 'By-Products', price: '₹40/250ml', stock: 110, dailySales: 42, revenue: 1680, image: '/img/lassi.png', status: 'In Stock' },
-  { id: 7, name: 'Pure Desi Ghee', category: 'By-Products', price: '₹650/500g', stock: 12, dailySales: 3, revenue: 1950, image: '/img/ghee.png', status: 'Critical' },
+  { id: 7, name: 'A2 Cow Ghee', category: 'By-Products', price: '₹850/500g', stock: 12, dailySales: 3, revenue: 2550, image: '/img/A2ghee.png', status: 'Critical' },
+  { id: 8, name: 'Pure Cow Ghee', category: 'By-Products', price: '₹650/500g', stock: 25, dailySales: 5, revenue: 3250, image: '/img/cowghee.png', status: 'In Stock' },
 ];
 
 const ProductCard = ({ product }) => (
