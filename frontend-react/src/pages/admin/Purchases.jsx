@@ -16,6 +16,54 @@ const Purchases = () => {
   const [purchaseData, setPurchaseData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    supplierName: '',
+    category: 'Raw Milk',
+    productName: '',
+    quantity: '',
+    rate: '',
+    status: 'Pending'
+  });
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleAddPurchase = async (e) => {
+    e.preventDefault();
+    try {
+      const quantity = Number(formData.quantity);
+      const rate = Number(formData.rate);
+      const totalCost = quantity * rate;
+      
+      const newPurchase = {
+        ...formData,
+        quantity,
+        rate,
+        totalCost,
+        poNumber: `PO-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
+      };
+      const { data } = await axios.post('https://milquu-backend.onrender.com/api/erp/purchases', newPurchase);
+      setPurchaseData([data, ...purchaseData]);
+      setIsModalOpen(false);
+      setFormData({
+        date: new Date().toISOString().split('T')[0],
+        supplierName: '',
+        category: 'Raw Milk',
+        productName: '',
+        quantity: '',
+        rate: '',
+        status: 'Pending'
+      });
+    } catch (error) {
+      console.error("Error creating purchase", error);
+      alert('Failed to save purchase');
+    }
+  };
+
   useEffect(() => {
     const fetchPurchases = async () => {
       try {
@@ -45,7 +93,7 @@ const Purchases = () => {
           <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center">
             <Download size={16} className="mr-2" /> Export
           </button>
-          <button className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
+          <button onClick={() => setIsModalOpen(true)} className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
             <Plus size={18} className="mr-2" /> New Purchase Order
           </button>
         </div>
@@ -179,6 +227,64 @@ const Purchases = () => {
           </table>
         </div>
       </div>
+
+      {/* Add Purchase Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm cursor-pointer" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 z-10">
+            <h2 className="text-xl font-bold text-milquu-dark mb-4">Add Purchase Order</h2>
+            <form onSubmit={handleAddPurchase} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Date</label>
+                  <input required type="date" name="date" value={formData.date} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Supplier Name</label>
+                  <input required type="text" name="supplierName" value={formData.supplierName} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" placeholder="Farmer XYZ" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Category</label>
+                <select required name="category" value={formData.category} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2">
+                  <option value="Raw Milk">Raw Milk</option>
+                  <option value="Packaging">Packaging</option>
+                  <option value="Transport">Transport</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Product Name</label>
+                <input required type="text" name="productName" value={formData.productName} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" placeholder="e.g. Buffalo Milk" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Quantity</label>
+                  <input required type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" placeholder="e.g. 50" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Rate / Unit (₹)</label>
+                  <input required type="number" name="rate" value={formData.rate} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" placeholder="e.g. 60" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Status</label>
+                <select required name="status" value={formData.status} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2">
+                  <option value="Pending">Pending</option>
+                  <option value="Received">Received</option>
+                  <option value="Paid">Paid</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600">Cancel</button>
+                <button type="submit" className="px-6 py-2 bg-milquu-dark text-white rounded-lg hover:bg-gray-800">Save Purchase</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

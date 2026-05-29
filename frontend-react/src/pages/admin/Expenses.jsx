@@ -18,6 +18,46 @@ const Expenses = () => {
   const [expenseData, setExpenseData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    category: 'Packaging',
+    description: '',
+    paidTo: '',
+    amount: '',
+    paymentMethod: 'UPI'
+  });
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    try {
+      const newExpense = {
+        ...formData,
+        amount: Number(formData.amount),
+        expenseId: `EXP-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
+      };
+      const { data } = await axios.post('https://milquu-backend.onrender.com/api/erp/expenses', newExpense);
+      setExpenseData([data, ...expenseData]);
+      setIsModalOpen(false);
+      setFormData({
+        date: new Date().toISOString().split('T')[0],
+        category: 'Packaging',
+        description: '',
+        paidTo: '',
+        amount: '',
+        paymentMethod: 'UPI'
+      });
+    } catch (error) {
+      console.error("Error creating expense", error);
+      alert('Failed to save expense');
+    }
+  };
+
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
@@ -49,7 +89,7 @@ const Expenses = () => {
           <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center">
             <Download size={16} className="mr-2" /> Export
           </button>
-          <button className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
+          <button onClick={() => setIsModalOpen(true)} className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
             <Plus size={18} className="mr-2" /> Add Expense
           </button>
         </div>
@@ -214,6 +254,59 @@ const Expenses = () => {
           </table>
         </div>
       </div>
+
+      {/* Add Expense Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm cursor-pointer" onClick={() => setIsModalOpen(false)}></div>
+          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 z-10">
+            <h2 className="text-xl font-bold text-milquu-dark mb-4">Add New Expense</h2>
+            <form onSubmit={handleAddExpense} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Date</label>
+                <input required type="date" name="date" value={formData.date} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Category</label>
+                <select required name="category" value={formData.category} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2">
+                  <option value="Packaging">Packaging</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Salaries">Salaries</option>
+                  <option value="Fuel">Fuel & Logistics</option>
+                  <option value="Utilities">Utilities</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Description</label>
+                <input required type="text" name="description" value={formData.description} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" placeholder="e.g. Milk Bottles" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Paid To</label>
+                <input required type="text" name="paidTo" value={formData.paidTo} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" placeholder="e.g. Supplier XYZ" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Amount (₹)</label>
+                  <input required type="number" name="amount" value={formData.amount} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" placeholder="0" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Method</label>
+                  <select required name="paymentMethod" value={formData.paymentMethod} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2">
+                    <option value="UPI">UPI</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Cash">Cash</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600">Cancel</button>
+                <button type="submit" className="px-6 py-2 bg-milquu-dark text-white rounded-lg hover:bg-gray-800">Save Expense</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

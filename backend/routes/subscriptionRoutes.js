@@ -28,4 +28,16 @@ router.post('/', async (req, res) => {
   }
 });
 
+// @route   GET /api/subscriptions
+// @desc    Get all subscriptions
+// @access  Public
+router.get('/', async (req, res) => {
+  try {
+    const subscriptions = await Subscription.find({}).sort({ createdAt: -1 });
+    res.json(subscriptions);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 export default router;

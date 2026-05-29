@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Users, CalendarCheck, RefreshCw, AlertCircle, Search, Filter, TrendingDown, IndianRupee } from 'lucide-react';
-
-const mockSubscriptions = [];
 
 const StatCard = ({ title, value, subtitle, icon, color }) => (
   <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start space-x-4 relative overflow-hidden">
@@ -17,6 +16,33 @@ const StatCard = ({ title, value, subtitle, icon, color }) => (
 );
 
 const AdminSubscriptions = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [subscriptionsData, setSubscriptionsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      try {
+        const { data } = await axios.get('https://milquu-backend.onrender.com/api/subscriptions');
+        const mappedData = data.map(sub => ({
+          ...sub,
+          id: sub._id,
+          product: sub.items && sub.items.length > 0 ? sub.items.map(i => i.name).join(', ') : 'Custom Box',
+          qty: sub.items && sub.items.length > 0 ? sub.items.map(i => i.qty).join(', ') : 1,
+          freq: sub.frequency,
+          nextDelivery: new Date(sub.createdAt).toLocaleDateString(), // Mocking next delivery
+          renewal: 'Auto-renew'
+        }));
+        setSubscriptionsData(mappedData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching subscriptions", error);
+        setLoading(false);
+      }
+    };
+    fetchSubscriptions();
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto pb-10">
       
@@ -76,7 +102,7 @@ const AdminSubscriptions = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {mockSubscriptions.map((sub, i) => (
+              {subscriptionsData.map((sub, i) => (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <p className="text-sm font-bold text-milquu-dark">{sub.name}</p>

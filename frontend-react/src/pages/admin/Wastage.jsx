@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Trash2, Plus, Search, Filter, Download, 
   TrendingDown, AlertOctagon, PackageX
@@ -7,15 +8,36 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 
-// Mock Data
-const wastageData = [];
-
 const wastageTrendData = [];
 
 const Wastage = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [wastageData, setWastageData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const totalLoss = 0; // This month
+  useEffect(() => {
+    const fetchWastages = async () => {
+      try {
+        const { data } = await axios.get('https://milquu-backend.onrender.com/api/erp/wastages');
+        
+        // Map backend fields to frontend expectations
+        const mappedData = data.map(item => ({
+          ...item,
+          product: item.productName || item.product,
+          qty: item.quantity || item.qty
+        }));
+        
+        setWastageData(mappedData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching wastages", error);
+        setLoading(false);
+      }
+    };
+    fetchWastages();
+  }, []);
+
+  const totalLoss = wastageData.reduce((acc, curr) => acc + (curr.lossValue || 0), 0);
   const wastagePercent = 0; // 1.2% of total production
 
   return (

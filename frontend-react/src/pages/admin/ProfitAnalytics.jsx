@@ -25,7 +25,7 @@ const StatCard = ({ title, value, icon, colorClass, trend, subtitle }) => (
       <div className={`p-2 rounded-xl ${colorClass.replace('from-', 'bg-').split(' ')[0]} bg-opacity-10 text-gray-700`}>
         {icon}
       </div>
-      {trend && (
+      {trend !== undefined && (
         <div className={`flex items-center text-xs font-bold px-2 py-1 rounded-full ${trend > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
           {trend > 0 ? <TrendingUp size={12} className="mr-1" /> : <TrendingDown size={12} className="mr-1" />}
           {Math.abs(trend)}%
@@ -41,6 +41,26 @@ const StatCard = ({ title, value, icon, colorClass, trend, subtitle }) => (
 );
 
 const ProfitAnalytics = () => {
+  const [analytics, setAnalytics] = React.useState({
+    revenue: 0,
+    expenses: 0,
+    purchases: 0,
+    netProfit: 0,
+    orders: 0
+  });
+
+  React.useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const res = await fetch('https://milquu-backend.onrender.com/api/erp/analytics');
+        const data = await res.json();
+        setAnalytics(data);
+      } catch (error) {
+        console.error("Failed to fetch analytics", error);
+      }
+    };
+    fetchAnalytics();
+  }, []);
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">
       
@@ -57,12 +77,12 @@ const ProfitAnalytics = () => {
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <StatCard title="Gross Profit" value="₹0" subtitle="This Month" icon={<DollarSign size={20} className="text-blue-600"/>} colorClass="from-blue-400 to-blue-600" />
-        <StatCard title="Net Profit" value="₹0" subtitle="This Month" trend={0} icon={<TrendingUp size={20} className="text-green-600"/>} colorClass="from-green-400 to-green-600" />
-        <StatCard title="Net Margin %" value="0%" subtitle="Overall" trend={0} icon={<PieChartIcon size={20} className="text-purple-600"/>} colorClass="from-purple-400 to-purple-600" />
-        <StatCard title="Daily Profit" value="₹0" subtitle="Average" icon={<Calculator size={20} className="text-orange-600"/>} colorClass="from-orange-400 to-orange-600" />
-        <StatCard title="Monthly Profit" value="₹0" subtitle="Current" icon={<BarChart2 size={20} className="text-teal-600"/>} colorClass="from-teal-400 to-teal-600" />
-        <StatCard title="Yearly Profit" value="₹0" subtitle="YTD" icon={<TrendingUp size={20} className="text-rose-600"/>} colorClass="from-rose-400 to-rose-600" />
+        <StatCard title="Gross Profit" value={`₹${(analytics.revenue || 0).toLocaleString()}`} subtitle="This Month" icon={<DollarSign size={20} className="text-blue-600"/>} colorClass="from-blue-400 to-blue-600" />
+        <StatCard title="Net Profit" value={`₹${(analytics.netProfit || 0).toLocaleString()}`} subtitle="This Month" trend={0} icon={<TrendingUp size={20} className="text-green-600"/>} colorClass="from-green-400 to-green-600" />
+        <StatCard title="Net Margin %" value={`${analytics.revenue ? Math.round((analytics.netProfit / analytics.revenue) * 100) : 0}%`} subtitle="Overall" trend={0} icon={<PieChartIcon size={20} className="text-purple-600"/>} colorClass="from-purple-400 to-purple-600" />
+        <StatCard title="Daily Profit" value={`₹${Math.round((analytics.netProfit || 0) / 30).toLocaleString()}`} subtitle="Average" icon={<Calculator size={20} className="text-orange-600"/>} colorClass="from-orange-400 to-orange-600" />
+        <StatCard title="Monthly Profit" value={`₹${(analytics.netProfit || 0).toLocaleString()}`} subtitle="Current" icon={<BarChart2 size={20} className="text-teal-600"/>} colorClass="from-teal-400 to-teal-600" />
+        <StatCard title="Yearly Profit" value={`₹${(analytics.netProfit || 0).toLocaleString()}`} subtitle="YTD" icon={<TrendingUp size={20} className="text-rose-600"/>} colorClass="from-rose-400 to-rose-600" />
       </div>
 
       {/* Main Charts Area */}
@@ -74,12 +94,12 @@ const ProfitAnalytics = () => {
           <div className="space-y-3 flex-1 flex flex-col justify-center">
             <div className="flex justify-between items-center text-sm">
               <span className="font-bold text-gray-800">Total Revenue</span>
-              <span className="font-bold text-milquu-blue">₹0</span>
+              <span className="font-bold text-milquu-blue">₹{(analytics.revenue || 0).toLocaleString()}</span>
             </div>
             <div className="border-b border-gray-100 my-1"></div>
             <div className="flex justify-between items-center text-sm text-gray-600">
               <span>(-) Raw Product Costs</span>
-              <span className="text-red-500">-₹0</span>
+              <span className="text-red-500">-₹{(analytics.purchases || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center text-sm text-gray-600">
               <span>(-) Packaging Cost</span>

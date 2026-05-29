@@ -9,7 +9,6 @@ import {
   BarChart, Bar, LineChart, Line, ComposedChart
 } from 'recharts';
 
-// Mock Data
 const trendData = [];
 
 const StatCard = ({ title, value, icon, subtitle, colorClass, borderClass }) => (
@@ -28,6 +27,27 @@ const StatCard = ({ title, value, icon, subtitle, colorClass, borderClass }) => 
 );
 
 const BusinessOverview = () => {
+  const [analytics, setAnalytics] = React.useState({
+    revenue: 0,
+    expenses: 0,
+    purchases: 0,
+    netProfit: 0,
+    orders: 0
+  });
+
+  React.useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        const res = await fetch('https://milquu-backend.onrender.com/api/erp/analytics');
+        const data = await res.json();
+        setAnalytics(data);
+      } catch (error) {
+        console.error("Failed to fetch analytics", error);
+      }
+    };
+    fetchAnalytics();
+  }, []);
+
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">
       
@@ -44,17 +64,17 @@ const BusinessOverview = () => {
 
       {/* 10 KPI Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        <StatCard title="Revenue Today" value="₹0" icon={<IndianRupee size={18} className="text-blue-600"/>} colorClass="bg-blue-100" />
-        <StatCard title="Revenue This Month" value="₹0" icon={<IndianRupee size={18} className="text-blue-600"/>} colorClass="bg-blue-100" />
-        <StatCard title="Profit Today" value="₹0" icon={<TrendingUp size={18} className="text-green-600"/>} colorClass="bg-green-100" />
-        <StatCard title="Profit This Month" value="₹0" icon={<TrendingUp size={18} className="text-green-600"/>} colorClass="bg-green-100" />
-        <StatCard title="Inventory Value" value="₹0" icon={<Package size={18} className="text-purple-600"/>} colorClass="bg-purple-100" />
+        <StatCard title="Revenue Today" value={`₹${(analytics.revenue || 0).toLocaleString()}`} icon={<IndianRupee size={18} className="text-blue-600"/>} colorClass="bg-blue-100" />
+        <StatCard title="Revenue This Month" value={`₹${(analytics.revenue || 0).toLocaleString()}`} icon={<IndianRupee size={18} className="text-blue-600"/>} colorClass="bg-blue-100" />
+        <StatCard title="Profit Today" value={`₹${(analytics.netProfit || 0).toLocaleString()}`} icon={<TrendingUp size={18} className="text-green-600"/>} colorClass="bg-green-100" />
+        <StatCard title="Profit This Month" value={`₹${(analytics.netProfit || 0).toLocaleString()}`} icon={<TrendingUp size={18} className="text-green-600"/>} colorClass="bg-green-100" />
+        <StatCard title="Inventory Value" value={`₹${(analytics.purchases || 0).toLocaleString()}`} icon={<Package size={18} className="text-purple-600"/>} colorClass="bg-purple-100" />
         
         <StatCard title="Shop Revenue" value="₹0" subtitle="This Month" icon={<Store size={18} className="text-orange-600"/>} colorClass="bg-orange-100" />
-        <StatCard title="Website Revenue" value="₹0" subtitle="This Month" icon={<Globe size={18} className="text-indigo-600"/>} colorClass="bg-indigo-100" />
+        <StatCard title="Website Revenue" value={`₹${(analytics.revenue || 0).toLocaleString()}`} subtitle="This Month" icon={<Globe size={18} className="text-indigo-600"/>} colorClass="bg-indigo-100" />
         <StatCard title="Active Customers" value="0" icon={<Users size={18} className="text-teal-600"/>} colorClass="bg-teal-100" />
         <StatCard title="Active Subscribers" value="0" icon={<CalendarDays size={18} className="text-rose-600"/>} colorClass="bg-rose-100" />
-        <StatCard title="Pending Orders" value="0" icon={<ShoppingBag size={18} className="text-red-600"/>} colorClass="bg-red-100" borderClass="border-red-100 bg-red-50/30" />
+        <StatCard title="Pending Orders" value={analytics.orders || 0} icon={<ShoppingBag size={18} className="text-red-600"/>} colorClass="bg-red-100" borderClass="border-red-100 bg-red-50/30" />
       </div>
 
       {/* Main Charts */}

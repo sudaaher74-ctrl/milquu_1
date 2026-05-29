@@ -1,16 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Users, Plus, Search, Filter, Download, Droplet, 
   Activity, TrendingUp, Sun, Moon
 } from 'lucide-react';
 
-// Mock Data
-const procurementData = [];
-
 const topFarmers = [];
 
 const Procurement = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [procurementData, setProcurementData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProcurements = async () => {
+      try {
+        const { data } = await axios.get('https://milquu-backend.onrender.com/api/erp/procurements');
+        setProcurementData(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching procurements", error);
+        setLoading(false);
+      }
+    };
+    fetchProcurements();
+  }, []);
 
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">

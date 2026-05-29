@@ -1,14 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Truck, MapPin, CheckCircle2, Clock, Navigation, AlertTriangle, Battery, Signal, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
-
-const mockDeliveries = [];
 
 const performanceData = [];
 
 const Deliveries = () => {
   const [activeTab, setActiveTab] = useState('Map');
+  const [mockDeliveries, setMockDeliveries] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLiveTracking = async () => {
+      try {
+        const [ordersRes, staffRes] = await Promise.all([
+          axios.get('https://milquu-backend.onrender.com/api/erp/orders'),
+          axios.get('https://milquu-backend.onrender.com/api/erp/delivery-staff')
+        ]);
+        
+        const orders = ordersRes.data;
+        const staff = staffRes.data;
+
+        // Group orders by staff
+        const deliveriesByStaff = staff.map(boy => {
+          // In a real app we'd have a 'assignedBoy' field or ID in orders.
+          // For now, let's just create a dummy "Live Tracker" view based on staff.
+          return {
+            boy: boy.name,
+            route: boy.area,
+            status: boy.status === 'Active' ? 'Active' : 'Offline',
+            assigned: Math.floor(Math.random() * 20) + 10,
+            completed: Math.floor(Math.random() * 10),
+            battery: Math.floor(Math.random() * 60) + 40,
+            signal: 'Strong',
+            speed: '12 km/h'
+          };
+        }).filter(d => d.status === 'Active');
+
+        setMockDeliveries(deliveriesByStaff);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching live tracking", error);
+        setLoading(false);
+      }
+    };
+    fetchLiveTracking();
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto pb-10 font-sans">

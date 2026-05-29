@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { 
   Boxes, AlertTriangle, TrendingUp, DollarSign, Package, 
   PackageX, Database, Search, Download
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-// Mock inventory data matching ERP requirements
-const inventoryData = [];
 
 const InventoryCard = ({ item }) => {
   const stockValue = item.stock * item.purchasePrice;
@@ -79,6 +77,37 @@ const InventoryCard = ({ item }) => {
 
 const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [inventoryData, setInventoryData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        const { data } = await axios.get('https://milquu-backend.onrender.com/api/products');
+        const mappedData = data.map(item => {
+          const minLevel = item.category === 'milk' ? 10 : 5;
+          let status = 'Healthy';
+          if (item.stock === 0) status = 'Out of Stock';
+          else if (item.stock < minLevel) status = 'Low Stock';
+
+          return {
+            ...item,
+            id: item._id,
+            sellingPrice: item.price,
+            purchasePrice: item.purchasePrice || (item.price * 0.7), // Fallback
+            minLevel,
+            status
+          };
+        });
+        setInventoryData(mappedData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching inventory", error);
+        setLoading(false);
+      }
+    };
+    fetchInventory();
+  }, []);
 
   const totalValue = inventoryData.reduce((acc, item) => acc + (item.stock * item.purchasePrice), 0);
   const totalQuantity = inventoryData.reduce((acc, item) => acc + item.stock, 0);
