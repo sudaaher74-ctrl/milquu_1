@@ -4,7 +4,7 @@ import {
   LayoutDashboard, ShoppingBag, Users, LogOut, ArrowLeft, 
   Package, CalendarDays, Truck, BarChart3, Boxes, 
   Bell, Settings, Search, Plus, Menu, X, ChevronDown, Bike,
-  Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart
+  Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart, MessageCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -33,9 +33,9 @@ const AdminLayout = () => {
     { name: 'Milk Procurement', path: '/admin/procurement', icon: <Droplets size={20} /> },
     { name: 'Wastage', path: '/admin/wastage', icon: <Trash2 size={20} /> },
     { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={20} /> },
-
     { name: 'Notifications', path: '/admin/notifications', icon: <Bell size={20} /> },
     { name: 'Settings', path: '/admin/settings', icon: <Settings size={20} /> },
+    { name: 'WhatsApp Bot', path: '/admin/whatsapp-settings', icon: <MessageCircle size={20} /> },
   ];
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
