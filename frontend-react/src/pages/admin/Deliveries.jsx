@@ -3,20 +3,9 @@ import { Truck, MapPin, CheckCircle2, Clock, Navigation, AlertTriangle, Battery,
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
-const mockDeliveries = [
-  { id: 'DEL-01', boy: 'Ramesh Singh', route: 'Kharghar Sec-12', assigned: 50, completed: 42, status: 'Active', phone: '+91 9876543210', battery: 85, signal: 'Good', speed: '25 km/h' },
-  { id: 'DEL-02', boy: 'Suresh Patil', route: 'Panvel City', assigned: 50, completed: 20, status: 'Delayed', phone: '+91 8765432109', battery: 42, signal: 'Weak', speed: '5 km/h' },
-  { id: 'DEL-03', boy: 'Amit Kumar', route: 'Kamothe', assigned: 50, completed: 5, status: 'Starting', phone: '+91 7654321098', battery: 98, signal: 'Good', speed: '0 km/h' },
-  { id: 'DEL-04', boy: 'Vikram Joshi', route: 'Kalamboli', assigned: 45, completed: 45, status: 'Completed', phone: '+91 6543210987', battery: 20, signal: 'Good', speed: '-' },
-];
+const mockDeliveries = [];
 
-const performanceData = [
-  { time: '5 AM', efficiency: 95 },
-  { time: '6 AM', efficiency: 98 },
-  { time: '7 AM', efficiency: 85 },
-  { time: '8 AM', efficiency: 75 },
-  { time: '9 AM', efficiency: 80 },
-];
+const performanceData = [];
 
 const Deliveries = () => {
   const [activeTab, setActiveTab] = useState('Map');
@@ -199,20 +188,12 @@ const Deliveries = () => {
              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center">
                 <Clock size={32} className="text-blue-500 mb-3" />
                 <h3 className="text-gray-500 text-sm font-medium">Avg Delivery Time</h3>
-                <p className="text-3xl font-bold text-milquu-dark mt-1">4.2 <span className="text-lg text-gray-400">mins</span></p>
+                <p className="text-3xl font-bold text-milquu-dark mt-1">0 <span className="text-lg text-gray-400">mins</span></p>
              </div>
              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center">
                 <CheckCircle2 size={32} className="text-green-500 mb-3" />
                 <h3 className="text-gray-500 text-sm font-medium">On-Time Rate</h3>
-                <p className="text-3xl font-bold text-milquu-dark mt-1">98.5%</p>
-             </div>
-             <div className="col-span-2 bg-orange-50 border border-orange-100 rounded-2xl p-6 flex items-start">
-               <AlertTriangle size={24} className="text-orange-500 mr-4 flex-shrink-0 mt-1" />
-               <div>
-                 <h4 className="font-bold text-orange-800">Route Deviation Detected</h4>
-                 <p className="text-sm text-orange-700 mt-1">Agent Suresh P. is deviating from the optimized route in Panvel City, causing a 15-minute delay. Re-routing suggested.</p>
-                 <button className="mt-3 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-orange-600 transition-colors">Send Alert to Agent</button>
-               </div>
+                <p className="text-3xl font-bold text-milquu-dark mt-1">0%</p>
              </div>
           </div>
         </div>

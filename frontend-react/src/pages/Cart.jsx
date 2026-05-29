@@ -13,7 +13,7 @@ const Cart = () => {
   const [allProducts, setAllProducts] = useState([]);
 
   useEffect(() => {
-    fetch('http://localhost:5001/api/products')
+    fetch('https://milquu-backend.onrender.com/api/products')
       .then(res => res.json())
       .then(data => setAllProducts(data))
       .catch(err => console.error(err));
@@ -36,17 +36,25 @@ const Cart = () => {
       const orderData = {
         name: formData.name,
         phone: formData.phone,
-        deliveryAddress: `${formData.address}, ${formData.city}, ${formData.pincode}`,
-        items: cartItems.map(item => ({
+        orderItems: cartItems.map(item => ({
           product: item._id || item.id,
-          quantity: item.quantity,
+          name: item.name,
+          qty: item.quantity,
+          image: item.image,
           price: typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.-]+/g,"")) : item.price
         })),
-        totalAmount: total,
-        frequency: 'One-time'
+        shippingAddress: {
+          address: formData.address,
+          city: formData.city,
+          postalCode: formData.pincode,
+          country: 'India'
+        },
+        paymentMethod: 'Cash on Delivery',
+        totalPrice: total,
+        orderSource: 'Website'
       };
 
-      const res = await fetch('http://localhost:5001/api/subscriptions', {
+      const res = await fetch('https://milquu-backend.onrender.com/api/erp/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
@@ -265,7 +273,17 @@ const Cart = () => {
                     <textarea required name="address" placeholder="Full Delivery Address" onChange={handleInputChange} rows="2" className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30 resize-none"></textarea>
                     
                     <div className="grid grid-cols-2 gap-3">
-                      <input required type="text" name="city" placeholder="City" onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30" />
+                      <select required name="city" value={formData.city} onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30 appearance-none text-gray-600">
+                        <option value="" disabled>Select Delivery Area</option>
+                        <option value="Panvel">Panvel</option>
+                        <option value="New Panvel">New Panvel</option>
+                        <option value="Khanda Colony">Khanda Colony</option>
+                        <option value="Kamothe">Kamothe</option>
+                        <option value="Karanjade">Karanjade</option>
+                        <option value="Kharghar">Kharghar</option>
+                        <option value="Belapur">Belapur</option>
+                        <option value="Nerul">Nerul</option>
+                      </select>
                       <input required type="text" name="pincode" placeholder="Pincode" onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30" />
                     </div>
 

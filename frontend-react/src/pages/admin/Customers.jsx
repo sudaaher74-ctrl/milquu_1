@@ -18,12 +18,32 @@ const segmentData = [
   { name: 'Occasional', value: 10, color: '#9CA3AF' },
 ];
 
-const topCustomers = [
-  { id: 1, name: 'Sudarshan Aher', joined: 'Jan 2023', orders: 156, lifetimeValue: '₹45,200', status: 'VIP' },
-  { id: 2, name: 'Priya Sharma', joined: 'Mar 2023', orders: 142, lifetimeValue: '₹38,500', status: 'VIP' },
-  { id: 3, name: 'Amit Kumar', joined: 'Jun 2023', orders: 89, lifetimeValue: '₹22,100', status: 'Regular' },
-  { id: 4, name: 'Neha Gupta', joined: 'Nov 2023', orders: 45, lifetimeValue: '₹12,400', status: 'New' },
-];
+const Customers = () => {
+  const [topCustomers, setTopCustomers] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const res = await fetch('https://milquu-backend.onrender.com/api/admin/customers');
+        const data = await res.json();
+        const mapped = data.map(c => ({
+          id: c._id,
+          name: c.name,
+          joined: new Date(c.createdAt).toLocaleDateString(),
+          orders: 0, // In reality, we'd need to fetch or aggregate their orders
+          lifetimeValue: '₹0',
+          status: 'New'
+        }));
+        setTopCustomers(mapped);
+      } catch (error) {
+        console.error("Failed to fetch customers", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCustomers();
+  }, []);
 
 const StatCard = ({ title, value, icon, trend, colorClass }) => (
   <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between relative overflow-hidden group">
@@ -43,7 +63,6 @@ const StatCard = ({ title, value, icon, trend, colorClass }) => (
   </div>
 );
 
-const Customers = () => {
   return (
     <div className="max-w-7xl mx-auto pb-10 font-sans">
       

@@ -19,6 +19,22 @@ import Revenue from './pages/admin/Revenue';
 import Inventory from './pages/admin/Inventory';
 import Notifications from './pages/admin/Notifications';
 import Settings from './pages/admin/Settings';
+import DeliveryBoys from './pages/admin/DeliveryBoys';
+import BusinessOverview from './pages/admin/BusinessOverview';
+import POS from './pages/admin/POS';
+import Purchases from './pages/admin/Purchases';
+import Expenses from './pages/admin/Expenses';
+import ProfitAnalytics from './pages/admin/ProfitAnalytics';
+import Procurement from './pages/admin/Procurement';
+import Wastage from './pages/admin/Wastage';
+import Reports from './pages/admin/Reports';
+
+import DeliveryLayout from './pages/delivery/DeliveryLayout';
+import DeliveryDashboard from './pages/delivery/DeliveryDashboard';
+import DeliveryLogin from './pages/delivery/DeliveryLogin';
+
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminLogin from './pages/admin/AdminLogin';
 
 // Helper to scroll to top on navigation
 const ScrollToTop = () => {
@@ -32,10 +48,12 @@ const ScrollToTop = () => {
 function App() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
+  const isDelivery = location.pathname.startsWith('/delivery');
+  const showNavAndFooter = !isAdmin && !isDelivery;
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col">
-      {!isAdmin && <Navbar />}
+      {showNavAndFooter && <Navbar />}
       <ScrollToTop />
       
       <main className="flex-grow">
@@ -47,22 +65,50 @@ function App() {
           <Route path="/cart" element={<Cart />} />
           
           {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={
+            <ProtectedRoute allowedRole="admin">
+              <AdminLayout />
+            </ProtectedRoute>
+          }>
             <Route index element={<Overview />} />
             <Route path="orders" element={<Orders />} />
             <Route path="customers" element={<Customers />} />
             <Route path="products" element={<AdminProducts />} />
             <Route path="subscriptions" element={<AdminSubscriptions />} />
             <Route path="deliveries" element={<Deliveries />} />
+            <Route path="delivery-boys" element={<DeliveryBoys />} />
             <Route path="revenue" element={<Revenue />} />
             <Route path="inventory" element={<Inventory />} />
+            
+            {/* New ERP Modules */}
+            <Route path="business-overview" element={<BusinessOverview />} />
+            <Route path="pos" element={<POS />} />
+            <Route path="purchases" element={<Purchases />} />
+            <Route path="expenses" element={<Expenses />} />
+            <Route path="profit" element={<ProfitAnalytics />} />
+            <Route path="procurement" element={<Procurement />} />
+            <Route path="wastage" element={<Wastage />} />
+            <Route path="reports" element={<Reports />} />
+
             <Route path="notifications" element={<Notifications />} />
             <Route path="settings" element={<Settings />} />
+          </Route>
+          {/* Delivery Boy Portal Routes */}
+          <Route path="/delivery/login" element={<DeliveryLogin />} />
+          <Route path="/delivery" element={
+            <ProtectedRoute allowedRole="delivery">
+              <DeliveryLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<DeliveryDashboard />} />
+            <Route path="map" element={<div className="p-8 text-center text-gray-500">Live Map View (Coming Soon)</div>} />
+            <Route path="profile" element={<div className="p-8 text-center text-gray-500">Profile View (Coming Soon)</div>} />
           </Route>
         </Routes>
       </main>
 
-      {!isAdmin && <Footer />}
+      {showNavAndFooter && <Footer />}
     </div>
   );
 }

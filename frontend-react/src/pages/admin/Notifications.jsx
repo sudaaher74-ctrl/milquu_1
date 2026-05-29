@@ -1,54 +1,55 @@
 import React, { useState } from 'react';
-import { Bell, ShoppingBag, PackageX, Truck, RefreshCw, IndianRupee, Check, Settings, Trash2 } from 'lucide-react';
+import { 
+  Bell, PackageX, Truck, IndianRupee, AlertTriangle, 
+  CheckCircle, Clock, Check, Settings, Trash2, CalendarX
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 
-const mockNotifications = [
-  { id: 1, type: 'order', title: 'New Order Received', message: 'Order #3492 placed by Sudarshan Aher for Premium A2 Cow Milk.', time: '2 mins ago', unread: true, icon: ShoppingBag, color: 'text-blue-500', bg: 'bg-blue-50' },
-  { id: 2, type: 'alert', title: 'Critical Stock Alert', message: 'Pure Desi Ghee is below minimum threshold (12 kg remaining).', time: '15 mins ago', unread: true, icon: PackageX, color: 'text-red-500', bg: 'bg-red-50' },
-  { id: 3, type: 'delivery', title: 'Route Deviation', message: 'Agent Suresh P. has deviated from the optimized route in Panvel City.', time: '1 hour ago', unread: false, icon: Truck, color: 'text-orange-500', bg: 'bg-orange-50' },
-  { id: 4, type: 'subscription', title: 'Subscription Renewed', message: 'Priya Sharma renewed her monthly milk subscription.', time: '2 hours ago', unread: false, icon: RefreshCw, color: 'text-green-500', bg: 'bg-green-50' },
-  { id: 5, type: 'payment', title: 'Payment Received', message: 'Payment of ₹1,250 received via UPI for Invoice #INV-882.', time: '5 hours ago', unread: false, icon: IndianRupee, color: 'text-purple-500', bg: 'bg-purple-50' },
-  { id: 6, type: 'order', title: 'Order Cancelled', message: 'Order #3488 was cancelled by the customer.', time: 'Yesterday', unread: false, icon: ShoppingBag, color: 'text-gray-500', bg: 'bg-gray-100' },
-];
+const mockAlerts = [];
 
 const Notifications = () => {
   const [activeFilter, setActiveFilter] = useState('All');
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [alerts, setAlerts] = useState(mockAlerts);
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const unreadCount = alerts.filter(n => n.unread).length;
+  const criticalCount = alerts.filter(n => n.type === 'critical').length;
 
   const markAllRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, unread: false })));
+    setAlerts(alerts.map(n => ({ ...n, unread: false })));
   };
 
-  const deleteNotification = (id) => {
-    setNotifications(notifications.filter(n => n.id !== id));
+  const deleteAlert = (id) => {
+    setAlerts(alerts.filter(n => n.id !== id));
   };
 
-  const filteredNotifications = notifications.filter(n => {
+  const filteredAlerts = alerts.filter(n => {
     if (activeFilter === 'All') return true;
+    if (activeFilter === 'Critical') return n.type === 'critical';
     if (activeFilter === 'Unread') return n.unread;
-    return n.type === activeFilter.toLowerCase();
+    return n.category === activeFilter;
   });
 
   return (
-    <div className="max-w-4xl mx-auto pb-10 font-sans">
+    <div className="max-w-5xl mx-auto pb-10 font-sans">
       
       {/* Header */}
       <div className="flex justify-between items-end mb-8">
         <div>
           <div className="flex items-center space-x-3 mb-2">
-            <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
-              <Bell size={24} />
+            <div className="p-2 bg-red-50 border border-red-100 text-red-600 rounded-lg shadow-sm">
+              <AlertTriangle size={24} />
             </div>
-            <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Notification Center</h1>
+            <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Smart Alerts Center</h1>
           </div>
-          <p className="text-gray-500 text-sm mt-1">You have <strong className="text-milquu-blue">{unreadCount} unread</strong> messages.</p>
+          <p className="text-gray-500 text-sm mt-1">
+            You have <strong className="text-red-600">{criticalCount} critical alerts</strong> and <strong className="text-milquu-blue">{unreadCount} unread</strong> notifications.
+          </p>
         </div>
         <div className="flex space-x-2">
-          <button onClick={markAllRead} className="text-sm font-medium text-gray-500 hover:text-milquu-dark flex items-center px-3 py-2 rounded-lg hover:bg-white transition-colors">
-            <Check size={16} className="mr-2" /> Mark all as read
+          <button onClick={markAllRead} className="text-sm font-medium text-gray-500 hover:text-milquu-dark flex items-center px-4 py-2 border border-gray-200 bg-white rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
+            <Check size={16} className="mr-2" /> Mark all read
           </button>
-          <button className="text-sm font-medium text-gray-500 hover:text-milquu-dark flex items-center p-2 rounded-lg hover:bg-white transition-colors">
+          <button className="text-sm font-medium text-gray-500 hover:text-milquu-dark flex items-center p-2 border border-gray-200 bg-white rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
             <Settings size={18} />
           </button>
         </div>
@@ -56,14 +57,16 @@ const Notifications = () => {
 
       {/* Filters */}
       <div className="flex space-x-2 mb-6 overflow-x-auto hide-scrollbar pb-2">
-        {['All', 'Unread', 'Order', 'Alert', 'Delivery', 'Subscription', 'Payment'].map(f => (
+        {['All', 'Critical', 'Unread', 'Low Stock', 'Delivery Delay', 'Subscription Expiry', 'Pending Payment', 'High Sales'].map(f => (
           <button 
             key={f}
             onClick={() => setActiveFilter(f)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border ${
               activeFilter === f 
-                ? 'bg-milquu-dark text-white shadow-md' 
-                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                ? 'bg-milquu-dark text-white border-milquu-dark shadow-md' 
+                : f === 'Critical' 
+                  ? 'bg-white text-red-600 border-red-200 hover:bg-red-50'
+                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
             }`}
           >
             {f}
@@ -71,58 +74,79 @@ const Notifications = () => {
         ))}
       </div>
 
-      {/* Notifications List */}
+      {/* Alerts List */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {filteredNotifications.length > 0 ? (
+        {filteredAlerts.length > 0 ? (
           <div className="divide-y divide-gray-50">
-            {filteredNotifications.map((notif) => {
-              const Icon = notif.icon;
+            {filteredAlerts.map((alert) => {
+              const Icon = alert.icon;
               return (
-                <div key={notif.id} className={`p-5 flex items-start group transition-colors ${notif.unread ? 'bg-blue-50/30' : 'hover:bg-gray-50/50'}`}>
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  key={alert.id} 
+                  className={`p-5 flex items-start group transition-colors ${alert.unread ? (alert.type === 'critical' ? 'bg-red-50/50' : 'bg-blue-50/30') : 'hover:bg-gray-50/50'}`}
+                >
                   {/* Icon */}
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${notif.bg} ${notif.color} mr-4`}>
-                    <Icon size={20} />
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 border ${alert.bg} ${alert.color} ${alert.border} mr-5 shadow-sm`}>
+                    <Icon size={24} />
                   </div>
                   
                   {/* Content */}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 pt-1">
                     <div className="flex justify-between items-start mb-1">
-                      <h4 className={`text-sm font-bold truncate pr-4 ${notif.unread ? 'text-gray-900' : 'text-gray-700'}`}>
-                        {notif.title}
-                      </h4>
-                      <span className="text-xs text-gray-400 whitespace-nowrap">{notif.time}</span>
+                      <div className="flex items-center space-x-2">
+                        <h4 className={`text-sm font-bold truncate pr-4 ${alert.unread ? 'text-gray-900' : 'text-gray-700'}`}>
+                          {alert.title}
+                        </h4>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${alert.bg} ${alert.color} ${alert.border}`}>
+                          {alert.category}
+                        </span>
+                      </div>
+                      <span className="text-xs font-medium flex items-center text-gray-400 whitespace-nowrap bg-white px-2 py-1 rounded-md border border-gray-100 shadow-sm">
+                        <Clock size={12} className="mr-1" /> {alert.time}
+                      </span>
                     </div>
-                    <p className={`text-sm line-clamp-2 ${notif.unread ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
-                      {notif.message}
+                    <p className={`text-sm mt-1 ${alert.unread ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>
+                      {alert.message}
                     </p>
+                    
+                    {/* Action Buttons for Critical/Warning */}
+                    {(alert.type === 'critical' || alert.type === 'warning') && alert.unread && (
+                      <div className="mt-3 flex space-x-2">
+                        <button className={`px-3 py-1.5 rounded-md text-xs font-bold text-white shadow-sm transition-colors ${
+                          alert.type === 'critical' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-500 hover:bg-orange-600'
+                        }`}>
+                          Take Action
+                        </button>
+                        <button className="px-3 py-1.5 rounded-md text-xs font-bold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 shadow-sm transition-colors">
+                          Dismiss
+                        </button>
+                      </div>
+                    )}
                   </div>
                   
-                  {/* Actions */}
-                  <div className="ml-4 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    {!notif.unread && (
-                      <button 
-                        onClick={() => deleteNotification(notif.id)}
-                        className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
-                        title="Delete Notification"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                    {notif.unread && (
-                      <div className="w-2.5 h-2.5 bg-milquu-blue rounded-full shadow-[0_0_8px_rgba(13,71,161,0.6)] ml-2"></div>
+                  {/* Status Indicator */}
+                  <div className="ml-4 flex items-center">
+                    {alert.unread && (
+                      <div className={`w-2.5 h-2.5 rounded-full shadow-sm ml-2 ${
+                        alert.type === 'critical' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]' : 
+                        alert.type === 'warning' ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]' :
+                        'bg-milquu-blue shadow-[0_0_8px_rgba(13,71,161,0.6)]'
+                      }`}></div>
                     )}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
         ) : (
-          <div className="p-12 text-center flex flex-col items-center">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-              <Bell size={24} className="text-gray-300" />
+          <div className="p-16 text-center flex flex-col items-center">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100 shadow-inner">
+              <Bell size={32} className="text-gray-300" />
             </div>
-            <h3 className="text-gray-900 font-bold mb-1">All caught up!</h3>
-            <p className="text-gray-500 text-sm">You have no {activeFilter.toLowerCase()} notifications at this time.</p>
+            <h3 className="text-gray-900 text-lg font-bold mb-1">System Optimal</h3>
+            <p className="text-gray-500 text-sm">No {activeFilter.toLowerCase()} alerts requiring your attention right now.</p>
           </div>
         )}
       </div>

@@ -46,7 +46,7 @@ const Subscription = () => {
         items: []
       };
 
-      const res = await fetch('http://localhost:5001/api/subscriptions', {
+      const res = await fetch('https://milquu-backend.onrender.com/api/subscriptions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
@@ -287,15 +287,23 @@ const Subscription = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-sans font-semibold text-gray-700 mb-2">City</label>
-                    <input 
+                    <select 
                       required
-                      type="text" 
                       name="city"
                       value={formData.city}
                       onChange={handleInputChange}
-                      placeholder="City Name"
-                      className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans"
-                    />
+                      className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans appearance-none text-gray-700"
+                    >
+                      <option value="" disabled>Select Delivery Area</option>
+                      <option value="Panvel">Panvel</option>
+                      <option value="New Panvel">New Panvel</option>
+                      <option value="Khanda Colony">Khanda Colony</option>
+                      <option value="Kamothe">Kamothe</option>
+                      <option value="Karanjade">Karanjade</option>
+                      <option value="Kharghar">Kharghar</option>
+                      <option value="Belapur">Belapur</option>
+                      <option value="Nerul">Nerul</option>
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-sans font-semibold text-gray-700 mb-2">Pincode</label>

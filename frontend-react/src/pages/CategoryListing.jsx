@@ -29,7 +29,7 @@ const CategoryListing = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('http://localhost:5001/api/products');
+        const res = await fetch('https://milquu-backend.onrender.com/api/products');
         const data = await res.json();
         
         // Group by category

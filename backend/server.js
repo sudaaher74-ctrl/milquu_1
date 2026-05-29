@@ -5,6 +5,8 @@ import connectDB from './config/db.js';
 import productRoutes from './routes/productRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import erpRoutes from './routes/erpRoutes.js'; // Added ERP routes
+import deliveryRoutes from './routes/deliveryRoutes.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -35,6 +37,8 @@ app.get('/', (req, res) => {
 app.use('/api/products', productRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/erp', erpRoutes); // Mounted ERP routes
+app.use('/api/delivery', deliveryRoutes);
 
 const PORT = process.env.PORT || 5001;
 

@@ -3,7 +3,8 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingBag, Users, LogOut, ArrowLeft, 
   Package, CalendarDays, Truck, BarChart3, Boxes, 
-  Bell, Settings, Search, Plus, Menu, X, ChevronDown
+  Bell, Settings, Search, Plus, Menu, X, ChevronDown, Bike,
+  Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -18,9 +19,21 @@ const AdminLayout = () => {
     { name: 'Customers', path: '/admin/customers', icon: <Users size={20} /> },
     { name: 'Products', path: '/admin/products', icon: <Package size={20} /> },
     { name: 'Subscriptions', path: '/admin/subscriptions', icon: <CalendarDays size={20} /> },
-    { name: 'Deliveries', path: '/admin/deliveries', icon: <Truck size={20} /> },
+    { name: 'Live Tracking', path: '/admin/deliveries', icon: <Truck size={20} /> },
+    { name: 'Delivery Staff', path: '/admin/delivery-boys', icon: <Bike size={20} /> },
     { name: 'Revenue', path: '/admin/revenue', icon: <BarChart3 size={20} /> },
     { name: 'Inventory', path: '/admin/inventory', icon: <Boxes size={20} /> },
+    
+    // New ERP Modules
+    { name: 'Business Overview', path: '/admin/business-overview', icon: <Briefcase size={20} /> },
+    { name: 'Shop POS', path: '/admin/pos', icon: <Store size={20} /> },
+    { name: 'Purchases', path: '/admin/purchases', icon: <ShoppingCart size={20} /> },
+    { name: 'Expenses', path: '/admin/expenses', icon: <Receipt size={20} /> },
+    { name: 'Profit Analytics', path: '/admin/profit', icon: <TrendingUp size={20} /> },
+    { name: 'Milk Procurement', path: '/admin/procurement', icon: <Droplets size={20} /> },
+    { name: 'Wastage', path: '/admin/wastage', icon: <Trash2 size={20} /> },
+    { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={20} /> },
+
     { name: 'Notifications', path: '/admin/notifications', icon: <Bell size={20} /> },
     { name: 'Settings', path: '/admin/settings', icon: <Settings size={20} /> },
   ];

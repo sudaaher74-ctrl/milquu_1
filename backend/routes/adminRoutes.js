@@ -4,9 +4,27 @@ import User from '../models/User.js';
 
 const router = express.Router();
 
+// @route   POST /api/admin/login
+// @desc    Admin login
+// @access  Public
+router.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  
+  // Hardcoded secure admin credentials for now
+  if (email === 'admin@milquu.com' && password === 'admin123') {
+    res.json({
+      token: 'admin-auth-token-xyz',
+      role: 'admin',
+      name: 'Admin'
+    });
+  } else {
+    res.status(401).json({ message: 'Invalid Admin Credentials' });
+  }
+});
+
 // @route   GET /api/admin/overview
 // @desc    Get dashboard stats
-// @access  Public (should be protected in prod)
+// @access  Private (Protected route)
 router.get('/overview', async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();

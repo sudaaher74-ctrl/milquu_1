@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Search, Filter, ChevronLeft, ChevronRight, Download } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Search, Filter, ChevronLeft, ChevronRight, Download, X, MapPin, Phone, User, Package, Calendar, Truck, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -10,14 +10,35 @@ const Orders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const itemsPerPage = 8;
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await fetch('http://localhost:5001/api/admin/orders');
+        const res = await fetch('https://milquu-backend.onrender.com/api/erp/orders');
         const data = await res.json();
-        setOrders(data);
+        
+        // Mocking Auto-assignment logic based on area
+        const mappedData = data.map(order => {
+          let area = 'Panvel';
+          let boy = 'Rahul Patil';
+          
+          if (order.shippingAddress?.city?.toLowerCase().includes('kamothe')) { area = 'Kamothe'; boy = 'Amit Jadhav'; }
+          else if (order.shippingAddress?.city?.toLowerCase().includes('kharghar')) { area = 'Kharghar'; boy = 'Suresh More'; }
+          
+          const deliveryStatuses = ['Assigned', 'Picked Up', 'Out For Delivery', 'Delivered'];
+          const randomStatus = order.status === 'Delivered' ? 'Delivered' : deliveryStatuses[Math.floor(Math.random() * (deliveryStatuses.length - 1))];
+          
+          return {
+            ...order,
+            deliveryArea: area,
+            assignedBoy: boy,
+            deliveryStatus: order.status === 'Pending' ? 'Pending Assignment' : randomStatus
+          };
+        });
+        
+        setOrders(mappedData);
       } catch (error) {
         console.error("Failed to fetch orders", error);
       } finally {
@@ -119,13 +140,13 @@ const Orders = () => {
                 <th className="px-6 py-4 font-semibold">Customer</th>
                 <th className="px-6 py-4 font-semibold">Product/Freq</th>
                 <th className="px-6 py-4 font-semibold">Amount</th>
+                <th className="px-6 py-4 font-semibold">Delivery Info</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
-                <th className="px-6 py-4 font-semibold">Order Date</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {currentOrders.length > 0 ? currentOrders.map((order) => (
-                <tr key={order._id} className="hover:bg-gray-50/80 transition-colors group cursor-pointer">
+                <tr key={order._id} onClick={() => setSelectedOrder(order)} className="hover:bg-gray-50/80 transition-colors group cursor-pointer">
                   <td className="px-6 py-4">
                     <span className="text-sm font-bold text-milquu-blue bg-blue-50 px-2 py-1 rounded-md">
                       #{order._id.slice(-6)}
@@ -137,15 +158,21 @@ const Orders = () => {
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-sm text-gray-700 font-medium truncate max-w-[150px]">
-                      {order.items && order.items.length > 0 ? order.items.map(i => i.product.name).join(', ') : 'Subscription'}
+                      {order.orderItems && order.orderItems.length > 0 ? order.orderItems.map(i => i.name || 'Product').join(', ') : 'Custom Order'}
                     </p>
-                    <p className="text-xs text-gray-400">{order.frequency}</p>
+                    <p className="text-xs text-gray-400">{order.orderSource || 'Website'}</p>
                   </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-700">₹{order.totalAmount}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-gray-700">₹{order.totalPrice}</td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-bold text-milquu-dark flex items-center"><Truck size={12} className="mr-1 text-milquu-blue" /> {order.assignedBoy}</p>
+                    <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mt-0.5">{order.deliveryArea}</p>
+                  </td>
                   <td className="px-6 py-4">
                     <StatusBadge status={order.status} />
+                    <p className={`text-[10px] mt-1 font-bold ${order.deliveryStatus === 'Delivered' ? 'text-green-600' : 'text-blue-600'}`}>
+                      {order.deliveryStatus}
+                    </p>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</td>
                 </tr>
               )) : (
                 <tr>
@@ -196,6 +223,152 @@ const Orders = () => {
           </div>
         )}
       </motion.div>
+
+      {/* Order Details Modal */}
+      <AnimatePresence>
+        {selectedOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              onClick={() => setSelectedOrder(null)}
+              className="absolute inset-0 bg-milquu-dark/60 backdrop-blur-sm cursor-pointer"
+            ></motion.div>
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden z-10 flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50/50">
+                <div>
+                  <h2 className="text-xl font-bold text-milquu-dark">Order Details</h2>
+                  <p className="text-sm text-gray-500">Order ID: <span className="font-semibold text-milquu-blue">#{selectedOrder._id}</span></p>
+                </div>
+                <button 
+                  onClick={() => setSelectedOrder(null)}
+                  className="p-2 bg-white border border-gray-200 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                  {/* Customer Info */}
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <h3 className="text-xs font-bold uppercase text-gray-400 mb-3 flex items-center"><User size={14} className="mr-1.5" /> Customer</h3>
+                    <p className="text-sm font-bold text-milquu-dark">{selectedOrder.name || selectedOrder.user?.name || 'Guest'}</p>
+                    <p className="text-sm text-gray-600 mt-1 flex items-center"><Phone size={14} className="mr-1.5 text-gray-400" /> {selectedOrder.phone || 'N/A'}</p>
+                    <p className="text-sm text-gray-600 mt-1">{selectedOrder.user?.email}</p>
+                  </div>
+
+                  {/* Delivery Info */}
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    <h3 className="text-xs font-bold uppercase text-gray-400 mb-3 flex items-center"><MapPin size={14} className="mr-1.5" /> Delivery Address</h3>
+                    <p className="text-sm font-medium text-gray-700 leading-relaxed">
+                      {selectedOrder.shippingAddress?.address ? (
+                        <>
+                          {selectedOrder.shippingAddress.address}<br/>
+                          {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.postalCode}<br/>
+                          {selectedOrder.shippingAddress.country}
+                        </>
+                      ) : (
+                        'No address provided.'
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-6 flex justify-between items-center">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-milquu-blue shadow-sm">
+                      <Truck size={20} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-milquu-dark">Assigned to: {selectedOrder.assignedBoy}</h4>
+                      <p className="text-xs text-gray-500">Area: {selectedOrder.deliveryArea}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="px-3 py-1 bg-white rounded-full text-xs font-bold text-milquu-blue shadow-sm border border-blue-100">
+                      {selectedOrder.deliveryStatus}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-sm font-bold text-milquu-dark flex items-center"><Package size={16} className="mr-1.5 text-milquu-blue" /> Order Items</h3>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center text-sm text-gray-500"><Calendar size={14} className="mr-1" /> {new Date(selectedOrder.createdAt).toLocaleDateString()}</div>
+                    <StatusBadge status={selectedOrder.status} />
+                  </div>
+                </div>
+
+                <div className="border border-gray-100 rounded-xl overflow-hidden mb-6">
+                  <table className="w-full text-left">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Item</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase text-center">Qty</th>
+                        <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase text-right">Price</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {selectedOrder.orderItems && selectedOrder.orderItems.length > 0 ? selectedOrder.orderItems.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-gray-50/50">
+                          <td className="px-4 py-3 text-sm font-medium text-milquu-dark">{item.name || 'Product'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600 text-center">{item.qty || item.quantity}</td>
+                          <td className="px-4 py-3 text-sm font-semibold text-gray-700 text-right">₹{item.price || 0}</td>
+                        </tr>
+                      )) : (
+                        <tr>
+                          <td className="px-4 py-3 text-sm font-medium text-milquu-dark">Custom Item</td>
+                          <td className="px-4 py-3 text-sm text-gray-600 text-center">1</td>
+                          <td className="px-4 py-3 text-sm font-semibold text-gray-700 text-right">₹{selectedOrder.totalPrice}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex justify-end">
+                  <div className="w-full sm:w-1/2 space-y-2">
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>Subtotal</span>
+                      <span>₹{selectedOrder.totalPrice}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>Delivery Fee</span>
+                      <span>₹0</span>
+                    </div>
+                    <div className="pt-2 border-t border-gray-100 flex justify-between text-base font-bold text-milquu-dark mt-2">
+                      <span>Total Amount</span>
+                      <span className="text-milquu-blue">₹{selectedOrder.totalPrice}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end space-x-3">
+                <button onClick={() => setSelectedOrder(null)} className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
+                  Close
+                </button>
+                <button className="px-4 py-2 bg-milquu-blue text-white rounded-lg text-sm font-medium hover:bg-blue-800 shadow-md shadow-milquu-blue/20 transition-colors">
+                  Print Invoice
+                </button>
+              </div>
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 };

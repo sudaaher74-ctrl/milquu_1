@@ -1,12 +1,7 @@
 import React from 'react';
 import { Users, CalendarCheck, RefreshCw, AlertCircle, Search, Filter, TrendingDown, IndianRupee } from 'lucide-react';
 
-const mockSubscriptions = [
-  { id: 'SUB-4D7893', name: 'Sudarshan Aher', product: 'Premium A2 Cow Milk', qty: '1L', freq: 'Daily', status: 'Active', nextDelivery: 'Tomorrow, 6:00 AM', renewal: 'In 14 days' },
-  { id: 'SUB-A165CF', name: 'Rushikesh Patil', product: 'Organic Cow Milk', qty: '2L', freq: 'Alternate Days', status: 'Active', nextDelivery: 'Wednesday, 6:30 AM', renewal: 'In 5 days' },
-  { id: 'SUB-954DCB', name: 'Priya Sharma', product: 'Buffalo Milk', qty: '1.5L', freq: 'Daily', status: 'Paused', nextDelivery: '-', renewal: 'Paused by user' },
-  { id: 'SUB-B42199', name: 'Amit Kumar', product: 'A2 Cow Milk + Paneer', qty: 'Custom', freq: 'Weekly', status: 'Active', nextDelivery: 'Sunday, 7:00 AM', renewal: 'In 2 days (Alert)' },
-];
+const mockSubscriptions = [];
 
 const StatCard = ({ title, value, subtitle, icon, color }) => (
   <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start space-x-4 relative overflow-hidden">
@@ -38,12 +33,12 @@ const AdminSubscriptions = () => {
 
       {/* Top Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5 mb-8">
-        <div className="xl:col-span-1"><StatCard title="Active Plans" value="284" subtitle="+12 this week" icon={<CalendarCheck size={20} className="text-green-600" />} color="bg-green-500" /></div>
-        <div className="xl:col-span-1"><StatCard title="Upcoming Deliveries" value="142" subtitle="For tomorrow" icon={<RefreshCw size={20} className="text-blue-600" />} color="bg-blue-500" /></div>
-        <div className="xl:col-span-1"><StatCard title="Monthly Subs" value="156" subtitle="55% of base" icon={<Users size={20} className="text-purple-600" />} color="bg-purple-500" /></div>
-        <div className="xl:col-span-1"><StatCard title="Renewal Alerts" value="8" subtitle="Exp. in 3 days" icon={<AlertCircle size={20} className="text-orange-600" />} color="bg-orange-500" /></div>
-        <div className="xl:col-span-1"><StatCard title="Sub Revenue" value="₹42K" subtitle="This Month" icon={<IndianRupee size={20} className="text-milquu-blue" />} color="bg-milquu-blue" /></div>
-        <div className="xl:col-span-1"><StatCard title="Churn Rate" value="2.1%" subtitle="-0.5% vs last" icon={<TrendingDown size={20} className="text-red-600" />} color="bg-red-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Active Plans" value="0" subtitle="+0 this week" icon={<CalendarCheck size={20} className="text-green-600" />} color="bg-green-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Upcoming Deliveries" value="0" subtitle="For tomorrow" icon={<RefreshCw size={20} className="text-blue-600" />} color="bg-blue-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Monthly Subs" value="0" subtitle="0% of base" icon={<Users size={20} className="text-purple-600" />} color="bg-purple-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Renewal Alerts" value="0" subtitle="Exp. in 3 days" icon={<AlertCircle size={20} className="text-orange-600" />} color="bg-orange-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Sub Revenue" value="₹0" subtitle="This Month" icon={<IndianRupee size={20} className="text-milquu-blue" />} color="bg-milquu-blue" /></div>
+        <div className="xl:col-span-1"><StatCard title="Churn Rate" value="0%" subtitle="0% vs last" icon={<TrendingDown size={20} className="text-red-600" />} color="bg-red-500" /></div>
       </div>
 
       {/* Main Table Area */}

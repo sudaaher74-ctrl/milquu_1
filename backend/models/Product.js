@@ -7,7 +7,13 @@ const productSchema = new mongoose.Schema({
   unit: { type: String, required: true },
   image: { type: String, required: true },
   category: { type: String, required: true }, // e.g., 'milk', 'by-products'
-  labels: [{ type: String }] // e.g., ['Farm Fresh', 'A2 Protein']
+  labels: [{ type: String }], // e.g., ['Farm Fresh', 'A2 Protein']
+  
+  // ERP Fields
+  purchasePrice: { type: Number, default: 0 },
+  marginPercentage: { type: Number, default: 0 },
+  stock: { type: Number, default: 0 },
+  stockValue: { type: Number, default: 0 }
 }, {
   timestamps: true
 });
