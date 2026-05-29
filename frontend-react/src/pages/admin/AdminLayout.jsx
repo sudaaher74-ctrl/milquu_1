@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, ShoppingBag, Users, LogOut, ArrowLeft, 
   Package, CalendarDays, Truck, BarChart3, Boxes, 
@@ -148,10 +148,10 @@ const AdminLayout = () => {
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 py-2"
                     >
-                      <button className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center"><Package size={16} className="mr-2"/> Add Product</button>
-                      <button className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center"><Users size={16} className="mr-2"/> Add Customer</button>
-                      <button className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center"><CalendarDays size={16} className="mr-2"/> Create Subscription</button>
-                      <button className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center"><Truck size={16} className="mr-2"/> Assign Delivery</button>
+                      <Link to="/admin/products" onClick={() => setQuickAddOpen(false)} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center"><Package size={16} className="mr-2"/> Add Product</Link>
+                      <Link to="/admin/customers" onClick={() => setQuickAddOpen(false)} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center"><Users size={16} className="mr-2"/> Add Customer</Link>
+                      <Link to="/admin/subscriptions" onClick={() => setQuickAddOpen(false)} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center"><CalendarDays size={16} className="mr-2"/> Create Subscription</Link>
+                      <Link to="/admin/deliveries" onClick={() => setQuickAddOpen(false)} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center"><Truck size={16} className="mr-2"/> Assign Delivery</Link>
                     </motion.div>
                   </>
                 )}
