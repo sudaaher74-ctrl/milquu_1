@@ -40,7 +40,7 @@ export const getMyDeliveries = async (req, res) => {
 export const markOrderDelivered = async (req, res) => {
   try {
     const { id } = req.params;
-    const { proofImageUrl } = req.body;
+    const { proofImageUrl, cashCollected } = req.body;
     
     const order = await Order.findById(id);
     if (!order) {
@@ -52,6 +52,12 @@ export const markOrderDelivered = async (req, res) => {
     order.isDelivered = true;
     order.deliveredAt = Date.now();
     order.proofOfDelivery = proofImageUrl || '';
+    
+    if (cashCollected) {
+      order.paymentStatus = 'PAID';
+      order.isPaid = true;
+      order.paidAt = Date.now();
+    }
 
     const updatedOrder = await order.save();
     res.json(updatedOrder);

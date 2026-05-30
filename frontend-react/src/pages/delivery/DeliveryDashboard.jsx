@@ -11,7 +11,8 @@ const DeliveryDashboard = () => {
   
   const [proofNote, setProofNote] = useState('');
   const [proofImage, setProofImage] = useState(null);
-  const [proofImageFile, setProofImageFile] = useState(null); // Added missing state declaration
+  const [proofImageFile, setProofImageFile] = useState(null); 
+  const [cashCollected, setCashCollected] = useState(false);
 
   const socketRef = useRef(null);
 
@@ -26,6 +27,9 @@ const DeliveryDashboard = () => {
         address: order.shippingAddress?.address || 'No Address',
         items: `${order.orderItems?.length || 0} items`,
         orderItems: order.orderItems || [],
+        paymentMethod: order.paymentMethod || 'COD',
+        paymentStatus: order.paymentStatus || 'PENDING',
+        totalPrice: order.totalPrice || 0,
         status: order.isDelivered ? 'Delivered' : 'Pending',
         time: 'Morning Delivery'
       }));
@@ -112,13 +116,17 @@ const DeliveryDashboard = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ proofImageUrl: uploadedImageUrl })
+          body: JSON.stringify({ 
+            proofImageUrl: uploadedImageUrl,
+            cashCollected: cashCollected
+          })
         });
         
         setTimeout(() => {
           setSelectedTask(null);
           setProofImage(null);
           setProofImageFile(null);
+          setCashCollected(false);
         }, 1000);
       } catch (error) {
         console.error("Failed to mark delivered", error);
@@ -333,8 +341,30 @@ const DeliveryDashboard = () => {
                           />
                         </div>
 
+                        {task.paymentMethod === 'COD' && task.paymentStatus === 'PENDING' && (
+                          <div className="bg-orange-50 border border-orange-100 p-3 rounded-xl mb-3">
+                            <h4 className="text-sm font-bold text-orange-800 mb-2">Payment Collection</h4>
+                            <p className="text-xs text-orange-600 mb-3">Collect <span className="font-bold text-lg">₹{task.totalPrice}</span> from the customer in Cash.</p>
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={cashCollected}
+                                onChange={(e) => setCashCollected(e.target.checked)}
+                                className="w-5 h-5 rounded border-orange-300 text-orange-500 focus:ring-orange-500" 
+                              />
+                              <span className="text-sm font-bold text-orange-800">I have collected the cash</span>
+                            </label>
+                          </div>
+                        )}
+
                         <button 
-                          onClick={() => updateTaskStatus(task.id, 'Delivered')}
+                          onClick={() => {
+                            if (task.paymentMethod === 'COD' && task.paymentStatus === 'PENDING' && !cashCollected) {
+                              alert("Please confirm you have collected the cash before confirming delivery.");
+                              return;
+                            }
+                            updateTaskStatus(task.id, 'Delivered')
+                          }}
                           className="w-full bg-green-500 text-white py-3.5 rounded-xl text-sm font-bold shadow-md shadow-green-900/20 flex items-center justify-center transition-transform active:scale-95"
                         >
                           <CheckCircle2 size={18} className="mr-2" /> Confirm Delivery

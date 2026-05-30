@@ -96,7 +96,23 @@ export const getOrders = async (req, res) => {
 
 export const createOrder = async (req, res) => {
   try {
-    const order = new Order(req.body);
+    const orderData = { ...req.body };
+    
+    // Auto-assign delivery boy based on shipping area
+    if (orderData.shippingAddress && orderData.shippingAddress.city) {
+      const area = orderData.shippingAddress.city;
+      // Find an active delivery staff for this area
+      const staff = await DeliveryStaff.findOne({ 
+        area: { $regex: new RegExp(`^${area}$`, 'i') }, 
+        status: 'Active' 
+      });
+      
+      if (staff) {
+        orderData.deliveryStaff = staff._id;
+      }
+    }
+
+    const order = new Order(orderData);
     const createdOrder = await order.save();
 
     res.status(201).json(createdOrder);

@@ -11,6 +11,7 @@ const Orders = () => {
   // State for advanced features
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
+  const [filterPayment, setFilterPayment] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [staffList, setStaffList] = useState([]);
@@ -63,7 +64,8 @@ const Orders = () => {
     const matchesSearch = (order.name || order.user?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
                           order._id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'All' || (order.status || 'Pending').toLowerCase() === filterStatus.toLowerCase();
-    return matchesSearch && matchesStatus;
+    const matchesPayment = filterPayment === 'All' || (order.paymentMethod || 'COD').toUpperCase() === filterPayment.toUpperCase();
+    return matchesSearch && matchesStatus && matchesPayment;
   });
 
   const handleAssignDriver = async (orderId, staffId) => {
@@ -158,6 +160,20 @@ const Orders = () => {
                 <Filter size={16} className="text-gray-500 mr-2" />
                 <select 
                   className="bg-transparent outline-none text-sm font-medium text-gray-600 appearance-none pr-6 cursor-pointer w-full"
+                  value={filterPayment}
+                  onChange={(e) => { setFilterPayment(e.target.value); setCurrentPage(1); }}
+                >
+                  <option value="All">All Payments</option>
+                  <option value="COD">COD</option>
+                  <option value="ONLINE">Online</option>
+                </select>
+              </div>
+            </div>
+            <div className="relative w-full sm:w-auto">
+              <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm px-4 py-2.5 cursor-pointer">
+                <Filter size={16} className="text-gray-500 mr-2" />
+                <select 
+                  className="bg-transparent outline-none text-sm font-medium text-gray-600 appearance-none pr-6 cursor-pointer w-full"
                   value={filterStatus}
                   onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
                 >
@@ -181,6 +197,7 @@ const Orders = () => {
                 <th className="px-6 py-4 font-semibold">Customer</th>
                 <th className="px-6 py-4 font-semibold">Product/Freq</th>
                 <th className="px-6 py-4 font-semibold">Amount</th>
+                <th className="px-6 py-4 font-semibold">Payment</th>
                 <th className="px-6 py-4 font-semibold">Delivery Info</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
               </tr>
@@ -204,6 +221,14 @@ const Orders = () => {
                     <p className="text-xs text-gray-400">{order.orderSource || 'Website'}</p>
                   </td>
                   <td className="px-6 py-4 text-sm font-bold text-gray-700">₹{order.totalPrice}</td>
+                  <td className="px-6 py-4">
+                    <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-md ${order.paymentMethod === 'ONLINE' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                      {order.paymentMethod || 'COD'}
+                    </span>
+                    <p className={`text-[10px] mt-1 font-bold ${order.paymentStatus === 'PAID' ? 'text-green-600' : 'text-orange-500'}`}>
+                      {order.paymentStatus || 'PENDING'}
+                    </p>
+                  </td>
                   <td className="px-6 py-4">
                     <p className="text-sm font-bold text-milquu-dark flex items-center"><Truck size={12} className="mr-1 text-milquu-blue" /> {order.assignedBoy}</p>
                     <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mt-0.5">{order.deliveryArea}</p>
@@ -415,6 +440,12 @@ const Orders = () => {
                     <div className="pt-2 border-t border-gray-100 flex justify-between text-base font-bold text-milquu-dark mt-2">
                       <span>Total Amount</span>
                       <span className="text-milquu-blue">₹{selectedOrder.totalPrice}</span>
+                    </div>
+                    <div className="flex justify-between text-sm mt-2">
+                      <span>Payment</span>
+                      <span className={`font-bold ${selectedOrder.paymentStatus === 'PAID' ? 'text-green-600' : 'text-orange-500'}`}>
+                        {selectedOrder.paymentMethod || 'COD'} ({selectedOrder.paymentStatus || 'PENDING'})
+                      </span>
                     </div>
                   </div>
                 </div>

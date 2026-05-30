@@ -47,7 +47,7 @@ const Cart = () => {
     e.preventDefault();
     
     if (paymentMethod === 'COD') {
-      await saveOrder(null, 'Cash on Delivery', false);
+      await saveOrder(null, 'COD', 'PENDING');
     } else {
       const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
       
@@ -70,17 +70,43 @@ const Cart = () => {
           return;
         }
 
+        // Fetch Razorpay Key
+        const keyRes = await fetch(`${baseUrl}/api/payment/key`);
+        const { key } = await keyRes.json();
+
         const options = {
-          key: "rzp_test_dummy_key_id", // Replace with real key in prod
+          key: key, // Use dynamically fetched key
           amount: orderData.amount,
           currency: orderData.currency,
           name: "Milquu Fresh",
           description: "Farm Fresh Milk Delivery",
           order_id: orderData.id,
           handler: async function (response) {
-            // Usually you'd verify the signature here by calling /api/payment/verify
-            // For this flow, we'll save the order directly on successful payment
-            await saveOrder(response.razorpay_payment_id, 'UPI / Online', true);
+            try {
+              // Verify payment on backend
+              const verifyRes = await fetch(`${baseUrl}/api/payment/verify`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+              });
+              const verifyData = await verifyRes.json();
+              if (verifyData.success) {
+                await saveOrder(response.razorpay_payment_id, 'ONLINE', 'PAID', {
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature
+                });
+              } else {
+                alert('Payment verification failed.');
+              }
+            } catch (err) {
+              console.error(err);
+              alert('Error verifying payment.');
+            }
           },
           prefill: {
             name: formData.name,
@@ -101,7 +127,7 @@ const Cart = () => {
     }
   };
 
-  const saveOrder = async (paymentId, method, isPaid = false) => {
+  const saveOrder = async (paymentId, method, paymentStatus, razorpayDetails = {}) => {
     try {
       const userInfoStr = localStorage.getItem('userInfo');
       const userId = userInfoStr && userInfoStr !== 'undefined' ? JSON.parse(userInfoStr)._id : undefined;
@@ -124,7 +150,11 @@ const Cart = () => {
           country: 'India'
         },
         paymentMethod: method,
-        isPaid: isPaid,
+        paymentStatus: paymentStatus,
+        razorpayOrderId: razorpayDetails.razorpayOrderId,
+        razorpayPaymentId: razorpayDetails.razorpayPaymentId,
+        razorpaySignature: razorpayDetails.razorpaySignature,
+        isPaid: paymentStatus === 'PAID',
         paymentResult: paymentId ? {
           id: paymentId,
           status: 'paid',

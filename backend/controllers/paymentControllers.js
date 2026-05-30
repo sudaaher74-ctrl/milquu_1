@@ -57,3 +57,10 @@ export const verifyPayment = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Get Razorpay Key
+// @route   GET /api/payment/key
+// @access  Public
+export const getRazorpayKey = (req, res) => {
+  res.json({ key: process.env.RAZORPAY_KEY_ID || 'rzp_test_dummy_key_id' });
+};
