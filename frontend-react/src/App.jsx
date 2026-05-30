@@ -129,14 +129,18 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/account" element={<MyAccount />} />
             
-            {/* Admin Routes */}
+            {/* Admin Routes - wrap AdminLayout so all /admin/* paths work */}
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={
-              <ProtectedRoute allowedRole="admin">
-                <AdminLayout />
-              </ProtectedRoute>
-            }>
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRole="admin">
+                  <AdminLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route index element={<Overview />} />
+              <Route path="dashboard" element={<Overview />} />
               <Route path="business-overview" element={<BusinessOverview />} />
               <Route path="orders" element={<Orders />} />
               <Route path="customers" element={<Customers />} />
@@ -155,7 +159,6 @@ function App() {
               <Route path="reports" element={<Reports />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="settings" element={<Settings />} />
-              {/* Catch-all for /admin/* to redirect to /admin */}
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Route>
             {/* Delivery Boy Portal Routes */}
