@@ -51,16 +51,21 @@ const MyAccount = () => {
     setLoadingOrders(true);
     try {
       const userInfoStr = localStorage.getItem('userInfo');
-      if (!userInfoStr || userInfoStr === 'undefined') return;
+      if (!userInfoStr || userInfoStr === 'undefined') {
+        setLoadingOrders(false);
+        return;
+      }
       const userToken = JSON.parse(userInfoStr).token;
 
       const res = await fetch('https://milquu-backend.onrender.com/api/users/orders', {
         headers: { 'Authorization': `Bearer ${userToken}` }
       });
       const data = await res.json();
-      setOrders(data);
+      // Guard: only set if data is actually an array
+      setOrders(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error(err);
+      console.error('fetchOrders error:', err);
+      setOrders([]);
     } finally {
       setLoadingOrders(false);
     }
@@ -201,26 +206,33 @@ const MyAccount = () => {
                     </div>
                   ) : orders.length > 0 ? (
                     <div className="space-y-4">
-                      {orders.map(order => (
-                        <div key={order._id} className="bg-gray-50 border border-gray-200 rounded-xl p-6">
-                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                            <div>
-                              <h4 className="font-bold text-gray-800">Order #{order._id.substring(0,8).toUpperCase()}</h4>
-                              <p className="text-sm text-gray-500">₹{order.totalPrice || order.totalAmount} • {new Date(order.createdAt).toLocaleDateString()}</p>
-                              <div className="mt-2 flex items-center gap-2">
-                                <span className={`text-xs font-bold px-2 py-1 rounded-md ${order.isDelivered ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                                  {order.isDelivered ? 'DELIVERED' : 'PENDING'}
+                      {orders.map(order => {
+                        const orderId = order?._id ? String(order._id) : 'unknown';
+                        const price = order?.totalPrice || order?.totalAmount || 0;
+                        const date = order?.createdAt ? new Date(order.createdAt).toLocaleDateString() : '';
+                        const delivered = !!order?.isDelivered;
+                        const itemCount = order?.orderItems?.length || order?.items?.length || 0;
+                        return (
+                          <div key={orderId} className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                              <div>
+                                <h4 className="font-bold text-gray-800">Order #{orderId.substring(0,8).toUpperCase()}</h4>
+                                <p className="text-sm text-gray-500">₹{price} • {date}</p>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <span className={`text-xs font-bold px-2 py-1 rounded-md ${delivered ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                    {delivered ? 'DELIVERED' : 'PENDING'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-gray-600 bg-white border border-gray-200 px-3 py-1 rounded-lg">
+                                  {itemCount} items
                                 </span>
                               </div>
                             </div>
-                            <div>
-                              <span className="text-sm font-medium text-gray-600 bg-white border border-gray-200 px-3 py-1 rounded-lg">
-                                {order.orderItems?.length || order.items?.length || 0} items
-                              </span>
-                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-100 border-dashed">
