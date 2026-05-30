@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
+    <!-- Cache buster to clear old corrupted data from testing -->
+    <script>
+      if (!localStorage.getItem('milquu_v2_cache_cleared')) {
+        localStorage.clear();
+        sessionStorage.clear();
+        localStorage.setItem('milquu_v2_cache_cleared', 'true');
+        // Force reload without cache
+        window.location.reload(true);
+      }
+    </script>
+    
     <!-- Google Fonts: Outfit and Playfair Display for modern luxury look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
