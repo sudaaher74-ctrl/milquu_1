@@ -41,7 +41,7 @@ const MyAccount = () => {
         headers: { 'Authorization': `Bearer ${userToken}` }
       });
       const data = await res.json();
-      setSubscriptions(data);
+      setSubscriptions(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -111,10 +111,10 @@ const MyAccount = () => {
           <div className="w-full md:w-64 flex-shrink-0">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-milquu-blue mb-4 mx-auto md:mx-0">
-                <span className="text-2xl font-bold font-serif">{user.name.charAt(0)}</span>
+                <span className="text-2xl font-bold font-serif">{user?.name?.charAt(0) || 'U'}</span>
               </div>
-              <h2 className="text-xl font-bold text-gray-800 text-center md:text-left">{user.name}</h2>
-              <p className="text-sm text-gray-500 text-center md:text-left">{user.email}</p>
+              <h2 className="text-xl font-bold text-gray-800 text-center md:text-left">{user?.name || 'User'}</h2>
+              <p className="text-sm text-gray-500 text-center md:text-left">{user?.email}</p>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -169,25 +169,25 @@ const MyAccount = () => {
                     <div>
                       <label className="block text-sm font-medium text-gray-500 mb-1">Full Name</label>
                       <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-800 font-medium">
-                        {user.name}
+                        {user?.name || 'Not provided'}
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-500 mb-1">Email Address</label>
                       <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-800 font-medium">
-                        {user.email}
+                        {user?.email || 'Not provided'}
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-500 mb-1">Phone Number</label>
                       <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-800 font-medium">
-                        {user.phone || 'Not provided'}
+                        {user?.phone || 'Not provided'}
                       </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-500 mb-1">Delivery Address</label>
                       <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-800 font-medium">
-                        {user.address || 'Not provided'}
+                        {user?.address || 'Not provided'}
                       </div>
                     </div>
                   </div>
