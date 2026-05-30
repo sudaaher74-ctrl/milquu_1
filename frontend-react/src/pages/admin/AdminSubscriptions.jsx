@@ -20,10 +20,20 @@ const AdminSubscriptions = () => {
   const [subscriptionsData, setSubscriptionsData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchSubscriptions = async () => {
-      try {
-        const { data } = await api.get('/api/subscriptions');
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    deliveryAddress: '',
+    frequency: 'Daily',
+    productName: 'Cow Milk',
+    qty: 1
+  });
+
+  const fetchSubscriptions = async () => {
+    try {
+      const { data } = await api.get('/api/subscriptions');
         const mappedData = data.map(sub => ({
           ...sub,
           id: sub._id,
@@ -38,12 +48,38 @@ const AdminSubscriptions = () => {
         setSubscriptionsData(mappedData);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching subscriptions", error);
-        setLoading(false);
-      }
-    };
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchSubscriptions();
   }, []);
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        name: formData.name,
+        phone: formData.phone,
+        deliveryAddress: formData.deliveryAddress,
+        frequency: formData.frequency,
+        items: [{ name: formData.productName, qty: Number(formData.qty), price: 80 }],
+        status: 'Active',
+      };
+      await api.post('/api/subscriptions', payload);
+      alert('Subscription created successfully!');
+      setIsModalOpen(false);
+      setFormData({ name: '', phone: '', deliveryAddress: '', frequency: 'Daily', productName: 'Cow Milk', qty: 1 });
+      fetchSubscriptions();
+    } catch (error) {
+      alert('Failed to create subscription');
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto pb-10">
@@ -54,7 +90,10 @@ const AdminSubscriptions = () => {
           <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Subscriptions</h1>
           <p className="text-gray-500 text-sm mt-1">Manage recurring orders and monthly subscribers.</p>
         </div>
-        <button className="bg-milquu-blue text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors shadow-md shadow-milquu-blue/20">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="bg-milquu-blue text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors shadow-md shadow-milquu-blue/20"
+        >
           Create Subscription
         </button>
       </div>
@@ -138,6 +177,55 @@ const AdminSubscriptions = () => {
           </table>
         </div>
       </div>
+      
+      {/* Create Subscription Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4">Create Offline Subscription</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+                <input required type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full border rounded-lg p-2" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <input required type="text" name="phone" value={formData.phone} onChange={handleInputChange} className="w-full border rounded-lg p-2" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
+                <textarea required name="deliveryAddress" value={formData.deliveryAddress} onChange={handleInputChange} className="w-full border rounded-lg p-2" rows="2"></textarea>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
+                  <select name="productName" value={formData.productName} onChange={handleInputChange} className="w-full border rounded-lg p-2">
+                    <option value="Cow Milk">Cow Milk</option>
+                    <option value="Buffalo Milk">Buffalo Milk</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Quantity (Litres)</label>
+                  <input required type="number" name="qty" min="1" value={formData.qty} onChange={handleInputChange} className="w-full border rounded-lg p-2" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Frequency</label>
+                <select name="frequency" value={formData.frequency} onChange={handleInputChange} className="w-full border rounded-lg p-2">
+                  <option value="Daily">Daily</option>
+                  <option value="Alternate Days">Alternate Days</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-milquu-blue text-white rounded-lg hover:bg-blue-800">
+                  Create Subscription
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

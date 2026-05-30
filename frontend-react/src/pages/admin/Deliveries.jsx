@@ -24,6 +24,9 @@ const Deliveries = () => {
   const [activeTab, setActiveTab] = useState('Map');
   const [mockDeliveries, setMockDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [assignForm, setAssignForm] = useState({ agentId: '', area: '' });
+  const [availableStaff, setAvailableStaff] = useState([]);
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -36,7 +39,6 @@ const Deliveries = () => {
         
         const staff = staffRes.data;
 
-        // Group orders by staff
         const deliveriesByStaff = staff.map(boy => {
           return {
             id: boy._id,
@@ -52,6 +54,7 @@ const Deliveries = () => {
           };
         }).filter(d => d.status === 'Active');
 
+        setAvailableStaff(staff);
         setMockDeliveries(deliveriesByStaff);
         setLoading(false);
       } catch (error) {
@@ -95,6 +98,17 @@ const Deliveries = () => {
     };
   }, [mockDeliveries.length]);
 
+  const handleAssignSubmit = (e) => {
+    e.preventDefault();
+    if (!assignForm.agentId || !assignForm.area) {
+      alert("Please select both agent and area");
+      return;
+    }
+    alert(`Agent assigned to ${assignForm.area} successfully!`);
+    setIsAssignModalOpen(false);
+    setAssignForm({ agentId: '', area: '' });
+  };
+
   return (
     <div className="max-w-7xl mx-auto pb-10 font-sans">
       
@@ -105,10 +119,10 @@ const Deliveries = () => {
           <p className="text-gray-500 text-sm mt-1">Live GPS tracking, route efficiency, and driver performance.</p>
         </div>
         <div className="flex space-x-3">
-          <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center">
-             <Zap size={16} className="mr-2" /> Optimize Routes
-          </button>
-          <button className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md shadow-gray-900/20 flex items-center">
+          <button 
+            onClick={() => setIsAssignModalOpen(true)}
+            className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md shadow-gray-900/20 flex items-center"
+          >
             <Truck size={18} className="mr-2" /> Assign Agent
           </button>
         </div>
@@ -263,6 +277,60 @@ const Deliveries = () => {
                 <h3 className="text-gray-500 text-sm font-medium">On-Time Rate</h3>
                 <p className="text-3xl font-bold text-milquu-dark mt-1">0%</p>
              </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Agent Modal */}
+      {isAssignModalOpen && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-4 text-milquu-dark">Assign Agent to Route</h2>
+            <form onSubmit={handleAssignSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Select Agent</label>
+                <select 
+                  required
+                  value={assignForm.agentId}
+                  onChange={(e) => setAssignForm({ ...assignForm, agentId: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg p-2 focus:outline-none focus:border-milquu-blue bg-white"
+                >
+                  <option value="">-- Select Agent --</option>
+                  {availableStaff.map(staff => (
+                    <option key={staff._id} value={staff._id}>{staff.name} ({staff.area})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Select Area / Route</label>
+                <select 
+                  required
+                  value={assignForm.area}
+                  onChange={(e) => setAssignForm({ ...assignForm, area: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg p-2 focus:outline-none focus:border-milquu-blue bg-white"
+                >
+                  <option value="">-- Select Route --</option>
+                  <option value="New Panvel East">New Panvel East</option>
+                  <option value="Khandeshwar">Khandeshwar</option>
+                  <option value="Kharghar">Kharghar</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setIsAssignModalOpen(false)}
+                  className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-4 py-2 bg-milquu-dark text-white rounded-lg hover:bg-gray-800 text-sm font-medium"
+                >
+                  Assign Route
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

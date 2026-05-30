@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../utils/api.js';
 import { Search, Filter, ChevronLeft, ChevronRight, Download, X, MapPin, Phone, User, Package, Calendar, Truck, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ExportButton from '../../components/admin/ExportButton';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -110,6 +111,17 @@ const Orders = () => {
     );
   }
 
+  const exportData = filteredOrders.map(order => ({
+    'Order ID': order._id,
+    'Customer Name': order.name || order.user?.name || 'Unknown',
+    'Phone': order.phone || 'N/A',
+    'Area': order.deliveryArea || 'N/A',
+    'Status': order.status || 'Pending',
+    'Delivery Boy': order.assignedBoy || 'Unassigned',
+    'Total (Rs)': order.totalPrice || 0,
+    'Date': new Date(order.createdAt).toLocaleDateString()
+  }));
+
   return (
     <div className="max-w-7xl mx-auto pb-10 font-sans">
       
@@ -119,9 +131,7 @@ const Orders = () => {
           <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Recent Orders</h1>
           <p className="text-gray-500 text-sm mt-1">Manage and track all customer orders and subscriptions.</p>
         </div>
-        <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center">
-          <Download size={16} className="mr-2" /> Export CSV
-        </button>
+        <ExportButton data={exportData} filename="Orders_Export" title="Orders Report" />
       </div>
 
       <motion.div 

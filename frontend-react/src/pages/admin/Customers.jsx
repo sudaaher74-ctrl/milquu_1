@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import api from '../../utils/api.js';
 import { Users, UserPlus, UserCheck, Star, ArrowUpRight, ArrowDownRight, Download, Filter } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import ExportButton from '../../components/admin/ExportButton';
 
 const growthData = [
   { name: 'Jan', new: 45, returning: 120 },
@@ -64,6 +65,15 @@ const StatCard = ({ title, value, icon, trend, colorClass }) => (
   </div>
 );
 
+  const exportData = topCustomers.map(c => ({
+    'Customer ID': c.id,
+    'Name': c.name,
+    'Joined Date': c.joined,
+    'Total Orders': c.orders,
+    'Lifetime Value': c.lifetimeValue,
+    'Status': c.status
+  }));
+
   return (
     <div className="max-w-7xl mx-auto pb-10 font-sans">
       
@@ -74,9 +84,7 @@ const StatCard = ({ title, value, icon, trend, colorClass }) => (
           <p className="text-gray-500 text-sm mt-1">Analyze acquisition, retention, and customer lifetime value.</p>
         </div>
         <div className="flex space-x-3">
-          <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center">
-            <Download size={16} className="mr-2" /> Export
-          </button>
+          <ExportButton data={exportData} filename="Customers_Export" title="Customer Insights Report" />
         </div>
       </div>
 

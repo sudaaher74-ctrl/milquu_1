@@ -4,6 +4,7 @@ import {
   Plus, Edit2, Trash2, Search, Filter, Download, MoreVertical, 
   ArrowUpDown, Package, DollarSign, TrendingUp, AlertCircle, X, Image as ImageIcon, CheckCircle
 } from 'lucide-react';
+import ExportButton from '../../components/admin/ExportButton';
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -12,6 +13,7 @@ const AdminProducts = () => {
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProductId, setEditingProductId] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -61,9 +63,43 @@ const AdminProducts = () => {
     }
   };
 
+  const openAddModal = () => {
+    setEditingProductId(null);
+    setFormData({ name: '', category: 'milk', price: '', stock: '', description: '', unit: '1 Litre' });
+    setImageFile(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = async (product) => {
+    setEditingProductId(product.id);
+    setFormData({
+      name: product.name,
+      category: product.category,
+      price: product.sellingPrice,
+      stock: product.stock,
+      description: product.description || '',
+      unit: product.unit || '1 Litre',
+      image: product.image
+    });
+    setImageFile(null);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      try {
+        await api.delete(`/api/products/${id}`);
+        fetchProducts();
+      } catch (error) {
+        console.error("Delete error:", error);
+        alert("Failed to delete product");
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!imageFile) {
+    if (!imageFile && !editingProductId && !formData.image) {
       alert('Please select an image');
       return;
     }
@@ -90,15 +126,18 @@ const AdminProducts = () => {
         image: imageUrl
       };
 
-      const productRes = await api.post('/api/products', productPayload);
-      
-      if (productRes.data) {
+      if (editingProductId) {
+        await api.put(`/api/products/${editingProductId}`, productPayload);
+        alert('Product updated successfully!');
+      } else {
+        await api.post('/api/products', productPayload);
         alert('Product added successfully!');
-        setIsModalOpen(false);
-        setFormData({ name: '', category: 'milk', price: '', stock: '', description: '', unit: '1 Litre' });
-        setImageFile(null);
-        fetchProducts();
       }
+      
+      setIsModalOpen(false);
+      setFormData({ name: '', category: 'milk', price: '', stock: '', description: '', unit: '1 Litre' });
+      setImageFile(null);
+      fetchProducts();
       
     } catch (error) {
       console.error('Submit error:', error);
@@ -127,6 +166,17 @@ const AdminProducts = () => {
   }) : { name: 'N/A', sellingPrice: 1, purchasePrice: 1 };
   const lowStockCount = products.filter(p => p.stock < 20).length;
 
+  const exportData = filteredProducts.map(p => ({
+    'Product ID': p.id,
+    'Name': p.name,
+    'SKU': p.sku,
+    'Category': p.category,
+    'Selling Price': p.sellingPrice,
+    'Purchase Price': p.purchasePrice,
+    'Stock': p.stock,
+    'Status': p.status
+  }));
+
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">
       
@@ -137,14 +187,12 @@ const AdminProducts = () => {
           <p className="text-gray-500 text-sm mt-1">Manage pricing, margins, stock value, and catalog status.</p>
         </div>
         <div className="flex space-x-3">
-          <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center">
-            <Download size={16} className="mr-2" /> Export
-          </button>
+          <ExportButton data={exportData} filename="Products_Export" title="Product Management Report" />
           <button className="bg-milquu-dark text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
             <Edit2 size={16} className="mr-2" /> Bulk Edit
           </button>
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={openAddModal}
             className="bg-milquu-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors shadow-md shadow-milquu-blue/20 flex items-center"
           >
             <Plus size={16} className="mr-2" /> Add Product
@@ -278,10 +326,10 @@ const AdminProducts = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-1.5 text-gray-400 hover:text-milquu-blue hover:bg-blue-50 rounded transition-colors mx-1">
+                      <button onClick={() => openEditModal(product)} className="p-1.5 text-gray-400 hover:text-milquu-blue hover:bg-blue-50 rounded transition-colors mx-1">
                         <Edit2 size={16} />
                       </button>
-                      <button className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors mx-1">
+                      <button onClick={() => handleDelete(product.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors mx-1">
                         <Trash2 size={16} />
                       </button>
                       <button className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors mx-1">
@@ -306,7 +354,7 @@ const AdminProducts = () => {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-4">Add New Product</h2>
+            <h2 className="text-2xl font-bold mb-4">{editingProductId ? 'Edit Product' : 'Add New Product'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
@@ -340,8 +388,8 @@ const AdminProducts = () => {
                 <textarea name="description" value={formData.description} onChange={handleInputChange} className="w-full border rounded-lg p-2" rows="2"></textarea>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
-                <input required type="file" accept="image/*" onChange={handleImageChange} className="w-full border rounded-lg p-2" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Product Image {editingProductId && '(Leave empty to keep existing)'}</label>
+                <input type="file" accept="image/*" onChange={handleImageChange} className="w-full border rounded-lg p-2" />
               </div>
               <div className="flex justify-end space-x-3 mt-6">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg">Cancel</button>

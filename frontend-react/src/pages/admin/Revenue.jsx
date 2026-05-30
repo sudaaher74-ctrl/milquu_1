@@ -8,6 +8,7 @@ import {
   BarChart, Bar, Legend, PieChart, Pie, Cell
 } from 'recharts';
 import { motion } from 'framer-motion';
+import ExportButton from '../../components/admin/ExportButton';
 
 // Mock Data
 const monthlyRevenueData = [];
@@ -41,6 +42,16 @@ const StatCard = ({ title, value, icon, trend, colorClass, subtitle }) => (
 );
 
 const Revenue = () => {
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+
+  const exportData = monthlyRevenueData.map(d => ({
+    'Month': d.month,
+    'Web Sales': d.web,
+    'Shop POS': d.shop,
+    'Subscriptions': d.sub,
+    'Total Revenue': d.web + d.shop + d.sub
+  }));
+
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">
       
@@ -51,12 +62,19 @@ const Revenue = () => {
           <p className="text-gray-500 text-sm mt-1">Deep dive into revenue streams, channel performance, and sales growth.</p>
         </div>
         <div className="flex space-x-3">
-          <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center">
-            <Calendar size={16} className="mr-2" /> This Year (2026)
-          </button>
-          <button className="bg-milquu-dark text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
-            <Download size={16} className="mr-2" /> Export Report
-          </button>
+          <div className="relative">
+            <select 
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="appearance-none bg-white border border-gray-200 text-gray-600 pl-9 pr-8 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm outline-none focus:border-milquu-gold"
+            >
+              <option value="2026">This Year (2026)</option>
+              <option value="2025">Last Year (2025)</option>
+              <option value="2024">2024</option>
+            </select>
+            <Calendar size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          </div>
+          <ExportButton data={exportData} filename={`Revenue_Export_${selectedYear}`} title={`Revenue Report - ${selectedYear}`} className="!bg-milquu-dark !text-white hover:!bg-gray-800" />
         </div>
       </div>
 

@@ -45,4 +45,36 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// @route   PUT /api/products/:id
+// @desc    Update a product
+// @access  Private/Admin
+router.put('/:id', protect, admin, async (req, res) => {
+  try {
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (product) {
+      res.json(product);
+    } else {
+      res.status(404).json({ message: 'Product not found' });
+    }
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid data', error: error.message });
+  }
+});
+
+// @route   DELETE /api/products/:id
+// @desc    Delete a product
+// @access  Private/Admin
+router.delete('/:id', protect, admin, async (req, res) => {
+  try {
+    const product = await Product.findByIdAndDelete(req.params.id);
+    if (product) {
+      res.json({ message: 'Product removed' });
+    } else {
+      res.status(404).json({ message: 'Product not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+});
+
 export default router;

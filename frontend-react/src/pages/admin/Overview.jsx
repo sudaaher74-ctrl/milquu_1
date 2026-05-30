@@ -5,6 +5,7 @@ import {
   IndianRupee, TrendingUp, TrendingDown, Package, Users, 
   CalendarDays, ShoppingBag, Truck, Store, Globe, AlertTriangle, ArrowUpRight
 } from 'lucide-react';
+import ExportButton from '../../components/admin/ExportButton';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, LineChart, Line, ComposedChart
@@ -65,6 +66,14 @@ const Overview = () => {
     orders: 0
   });
 
+  const reportData = [
+    { Metric: 'Total Revenue', Value: metrics.revenue },
+    { Metric: 'Net Profit', Value: metrics.netProfit },
+    { Metric: 'Total Orders', Value: metrics.orders },
+    { Metric: 'Total Expenses', Value: metrics.expenses },
+    { Metric: 'Total Purchases', Value: metrics.purchases }
+  ];
+
   React.useEffect(() => {
     const fetchAnalytics = async () => {
       try {
@@ -92,9 +101,7 @@ const Overview = () => {
           <button className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
             Last 7 Days
           </button>
-          <button className="px-4 py-2 bg-milquu-dark text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md">
-            Generate Report
-          </button>
+          <ExportButton data={reportData} filename="Executive_Overview" title="Executive Overview Report" className="!bg-milquu-dark !text-white hover:!bg-gray-800" />
         </div>
       </div>
       

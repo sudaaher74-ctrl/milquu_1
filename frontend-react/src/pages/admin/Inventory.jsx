@@ -5,6 +5,7 @@ import {
   PackageX, Database, Search, Download
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import ExportButton from '../../components/admin/ExportButton';
 
 const InventoryCard = ({ item }) => {
   const stockValue = item.stock * item.purchasePrice;
@@ -80,9 +81,12 @@ const Inventory = () => {
   const [inventoryData, setInventoryData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchInventory = async () => {
-      try {
+  // Modal State
+  const [isAddStockModalOpen, setIsAddStockModalOpen] = useState(false);
+  const [addStockForm, setAddStockForm] = useState({ productId: '', quantity: 0 });
+
+  const fetchInventory = async () => {
+    try {
         const { data } = await api.get('/api/products');
         const mappedData = data.map(item => {
           const minLevel = item.category === 'milk' ? 10 : 5;
@@ -109,6 +113,28 @@ const Inventory = () => {
     fetchInventory();
   }, []);
 
+  const handleAddStockSubmit = async (e) => {
+    e.preventDefault();
+    if (!addStockForm.productId || addStockForm.quantity <= 0) {
+      alert("Please select a product and valid quantity.");
+      return;
+    }
+    
+    try {
+      const product = inventoryData.find(p => p.id === addStockForm.productId);
+      if (!product) return;
+      
+      const newStock = product.stock + Number(addStockForm.quantity);
+      await api.put(`/api/products/${addStockForm.productId}`, { stock: newStock });
+      alert('Stock added successfully!');
+      setIsAddStockModalOpen(false);
+      setAddStockForm({ productId: '', quantity: 0 });
+      fetchInventory();
+    } catch (error) {
+      alert("Failed to add stock");
+    }
+  };
+
   const totalValue = inventoryData.reduce((acc, item) => acc + (item.stock * item.purchasePrice), 0);
   const totalQuantity = inventoryData.reduce((acc, item) => acc + item.stock, 0);
   const lowStockCount = inventoryData.filter(i => i.status === 'Low Stock').length;
@@ -117,6 +143,17 @@ const Inventory = () => {
   const deadInventoryCount = 1;
 
   const filteredData = inventoryData.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  const exportData = filteredData.map(item => ({
+    'Item ID': item.id,
+    'Name': item.name,
+    'Category': item.category,
+    'Stock': item.stock,
+    'Unit': item.unit,
+    'Status': item.status,
+    'Purchase Price': item.purchasePrice,
+    'Stock Value': item.stock * item.purchasePrice
+  }));
 
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">
@@ -128,10 +165,11 @@ const Inventory = () => {
           <p className="text-gray-500 text-sm mt-1">Real-time tracking of stock values, expected revenue, and profits.</p>
         </div>
         <div className="flex space-x-3">
-          <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center">
-            <Download size={16} className="mr-2" /> Export Log
-          </button>
-          <button className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
+          <ExportButton data={exportData} filename="Inventory_Log" title="Inventory Report" />
+          <button 
+            onClick={() => setIsAddStockModalOpen(true)}
+            className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center"
+          >
             <Boxes size={18} className="mr-2" /> Add Stock
           </button>
         </div>
@@ -213,6 +251,57 @@ const Inventory = () => {
           <InventoryCard key={item.id} item={item} />
         ))}
       </div>
+
+      {/* Add Stock Modal */}
+      {isAddStockModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-4 text-milquu-dark">Add Stock</h2>
+            <form onSubmit={handleAddStockSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Select Product</label>
+                <select 
+                  required
+                  value={addStockForm.productId}
+                  onChange={(e) => setAddStockForm({ ...addStockForm, productId: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg p-2 focus:outline-none focus:border-milquu-blue bg-white"
+                >
+                  <option value="">-- Select Product --</option>
+                  {inventoryData.map(item => (
+                    <option key={item.id} value={item.id}>{item.name} (Current: {item.stock})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity to Add</label>
+                <input 
+                  required
+                  type="number" 
+                  min="1"
+                  value={addStockForm.quantity}
+                  onChange={(e) => setAddStockForm({ ...addStockForm, quantity: e.target.value })}
+                  className="w-full border border-gray-200 rounded-lg p-2 focus:outline-none focus:border-milquu-blue"
+                />
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setIsAddStockModalOpen(false)}
+                  className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-4 py-2 bg-milquu-dark text-white rounded-lg hover:bg-gray-800 text-sm font-medium flex items-center"
+                >
+                  <Boxes size={16} className="mr-2" /> Add Inventory
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
