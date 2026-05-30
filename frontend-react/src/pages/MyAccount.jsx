@@ -5,6 +5,8 @@ import { LogOut, User, Package, Calendar, Settings, Play, Pause, XCircle } from 
 import { motion } from 'framer-motion';
 
 const MyAccount = () => {
+  const baseUrl = import.meta.env.MODE === 'development' ? 'http://localhost:5001' : 'https://milquu-backend.onrender.com';
+
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
@@ -35,7 +37,7 @@ const MyAccount = () => {
       if (!userInfoStr || userInfoStr === 'undefined') return;
       const userToken = JSON.parse(userInfoStr).token;
       
-      const res = await fetch('https://milquu-backend.onrender.com/api/users/subscriptions', {
+      const res = await fetch(`${baseUrl}/api/users/subscriptions`, {
         headers: { 'Authorization': `Bearer ${userToken}` }
       });
       const data = await res.json();
@@ -57,7 +59,7 @@ const MyAccount = () => {
       }
       const userToken = JSON.parse(userInfoStr).token;
 
-      const res = await fetch('https://milquu-backend.onrender.com/api/users/orders', {
+      const res = await fetch(`${baseUrl}/api/users/orders`, {
         headers: { 'Authorization': `Bearer ${userToken}` }
       });
       const data = await res.json();
@@ -76,7 +78,7 @@ const MyAccount = () => {
       const userInfoStr = localStorage.getItem('userInfo');
       if (!userInfoStr || userInfoStr === 'undefined') return;
       const userToken = JSON.parse(userInfoStr).token;
-      const res = await fetch(`https://milquu-backend.onrender.com/api/users/subscriptions/${id}/status`, {
+      const res = await fetch(`${baseUrl}/api/users/subscriptions/${id}/status`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

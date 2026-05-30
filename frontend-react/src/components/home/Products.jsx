@@ -41,7 +41,7 @@ const Products = () => {
               transition={{ duration: 0.6, delay: index * 0.2 }}
               className="w-full flex justify-center"
             >
-              <Link to={`/category/${category.id}`} className="w-full max-w-[450px] lg:max-w-[550px] block outline-none">
+              <Link to="/products" className="w-full max-w-[450px] lg:max-w-[550px] block outline-none">
                 <motion.div 
                   animate={{ 
                     y: [0, 8, 0, -4, 0], 
