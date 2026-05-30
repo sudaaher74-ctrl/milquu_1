@@ -34,7 +34,28 @@ const ProfitAnalytics = lazy(() => import('./pages/admin/ProfitAnalytics'));
 const Procurement = lazy(() => import('./pages/admin/Procurement'));
 const Wastage = lazy(() => import('./pages/admin/Wastage'));
 const Reports = lazy(() => import('./pages/admin/Reports'));
+const SEOGenerator = lazy(() => import('./pages/admin/SEOGenerator'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
+
+// SEO & Content Pages
+const AboutUs = lazy(() => import('./pages/seo/AboutUs'));
+const OurFarm = lazy(() => import('./pages/seo/OurFarm'));
+const OurProcess = lazy(() => import('./pages/seo/OurProcess'));
+const QualityAssurance = lazy(() => import('./pages/seo/QualityAssurance'));
+const ProductPage = lazy(() => import('./pages/seo/ProductPage'));
+
+// Blog Pages
+const BlogIndex = lazy(() => import('./pages/blog/BlogIndex'));
+const BlogPost = lazy(() => import('./pages/blog/BlogPost'));
+
+// Location Landing Pages
+const MilkDeliveryPanvel = lazy(() => import('./pages/seo/MilkDeliveryPanvel'));
+const MilkDeliveryNewPanvel = lazy(() => import('./pages/seo/MilkDeliveryNewPanvel'));
+const MilkDeliveryKaranjade = lazy(() => import('./pages/seo/MilkDeliveryKaranjade'));
+const OrganicMilkKharghar = lazy(() => import('./pages/seo/OrganicMilkKharghar'));
+const FreshCowMilkBelapur = lazy(() => import('./pages/seo/FreshCowMilkBelapur'));
+const FarmFreshMilkNerul = lazy(() => import('./pages/seo/FarmFreshMilkNerul'));
+const MilkDeliveryNaviMumbai = lazy(() => import('./pages/seo/MilkDeliveryNaviMumbai'));
 
 // Delivery Pages
 const DeliveryLayout = lazy(() => import('./pages/delivery/DeliveryLayout'));
@@ -129,6 +150,28 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/account" element={<MyAccount />} />
             
+            {/* E-E-A-T Pages */}
+            <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/our-farm" element={<OurFarm />} />
+            <Route path="/our-process" element={<OurProcess />} />
+            <Route path="/quality-assurance" element={<QualityAssurance />} />
+            
+            {/* Blog System */}
+            <Route path="/blog" element={<BlogIndex />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
+            
+            {/* Dynamic Product Page */}
+            <Route path="/product/:slug" element={<ProductPage />} />
+            
+            {/* Local SEO Landing Pages */}
+            <Route path="/milk-delivery-panvel" element={<MilkDeliveryPanvel />} />
+            <Route path="/milk-delivery-new-panvel" element={<MilkDeliveryNewPanvel />} />
+            <Route path="/milk-delivery-karanjade" element={<MilkDeliveryKaranjade />} />
+            <Route path="/organic-milk-kharghar" element={<OrganicMilkKharghar />} />
+            <Route path="/fresh-cow-milk-belapur" element={<FreshCowMilkBelapur />} />
+            <Route path="/farm-fresh-milk-nerul" element={<FarmFreshMilkNerul />} />
+            <Route path="/milk-delivery-navi-mumbai" element={<MilkDeliveryNaviMumbai />} />
+            
             {/* Admin Routes - wrap AdminLayout so all /admin/* paths work */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route
@@ -157,6 +200,7 @@ function App() {
               <Route path="procurement" element={<Procurement />} />
               <Route path="wastage" element={<Wastage />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="seo-tools" element={<SEOGenerator />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />

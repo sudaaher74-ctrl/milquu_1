@@ -2,26 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Cache buster to clear old corrupted data from testing -->
-    <script>
-      if (!localStorage.getItem('milquu_v2_cache_cleared')) {
-        localStorage.clear();
-        sessionStorage.clear();
-        localStorage.setItem('milquu_v2_cache_cleared', 'true');
-        // Force reload without cache
-        window.location.reload(true);
-      }
-    </script>
+    <!-- Base fallback meta tags (overridden by react-helmet-async) -->
+    <title>MilQuu Fresh – Premium Dairy Delivery in Navi Mumbai</title>
+    <meta name="description" content="Get farm-fresh A2 cow milk, buffalo milk, paneer & ghee delivered daily to your doorstep in Panvel, Kharghar, Belapur & Nerul." />
     
-    <!-- Google Fonts: Outfit and Playfair Display for modern luxury look -->
+    <!-- Google Fonts Preload -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-    
-    <title>MILQUU FRESH - Premium Dairy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    </noscript>
   </head>
   <body>
     <div id="root"></div>
