@@ -9,9 +9,10 @@ const router = express.Router();
 // @access  Public (Guest Checkout)
 router.post('/', async (req, res) => {
   try {
-    const { name, phone, items, totalAmount, deliveryAddress, frequency, status, monthlyTotal } = req.body;
+    const { user, name, phone, items, totalAmount, deliveryAddress, frequency, status, monthlyTotal } = req.body;
 
     const subscription = new Subscription({
+      user,
       name,
       phone,
       items: items || [],

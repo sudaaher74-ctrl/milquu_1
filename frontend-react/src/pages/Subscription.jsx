@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../utils/api.js';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, CalendarDays, Milk, Clock } from 'lucide-react';
 
@@ -37,7 +38,7 @@ const Subscription = () => {
       const selectedProdDetails = products.find(p => p.id === selectedProduct);
       const priceNum = parseFloat(selectedProdDetails.price.replace(/[^0-9.-]+/g,""));
       
-      const orderData = {
+      let orderData = {
         name: formData.name,
         phone: formData.phone,
         deliveryAddress: `${formData.address}, ${formData.city}, ${formData.pincode}`,
@@ -46,13 +47,14 @@ const Subscription = () => {
         items: []
       };
 
-      const res = await fetch('https://milquu-backend.onrender.com/api/subscriptions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
-      });
+      const userInfoStr = localStorage.getItem('userInfo');
+      if (userInfoStr) {
+        orderData.user = JSON.parse(userInfoStr)._id;
+      }
 
-      if (res.ok) {
+      const res = await api.post('/api/subscriptions', orderData);
+
+      if (res.data) {
         alert("Subscription created successfully!");
         setFormData({ name: '', phone: '', address: '', city: '', pincode: '' });
       } else {

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import api from '../../utils/api.js';
 import { Search, Filter, ChevronLeft, ChevronRight, Download, X, MapPin, Phone, User, Package, Calendar, Truck, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -18,11 +19,11 @@ const Orders = () => {
     const fetchOrdersAndStaff = async () => {
       try {
         const [ordersRes, staffRes] = await Promise.all([
-          fetch('https://milquu-backend.onrender.com/api/erp/orders'),
-          fetch('https://milquu-backend.onrender.com/api/erp/delivery-staff')
+          api.get('/api/erp/orders'),
+          api.get('/api/erp/delivery-staff')
         ]);
-        const data = await ordersRes.json();
-        const staffData = await staffRes.json();
+        const data = ordersRes.data;
+        const staffData = staffRes.data;
         setStaffList(staffData);
         
         // Auto-assign from real database staff
@@ -67,20 +68,13 @@ const Orders = () => {
   const handleAssignDriver = async (orderId, staffId) => {
     try {
       const adminTokenStr = localStorage.getItem('adminToken');
-      const token = adminTokenStr ? JSON.parse(adminTokenStr).token : '';
-      const authHeaders = { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-
-      const res = await fetch(`https://milquu-backend.onrender.com/api/erp/orders/${orderId}/assign`, {
-        method: 'PUT',
-        headers: authHeaders,
-        body: JSON.stringify({ staffId })
+      const res = await api.put(`/api/erp/orders/${orderId}/assign`, {
+        deliveryBoyId: staffId
       });
-      if (!res.ok) throw new Error('Failed to assign driver');
       
-      const updatedOrder = await res.json();
+      if (!res.data) throw new Error('Failed to assign driver');
+      
+      const updatedOrder = res.data;
       
       // Update local state
       const staff = staffList.find(s => s._id === staffId);

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import api from '../../utils/api.js';
 import { 
   Plus, Edit2, Trash2, Search, Filter, Download, MoreVertical, 
-  ArrowUpDown, Package, DollarSign, TrendingUp, AlertCircle
+  ArrowUpDown, Package, DollarSign, TrendingUp, AlertCircle, X, Image as ImageIcon, CheckCircle
 } from 'lucide-react';
 
 const AdminProducts = () => {
@@ -25,10 +25,9 @@ const AdminProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('https://milquu-backend.onrender.com/api/products');
-      const data = await res.json();
+      const res = await api.get('/api/products');
       
-      const mapped = data.map(p => ({
+      const mapped = res.data.map(p => ({
         id: p._id,
         name: p.name,
         sku: p.sku || `MIL-${p._id.substring(0,4).toUpperCase()}`,
@@ -71,25 +70,19 @@ const AdminProducts = () => {
     
     setIsUploading(true);
     try {
-      // 1. Upload Image to Cloudinary
-      const imageFormData = new FormData();
-      imageFormData.append('image', imageFile);
-      
-      const adminTokenStr = localStorage.getItem('adminToken');
-      const token = adminTokenStr ? JSON.parse(adminTokenStr).token : '';
-      const authHeaders = { 'Authorization': `Bearer ${token}` };
+      let imageUrl = formData.image;
 
-      const uploadRes = await fetch('https://milquu-backend.onrender.com/api/upload', {
-        method: 'POST',
-        headers: authHeaders,
-        body: imageFormData
-      });
-      
-      if (!uploadRes.ok) throw new Error('Image upload failed');
-      const uploadData = await uploadRes.json();
-      const imageUrl = uploadData.url;
+      if (imageFile) {
+        const uploadData = new FormData();
+        uploadData.append('image', imageFile);
+        
+        const uploadRes = await api.post('/api/upload', uploadData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        imageUrl = uploadRes.data.url;
+      }
 
-      // 2. Create Product
       const productPayload = {
         ...formData,
         price: Number(formData.price),
@@ -97,22 +90,15 @@ const AdminProducts = () => {
         image: imageUrl
       };
 
-      const productRes = await fetch('https://milquu-backend.onrender.com/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeaders
-        },
-        body: JSON.stringify(productPayload)
-      });
+      const productRes = await api.post('/api/products', productPayload);
       
-      if (!productRes.ok) throw new Error('Product creation failed');
-      
-      // 3. Cleanup and Refresh
-      setIsModalOpen(false);
-      setFormData({ name: '', category: 'milk', price: '', stock: '', description: '', unit: '1 Litre' });
-      setImageFile(null);
-      fetchProducts();
+      if (productRes.data) {
+        alert('Product added successfully!');
+        setIsModalOpen(false);
+        setFormData({ name: '', category: 'milk', price: '', stock: '', description: '', unit: '1 Litre' });
+        setImageFile(null);
+        fetchProducts();
+      }
       
     } catch (error) {
       console.error('Submit error:', error);

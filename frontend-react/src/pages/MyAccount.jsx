@@ -11,6 +11,9 @@ const MyAccount = () => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loadingSubs, setLoadingSubs] = useState(false);
 
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -20,6 +23,8 @@ const MyAccount = () => {
   useEffect(() => {
     if (user && activeTab === 'subscriptions') {
       fetchSubscriptions();
+    } else if (user && activeTab === 'orders') {
+      fetchOrders();
     }
   }, [user, activeTab]);
 
@@ -36,6 +41,22 @@ const MyAccount = () => {
       console.error(err);
     } finally {
       setLoadingSubs(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const userToken = JSON.parse(localStorage.getItem('userInfo')).token;
+      const res = await fetch('https://milquu-backend.onrender.com/api/users/orders', {
+        headers: { 'Authorization': `Bearer ${userToken}` }
+      });
+      const data = await res.json();
+      setOrders(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingOrders(false);
     }
   };
 
@@ -166,10 +187,39 @@ const MyAccount = () => {
               {activeTab === 'orders' && (
                 <div>
                   <h3 className="text-2xl font-bold font-serif text-gray-800 mb-6">Order History</h3>
-                  <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-100 border-dashed">
-                    <Package size={48} className="mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500">You haven't placed any orders yet.</p>
-                  </div>
+                  {loadingOrders ? (
+                    <div className="flex justify-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-milquu-blue"></div>
+                    </div>
+                  ) : orders.length > 0 ? (
+                    <div className="space-y-4">
+                      {orders.map(order => (
+                        <div key={order._id} className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div>
+                              <h4 className="font-bold text-gray-800">Order #{order._id.substring(0,8).toUpperCase()}</h4>
+                              <p className="text-sm text-gray-500">₹{order.totalAmount} • {new Date(order.createdAt).toLocaleDateString()}</p>
+                              <div className="mt-2 flex items-center gap-2">
+                                <span className="text-xs font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">
+                                  {order.status.toUpperCase()}
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-sm font-medium text-gray-600 bg-white border border-gray-200 px-3 py-1 rounded-lg">
+                                {order.items?.length || 0} items
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-100 border-dashed">
+                      <Package size={48} className="mx-auto text-gray-300 mb-4" />
+                      <p className="text-gray-500">You haven't placed any orders yet.</p>
+                    </div>
+                  )}
                 </div>
               )}
 

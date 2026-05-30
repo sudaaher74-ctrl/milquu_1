@@ -116,3 +116,13 @@ export const updateSubscriptionStatus = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+export const getMyOrders = async (req, res) => {
+  try {
+    const Order = (await import('../models/Order.js')).default;
+    const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
