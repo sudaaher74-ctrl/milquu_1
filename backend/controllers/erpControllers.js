@@ -108,14 +108,16 @@ export const createOrder = async (req, res) => {
 export const assignOrderToStaff = async (req, res) => {
   try {
     const { id } = req.params;
-    const { staffId } = req.body;
+    const { staffId, deliveryBoyId } = req.body;
+    
+    const assignedId = staffId || deliveryBoyId;
     
     const order = await Order.findById(id);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    order.deliveryStaff = staffId;
+    order.deliveryStaff = assignedId;
     order.deliveryStatus = 'Out For Delivery';
     
     const updatedOrder = await order.save();
