@@ -20,12 +20,12 @@ const DeliveryDashboard = () => {
       const { data } = await api.get('/api/delivery/my-deliveries');
       // For now, map DB orders to task structure
       const formattedTasks = data.map(order => ({
-        id: order.orderId || order._id,
-        customer: order.customerName,
-        phone: '+91 0000000000', // Mock phone since it's not in Order schema directly
-        address: 'Customer Address',
-        items: `${order.items?.length || 0} items`,
-        status: order.deliveryStatus || 'Pending Assignment',
+        id: order._id,
+        customer: order.name || order.user?.name || 'Unknown',
+        phone: order.phone || order.user?.phone || 'Not Provided',
+        address: order.shippingAddress?.address || 'No Address',
+        items: `${order.orderItems?.length || 0} items`,
+        status: order.isDelivered ? 'Delivered' : 'Pending',
         time: 'Morning Delivery'
       }));
       setTasks(formattedTasks);

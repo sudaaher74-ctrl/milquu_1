@@ -28,9 +28,10 @@ export const loginDeliveryStaff = async (req, res) => {
 
 export const getMyDeliveries = async (req, res) => {
   try {
-    // For demo, we just return an empty array or all orders depending on how we want to handle it.
-    // In prod, this would use req.user._id to find assigned orders.
-    const deliveries = await Order.find({ deliveryStatus: 'Out for Delivery' });
+    const deliveries = await Order.find({ 
+      deliveryStaff: req.user._id, 
+      isDelivered: false 
+    }).populate('user', 'name email phone');
     res.json(deliveries);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
