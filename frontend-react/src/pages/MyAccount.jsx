@@ -277,28 +277,32 @@ const MyAccount = () => {
                               </div>
                             </div>
                             <div className="flex gap-2 w-full md:w-auto">
-                              {sub.status === 'paused' ? (
+                              {(sub.status === 'paused' || sub.status === 'Cancelled') && (
                                 <button 
                                   onClick={() => handleUpdateStatus(sub._id, 'Active')}
                                   className="flex-1 md:flex-none flex items-center justify-center bg-white border border-gray-200 text-green-600 px-4 py-2 rounded-lg font-semibold hover:bg-green-50 shadow-sm"
                                 >
-                                  <Play size={16} className="mr-2" /> Resume
+                                  <Play size={16} className="mr-2" /> Continue
                                 </button>
-                              ) : sub.status === 'Active' ? (
+                              )}
+                              
+                              {sub.status === 'Active' && (
                                 <button 
                                   onClick={() => setPauseTarget({ id: sub._id, startDate: '', endDate: '' })}
                                   className="flex-1 md:flex-none flex items-center justify-center bg-white border border-gray-200 text-yellow-600 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-50 shadow-sm"
                                 >
                                   <Pause size={16} className="mr-2" /> Pause
                                 </button>
-                              ) : null}
-                              <button 
-                                onClick={() => handleUpdateStatus(sub._id, 'Cancelled')}
-                                disabled={sub.status === 'Cancelled'}
-                                className="flex-1 md:flex-none flex items-center justify-center bg-white border border-gray-200 text-red-600 px-4 py-2 rounded-lg font-semibold hover:bg-red-50 shadow-sm disabled:opacity-50"
-                              >
-                                <XCircle size={16} className="mr-2" /> Cancel
-                              </button>
+                              )}
+
+                              {sub.status !== 'Cancelled' && (
+                                <button 
+                                  onClick={() => handleUpdateStatus(sub._id, 'Cancelled')}
+                                  className="flex-1 md:flex-none flex items-center justify-center bg-white border border-gray-200 text-red-600 px-4 py-2 rounded-lg font-semibold hover:bg-red-50 shadow-sm"
+                                >
+                                  <XCircle size={16} className="mr-2" /> Cancel
+                                </button>
+                              )}
                             </div>
                           </div>
                           
