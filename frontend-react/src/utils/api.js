@@ -11,7 +11,14 @@ api.interceptors.request.use(
     const adminToken = localStorage.getItem('adminToken');
     const deliveryStaff = localStorage.getItem('deliveryStaff');
     
-    if (adminToken && adminToken !== 'undefined') {
+    if (config.url.includes('/api/delivery') && deliveryStaff && deliveryStaff !== 'undefined') {
+      try {
+        const parsedStaff = JSON.parse(deliveryStaff);
+        if (parsedStaff.token) {
+          config.headers.Authorization = `Bearer ${parsedStaff.token}`;
+        }
+      } catch (e) { console.error(e); }
+    } else if (adminToken && adminToken !== 'undefined') {
       try {
         const parsedToken = JSON.parse(adminToken);
         if (parsedToken.token) {
