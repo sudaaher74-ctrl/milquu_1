@@ -12,6 +12,7 @@ router.post('/', async (req, res) => {
     const { user, name, phone, items, totalAmount, deliveryAddress, frequency, status, monthlyTotal } = req.body;
 
     const subscription = new Subscription({
+      subscriptionId: 'SUB-' + Date.now() + Math.floor(Math.random() * 1000),
       user,
       name,
       phone,
