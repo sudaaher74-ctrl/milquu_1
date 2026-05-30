@@ -36,10 +36,55 @@ const DeliveryDashboard = () => {
     fetchTasks();
   }, []);
 
-  const updateTaskStatus = (id, newStatus) => {
+  const updateTaskStatus = async (id, newStatus) => {
+    // Optimistic update locally
     setTasks(tasks.map(t => t.id === id ? { ...t, status: newStatus } : t));
+    
     if (newStatus === 'Delivered') {
-      setTimeout(() => setSelectedTask(null), 1000);
+      try {
+        let uploadedImageUrl = '';
+        
+        // 1. Upload proof image if it exists
+        if (proofImageFile) {
+          const imageFormData = new FormData();
+          imageFormData.append('image', proofImageFile);
+          
+          const staffTokenStr = localStorage.getItem('deliveryToken');
+          const token = staffTokenStr ? JSON.parse(staffTokenStr).token : '';
+          
+          const uploadRes = await fetch('https://milquu-backend.onrender.com/api/upload', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: imageFormData
+          });
+          
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            uploadedImageUrl = uploadData.url;
+          }
+        }
+        
+        // 2. Mark order as delivered in backend
+        const staffTokenStr = localStorage.getItem('deliveryToken');
+        const token = staffTokenStr ? JSON.parse(staffTokenStr).token : '';
+        
+        await fetch(`https://milquu-backend.onrender.com/api/delivery/orders/${id}/deliver`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ proofImageUrl: uploadedImageUrl })
+        });
+        
+        setTimeout(() => {
+          setSelectedTask(null);
+          setProofImage(null);
+          setProofImageFile(null);
+        }, 1000);
+      } catch (error) {
+        console.error("Failed to mark delivered", error);
+      }
     }
   };
 
@@ -87,8 +132,11 @@ const DeliveryDashboard = () => {
     };
   }, [isTracking]);
 
+  const [proofImageFile, setProofImageFile] = useState(null);
+
   const handlePhotoUpload = (e) => {
     if (e.target.files && e.target.files[0]) {
+      setProofImageFile(e.target.files[0]);
       const reader = new FileReader();
       reader.onload = (event) => setProofImage(event.target.result);
       reader.readAsDataURL(e.target.files[0]);

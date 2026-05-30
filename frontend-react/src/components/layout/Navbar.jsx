@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, ShoppingCart } from 'lucide-react';
+import { Menu, X, ShoppingCart, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { cartCount } = useCart();
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -68,6 +70,18 @@ const Navbar = () => {
                 </span>
               )}
             </Link>
+            {user ? (
+              <Link to="/account" className="flex items-center space-x-2 text-milquu-dark hover:text-milquu-gold transition-colors duration-200">
+                <div className="w-8 h-8 bg-milquu-gold/10 rounded-full flex items-center justify-center text-milquu-gold">
+                  <User size={18} />
+                </div>
+                <span className="text-sm font-semibold">{user.name.split(' ')[0]}</span>
+              </Link>
+            ) : (
+              <Link to="/login" className="text-sm font-semibold text-milquu-dark hover:text-milquu-gold transition-colors duration-200">
+                Login
+              </Link>
+            )}
             <Link to="/subscribe">
               <button className="bg-milquu-gold hover:bg-milquu-green text-white px-6 py-2.5 rounded-full font-sans text-sm font-semibold tracking-wide transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
                 Subscribe Now
@@ -114,6 +128,27 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+            
+            <div className="w-16 h-px bg-gray-200 my-4"></div>
+            
+            {user ? (
+              <Link
+                to="/account"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-2xl font-serif text-milquu-dark hover:text-milquu-gold transition-colors flex items-center"
+              >
+                <User className="mr-2" /> My Account
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-2xl font-serif text-milquu-dark hover:text-milquu-gold transition-colors"
+              >
+                Login
+              </Link>
+            )}
+
             <Link to="/subscribe" onClick={() => setIsMobileMenuOpen(false)}>
               <button className="mt-4 bg-milquu-gold text-white px-8 py-3 rounded-full font-sans text-lg font-semibold shadow-lg">
                 Subscribe Now

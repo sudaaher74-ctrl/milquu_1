@@ -30,12 +30,87 @@ const Cart = () => {
   const deliveryFee = 0; // Free delivery for now
   const total = subtotal + deliveryFee;
 
-  const handleCheckoutSubmit = (e) => {
-    e.preventDefault();
-    setStep(2.5); // Show Payment Simulator
+  const loadScript = (src) => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
   };
 
-  const handlePaymentSuccess = async () => {
+  const handleCheckoutSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Load Razorpay script
+    const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+    if (!res) {
+      alert('Razorpay SDK failed to load. Are you online?');
+      return;
+    }
+
+    try {
+      // 1. Create order on backend
+      const orderRes = await fetch('https://milquu-backend.onrender.com/api/payment/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: total })
+      });
+      const orderData = await orderRes.json();
+
+      if (!orderData || !orderData.id) {
+        alert('Server error. Please try again.');
+        return;
+      }
+
+      // 2. Initialize Razorpay
+      const options = {
+        key: 'rzp_test_dummy_key_id', // Replace with environment variable in production
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Milquu Fresh',
+        description: 'Farm Fresh Products',
+        image: 'https://milquu.com/logo.png', // Replace with real logo url
+        order_id: orderData.id,
+        handler: async function (response) {
+          // 3. Verify payment
+          const verifyRes = await fetch('https://milquu-backend.onrender.com/api/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            })
+          });
+          const verifyData = await verifyRes.json();
+          
+          if (verifyData.success) {
+            handlePaymentSuccess(response.razorpay_payment_id);
+          } else {
+            alert('Payment verification failed!');
+          }
+        },
+        prefill: {
+          name: formData.name,
+          contact: formData.phone,
+        },
+        theme: {
+          color: '#1a4a35'
+        }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+      
+    } catch (err) {
+      console.error(err);
+      alert('Something went wrong. Please try again.');
+    }
+  };
+
+  const handlePaymentSuccess = async (paymentId) => {
     try {
       const orderData = {
         name: formData.name,
@@ -53,7 +128,12 @@ const Cart = () => {
           postalCode: formData.pincode,
           country: 'India'
         },
-        paymentMethod: 'Online Payment', // Changed to represent simulated payment
+        paymentMethod: 'Razorpay',
+        paymentResult: {
+          id: paymentId,
+          status: 'paid',
+          update_time: new Date().toISOString()
+        },
         totalPrice: total,
         orderSource: 'Website'
       };
@@ -68,7 +148,7 @@ const Cart = () => {
         setStep(3); // Success page
         clearCart();
       } else {
-        alert("Failed to submit order.");
+        alert("Failed to submit order to our system, but payment was successful. Please contact support.");
       }
     } catch (err) {
       console.error(err);
@@ -291,71 +371,22 @@ const Cart = () => {
                       <input required type="text" name="pincode" placeholder="Pincode" onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30" />
                     </div>
 
-                    <div className="bg-milquu-green/10 text-milquu-green rounded-xl p-4 font-sans text-sm flex items-start mt-4">
-                      <div className="mr-3 mt-0.5"><CheckCircle size={16} /></div>
+                    <div className="bg-milquu-gold/10 text-milquu-dark rounded-xl p-4 font-sans text-sm flex items-start mt-4">
+                      <div className="mr-3 mt-0.5"><Lock size={16} className="text-milquu-gold" /></div>
                       <div>
-                        <strong>Cash on Delivery</strong><br/>
-                        Pay ₹{total} in cash when your order arrives.
+                        <strong>Secure Online Payment</strong><br/>
+                        Pay ₹{total} securely via Razorpay.
                       </div>
                     </div>
 
                     <button 
                       type="submit"
-                      className="w-full bg-milquu-green hover:bg-[#1a4a35] text-white px-4 py-3.5 rounded-full font-sans font-bold text-sm transition-colors shadow-md mt-6"
+                      className="w-full bg-milquu-dark hover:bg-milquu-gold text-white px-4 py-3.5 rounded-full font-sans font-bold text-sm transition-colors shadow-md mt-6"
                     >
-                      Confirm Order
+                      Pay ₹{total} Now
                     </button>
                   </form>
                 </motion.div>
-              )}
-              {step === 2.5 && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                  <motion.div 
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 overflow-hidden relative"
-                  >
-                    <div className="text-center mb-6">
-                      <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
-                        <ShoppingCart size={28} />
-                      </div>
-                      <h3 className="text-xl font-bold font-serif text-gray-800">Secure Payment</h3>
-                      <p className="text-sm text-gray-500 mt-1">Milquu Fresh via Simulated Gateway</p>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm text-gray-500">Amount to pay</span>
-                        <span className="text-lg font-bold text-gray-800">₹{total}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">Phone</span>
-                        <span className="text-sm font-medium text-gray-800">{formData.phone}</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <button 
-                        onClick={handlePaymentSuccess}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition flex items-center justify-center"
-                      >
-                        Simulate Successful Payment
-                      </button>
-                      <button 
-                        onClick={() => setStep(2)}
-                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-bold transition flex items-center justify-center"
-                      >
-                        Cancel Payment
-                      </button>
-                    </div>
-
-                    <div className="text-center mt-6">
-                      <span className="text-xs text-gray-400 flex items-center justify-center">
-                        <Lock size={12} className="mr-1" /> This is a test payment environment
-                      </span>
-                    </div>
-                  </motion.div>
-                </div>
               )}
             </AnimatePresence>
 

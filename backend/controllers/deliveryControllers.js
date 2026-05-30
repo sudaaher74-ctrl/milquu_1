@@ -36,3 +36,25 @@ export const getMyDeliveries = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+export const markOrderDelivered = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { proofImageUrl } = req.body;
+    
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    // Optional: Check if req.user._id matches order.deliveryStaff
+    order.deliveryStatus = 'Delivered';
+    order.isDelivered = true;
+    order.deliveredAt = Date.now();
+    order.proofOfDelivery = proofImageUrl || '';
+
+    const updatedOrder = await order.save();
+    res.json(updatedOrder);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};

@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import compression from 'compression';
 import connectDB from './config/db.js';
 import productRoutes from './routes/productRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
@@ -8,6 +9,8 @@ import adminRoutes from './routes/adminRoutes.js';
 import erpRoutes from './routes/erpRoutes.js'; // Added ERP routes
 import deliveryRoutes from './routes/deliveryRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 import { startSubscriptionEngine } from './cron/subscriptionEngine.js';
 
 import path from 'path';
@@ -27,6 +30,9 @@ startSubscriptionEngine();
 
 const app = express();
 
+// Use compression
+app.use(compression());
+
 // Body parser
 app.use(express.json());
 
@@ -45,6 +51,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/erp', erpRoutes); // Mounted ERP routes
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/payment', paymentRoutes);
 
 const PORT = process.env.PORT || 5001;
 

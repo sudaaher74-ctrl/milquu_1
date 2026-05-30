@@ -385,7 +385,20 @@ const Orders = () => {
                   </table>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-between items-start">
+                  {selectedOrder.proofOfDelivery ? (
+                    <div className="w-full sm:w-1/3 mb-4 sm:mb-0">
+                      <h4 className="text-xs font-bold text-gray-500 uppercase mb-2">Proof of Delivery</h4>
+                      <img 
+                        src={selectedOrder.proofOfDelivery} 
+                        alt="Proof of Delivery" 
+                        className="w-full max-w-[150px] rounded-lg shadow-sm border border-gray-200" 
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-full sm:w-1/3 mb-4 sm:mb-0"></div>
+                  )}
+                  
                   <div className="w-full sm:w-1/2 space-y-2">
                     <div className="flex justify-between text-sm text-gray-500">
                       <span>Subtotal</span>
