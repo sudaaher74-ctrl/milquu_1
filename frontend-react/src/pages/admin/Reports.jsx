@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
+import api from '../../utils/api.js';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { 
   FileText, Download, FileSpreadsheet, Calendar, 
   TrendingUp, Package, Users, Truck, DollarSign, PieChart, ShieldCheck
@@ -6,7 +9,7 @@ import {
 
 const reportsList = [
   { 
-    id: 1, 
+    id: 'financial', 
     category: 'Financial', 
     title: 'Profit & Loss (P&L) Statement', 
     description: 'Comprehensive breakdown of revenue, expenses, and net profit.',
@@ -15,7 +18,7 @@ const reportsList = [
     bg: 'bg-green-50'
   },
   { 
-    id: 2, 
+    id: 'sales', 
     category: 'Sales', 
     title: 'Daily Sales & Revenue Report', 
     description: 'Detailed sales data across Website, Shop POS, and Subscriptions.',
@@ -24,7 +27,7 @@ const reportsList = [
     bg: 'bg-blue-50'
   },
   { 
-    id: 3, 
+    id: 'inventory', 
     category: 'Inventory', 
     title: 'Stock Valuation & Movement', 
     description: 'Current stock levels, reorder alerts, and total inventory value.',
@@ -33,34 +36,7 @@ const reportsList = [
     bg: 'bg-purple-50'
   },
   { 
-    id: 4, 
-    category: 'Operations', 
-    title: 'Delivery Performance & Routes', 
-    description: 'Driver efficiency, route deviations, and delayed deliveries log.',
-    icon: Truck,
-    color: 'text-orange-600',
-    bg: 'bg-orange-50'
-  },
-  { 
-    id: 5, 
-    category: 'Customers', 
-    title: 'Subscription Churn & Retention', 
-    description: 'Analysis of active, paused, and cancelled milk subscriptions.',
-    icon: Users,
-    color: 'text-teal-600',
-    bg: 'bg-teal-50'
-  },
-  { 
-    id: 6, 
-    category: 'Financial', 
-    title: 'GST & Tax Summary', 
-    description: 'Calculated GST (5%, 12%, 18%) across all sales channels for filing.',
-    icon: ShieldCheck,
-    color: 'text-rose-600',
-    bg: 'bg-rose-50'
-  },
-  { 
-    id: 7, 
+    id: 'procurement', 
     category: 'Operations', 
     title: 'Milk Procurement & Wastage', 
     description: 'Farmer collection volumes, FAT/SNF quality, and production loss.',
@@ -71,6 +47,120 @@ const reportsList = [
 ];
 
 const Reports = () => {
+  const [loadingReport, setLoadingReport] = useState(null);
+
+  const fetchReportData = async (reportId) => {
+    switch (reportId) {
+      case 'financial':
+        const p1 = await api.get('/api/erp/purchases');
+        const e1 = await api.get('/api/erp/expenses');
+        const o1 = await api.get('/api/erp/orders');
+        return [
+          { type: 'Revenue', source: 'Online Orders', amount: o1.data.reduce((a,b)=>a+(b.totalPrice||0),0) },
+          { type: 'Cost', source: 'Purchases', amount: p1.data.reduce((a,b)=>a+(b.totalAmount||0),0) },
+          { type: 'Cost', source: 'Operating Expenses', amount: e1.data.reduce((a,b)=>a+(b.amount||0),0) }
+        ];
+      case 'sales':
+        const orders = await api.get('/api/erp/orders');
+        return orders.data.map(o => ({
+          OrderId: o.orderId || o._id,
+          Customer: o.customerName || 'Unknown',
+          Status: o.status || o.paymentStatus || 'Completed',
+          Amount: o.totalPrice || 0,
+          Date: new Date(o.createdAt).toLocaleDateString()
+        }));
+      case 'inventory':
+        const products = await api.get('/api/products');
+        return products.data.map(p => ({
+          Product: p.name,
+          Category: p.category,
+          Price: p.price,
+          Stock: p.stock || 0
+        }));
+      case 'procurement':
+        const procs = await api.get('/api/erp/procurements');
+        return procs.data.map(p => ({
+          Farmer: p.farmerName || p.farmer,
+          MilkType: p.milkType || p.type,
+          Qty: p.quantity || p.qty,
+          FAT: p.fat,
+          SNF: p.snf,
+          Payout: p.totalPayout || p.totalAmount,
+          Date: new Date(p.date).toLocaleDateString()
+        }));
+      default:
+        return [];
+    }
+  };
+
+  const handleExportCSV = async (reportId, title) => {
+    try {
+      setLoadingReport(`${reportId}-csv`);
+      const data = await fetchReportData(reportId);
+      if (!data || data.length === 0) {
+        alert("No data available for this report.");
+        return;
+      }
+
+      // Convert to CSV
+      const headers = Object.keys(data[0]);
+      const csvContent = [
+        headers.join(','),
+        ...data.map(row => headers.map(h => `"${row[h]}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `${title.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Export Error:", error);
+      alert("Failed to export report.");
+    } finally {
+      setLoadingReport(null);
+    }
+  };
+
+  const handleExportPDF = async (reportId, title) => {
+    try {
+      setLoadingReport(`${reportId}-pdf`);
+      const data = await fetchReportData(reportId);
+      if (!data || data.length === 0) {
+        alert("No data available for this report.");
+        return;
+      }
+
+      const doc = new jsPDF();
+      doc.setFontSize(18);
+      doc.text(`Milquu Fresh - ${title}`, 14, 22);
+      doc.setFontSize(11);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+
+      const headers = Object.keys(data[0]);
+      const rows = data.map(row => headers.map(h => row[h]));
+
+      doc.autoTable({
+        startY: 36,
+        head: [headers],
+        body: rows,
+        theme: 'grid',
+        headStyles: { fillColor: [44, 62, 80] }
+      });
+
+      doc.save(`${title.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (error) {
+      console.error("Export Error:", error);
+      alert("Failed to export report.");
+    } finally {
+      setLoadingReport(null);
+    }
+  };
+
   return (
     <div className="max-w-[1200px] mx-auto pb-10 font-sans">
       
@@ -127,11 +217,27 @@ const Reports = () => {
               <p className="text-sm text-gray-500 mb-6 flex-1">{report.description}</p>
               
               <div className="flex space-x-3 pt-4 border-t border-gray-50">
-                <button className="flex-1 flex items-center justify-center py-2 bg-gray-50 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-100 transition-colors border border-gray-200">
-                  <FileText size={16} className="mr-2" /> PDF
+                <button 
+                  onClick={() => handleExportPDF(report.id, report.title)}
+                  disabled={loadingReport === `${report.id}-pdf`}
+                  className={`flex-1 flex items-center justify-center py-2 ${loadingReport === `${report.id}-pdf` ? 'opacity-50 cursor-not-allowed' : ''} bg-gray-50 text-gray-600 rounded-lg text-sm font-bold hover:bg-gray-100 transition-colors border border-gray-200`}
+                >
+                  {loadingReport === `${report.id}-pdf` ? (
+                    <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></span>
+                  ) : (
+                    <><FileText size={16} className="mr-2" /> PDF</>
+                  )}
                 </button>
-                <button className="flex-1 flex items-center justify-center py-2 bg-green-50 text-green-700 rounded-lg text-sm font-bold hover:bg-green-100 transition-colors border border-green-200">
-                  <FileSpreadsheet size={16} className="mr-2" /> Excel
+                <button 
+                  onClick={() => handleExportCSV(report.id, report.title)}
+                  disabled={loadingReport === `${report.id}-csv`}
+                  className={`flex-1 flex items-center justify-center py-2 ${loadingReport === `${report.id}-csv` ? 'opacity-50 cursor-not-allowed' : ''} bg-green-50 text-green-700 rounded-lg text-sm font-bold hover:bg-green-100 transition-colors border border-green-200`}
+                >
+                  {loadingReport === `${report.id}-csv` ? (
+                    <span className="w-4 h-4 border-2 border-green-700 border-t-transparent rounded-full animate-spin"></span>
+                  ) : (
+                    <><FileSpreadsheet size={16} className="mr-2" /> Excel</>
+                  )}
                 </button>
               </div>
             </div>
