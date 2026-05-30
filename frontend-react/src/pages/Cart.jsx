@@ -43,71 +43,14 @@ const Cart = () => {
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
     
-    // Load Razorpay script
-    const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
-    if (!res) {
-      alert('Razorpay SDK failed to load. Are you online?');
-      return;
-    }
-
-    try {
-      // 1. Create order on backend
-      const orderRes = await fetch('https://milquu-backend.onrender.com/api/payment/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: total })
-      });
-      const orderData = await orderRes.json();
-
-      if (!orderData || !orderData.id) {
-        alert('Server error. Please try again.');
-        return;
-      }
-
-      // 2. Initialize Razorpay
-      const options = {
-        key: 'rzp_test_dummy_key_id', // Replace with environment variable in production
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: 'Milquu Fresh',
-        description: 'Farm Fresh Products',
-        image: 'https://milquu.com/logo.png', // Replace with real logo url
-        order_id: orderData.id,
-        handler: async function (response) {
-          // 3. Verify payment
-          const verifyRes = await fetch('https://milquu-backend.onrender.com/api/payment/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature
-            })
-          });
-          const verifyData = await verifyRes.json();
-          
-          if (verifyData.success) {
-            handlePaymentSuccess(response.razorpay_payment_id);
-          } else {
-            alert('Payment verification failed!');
-          }
-        },
-        prefill: {
-          name: formData.name,
-          contact: formData.phone,
-        },
-        theme: {
-          color: '#1a4a35'
-        }
-      };
-
-      const paymentObject = new window.Razorpay(options);
-      paymentObject.open();
-      
-    } catch (err) {
-      console.error(err);
-      alert('Something went wrong. Please try again.');
-    }
+    // Simulate payment immediately for demonstration without needing real Razorpay keys
+    alert('Test Mode: Simulating successful payment...');
+    
+    // Generate a fake payment ID
+    const fakePaymentId = 'pay_' + Math.random().toString(36).substring(2, 15);
+    
+    // Proceed directly to saving the order
+    await handlePaymentSuccess(fakePaymentId);
   };
 
   const handlePaymentSuccess = async (paymentId) => {
