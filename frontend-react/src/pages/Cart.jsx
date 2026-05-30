@@ -10,6 +10,7 @@ const Cart = () => {
   const [formData, setFormData] = useState({
     name: '', phone: '', address: '', city: '', pincode: ''
   });
+  const [paymentMethod, setPaymentMethod] = useState('COD');
   const [allProducts, setAllProducts] = useState([]);
 
   const baseUrl = import.meta.env.MODE === 'development' ? 'http://localhost:5001' : 'https://milquu-backend.onrender.com';
@@ -45,17 +46,17 @@ const Cart = () => {
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
     
-    // Simulate payment immediately for demonstration without needing real Razorpay keys
-    alert('Test Mode: Simulating successful payment...');
-    
-    // Generate a fake payment ID
-    const fakePaymentId = 'pay_' + Math.random().toString(36).substring(2, 15);
-    
-    // Proceed directly to saving the order
-    await handlePaymentSuccess(fakePaymentId);
+    if (paymentMethod === 'COD') {
+      await saveOrder(null, 'Cash on Delivery', false);
+    } else {
+      // Simulate payment immediately for demonstration without needing real Razorpay keys
+      alert('Test Mode: Simulating secure payment via GPay / PhonePe...');
+      const fakePaymentId = 'pay_' + Math.random().toString(36).substring(2, 15);
+      await saveOrder(fakePaymentId, 'UPI / Online', true);
+    }
   };
 
-  const handlePaymentSuccess = async (paymentId) => {
+  const saveOrder = async (paymentId, method, isPaid = false) => {
     try {
       const userInfoStr = localStorage.getItem('userInfo');
       const userId = userInfoStr && userInfoStr !== 'undefined' ? JSON.parse(userInfoStr)._id : undefined;
@@ -77,12 +78,13 @@ const Cart = () => {
           postalCode: formData.pincode,
           country: 'India'
         },
-        paymentMethod: 'Razorpay',
-        paymentResult: {
+        paymentMethod: method,
+        isPaid: isPaid,
+        paymentResult: paymentId ? {
           id: paymentId,
           status: 'paid',
           update_time: new Date().toISOString()
-        },
+        } : undefined,
         totalPrice: total,
         orderSource: 'Website'
       };
@@ -97,7 +99,7 @@ const Cart = () => {
         setStep(3); // Success page
         clearCart();
       } else {
-        alert("Failed to submit order to our system, but payment was successful. Please contact support.");
+        alert("Failed to submit order to our system. Please contact support.");
       }
     } catch (err) {
       console.error(err);
@@ -320,19 +322,45 @@ const Cart = () => {
                       <input required type="text" name="pincode" placeholder="Pincode" onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30" />
                     </div>
 
-                    <div className="bg-milquu-gold/10 text-milquu-dark rounded-xl p-4 font-sans text-sm flex items-start mt-4">
-                      <div className="mr-3 mt-0.5"><Lock size={16} className="text-milquu-gold" /></div>
-                      <div>
-                        <strong>Secure Online Payment</strong><br/>
-                        Pay ₹{total} securely via Razorpay.
-                      </div>
+                    <div className="mt-4 space-y-3">
+                      <h4 className="font-serif font-bold text-milquu-dark text-sm mb-2">Payment Method</h4>
+                      
+                      <label className={`flex items-center p-3 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'COD' ? 'bg-milquu-gold/10 border-milquu-gold/50' : 'bg-gray-50/50 border-gray-200'}`}>
+                        <input 
+                          type="radio" 
+                          name="payment" 
+                          value="COD" 
+                          checked={paymentMethod === 'COD'}
+                          onChange={() => setPaymentMethod('COD')}
+                          className="mr-3 w-4 h-4 text-milquu-gold focus:ring-milquu-gold"
+                        />
+                        <div className="flex-1">
+                          <span className="font-bold text-sm text-milquu-dark block">Cash on Delivery</span>
+                          <span className="text-xs text-gray-500">Pay with cash when your milk arrives</span>
+                        </div>
+                      </label>
+
+                      <label className={`flex items-center p-3 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'ONLINE' ? 'bg-milquu-gold/10 border-milquu-gold/50' : 'bg-gray-50/50 border-gray-200'}`}>
+                        <input 
+                          type="radio" 
+                          name="payment" 
+                          value="ONLINE" 
+                          checked={paymentMethod === 'ONLINE'}
+                          onChange={() => setPaymentMethod('ONLINE')}
+                          className="mr-3 w-4 h-4 text-milquu-gold focus:ring-milquu-gold"
+                        />
+                        <div className="flex-1">
+                          <span className="font-bold text-sm text-milquu-dark block">Pay Online (GPay, PhonePe, Cards)</span>
+                          <span className="text-xs text-gray-500">Secure online payment via Razorpay</span>
+                        </div>
+                      </label>
                     </div>
 
                     <button 
                       type="submit"
                       className="w-full bg-milquu-dark hover:bg-milquu-gold text-white px-4 py-3.5 rounded-full font-sans font-bold text-sm transition-colors shadow-md mt-6"
                     >
-                      Pay ₹{total} Now
+                      {paymentMethod === 'COD' ? `Place Order (Pay ₹${total} on Delivery)` : `Pay ₹${total} Now`}
                     </button>
                   </form>
                 </motion.div>
