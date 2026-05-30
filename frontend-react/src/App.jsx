@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 
@@ -155,6 +155,8 @@ function App() {
               <Route path="reports" element={<Reports />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="settings" element={<Settings />} />
+              {/* Catch-all for /admin/* to redirect to /admin */}
+              <Route path="*" element={<Navigate to="/admin" replace />} />
             </Route>
             {/* Delivery Boy Portal Routes */}
             <Route path="/delivery/login" element={<DeliveryLogin />} />
@@ -167,6 +169,9 @@ function App() {
               <Route path="map" element={<div className="p-8 text-center text-gray-500">Live Map View (Coming Soon)</div>} />
               <Route path="profile" element={<div className="p-8 text-center text-gray-500">Profile View (Coming Soon)</div>} />
             </Route>
+
+            {/* Global Catch-all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>
