@@ -12,8 +12,10 @@ const Cart = () => {
   });
   const [allProducts, setAllProducts] = useState([]);
 
+  const baseUrl = import.meta.env.MODE === 'development' ? 'http://localhost:5001' : 'https://milquu-backend.onrender.com';
+
   useEffect(() => {
-    fetch('https://milquu-backend.onrender.com/api/products')
+    fetch(`${baseUrl}/api/products`)
       .then(res => res.json())
       .then(data => setAllProducts(data))
       .catch(err => console.error(err));
@@ -85,7 +87,7 @@ const Cart = () => {
         orderSource: 'Website'
       };
 
-      const res = await fetch('https://milquu-backend.onrender.com/api/erp/orders', {
+      const res = await fetch(`${baseUrl}/api/erp/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
