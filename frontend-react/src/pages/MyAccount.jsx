@@ -206,16 +206,16 @@ const MyAccount = () => {
                           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
                               <h4 className="font-bold text-gray-800">Order #{order._id.substring(0,8).toUpperCase()}</h4>
-                              <p className="text-sm text-gray-500">₹{order.totalAmount} • {new Date(order.createdAt).toLocaleDateString()}</p>
+                              <p className="text-sm text-gray-500">₹{order.totalPrice || order.totalAmount} • {new Date(order.createdAt).toLocaleDateString()}</p>
                               <div className="mt-2 flex items-center gap-2">
-                                <span className="text-xs font-bold px-2 py-1 rounded-md bg-blue-100 text-blue-700">
-                                  {order.status.toUpperCase()}
+                                <span className={`text-xs font-bold px-2 py-1 rounded-md ${order.isDelivered ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                                  {order.isDelivered ? 'DELIVERED' : 'PENDING'}
                                 </span>
                               </div>
                             </div>
                             <div>
                               <span className="text-sm font-medium text-gray-600 bg-white border border-gray-200 px-3 py-1 rounded-lg">
-                                {order.items?.length || 0} items
+                                {order.orderItems?.length || order.items?.length || 0} items
                               </span>
                             </div>
                           </div>
