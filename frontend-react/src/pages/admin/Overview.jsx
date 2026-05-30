@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../../utils/api.js';
 import { motion } from 'framer-motion';
 import { 
   IndianRupee, TrendingUp, TrendingDown, Package, Users, 
@@ -67,9 +68,8 @@ const Overview = () => {
   React.useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const res = await fetch('https://milquu-backend.onrender.com/api/erp/analytics');
-        const data = await res.json();
-        setMetrics(data);
+        const res = await api.get('/api/erp/analytics');
+        setMetrics(res.data);
       } catch (error) {
         console.error("Failed to fetch analytics", error);
       } finally {

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../../utils/api.js';
 import { Users, UserPlus, UserCheck, Star, ArrowUpRight, ArrowDownRight, Download, Filter } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
@@ -25,8 +26,8 @@ const Customers = () => {
   React.useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const res = await fetch('https://milquu-backend.onrender.com/api/admin/customers');
-        const data = await res.json();
+        const res = await api.get('/api/admin/customers');
+        const data = res.data;
         const mapped = data.map(c => ({
           id: c._id,
           name: c.name,

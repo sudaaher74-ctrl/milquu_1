@@ -1,4 +1,5 @@
 import React from 'react';
+import api from '../../utils/api.js';
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, TrendingDown, DollarSign, PieChart as PieChartIcon, 
@@ -48,15 +49,17 @@ const ProfitAnalytics = () => {
     netProfit: 0,
     orders: 0
   });
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const res = await fetch('https://milquu-backend.onrender.com/api/erp/analytics');
-        const data = await res.json();
-        setAnalytics(data);
+        const res = await api.get('/api/erp/analytics');
+        setAnalytics(res.data);
       } catch (error) {
         console.error("Failed to fetch analytics", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchAnalytics();
