@@ -7,11 +7,16 @@ const DeliveryLayout = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const savedStaff = localStorage.getItem('deliveryStaff');
-    if (!savedStaff) {
-      navigate('/delivery/login');
+    const savedStaffStr = localStorage.getItem('deliveryStaff');
+    if (savedStaffStr && savedStaffStr !== 'undefined') {
+      try {
+        setStaff(JSON.parse(savedStaffStr));
+      } catch(e) {
+        console.error(e);
+        navigate('/delivery/login');
+      }
     } else {
-      setStaff(JSON.parse(savedStaff));
+      navigate('/delivery/login');
     }
   }, [navigate]);
 

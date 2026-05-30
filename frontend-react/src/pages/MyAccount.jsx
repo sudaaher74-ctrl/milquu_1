@@ -31,7 +31,10 @@ const MyAccount = () => {
   const fetchSubscriptions = async () => {
     setLoadingSubs(true);
     try {
-      const userToken = JSON.parse(localStorage.getItem('userInfo')).token;
+      const userInfoStr = localStorage.getItem('userInfo');
+      if (!userInfoStr || userInfoStr === 'undefined') return;
+      const userToken = JSON.parse(userInfoStr).token;
+      
       const res = await fetch('https://milquu-backend.onrender.com/api/users/subscriptions', {
         headers: { 'Authorization': `Bearer ${userToken}` }
       });
@@ -47,7 +50,10 @@ const MyAccount = () => {
   const fetchOrders = async () => {
     setLoadingOrders(true);
     try {
-      const userToken = JSON.parse(localStorage.getItem('userInfo')).token;
+      const userInfoStr = localStorage.getItem('userInfo');
+      if (!userInfoStr || userInfoStr === 'undefined') return;
+      const userToken = JSON.parse(userInfoStr).token;
+
       const res = await fetch('https://milquu-backend.onrender.com/api/users/orders', {
         headers: { 'Authorization': `Bearer ${userToken}` }
       });
@@ -62,7 +68,9 @@ const MyAccount = () => {
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {
-      const userToken = JSON.parse(localStorage.getItem('userInfo')).token;
+      const userInfoStr = localStorage.getItem('userInfo');
+      if (!userInfoStr || userInfoStr === 'undefined') return;
+      const userToken = JSON.parse(userInfoStr).token;
       const res = await fetch(`https://milquu-backend.onrender.com/api/users/subscriptions/${id}/status`, {
         method: 'PUT',
         headers: { 

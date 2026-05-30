@@ -142,7 +142,8 @@ const DeliveryDashboard = () => {
   const [location, setLocation] = useState(null);
   
   // Get driver ID from auth context
-  const staffData = JSON.parse(localStorage.getItem('deliveryStaff') || '{}');
+  const staffDataStr = localStorage.getItem('deliveryStaff');
+  const staffData = staffDataStr && staffDataStr !== 'undefined' ? JSON.parse(staffDataStr) : {};
   const driverId = staffData.staffId || 'STAFF-001';
 
   useEffect(() => {

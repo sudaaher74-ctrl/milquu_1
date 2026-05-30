@@ -48,8 +48,12 @@ const Subscription = () => {
       };
 
       const userInfoStr = localStorage.getItem('userInfo');
-      if (userInfoStr) {
-        orderData.user = JSON.parse(userInfoStr)._id;
+      if (userInfoStr && userInfoStr !== 'undefined') {
+        try {
+          orderData.user = JSON.parse(userInfoStr)._id;
+        } catch (e) {
+          console.error(e);
+        }
       }
 
       const res = await api.post('/api/subscriptions', orderData);
