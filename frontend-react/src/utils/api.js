@@ -11,16 +11,20 @@ api.interceptors.request.use(
     const adminToken = localStorage.getItem('adminToken');
     const deliveryStaff = localStorage.getItem('deliveryStaff');
     
-    if (adminToken) {
-      const parsedToken = JSON.parse(adminToken);
-      if (parsedToken.token) {
-        config.headers.Authorization = `Bearer ${parsedToken.token}`;
-      }
-    } else if (deliveryStaff) {
-      const parsedStaff = JSON.parse(deliveryStaff);
-      if (parsedStaff.token) {
-        config.headers.Authorization = `Bearer ${parsedStaff.token}`;
-      }
+    if (adminToken && adminToken !== 'undefined') {
+      try {
+        const parsedToken = JSON.parse(adminToken);
+        if (parsedToken.token) {
+          config.headers.Authorization = `Bearer ${parsedToken.token}`;
+        }
+      } catch (e) { console.error(e); }
+    } else if (deliveryStaff && deliveryStaff !== 'undefined') {
+      try {
+        const parsedStaff = JSON.parse(deliveryStaff);
+        if (parsedStaff.token) {
+          config.headers.Authorization = `Bearer ${parsedStaff.token}`;
+        }
+      } catch (e) { console.error(e); }
     }
     return config;
   },

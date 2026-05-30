@@ -15,9 +15,16 @@ const ProtectedRoute = ({ children, allowedRole }) => {
     }
   } else if (allowedRole === 'delivery') {
     const deliveryData = localStorage.getItem('deliveryStaff');
-    if (deliveryData) {
-      const parsedData = JSON.parse(deliveryData);
-      user = { ...parsedData, role: 'delivery' };
+    if (deliveryData && deliveryData !== 'undefined') {
+      try {
+        const parsedData = JSON.parse(deliveryData);
+        if (parsedData.token) {
+          user = { role: 'delivery' };
+        }
+      } catch (e) {
+        console.error(e);
+        localStorage.removeItem('deliveryStaff');
+      }
     }
   }
 

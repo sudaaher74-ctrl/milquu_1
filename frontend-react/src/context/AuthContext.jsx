@@ -12,8 +12,13 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if user is logged in
     const userInfo = localStorage.getItem('userInfo');
-    if (userInfo) {
-      setUser(JSON.parse(userInfo));
+    if (userInfo && userInfo !== 'undefined') {
+      try {
+        setUser(JSON.parse(userInfo));
+      } catch (e) {
+        console.error("Failed to parse userInfo", e);
+        localStorage.removeItem('userInfo');
+      }
     }
   }, []);
 
