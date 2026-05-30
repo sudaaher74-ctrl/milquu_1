@@ -55,7 +55,11 @@ const Cart = () => {
 
   const handlePaymentSuccess = async (paymentId) => {
     try {
+      const userInfoStr = localStorage.getItem('userInfo');
+      const userId = userInfoStr && userInfoStr !== 'undefined' ? JSON.parse(userInfoStr)._id : undefined;
+
       const orderData = {
+        user: userId,
         name: formData.name,
         phone: formData.phone,
         orderItems: cartItems.map(item => ({
