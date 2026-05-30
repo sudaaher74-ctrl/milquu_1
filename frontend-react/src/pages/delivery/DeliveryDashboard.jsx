@@ -25,6 +25,7 @@ const DeliveryDashboard = () => {
         phone: order.phone || order.user?.phone || 'Not Provided',
         address: order.shippingAddress?.address || 'No Address',
         items: `${order.orderItems?.length || 0} items`,
+        orderItems: order.orderItems || [],
         status: order.isDelivered ? 'Delivered' : 'Pending',
         time: 'Morning Delivery'
       }));
@@ -246,7 +247,22 @@ const DeliveryDashboard = () => {
                   className="bg-gray-50/80 border-t border-gray-100 p-4"
                 >
                   <div className="bg-white p-3 rounded-xl border border-gray-100 mb-4 shadow-sm">
-                    <p className="text-sm font-semibold text-gray-700 flex items-start"><Package size={14} className="mr-2 mt-0.5 text-milquu-blue flex-shrink-0" /> <span className="leading-tight">{task.items}</span></p>
+                    <div className="flex items-start mb-2">
+                      <Package size={14} className="mr-2 mt-0.5 text-milquu-blue flex-shrink-0" /> 
+                      <span className="text-sm font-semibold text-gray-700 leading-tight">Items to Deliver:</span>
+                    </div>
+                    {task.orderItems && task.orderItems.length > 0 ? (
+                      <ul className="text-sm text-gray-600 pl-6 space-y-1.5">
+                        {task.orderItems.map((item, idx) => (
+                          <li key={idx} className="flex items-center">
+                            <span className="bg-milquu-blue/10 text-milquu-blue font-bold px-1.5 py-0.5 rounded text-xs mr-2">{item.qty}x</span>
+                            <span>{item.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-gray-500 pl-6">{task.items}</p>
+                    )}
                   </div>
 
                   <div className="flex space-x-3 mb-6">
