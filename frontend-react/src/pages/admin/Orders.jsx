@@ -11,6 +11,7 @@ const Orders = () => {
   const [filterStatus, setFilterStatus] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [staffList, setStaffList] = useState([]);
   const itemsPerPage = 8;
 
   useEffect(() => {
@@ -22,6 +23,7 @@ const Orders = () => {
         ]);
         const data = await ordersRes.json();
         const staffData = await staffRes.json();
+        setStaffList(staffData);
         
         // Auto-assign from real database staff
         const mappedData = data.map((order, index) => {
@@ -61,6 +63,35 @@ const Orders = () => {
     const matchesStatus = filterStatus === 'All' || (order.status || 'Pending').toLowerCase() === filterStatus.toLowerCase();
     return matchesSearch && matchesStatus;
   });
+
+  const handleAssignDriver = async (orderId, staffId) => {
+    try {
+      const adminTokenStr = localStorage.getItem('adminToken');
+      const token = adminTokenStr ? JSON.parse(adminTokenStr).token : '';
+      const authHeaders = { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      const res = await fetch(`https://milquu-backend.onrender.com/api/erp/orders/${orderId}/assign`, {
+        method: 'PUT',
+        headers: authHeaders,
+        body: JSON.stringify({ staffId })
+      });
+      if (!res.ok) throw new Error('Failed to assign driver');
+      
+      const updatedOrder = await res.json();
+      
+      // Update local state
+      const staff = staffList.find(s => s._id === staffId);
+      setOrders(orders.map(o => o._id === orderId ? { ...o, deliveryStaff: staffId, assignedBoy: staff?.name, deliveryStatus: 'Out For Delivery' } : o));
+      setSelectedOrder(prev => ({ ...prev, deliveryStaff: staffId, assignedBoy: staff?.name, deliveryStatus: 'Out For Delivery' }));
+      
+    } catch (error) {
+      console.error(error);
+      alert('Failed to assign driver');
+    }
+  };
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
@@ -290,7 +321,7 @@ const Orders = () => {
                   </div>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-6 flex justify-between items-center">
+                <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-6 flex justify-between items-center flex-wrap gap-4">
                   <div className="flex items-center space-x-4">
                     <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-milquu-blue shadow-sm">
                       <Truck size={20} />
@@ -300,7 +331,19 @@ const Orders = () => {
                       <p className="text-xs text-gray-500">Area: {selectedOrder.deliveryArea}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="flex items-center gap-3">
+                    {staffList && staffList.length > 0 && (
+                      <select 
+                        onChange={(e) => handleAssignDriver(selectedOrder._id, e.target.value)}
+                        className="text-xs border-gray-200 rounded-md py-1 px-2 text-gray-600 focus:outline-none focus:ring-1 focus:ring-milquu-blue"
+                        defaultValue={selectedOrder.deliveryStaff || ''}
+                      >
+                        <option value="" disabled>Assign Driver</option>
+                        {staffList.map(staff => (
+                          <option key={staff._id} value={staff._id}>{staff.name} ({staff.area})</option>
+                        ))}
+                      </select>
+                    )}
                     <span className="px-3 py-1 bg-white rounded-full text-xs font-bold text-milquu-blue shadow-sm border border-blue-100">
                       {selectedOrder.deliveryStatus}
                     </span>

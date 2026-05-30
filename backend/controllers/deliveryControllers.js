@@ -1,13 +1,13 @@
 import DeliveryStaff from '../models/DeliveryStaff.js';
 import Order from '../models/Order.js';
+import generateToken from '../utils/generateToken.js';
 
 export const loginDeliveryStaff = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const staff = await DeliveryStaff.findOne({ email, password }); // In prod: compare hashed password
+    const staff = await DeliveryStaff.findOne({ email });
     
-    if (staff) {
-      // In prod: generate JWT token
+    if (staff && (await staff.matchPassword(password))) {
       res.json({
         _id: staff._id,
         staffId: staff.staffId,
@@ -16,7 +16,7 @@ export const loginDeliveryStaff = async (req, res) => {
         area: staff.area,
         city: staff.city,
         role: 'delivery',
-        token: 'demo-token-123'
+        token: generateToken(staff._id, 'delivery')
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });

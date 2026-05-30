@@ -34,6 +34,10 @@ const orderSchema = new mongoose.Schema({
   paidAt: { type: Date },
   isDelivered: { type: Boolean, required: true, default: false },
   deliveredAt: { type: Date },
+  deliveryStaff: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'DeliveryStaff',
+  },
   orderSource: { 
     type: String, 
     required: true, 

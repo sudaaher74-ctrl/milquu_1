@@ -59,8 +59,9 @@ const DeliveryDashboard = () => {
   const [isTracking, setIsTracking] = useState(false);
   const [location, setLocation] = useState(null);
   
-  // Hardcoded for now. In a real app, this comes from login/auth context.
-  const driverId = 'STAFF-001';
+  // Get driver ID from auth context
+  const staffData = JSON.parse(localStorage.getItem('deliveryStaff') || '{}');
+  const driverId = staffData.staffId || 'STAFF-001';
 
   useEffect(() => {
     let watchId;

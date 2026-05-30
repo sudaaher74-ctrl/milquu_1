@@ -105,6 +105,26 @@ export const createOrder = async (req, res) => {
   }
 };
 
+export const assignOrderToStaff = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { staffId } = req.body;
+    
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    order.deliveryStaff = staffId;
+    order.deliveryStatus = 'Out For Delivery';
+    
+    const updatedOrder = await order.save();
+    res.json(updatedOrder);
+  } catch (error) {
+    res.status(400).json({ message: 'Error assigning order', error: error.message });
+  }
+};
+
 // --- ANALYTICS DASHBOARD ---
 export const getDashboardAnalytics = async (req, res) => {
   try {

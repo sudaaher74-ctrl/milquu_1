@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
-import { Minus, Plus, Trash2, ArrowLeft, CheckCircle, ArrowRight, ShoppingCart } from 'lucide-react';
+import { Minus, Plus, Trash2, ArrowLeft, CheckCircle, ArrowRight, ShoppingCart, Lock } from 'lucide-react';
 
 const Cart = () => {
   const { cartItems, updateQuantity, removeFromCart, clearCart, addToCart } = useCart();
@@ -30,8 +30,12 @@ const Cart = () => {
   const deliveryFee = 0; // Free delivery for now
   const total = subtotal + deliveryFee;
 
-  const handleCheckoutSubmit = async (e) => {
+  const handleCheckoutSubmit = (e) => {
     e.preventDefault();
+    setStep(2.5); // Show Payment Simulator
+  };
+
+  const handlePaymentSuccess = async () => {
     try {
       const orderData = {
         name: formData.name,
@@ -49,7 +53,7 @@ const Cart = () => {
           postalCode: formData.pincode,
           country: 'India'
         },
-        paymentMethod: 'Cash on Delivery',
+        paymentMethod: 'Online Payment', // Changed to represent simulated payment
         totalPrice: total,
         orderSource: 'Website'
       };
@@ -303,6 +307,55 @@ const Cart = () => {
                     </button>
                   </form>
                 </motion.div>
+              )}
+              {step === 2.5 && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                  <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 overflow-hidden relative"
+                  >
+                    <div className="text-center mb-6">
+                      <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-600">
+                        <ShoppingCart size={28} />
+                      </div>
+                      <h3 className="text-xl font-bold font-serif text-gray-800">Secure Payment</h3>
+                      <p className="text-sm text-gray-500 mt-1">Milquu Fresh via Simulated Gateway</p>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-500">Amount to pay</span>
+                        <span className="text-lg font-bold text-gray-800">₹{total}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-500">Phone</span>
+                        <span className="text-sm font-medium text-gray-800">{formData.phone}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <button 
+                        onClick={handlePaymentSuccess}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold transition flex items-center justify-center"
+                      >
+                        Simulate Successful Payment
+                      </button>
+                      <button 
+                        onClick={() => setStep(2)}
+                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-bold transition flex items-center justify-center"
+                      >
+                        Cancel Payment
+                      </button>
+                    </div>
+
+                    <div className="text-center mt-6">
+                      <span className="text-xs text-gray-400 flex items-center justify-center">
+                        <Lock size={12} className="mr-1" /> This is a test payment environment
+                      </span>
+                    </div>
+                  </motion.div>
+                </div>
               )}
             </AnimatePresence>
 

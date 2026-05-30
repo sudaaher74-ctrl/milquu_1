@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import DeliveryStaff from '../models/DeliveryStaff.js';
 
 export const protect = async (req, res, next) => {
   let token;
@@ -12,8 +13,13 @@ export const protect = async (req, res, next) => {
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
 
-      // Get user from the token
-      req.user = await User.findById(decoded.id).select('-password');
+      // Get user or staff from the token
+      if (decoded.role === 'delivery') {
+        req.user = await DeliveryStaff.findById(decoded.id).select('-password');
+        req.user.role = 'delivery'; // explicitly set role since it might not be in the schema
+      } else {
+        req.user = await User.findById(decoded.id).select('-password');
+      }
 
       if (!req.user) {
         res.status(401).json({ message: 'Not authorized, user not found' });

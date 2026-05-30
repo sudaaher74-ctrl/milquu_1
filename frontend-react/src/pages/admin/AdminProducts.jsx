@@ -9,35 +9,118 @@ const AdminProducts = () => {
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    category: 'milk',
+    price: '',
+    stock: '',
+    description: '',
+    unit: '1 Litre',
+  });
+  const [imageFile, setImageFile] = useState(null);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch('https://milquu-backend.onrender.com/api/products');
+      const data = await res.json();
+      
+      const mapped = data.map(p => ({
+        id: p._id,
+        name: p.name,
+        sku: p.sku || `MIL-${p._id.substring(0,4).toUpperCase()}`,
+        category: p.category,
+        purchasePrice: p.price * 0.7, 
+        sellingPrice: p.price,
+        stock: p.stock || 50,
+        image: p.image,
+        status: p.stock > 20 ? 'Active' : (p.stock > 0 ? 'Low Stock' : 'Out of Stock')
+      }));
+      
+      setProducts(mapped);
+    } catch (error) {
+      console.error("Failed to fetch products", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   React.useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch('https://milquu-backend.onrender.com/api/products');
-        const data = await res.json();
-        
-        // Map backend product model to match admin expectations
-        const mapped = data.map(p => ({
-          id: p._id,
-          name: p.name,
-          sku: p.sku || `MIL-${p._id.substring(0,4).toUpperCase()}`,
-          category: p.category,
-          purchasePrice: p.price * 0.7, // Estimate purchase price if not in schema
-          sellingPrice: p.price,
-          stock: p.stock || 50,
-          image: p.image,
-          status: p.stock > 20 ? 'Active' : (p.stock > 0 ? 'Low Stock' : 'Out of Stock')
-        }));
-        
-        setProducts(mapped);
-      } catch (error) {
-        console.error("Failed to fetch products", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchProducts();
   }, []);
+
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!imageFile) {
+      alert('Please select an image');
+      return;
+    }
+    
+    setIsUploading(true);
+    try {
+      // 1. Upload Image to Cloudinary
+      const imageFormData = new FormData();
+      imageFormData.append('image', imageFile);
+      
+      const adminTokenStr = localStorage.getItem('adminToken');
+      const token = adminTokenStr ? JSON.parse(adminTokenStr).token : '';
+      const authHeaders = { 'Authorization': `Bearer ${token}` };
+
+      const uploadRes = await fetch('https://milquu-backend.onrender.com/api/upload', {
+        method: 'POST',
+        headers: authHeaders,
+        body: imageFormData
+      });
+      
+      if (!uploadRes.ok) throw new Error('Image upload failed');
+      const uploadData = await uploadRes.json();
+      const imageUrl = uploadData.url;
+
+      // 2. Create Product
+      const productPayload = {
+        ...formData,
+        price: Number(formData.price),
+        stock: Number(formData.stock),
+        image: imageUrl
+      };
+
+      const productRes = await fetch('https://milquu-backend.onrender.com/api/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders
+        },
+        body: JSON.stringify(productPayload)
+      });
+      
+      if (!productRes.ok) throw new Error('Product creation failed');
+      
+      // 3. Cleanup and Refresh
+      setIsModalOpen(false);
+      setFormData({ name: '', category: 'milk', price: '', stock: '', description: '', unit: '1 Litre' });
+      setImageFile(null);
+      fetchProducts();
+      
+    } catch (error) {
+      console.error('Submit error:', error);
+      alert('Failed to add product: ' + error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const calculateMetrics = (p) => {
     const profit = p.sellingPrice - p.purchasePrice;
@@ -74,7 +157,10 @@ const AdminProducts = () => {
           <button className="bg-milquu-dark text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
             <Edit2 size={16} className="mr-2" /> Bulk Edit
           </button>
-          <button className="bg-milquu-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors shadow-md shadow-milquu-blue/20 flex items-center">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-milquu-blue text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors shadow-md shadow-milquu-blue/20 flex items-center"
+          >
             <Plus size={16} className="mr-2" /> Add Product
           </button>
         </div>
@@ -230,6 +316,57 @@ const AdminProducts = () => {
           </table>
         </div>
       </div>
+      {/* Add Product Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-4">Add New Product</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                <input required type="text" name="name" value={formData.name} onChange={handleInputChange} className="w-full border rounded-lg p-2" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select name="category" value={formData.category} onChange={handleInputChange} className="w-full border rounded-lg p-2">
+                    <option value="milk">Milk</option>
+                    <option value="by-products">By-Products</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                  <input required type="text" name="unit" value={formData.unit} onChange={handleInputChange} className="w-full border rounded-lg p-2" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+                  <input required type="number" name="price" value={formData.price} onChange={handleInputChange} className="w-full border rounded-lg p-2" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Initial Stock</label>
+                  <input required type="number" name="stock" value={formData.stock} onChange={handleInputChange} className="w-full border rounded-lg p-2" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea name="description" value={formData.description} onChange={handleInputChange} className="w-full border rounded-lg p-2" rows="2"></textarea>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
+                <input required type="file" accept="image/*" onChange={handleImageChange} className="w-full border rounded-lg p-2" />
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg">Cancel</button>
+                <button type="submit" disabled={isUploading} className="px-4 py-2 bg-milquu-blue text-white rounded-lg hover:bg-blue-800 disabled:opacity-50 flex items-center">
+                  {isUploading ? 'Uploading...' : 'Save Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
