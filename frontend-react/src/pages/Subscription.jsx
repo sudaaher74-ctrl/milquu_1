@@ -24,6 +24,7 @@ const Subscription = () => {
   const [selectedProduct, setSelectedProduct] = useState('a2');
   const [selectedFreq, setSelectedFreq] = useState('daily');
   const [selectedTime, setSelectedTime] = useState('morning');
+  const [paymentMethod, setPaymentMethod] = useState('COD');
   const [formData, setFormData] = useState({
     name: '', phone: '', address: '', city: '', pincode: ''
   });
@@ -32,8 +33,17 @@ const Subscription = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const loadScript = (src) => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const saveSubscription = async (paymentId, method, isPaid = false) => {
     try {
       const selectedProdDetails = products.find(p => p.id === selectedProduct);
       const priceNum = parseFloat(selectedProdDetails.price.replace(/[^0-9.-]+/g,""));
@@ -44,8 +54,18 @@ const Subscription = () => {
         deliveryAddress: `${formData.address}, ${formData.city}, ${formData.pincode}`,
         frequency: selectedFreq === 'daily' ? 'Daily' : selectedFreq === 'alt' ? 'Alternate Days' : 'Weekly',
         totalAmount: priceNum * 30, // Estimating 30 days
-        items: []
+        items: [],
+        paymentMethod: method,
+        isPaid: isPaid
       };
+
+      if (paymentId) {
+        orderData.paymentResult = {
+          id: paymentId,
+          status: 'paid',
+          update_time: new Date().toISOString()
+        };
+      }
 
       const userInfoStr = localStorage.getItem('userInfo');
       if (userInfoStr && userInfoStr !== 'undefined') {
@@ -67,6 +87,67 @@ const Subscription = () => {
     } catch (err) {
       console.error(err);
       alert("Error submitting subscription.");
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (paymentMethod === 'COD') {
+      await saveSubscription(null, 'Cash on Delivery', false);
+    } else {
+      const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+      
+      if (!res) {
+        alert('Razorpay SDK failed to load. Are you online?');
+        return;
+      }
+
+      try {
+        const selectedProdDetails = products.find(p => p.id === selectedProduct);
+        const priceNum = parseFloat(selectedProdDetails.price.replace(/[^0-9.-]+/g,""));
+        const total = priceNum * 30; // 30 days upfront
+
+        // Create order on backend
+        const baseUrl = import.meta.env.MODE === 'development' ? 'http://localhost:5001' : 'https://milquu-backend.onrender.com';
+        const orderRes = await fetch(`${baseUrl}/api/payment/orders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: total })
+        });
+        const orderData = await orderRes.json();
+
+        if (!orderData || !orderData.id) {
+          alert('Failed to initialize payment. Please try again.');
+          return;
+        }
+
+        const options = {
+          key: "rzp_test_dummy_key_id", // Replace with real key in prod
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: "Milquu Fresh",
+          description: "Monthly Subscription Upfront",
+          order_id: orderData.id,
+          handler: async function (response) {
+            await saveSubscription(response.razorpay_payment_id, 'UPI / Online', true);
+          },
+          prefill: {
+            name: formData.name,
+            contact: formData.phone
+          },
+          theme: {
+            color: "#D3AC67" // milquu-gold
+          }
+        };
+
+        const paymentObject = new window.Razorpay(options);
+        paymentObject.open();
+        
+      } catch (error) {
+        console.error(error);
+        alert('Error connecting to payment gateway.');
+      }
     }
   };
 
@@ -325,6 +406,43 @@ const Subscription = () => {
                   </div>
                 </div>
 
+              </div>
+            </div>
+
+            {/* Step 5: Payment Method */}
+            <div className="pt-6">
+              <h3 className="text-2xl font-serif font-bold text-milquu-dark mb-6">Payment Method</h3>
+              
+              <div className="space-y-4">
+                <label className={`flex items-center p-4 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'COD' ? 'bg-milquu-gold/10 border-milquu-gold/50 shadow-sm' : 'bg-gray-50/50 border-gray-200 hover:bg-gray-50'}`}>
+                  <input 
+                    type="radio" 
+                    name="payment" 
+                    value="COD" 
+                    checked={paymentMethod === 'COD'}
+                    onChange={() => setPaymentMethod('COD')}
+                    className="mr-4 w-5 h-5 text-milquu-gold focus:ring-milquu-gold"
+                  />
+                  <div className="flex-1">
+                    <span className="font-bold text-base text-milquu-dark block">Cash on Delivery</span>
+                    <span className="text-sm text-gray-500">Pay weekly / monthly directly to your delivery executive</span>
+                  </div>
+                </label>
+
+                <label className={`flex items-center p-4 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'ONLINE' ? 'bg-milquu-gold/10 border-milquu-gold/50 shadow-sm' : 'bg-gray-50/50 border-gray-200 hover:bg-gray-50'}`}>
+                  <input 
+                    type="radio" 
+                    name="payment" 
+                    value="ONLINE" 
+                    checked={paymentMethod === 'ONLINE'}
+                    onChange={() => setPaymentMethod('ONLINE')}
+                    className="mr-4 w-5 h-5 text-milquu-gold focus:ring-milquu-gold"
+                  />
+                  <div className="flex-1">
+                    <span className="font-bold text-base text-milquu-dark block">Pay Online (GPay, PhonePe, Cards)</span>
+                    <span className="text-sm text-gray-500">Pay upfront securely via Razorpay</span>
+                  </div>
+                </label>
               </div>
             </div>
 

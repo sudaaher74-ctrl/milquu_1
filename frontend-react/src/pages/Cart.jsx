@@ -49,10 +49,55 @@ const Cart = () => {
     if (paymentMethod === 'COD') {
       await saveOrder(null, 'Cash on Delivery', false);
     } else {
-      // Simulate payment immediately for demonstration without needing real Razorpay keys
-      alert('Test Mode: Simulating secure payment via GPay / PhonePe...');
-      const fakePaymentId = 'pay_' + Math.random().toString(36).substring(2, 15);
-      await saveOrder(fakePaymentId, 'UPI / Online', true);
+      const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+      
+      if (!res) {
+        alert('Razorpay SDK failed to load. Are you online?');
+        return;
+      }
+
+      try {
+        // Create order on backend
+        const orderRes = await fetch(`${baseUrl}/api/payment/orders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: total })
+        });
+        const orderData = await orderRes.json();
+
+        if (!orderData || !orderData.id) {
+          alert('Failed to initialize payment. Please try again.');
+          return;
+        }
+
+        const options = {
+          key: "rzp_test_dummy_key_id", // Replace with real key in prod
+          amount: orderData.amount,
+          currency: orderData.currency,
+          name: "Milquu Fresh",
+          description: "Farm Fresh Milk Delivery",
+          order_id: orderData.id,
+          handler: async function (response) {
+            // Usually you'd verify the signature here by calling /api/payment/verify
+            // For this flow, we'll save the order directly on successful payment
+            await saveOrder(response.razorpay_payment_id, 'UPI / Online', true);
+          },
+          prefill: {
+            name: formData.name,
+            contact: formData.phone
+          },
+          theme: {
+            color: "#D3AC67" // milquu-gold
+          }
+        };
+
+        const paymentObject = new window.Razorpay(options);
+        paymentObject.open();
+        
+      } catch (error) {
+        console.error(error);
+        alert('Error connecting to payment gateway.');
+      }
     }
   };
 
