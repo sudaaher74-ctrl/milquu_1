@@ -7,13 +7,36 @@ export const startSubscriptionEngine = () => {
   cron.schedule('59 23 * * *', async () => {
     console.log('Running automated subscription engine...');
     try {
-      // Find all active subscriptions
-      const activeSubscriptions = await Subscription.find({ status: 'Active' });
+      // Find all subscriptions that are Active or paused
+      const activeSubscriptions = await Subscription.find({ 
+        status: { $in: ['Active', 'active', 'paused', 'Paused'] } 
+      });
+
+      const currentDate = new Date();
+      currentDate.setHours(0, 0, 0, 0); // Normalize to start of day
 
       for (const sub of activeSubscriptions) {
-        // Skip if frequency doesn't match today (Basic logic: daily runs every day)
-        // In a real app, you'd check 'alternate days', 'weekends only', etc.
         
+        // Handle auto-resuming if the pause end date has passed
+        if ((sub.status === 'paused' || sub.status === 'Paused') && sub.pauseEndDate) {
+          const endDate = new Date(sub.pauseEndDate);
+          endDate.setHours(0, 0, 0, 0);
+          
+          if (currentDate > endDate) {
+            sub.status = 'Active';
+            sub.pauseStartDate = undefined;
+            sub.pauseEndDate = undefined;
+            await sub.save();
+            console.log(`Auto-resumed subscription: ${sub._id}`);
+          }
+        }
+
+        // If the subscription is STILL paused, skip generating an order
+        if (sub.status === 'paused' || sub.status === 'Paused') {
+          console.log(`Skipping paused subscription: ${sub._id}`);
+          continue;
+        }
+
         // Generate an order for this subscription for tomorrow
         const order = new Order({
           user: sub.user,

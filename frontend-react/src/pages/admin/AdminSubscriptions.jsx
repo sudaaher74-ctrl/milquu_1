@@ -31,7 +31,9 @@ const AdminSubscriptions = () => {
           qty: sub.items && sub.items.length > 0 ? sub.items.map(i => i.qty).join(', ') : 1,
           freq: sub.frequency,
           nextDelivery: new Date(sub.createdAt).toLocaleDateString(), // Mocking next delivery
-          renewal: 'Auto-renew'
+          renewal: (sub.status === 'paused' || sub.status === 'Paused') && sub.pauseEndDate 
+            ? `Resumes: ${new Date(sub.pauseEndDate).toLocaleDateString()}` 
+            : 'Auto-renew'
         }));
         setSubscriptionsData(mappedData);
         setLoading(false);

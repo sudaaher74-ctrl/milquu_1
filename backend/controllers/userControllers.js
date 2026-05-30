@@ -95,7 +95,7 @@ export const getMySubscriptions = async (req, res) => {
 
 export const updateSubscriptionStatus = async (req, res) => {
   try {
-    const { status } = req.body; // e.g. 'paused', 'Active', 'Cancelled'
+    const { status, pauseStartDate, pauseEndDate } = req.body; // e.g. 'paused', 'Active', 'Cancelled'
     const Subscription = (await import('../models/Subscription.js')).default;
     
     const subscription = await Subscription.findById(req.params.id);
@@ -107,6 +107,15 @@ export const updateSubscriptionStatus = async (req, res) => {
       }
       
       subscription.status = status;
+      if (pauseStartDate) subscription.pauseStartDate = new Date(pauseStartDate);
+      if (pauseEndDate) subscription.pauseEndDate = new Date(pauseEndDate);
+      
+      // If resuming manually, clear the dates
+      if (status === 'Active' || status === 'active') {
+        subscription.pauseStartDate = undefined;
+        subscription.pauseEndDate = undefined;
+      }
+
       const updatedSubscription = await subscription.save();
       res.json(updatedSubscription);
     } else {

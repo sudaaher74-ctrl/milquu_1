@@ -15,6 +15,7 @@ const MyAccount = () => {
 
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [pauseTarget, setPauseTarget] = useState(null);
 
   useEffect(() => {
     if (!user) {
@@ -73,18 +74,23 @@ const MyAccount = () => {
     }
   };
 
-  const handleUpdateStatus = async (id, newStatus) => {
+  const handleUpdateStatus = async (id, newStatus, pauseStartDate = null, pauseEndDate = null) => {
     try {
       const userInfoStr = localStorage.getItem('userInfo');
       if (!userInfoStr || userInfoStr === 'undefined') return;
       const userToken = JSON.parse(userInfoStr).token;
+      
+      const payload = { status: newStatus };
+      if (pauseStartDate) payload.pauseStartDate = pauseStartDate;
+      if (pauseEndDate) payload.pauseEndDate = pauseEndDate;
+
       const res = await fetch(`${baseUrl}/api/users/subscriptions/${id}/status`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${userToken}` 
         },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         fetchSubscriptions();
@@ -280,7 +286,7 @@ const MyAccount = () => {
                                 </button>
                               ) : sub.status === 'Active' ? (
                                 <button 
-                                  onClick={() => handleUpdateStatus(sub._id, 'paused')}
+                                  onClick={() => setPauseTarget({ id: sub._id, startDate: '', endDate: '' })}
                                   className="flex-1 md:flex-none flex items-center justify-center bg-white border border-gray-200 text-yellow-600 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-50 shadow-sm"
                                 >
                                   <Pause size={16} className="mr-2" /> Pause
@@ -295,6 +301,53 @@ const MyAccount = () => {
                               </button>
                             </div>
                           </div>
+                          
+                          {/* Pause Dates Form */}
+                          {pauseTarget?.id === sub._id && (
+                            <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                              <h5 className="font-bold text-yellow-800 mb-2">Pause Subscription (Vacation Mode)</h5>
+                              <div className="flex flex-col md:flex-row gap-4 mb-4">
+                                <div className="flex-1">
+                                  <label className="block text-xs font-semibold text-yellow-700 mb-1">Pause Start Date</label>
+                                  <input 
+                                    type="date" 
+                                    min={new Date().toISOString().split('T')[0]}
+                                    value={pauseTarget.startDate}
+                                    onChange={(e) => setPauseTarget({ ...pauseTarget, startDate: e.target.value })}
+                                    className="w-full px-3 py-2 border border-yellow-300 bg-white rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <label className="block text-xs font-semibold text-yellow-700 mb-1">Pause End Date</label>
+                                  <input 
+                                    type="date" 
+                                    min={pauseTarget.startDate || new Date().toISOString().split('T')[0]}
+                                    value={pauseTarget.endDate}
+                                    onChange={(e) => setPauseTarget({ ...pauseTarget, endDate: e.target.value })}
+                                    className="w-full px-3 py-2 border border-yellow-300 bg-white rounded-lg focus:ring-2 focus:ring-yellow-400 focus:outline-none"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-end gap-2">
+                                <button 
+                                  onClick={() => setPauseTarget(null)}
+                                  className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-gray-800"
+                                >
+                                  Cancel
+                                </button>
+                                <button 
+                                  disabled={!pauseTarget.startDate || !pauseTarget.endDate}
+                                  onClick={() => {
+                                    handleUpdateStatus(sub._id, 'paused', pauseTarget.startDate, pauseTarget.endDate);
+                                    setPauseTarget(null);
+                                  }}
+                                  className="px-4 py-2 text-sm font-bold text-white bg-yellow-500 rounded-lg hover:bg-yellow-600 disabled:opacity-50"
+                                >
+                                  Confirm Pause
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
