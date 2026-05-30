@@ -12,6 +12,16 @@ const Procurement = () => {
   const [procurementData, setProcurementData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    farmer: '',
+    type: 'Buffalo',
+    qty: '',
+    fat: '',
+    snf: '',
+    rate: ''
+  });
+
   useEffect(() => {
     const fetchProcurements = async () => {
       try {
@@ -26,8 +36,40 @@ const Procurement = () => {
     fetchProcurements();
   }, []);
 
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const qty = parseFloat(formData.qty);
+      const rate = parseFloat(formData.rate);
+      const total = qty * rate;
+
+      const newEntry = {
+        ...formData,
+        qty,
+        fat: parseFloat(formData.fat),
+        snf: parseFloat(formData.snf),
+        rate,
+        total,
+        date: new Date().toISOString(),
+        shift: new Date().getHours() < 12 ? 'Morning' : 'Evening'
+      };
+
+      const { data } = await api.post('/api/erp/procurements', newEntry);
+      setProcurementData([data, ...procurementData]);
+      setIsModalOpen(false);
+      setFormData({ farmer: '', type: 'Buffalo', qty: '', fat: '', snf: '', rate: '' });
+    } catch (error) {
+      console.error('Error creating procurement:', error);
+      alert('Failed to log procurement');
+    }
+  };
+
   return (
-    <div className="max-w-[1400px] mx-auto pb-10 font-sans">
+    <div className="max-w-[1400px] mx-auto pb-10 font-sans relative">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
@@ -39,7 +81,10 @@ const Procurement = () => {
           <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center">
             <Download size={16} className="mr-2" /> Export Log
           </button>
-          <button className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center"
+          >
             <Plus size={18} className="mr-2" /> New Entry
           </button>
         </div>
@@ -191,6 +236,65 @@ const Procurement = () => {
 
       </div>
 
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-xl font-bold font-serif text-milquu-dark">Log New Procurement</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Farmer Name</label>
+                <input required type="text" name="farmer" value={formData.farmer} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Milk Type</label>
+                  <select name="type" value={formData.type} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue">
+                    <option value="Buffalo">Buffalo</option>
+                    <option value="Cow">Cow</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">Quantity (Liters)</label>
+                  <input required type="number" step="0.1" name="qty" value={formData.qty} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">FAT (%)</label>
+                  <input required type="number" step="0.1" name="fat" value={formData.fat} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue" />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1">SNF (%)</label>
+                  <input required type="number" step="0.1" name="snf" value={formData.snf} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Rate per Liter (₹)</label>
+                <input required type="number" step="0.1" name="rate" value={formData.rate} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue" />
+              </div>
+
+              <div className="pt-4 flex justify-end space-x-3 border-t border-gray-100">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-milquu-dark rounded-lg hover:bg-gray-900">
+                  Save Entry
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

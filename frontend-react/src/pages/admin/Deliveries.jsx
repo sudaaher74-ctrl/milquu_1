@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../../utils/api.js';
+import { io } from 'socket.io-client';
 import { Truck, MapPin, CheckCircle2, Clock, Navigation, AlertTriangle, Battery, Signal, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
@@ -23,10 +24,9 @@ const Deliveries = () => {
   const [activeTab, setActiveTab] = useState('Map');
   const [mockDeliveries, setMockDeliveries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const socketRef = useRef(null);
 
   useEffect(() => {
-    let intervalId;
-    
     const fetchLiveTracking = async () => {
       try {
         const [ordersRes, staffRes] = await Promise.all([
@@ -34,12 +34,12 @@ const Deliveries = () => {
           api.get('/api/erp/delivery-staff')
         ]);
         
-        const orders = ordersRes.data;
         const staff = staffRes.data;
 
         // Group orders by staff
         const deliveriesByStaff = staff.map(boy => {
           return {
+            id: boy._id,
             boy: boy.name,
             route: boy.area,
             status: boy.status === 'Active' ? 'Active' : 'Offline',
@@ -48,7 +48,7 @@ const Deliveries = () => {
             battery: Math.floor(Math.random() * 60) + 40,
             signal: 'Strong',
             speed: '12 km/h',
-            location: boy.location || null
+            location: boy.location || { lat: 19.0166, lng: 73.0966 }
           };
         }).filter(d => d.status === 'Active');
 
@@ -61,12 +61,39 @@ const Deliveries = () => {
     };
     
     fetchLiveTracking();
-    intervalId = setInterval(fetchLiveTracking, 10000); // Poll every 10 seconds
     
+    // Initialize Socket Connection
+    socketRef.current = io('https://milquu-backend.onrender.com');
+
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      if (socketRef.current) socketRef.current.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (!socketRef.current || mockDeliveries.length === 0) return;
+
+    mockDeliveries.forEach(staff => {
+      socketRef.current.emit('join_tracking', { deliveryBoyId: staff.id });
+    });
+
+    socketRef.current.on('location_updated', (data) => {
+      setMockDeliveries(prev => prev.map(d => {
+        if (d.id === data.deliveryBoyId) {
+          return { 
+            ...d, 
+            location: { lat: data.latitude, lng: data.longitude }, 
+            speed: data.heading ? `${Math.round(data.heading)}°` : d.speed 
+          };
+        }
+        return d;
+      }));
+    });
+
+    return () => {
+      socketRef.current.off('location_updated');
+    };
+  }, [mockDeliveries.length]);
 
   return (
     <div className="max-w-7xl mx-auto pb-10 font-sans">

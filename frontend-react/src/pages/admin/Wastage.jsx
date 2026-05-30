@@ -15,6 +15,14 @@ const Wastage = () => {
   const [wastageData, setWastageData] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    product: '',
+    qty: '',
+    reason: 'Spoilage',
+    lossValue: ''
+  });
+
   useEffect(() => {
     const fetchWastages = async () => {
       try {
@@ -37,11 +45,44 @@ const Wastage = () => {
     fetchWastages();
   }, []);
 
+  const handleInputChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const newEntry = {
+        product: formData.product,
+        quantity: parseFloat(formData.qty),
+        reason: formData.reason,
+        lossValue: parseFloat(formData.lossValue),
+        date: new Date().toISOString(),
+        reportedBy: 'Admin'
+      };
+
+      const { data } = await api.post('/api/erp/wastages', newEntry);
+      
+      const mappedEntry = {
+        ...data,
+        product: data.productName || data.product,
+        qty: data.quantity || data.qty
+      };
+
+      setWastageData([mappedEntry, ...wastageData]);
+      setIsModalOpen(false);
+      setFormData({ product: '', qty: '', reason: 'Spoilage', lossValue: '' });
+    } catch (error) {
+      console.error('Error reporting wastage:', error);
+      alert('Failed to log wastage');
+    }
+  };
+
   const totalLoss = wastageData.reduce((acc, curr) => acc + (curr.lossValue || 0), 0);
   const wastagePercent = 0; // 1.2% of total production
 
   return (
-    <div className="max-w-[1400px] mx-auto pb-10 font-sans">
+    <div className="max-w-[1400px] mx-auto pb-10 font-sans relative">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
@@ -53,7 +94,10 @@ const Wastage = () => {
           <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center">
             <Download size={16} className="mr-2" /> Export Log
           </button>
-          <button className="bg-red-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-md flex items-center">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-red-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors shadow-md flex items-center"
+          >
             <Plus size={18} className="mr-2" /> Report Wastage
           </button>
         </div>
@@ -166,6 +210,55 @@ const Wastage = () => {
         </div>
 
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-xl font-bold font-serif text-milquu-dark">Log Spoilage</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Product Name</label>
+                <input required type="text" name="product" value={formData.product} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-red-300" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Quantity Lost</label>
+                <input required type="number" step="0.1" name="qty" value={formData.qty} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-red-300" />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Reason for Loss</label>
+                <select name="reason" value={formData.reason} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-red-300">
+                  <option value="Spoilage">Spoilage (Expired/Sour)</option>
+                  <option value="Damaged Packaging">Damaged Packaging</option>
+                  <option value="Transit Loss">Transit Loss (Spilled)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">Estimated Loss Value (₹)</label>
+                <input required type="number" step="0.1" name="lossValue" value={formData.lossValue} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-red-300" />
+              </div>
+
+              <div className="pt-4 flex justify-end space-x-3 border-t border-gray-100">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200">
+                  Cancel
+                </button>
+                <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">
+                  Report Loss
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

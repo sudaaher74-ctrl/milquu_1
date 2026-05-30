@@ -54,8 +54,17 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/payment', paymentRoutes);
 
+import http from 'http';
+import { initSocket } from './socket.js';
+
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+// Create HTTP server
+const server = http.createServer(app);
+
+// Initialize Socket.io
+initSocket(server);
+
+server.listen(PORT, () => {
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });

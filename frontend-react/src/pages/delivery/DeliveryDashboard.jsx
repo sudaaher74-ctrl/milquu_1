@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../../utils/api.js';
+import { io } from 'socket.io-client';
 import { MapPin, Phone, CheckCircle, Navigation, Package, Camera, FileText, ChevronDown, CheckCircle2, PackageCheck, Truck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -10,6 +11,9 @@ const DeliveryDashboard = () => {
   
   const [proofNote, setProofNote] = useState('');
   const [proofImage, setProofImage] = useState(null);
+  const [proofImageFile, setProofImageFile] = useState(null); // Added missing state declaration
+
+  const socketRef = useRef(null);
 
   const fetchTasks = async () => {
     try {
@@ -34,6 +38,39 @@ const DeliveryDashboard = () => {
 
   useEffect(() => {
     fetchTasks();
+
+    // Initialize Socket Connection for Live Tracking
+    const staffData = localStorage.getItem('deliveryStaff');
+    const staff = staffData ? JSON.parse(staffData) : null;
+    
+    if (staff && staff._id) {
+      socketRef.current = io('https://milquu-backend.onrender.com'); // Connect to your backend
+      
+      // Join Tracking Room
+      socketRef.current.emit('join_tracking', { deliveryBoyId: staff._id });
+
+      // Start GPS Tracking
+      if ('geolocation' in navigator) {
+        const watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            const { latitude, longitude, heading } = position.coords;
+            socketRef.current.emit('update_location', {
+              deliveryBoyId: staff._id,
+              latitude,
+              longitude,
+              heading
+            });
+          },
+          (error) => console.error("Error getting location: ", error),
+          { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+        );
+
+        return () => {
+          navigator.geolocation.clearWatch(watchId);
+          if (socketRef.current) socketRef.current.disconnect();
+        };
+      }
+    }
   }, []);
 
   const updateTaskStatus = async (id, newStatus) => {
@@ -131,8 +168,6 @@ const DeliveryDashboard = () => {
       if (watchId) navigator.geolocation.clearWatch(watchId);
     };
   }, [isTracking]);
-
-  const [proofImageFile, setProofImageFile] = useState(null);
 
   const handlePhotoUpload = (e) => {
     if (e.target.files && e.target.files[0]) {
