@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useEffect, useState } from 'react';
+import api from '../utils/api.js';
 
 // Product category metadata
 const categoryMeta = {
@@ -29,8 +30,7 @@ const CategoryListing = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('https://milquu-backend.onrender.com/api/products');
-        const data = await res.json();
+        const { data } = await api.get('/api/products');
         
         // Group by category
         const grouped = {
