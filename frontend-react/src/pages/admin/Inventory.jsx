@@ -110,6 +110,8 @@ const Inventory = () => {
         setLoading(false);
       }
     };
+    
+  useEffect(() => {
     fetchInventory();
   }, []);
 
