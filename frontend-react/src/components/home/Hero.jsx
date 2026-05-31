@@ -1,8 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Hero = () => {
+  const navigate = useNavigate();
   return (
     <section className="relative min-h-[100dvh] flex flex-col lg:flex-row items-center bg-milquu-cream pt-28 lg:pt-24 overflow-hidden">
       
@@ -47,11 +49,17 @@ const Hero = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-6">
-              <button className="w-full sm:w-auto px-6 py-3 lg:px-8 lg:py-4 bg-milquu-dark hover:bg-black text-white rounded-full font-sans font-medium transition-all duration-300 shadow-xl hover:shadow-2xl flex items-center justify-center group text-sm lg:text-base">
+              <button 
+                onClick={() => navigate('/subscribe')}
+                className="w-full sm:w-auto px-6 py-3 lg:px-8 lg:py-4 bg-milquu-dark hover:bg-black text-white rounded-full font-sans font-medium transition-all duration-300 shadow-xl hover:shadow-2xl flex items-center justify-center group text-sm lg:text-base"
+              >
                 Start Subscription
                 <ArrowRight className="ml-2 w-4 h-4 lg:w-5 lg:h-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="w-full sm:w-auto px-6 py-3 lg:px-8 lg:py-4 bg-white hover:bg-gray-50 text-milquu-dark border border-gray-200 rounded-full font-sans font-medium transition-all duration-300 shadow-sm hover:shadow-md text-center text-sm lg:text-base">
+              <button 
+                onClick={() => navigate('/products')}
+                className="w-full sm:w-auto px-6 py-3 lg:px-8 lg:py-4 bg-white hover:bg-gray-50 text-milquu-dark border border-gray-200 rounded-full font-sans font-medium transition-all duration-300 shadow-sm hover:shadow-md text-center text-sm lg:text-base"
+              >
                 Explore Products
               </button>
             </div>
