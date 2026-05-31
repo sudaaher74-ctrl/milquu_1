@@ -232,9 +232,14 @@ const Orders = () => {
                   </td>
                   <td className="px-6 py-4">
                     <StatusBadge status={order.status} />
-                    <p className={`text-[10px] mt-1 font-bold ${order.deliveryStatus === 'Delivered' ? 'text-green-600' : 'text-blue-600'}`}>
+                    <p className={`text-[10px] mt-1 font-bold ${order.deliveryStatus === 'Delivered' ? 'text-green-600' : order.deliveryStatus === 'Failed' ? 'text-red-600' : 'text-blue-600'}`}>
                       {order.deliveryStatus}
                     </p>
+                    {order.deliverySlot && (
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded mt-1 inline-block ${order.deliverySlot === 'Morning' ? 'bg-orange-100 text-orange-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                        {order.deliverySlot === 'Morning' ? '🌅' : '🌇'} {order.deliverySlot}
+                      </span>
+                    )}
                   </td>
                 </tr>
               )) : (

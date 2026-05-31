@@ -31,7 +31,10 @@ const DeliveryDashboard = () => {
         paymentStatus: order.paymentStatus || 'PENDING',
         totalPrice: order.totalPrice || 0,
         status: order.deliveryStatus || (order.isDelivered ? 'Delivered' : 'Pending'),
-        time: 'Morning Delivery'
+        deliverySlot: order.deliverySlot || 'Morning',
+        scheduledDeliveryWindow: order.scheduledDeliveryWindow || '4:00 AM – 7:00 AM',
+        scheduledDeliveryDate: order.scheduledDeliveryDate || null,
+        time: order.deliverySlot === 'Evening' ? 'Evening 5–7 PM' : 'Morning 4–7 AM'
       }));
       setTasks(formattedTasks);
     } catch (error) {
@@ -254,7 +257,12 @@ const DeliveryDashboard = () => {
                 <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(task.status)}`}>
                   {task.status === 'Pending Assignment' ? 'Assigned' : task.status}
                 </span>
-                <span className="text-xs font-bold text-gray-400">{task.time}</span>
+                <div className="text-right">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${task.deliverySlot === 'Evening' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700'}`}>
+                    {task.deliverySlot === 'Evening' ? '🌇 Evening' : '🌅 Morning'}
+                  </span>
+                  <p className="text-[10px] text-gray-400 mt-1">{task.scheduledDeliveryWindow}</p>
+                </div>
               </div>
               
               <h3 className="font-bold text-milquu-dark text-lg mb-1">{task.customer}</h3>

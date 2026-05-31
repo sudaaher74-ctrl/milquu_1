@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2, ArrowLeft, CheckCircle, ArrowRight, ShoppingCart, Lock } from 'lucide-react';
+import DeliverySlotSelector from '../components/cart/DeliverySlotSelector';
 
 const Cart = () => {
   const { cartItems, updateQuantity, removeFromCart, clearCart, addToCart } = useCart();
@@ -12,6 +13,7 @@ const Cart = () => {
   });
   const [paymentMethod, setPaymentMethod] = useState('COD');
   const [allProducts, setAllProducts] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null); // { id, deliveryDate, window }
 
   const baseUrl = import.meta.env.MODE === 'development' ? 'http://localhost:5001' : 'https://milquu-backend.onrender.com';
 
@@ -48,6 +50,11 @@ const Cart = () => {
 
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
+
+    if (!selectedSlot) {
+      alert('Please choose a delivery slot before placing your order.');
+      return;
+    }
     
     if (paymentMethod === 'COD') {
       await saveOrder(null, 'COD', 'PENDING');
@@ -172,7 +179,10 @@ const Cart = () => {
           update_time: new Date().toISOString()
         } : undefined,
         totalPrice: total,
-        orderSource: 'Website'
+        orderSource: 'Website',
+        deliverySlot: selectedSlot?.id || 'Morning',
+        scheduledDeliveryDate: selectedSlot?.deliveryDate || null,
+        scheduledDeliveryWindow: selectedSlot?.window || '4:00 AM – 7:00 AM',
       };
 
       const res = await fetch(`${baseUrl}/api/erp/orders`, {
@@ -213,10 +223,21 @@ const Cart = () => {
           >
             <CheckCircle size={32} />
           </motion.div>
-          <h2 className="text-2xl font-serif font-bold text-milquu-dark mb-2">Order Confirmed!</h2>
-          <p className="text-gray-600 text-sm font-sans mb-6">
-            Thank you, {formData.name}. Your order has been placed. You will pay <strong>₹{total}</strong> via Cash on Delivery.
+          <h2 className="text-2xl font-serif font-bold text-milquu-dark mb-2">Order Confirmed! 🥛</h2>
+          <p className="text-gray-600 text-sm font-sans mb-2">
+            Thank you, {formData.name}. Your order has been placed!
           </p>
+          {selectedSlot && (
+            <div className="bg-milquu-green/5 border border-milquu-green/20 rounded-xl p-3 mb-4 text-sm">
+              <p className="font-bold text-milquu-dark">
+                {selectedSlot.id === 'Morning' ? '🌅' : '🌇'} {selectedSlot.id} Delivery
+              </p>
+              <p className="text-gray-600 text-xs mt-1">
+                📅 {selectedSlot.deliveryDate?.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
+              </p>
+              <p className="text-gray-600 text-xs">⏰ {selectedSlot.window}</p>
+            </div>
+          )}
           <Link to="/">
             <button className="bg-milquu-dark hover:bg-milquu-gold text-white px-6 py-2.5 rounded-full font-sans text-sm font-bold transition-colors shadow-lg">
               Return Home
@@ -385,6 +406,12 @@ const Cart = () => {
                 >
                   <form onSubmit={handleCheckoutSubmit} className="space-y-4">
                     <h4 className="font-serif font-bold text-milquu-dark text-sm mb-3">Delivery Details</h4>
+                    
+                    {/* Delivery Slot Selector */}
+                    <DeliverySlotSelector
+                      value={selectedSlot?.id || null}
+                      onChange={(id, deliveryDate, window) => setSelectedSlot({ id, deliveryDate, window })}
+                    />
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <input required type="text" name="name" placeholder="Full Name" onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30" />

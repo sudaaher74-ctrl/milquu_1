@@ -46,6 +46,9 @@ const orderSchema = new mongoose.Schema({
   proofOfDelivery: { type: String },
   deliveryStatus: { type: String, default: 'Pending' },
   failedReason: { type: String },
+  deliverySlot: { type: String, enum: ['Morning', 'Evening'], default: 'Morning' },
+  scheduledDeliveryDate: { type: Date },
+  scheduledDeliveryWindow: { type: String, default: '4:00 AM – 7:00 AM' },
   deliveryStaff: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'DeliveryStaff',
