@@ -35,6 +35,9 @@ const Cart = () => {
 
   const loadScript = (src) => {
     return new Promise((resolve) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        return resolve(true);
+      }
       const script = document.createElement('script');
       script.src = src;
       script.onload = () => resolve(true);
@@ -52,7 +55,12 @@ const Cart = () => {
       const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
       
       if (!res) {
-        alert('Razorpay SDK failed to load. Are you online?');
+        alert('Razorpay SDK failed to load. Are you online? Check if an adblocker is active.');
+        return;
+      }
+
+      if (!window.Razorpay) {
+        alert('Razorpay failed to initialize. Please check your browser settings.');
         return;
       }
 
@@ -118,6 +126,9 @@ const Cart = () => {
         };
 
         const paymentObject = new window.Razorpay(options);
+        paymentObject.on('payment.failed', function (response){
+          alert("Payment Failed: " + response.error.description);
+        });
         paymentObject.open();
         
       } catch (error) {
@@ -400,8 +411,9 @@ const Cart = () => {
                     <div className="mt-4 space-y-3">
                       <h4 className="font-serif font-bold text-milquu-dark text-sm mb-2">Payment Method</h4>
                       
-                      <label className={`flex items-center p-3 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'COD' ? 'bg-milquu-gold/10 border-milquu-gold/50' : 'bg-gray-50/50 border-gray-200'}`}>
+                      <label htmlFor="payment-cod" className={`flex items-center p-3 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'COD' ? 'bg-milquu-gold/10 border-milquu-gold/50' : 'bg-gray-50/50 border-gray-200'}`}>
                         <input 
+                          id="payment-cod"
                           type="radio" 
                           name="payment" 
                           value="COD" 
@@ -415,8 +427,9 @@ const Cart = () => {
                         </div>
                       </label>
 
-                      <label className={`flex items-center p-3 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'ONLINE' ? 'bg-milquu-gold/10 border-milquu-gold/50' : 'bg-gray-50/50 border-gray-200'}`}>
+                      <label htmlFor="payment-online" className={`flex items-center p-3 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'ONLINE' ? 'bg-milquu-gold/10 border-milquu-gold/50' : 'bg-gray-50/50 border-gray-200'}`}>
                         <input 
+                          id="payment-online"
                           type="radio" 
                           name="payment" 
                           value="ONLINE" 

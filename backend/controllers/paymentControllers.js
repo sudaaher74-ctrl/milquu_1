@@ -15,9 +15,9 @@ export const createOrder = async (req, res) => {
   try {
     const { amount, currency = 'INR', receipt = 'receipt#1' } = req.body;
     
-    // Amount is in paise for INR
+    // Amount is in paise for INR and must be an integer
     const options = {
-      amount: amount * 100, 
+      amount: Math.round(amount * 100), 
       currency,
       receipt
     };
