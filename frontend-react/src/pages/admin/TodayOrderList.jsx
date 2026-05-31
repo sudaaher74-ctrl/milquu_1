@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../utils/api.js';
 import { motion } from 'framer-motion';
-import { RefreshCw, Printer, Users, Package, Clock, CheckCircle } from 'lucide-react';
+import { RefreshCw, Download, Users, Package, Clock, CheckCircle, Bike } from 'lucide-react';
 
 const TodayOrderList = () => {
   const [data, setData] = useState(null);
@@ -32,98 +32,142 @@ const TodayOrderList = () => {
     finally { setAssigningId(null); }
   };
 
-  const handlePrint = (staffId) => {
-    const subs = filteredSubs.filter(s =>
-      staffId === 'All' ? true : (s.assignedStaff || 'unassigned') === staffId
-    );
-    const staffName = staffId === 'All'
-      ? 'All Delivery Boys'
-      : (data?.staffList?.find(s => s._id === staffId)?.name || 'Unassigned');
+  // Generate and print PDF for a specific staff (or All)
+  const handleDownload = (staffId) => {
+    const subs = (data?.subscriptions || []).filter(s => {
+      if (staffId === 'All') return true;
+      if (staffId === 'unassigned') return !s.assignedStaff;
+      return (s.assignedStaff || '').toString() === staffId;
+    });
+
+    const staffObj = staffId === 'All'
+      ? null
+      : staffId === 'unassigned'
+      ? { name: 'Unassigned', phone: '—', area: '—' }
+      : data?.staffList?.find(s => s._id === staffId);
+
+    const staffName = staffObj ? staffObj.name : 'All Delivery Boys';
 
     const rows = subs.map((sub, i) => {
-      const items = (sub.items || []).map(it => `${it.quantity}x ${it.product?.name || it.name || 'Product'}`).join(', ');
-      const slot = (sub.deliverySlot || 'Morning') === 'Evening' ? 'Evening (5–7 PM)' : 'Morning (4–7 AM)';
+      const items = (sub.items || [])
+        .map(it => `${it.quantity}x ${it.product?.name || it.name || 'Item'}`)
+        .join('<br/>');
+      const slot = (sub.deliverySlot || 'Morning') === 'Evening'
+        ? '<span style="background:#e0e7ff;color:#3730a3;padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:bold;">🌇 Evening</span>'
+        : '<span style="background:#fff7ed;color:#c2410c;padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:bold;">🌅 Morning</span>';
       return `
         <tr>
-          <td>${i + 1}</td>
-          <td><strong>${sub.name || '—'}</strong></td>
+          <td style="text-align:center;color:#888;font-weight:bold">${i + 1}</td>
+          <td><strong>${sub.name || '—'}</strong><br/><span style="font-size:9px;color:#888;text-transform:capitalize">${sub.frequency || 'Daily'}</span></td>
           <td>${sub.phone || '—'}</td>
           <td>${items || '—'}</td>
-          <td>${sub.deliveryAddress || '—'}</td>
+          <td style="font-size:10px">${sub.deliveryAddress || '—'}</td>
           <td>${slot}</td>
-          <td style="text-align:center">☐</td>
+          <td style="text-align:center;font-size:16px">☐</td>
         </tr>`;
     }).join('');
+
+    const deliveryBoyBlock = staffObj && staffId !== 'All' ? `
+      <div style="background:#f3f4f6;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:13px;font-weight:bold;color:#111">🚴 ${staffObj.name}</div>
+          <div style="font-size:10px;color:#666;margin-top:2px">📞 ${staffObj.phone || '—'} &nbsp;·&nbsp; 📍 Area: ${staffObj.area || '—'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:bold;color:#1a1a2e">${subs.length}</div>
+          <div style="font-size:9px;color:#666;text-transform:uppercase;letter-spacing:.5px">Deliveries</div>
+        </div>
+      </div>` : '';
 
     const win = window.open('', '_blank');
     win.document.write(`
       <!DOCTYPE html>
       <html><head>
-      <title>Delivery List - ${data?.date}</title>
+      <title>Delivery List — ${staffName} — ${data?.date}</title>
       <style>
-        @page { size: A4; margin: 15mm; }
-        body { font-family: Arial, sans-serif; font-size: 11px; color: #000; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 8px; }
-        .header h1 { margin: 0; font-size: 18px; }
-        .header p { margin: 2px 0; font-size: 11px; color: #444; }
-        .meta { font-size: 11px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        thead { background: #1a1a2e; color: white; }
-        th { padding: 7px 8px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
-        td { padding: 7px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
-        tr:nth-child(even) { background: #f9fafb; }
-        .footer { margin-top: 20px; font-size: 10px; color: #666; border-top: 1px solid #ccc; padding-top: 8px; display: flex; justify-content: space-between; }
-        .sig { margin-top: 30px; border-top: 1px solid #000; width: 150px; font-size: 10px; padding-top: 4px; }
+        @page { size: A4; margin: 12mm 15mm; }
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 11px; color: #111; margin: 0; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 2px solid #1a1a2e; margin-bottom: 12px; }
+        .logo { font-size: 22px; font-weight: bold; color: #1a1a2e; }
+        .logo span { color: #D3AC67; }
+        .meta p { margin: 2px 0; font-size: 10px; color: #555; text-align: right; }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: #1a1a2e; color: white; }
+        th { padding: 8px; text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: .4px; font-weight: 600; }
+        td { padding: 7px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; font-size: 10.5px; }
+        tr:nth-child(even) td { background: #f9fafb; }
+        .footer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #ddd; display: flex; justify-content: space-between; font-size: 9px; color: #999; }
+        .sigs { display: flex; gap: 80px; margin-top: 36px; }
+        .sig { border-top: 1px solid #333; width: 160px; padding-top: 4px; font-size: 9px; color: #444; }
+        @media print { button { display: none; } }
       </style>
       </head><body>
       <div class="header">
         <div>
-          <h1>🥛 Milquu Fresh</h1>
-          <p>Today's Delivery List — <strong>${data?.dayName}, ${data?.date}</strong></p>
-          <p>Assigned To: <strong>${staffName}</strong></p>
+          <div class="logo">Milk<span>Quu</span> Fresh</div>
+          <div style="font-size:11px;color:#555;margin-top:4px">Today's Delivery List &nbsp;·&nbsp; <strong>${data?.dayName}, ${data?.date}</strong></div>
         </div>
         <div class="meta">
           <p>Total Deliveries: <strong>${subs.length}</strong></p>
-          <p>Generated at: ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
+          <p>Generated: ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
+          <p>Assigned To: <strong>${staffName}</strong></p>
         </div>
       </div>
+      ${deliveryBoyBlock}
       <table>
         <thead>
           <tr>
-            <th>#</th>
+            <th style="width:28px">#</th>
             <th>Customer Name</th>
-            <th>Phone</th>
-            <th>Items</th>
-            <th>Delivery Address</th>
-            <th>Slot</th>
-            <th>Done ✓</th>
+            <th style="width:100px">Phone</th>
+            <th>Items to Deliver</th>
+            <th>Address</th>
+            <th style="width:90px">Slot</th>
+            <th style="width:40px;text-align:center">Done ✓</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
       <div class="footer">
-        <span>Milquu Fresh · www.milquufresh.in</span>
-        <span>Printed on ${new Date().toLocaleDateString('en-IN')}</span>
+        <span>Milquu Fresh · milquufresh.in</span>
+        <span>Printed on ${new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</span>
       </div>
-      <div style="margin-top:30px; display:flex; gap:60px;">
+      <div class="sigs">
         <div class="sig">Delivery Boy Signature</div>
         <div class="sig">Admin Signature</div>
       </div>
       </body></html>
     `);
     win.document.close();
-    setTimeout(() => win.print(), 500);
+    setTimeout(() => win.print(), 400);
   };
 
   const unassignedCount = data?.subscriptions?.filter(s => !s.assignedStaff).length || 0;
 
-  // unique staff IDs present in today's list
-  const staffsPresent = [
-    { _id: 'All', name: 'All' },
-    ...(data?.staffList || []).filter(st =>
-      data?.subscriptions?.some(s => s.assignedStaff?.toString() === st._id?.toString())
-    ),
-    ...(unassignedCount > 0 ? [{ _id: 'unassigned', name: 'Unassigned' }] : [])
+  // Build staff cards list: only staff who have deliveries today
+  const staffCards = [
+    {
+      _id: 'All',
+      name: 'All Delivery Boys',
+      area: 'Combined List',
+      count: data?.totalDeliveries || 0,
+      color: 'bg-milquu-dark',
+    },
+    ...(data?.staffList || [])
+      .filter(st => data?.subscriptions?.some(s => s.assignedStaff?.toString() === st._id?.toString()))
+      .map(st => ({
+        ...st,
+        count: data.subscriptions.filter(s => s.assignedStaff?.toString() === st._id?.toString()).length,
+        color: 'bg-milquu-blue',
+      })),
+    ...(unassignedCount > 0 ? [{
+      _id: 'unassigned',
+      name: 'Unassigned',
+      area: 'Needs Assignment',
+      count: unassignedCount,
+      color: 'bg-orange-500',
+    }] : []),
   ];
 
   const filteredSubs = (data?.subscriptions || []).filter(s => {
@@ -132,30 +176,28 @@ const TodayOrderList = () => {
     return (s.assignedStaff || '').toString() === filterStaff;
   });
 
+  const getAssignedStaffName = (sub) => {
+    if (!sub.assignedStaff) return null;
+    return data?.staffList?.find(s => s._id?.toString() === sub.assignedStaff?.toString())?.name || null;
+  };
+
   return (
     <div className="max-w-7xl mx-auto pb-10 font-sans">
 
-      {/* Header */}
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">📋 Today's Delivery List</h1>
           <p className="text-gray-500 text-sm mt-1">
             {data
-              ? `${data.dayName}, ${data.date} · ${data.totalDeliveries} subscriptions to deliver today`
+              ? `${data.dayName}, ${data.date} · ${data.totalDeliveries} subscriptions to deliver`
               : 'Generating list from active subscriptions...'}
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={fetchTodayOrders}
-            className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
-            <RefreshCw size={15} className={loading ? 'animate-spin' : ''} /> Refresh
-          </button>
-          <button onClick={() => handlePrint(filterStaff)}
-            disabled={!data || loading}
-            className="flex items-center gap-2 px-4 py-2 bg-milquu-dark text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50">
-            <Printer size={15} /> Print / Download PDF
-          </button>
-        </div>
+        <button onClick={fetchTodayOrders}
+          className="flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-50 transition-colors">
+          <RefreshCw size={15} className={loading ? 'animate-spin' : ''} /> Refresh
+        </button>
       </div>
 
       {/* Stats */}
@@ -178,16 +220,43 @@ const TodayOrderList = () => {
         </div>
       )}
 
-      {/* Filter by Staff */}
-      {data && (
-        <div className="flex gap-2 mb-5 flex-wrap">
-          {staffsPresent.map(st => (
-            <button key={st._id}
-              onClick={() => setFilterStaff(st._id)}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${filterStaff === st._id ? 'bg-milquu-dark text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-milquu-dark'}`}>
-              {st.name}
-            </button>
-          ))}
+      {/* ---- Per-Staff Download Cards ---- */}
+      {data && !loading && (
+        <div className="mb-8">
+          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Download by Delivery Boy</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {staffCards.map(card => (
+              <motion.div
+                key={card._id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                onClick={() => setFilterStaff(card._id)}
+                className={`bg-white rounded-2xl border-2 p-4 cursor-pointer transition-all shadow-sm hover:shadow-md ${filterStaff === card._id ? 'border-milquu-dark' : 'border-gray-100'}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 ${card.color} rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm`}>
+                      {card._id === 'All' ? '📋' : card._id === 'unassigned' ? '?' : card.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-bold text-milquu-dark text-sm">{card.name}</p>
+                      <p className="text-[11px] text-gray-400">{card.area}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-milquu-dark">{card.count}</p>
+                    <p className="text-[10px] text-gray-400">deliveries</p>
+                  </div>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDownload(card._id); }}
+                  className="mt-3 w-full flex items-center justify-center gap-2 bg-milquu-dark hover:bg-gray-800 text-white text-xs font-bold py-2 rounded-xl transition-colors"
+                >
+                  <Download size={13} /> Download PDF for {card._id === 'All' ? 'All' : card.name}
+                </button>
+              </motion.div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -199,13 +268,21 @@ const TodayOrderList = () => {
         </div>
       )}
 
-      {/* Table */}
+      {/* ---- Table ---- */}
       {!loading && data && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
+          {/* Table header bar */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+            <p className="text-sm font-bold text-milquu-dark">
+              {filterStaff === 'All' ? 'All Deliveries' : filterStaff === 'unassigned' ? 'Unassigned' : (data.staffList?.find(s => s._id === filterStaff)?.name || '')}
+              <span className="ml-2 text-xs text-gray-400 font-normal">({filteredSubs.length} orders)</span>
+            </p>
+          </div>
+
           {filteredSubs.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">No deliveries for this filter.</div>
+            <div className="p-12 text-center text-gray-400">No deliveries for this selection.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
@@ -214,19 +291,21 @@ const TodayOrderList = () => {
                     <th className="px-4 py-3 font-semibold w-8">#</th>
                     <th className="px-4 py-3 font-semibold">Customer</th>
                     <th className="px-4 py-3 font-semibold">Phone</th>
-                    <th className="px-4 py-3 font-semibold">Items to Deliver</th>
+                    <th className="px-4 py-3 font-semibold">Items</th>
                     <th className="px-4 py-3 font-semibold">Address</th>
                     <th className="px-4 py-3 font-semibold">Slot</th>
+                    {filterStaff === 'All' && <th className="px-4 py-3 font-semibold">Delivery Boy</th>}
                     <th className="px-4 py-3 font-semibold">Assign To</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {filteredSubs.map((sub, idx) => {
-                    const items = (sub.items || []);
+                    const items = sub.items || [];
                     const slot = sub.deliverySlot || 'Morning';
+                    const assignedName = getAssignedStaffName(sub);
                     return (
                       <tr key={sub._id} className="hover:bg-gray-50/70 transition-colors">
-                        <td className="px-4 py-3 text-gray-400 font-bold">{idx + 1}</td>
+                        <td className="px-4 py-3 text-gray-400 font-bold text-center">{idx + 1}</td>
                         <td className="px-4 py-3">
                           <p className="font-bold text-milquu-dark">{sub.name || '—'}</p>
                           <p className="text-[11px] text-gray-400 capitalize">{sub.frequency || 'Daily'}</p>
@@ -250,6 +329,20 @@ const TodayOrderList = () => {
                             {slot === 'Evening' ? '🌇 Evening' : '🌅 Morning'}
                           </span>
                         </td>
+                        {filterStaff === 'All' && (
+                          <td className="px-4 py-3">
+                            {assignedName ? (
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-6 h-6 bg-milquu-blue rounded-full text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                                  {assignedName.charAt(0)}
+                                </div>
+                                <span className="text-xs font-semibold text-gray-700">{assignedName}</span>
+                              </div>
+                            ) : (
+                              <span className="text-[11px] bg-orange-50 text-orange-600 font-bold px-2 py-0.5 rounded-full">Unassigned</span>
+                            )}
+                          </td>
+                        )}
                         <td className="px-4 py-3">
                           <select
                             value={sub.assignedStaff || ''}
