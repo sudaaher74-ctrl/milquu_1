@@ -37,6 +37,7 @@ const Wastage = lazy(() => import('./pages/admin/Wastage'));
 const Reports = lazy(() => import('./pages/admin/Reports'));
 const SEOGenerator = lazy(() => import('./pages/admin/SEOGenerator'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
+const TodayOrderList = lazy(() => import('./pages/admin/TodayOrderList'));
 
 // SEO & Content Pages
 const AboutUs = lazy(() => import('./pages/seo/AboutUs'));
@@ -202,6 +203,7 @@ function App() {
               <Route path="wastage" element={<Wastage />} />
               <Route path="reports" element={<Reports />} />
               <Route path="seo-tools" element={<SEOGenerator />} />
+              <Route path="today-orders" element={<TodayOrderList />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />

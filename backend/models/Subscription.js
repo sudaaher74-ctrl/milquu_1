@@ -17,7 +17,10 @@ const subscriptionSchema = new mongoose.Schema({
   frequency: { type: String, enum: ['Daily', 'Alternate Days', 'Weekly', 'One-time', 'daily', 'alternate'], default: 'One-time' },
   startDate: { type: Date, default: Date.now },
   pauseStartDate: { type: Date },
-  pauseEndDate: { type: Date }
+  pauseEndDate: { type: Date },
+  assignedStaff: { type: mongoose.Schema.Types.ObjectId, ref: 'DeliveryStaff' },
+  deliverySlot: { type: String, enum: ['Morning', 'Evening'], default: 'Morning' },
+  deliveryArea: { type: String }
 }, {
   strict: false,
   timestamps: true

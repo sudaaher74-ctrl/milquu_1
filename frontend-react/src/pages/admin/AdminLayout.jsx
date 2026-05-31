@@ -19,6 +19,7 @@ const AdminLayout = () => {
     { name: 'Customers', path: '/admin/customers', icon: <Users size={20} /> },
     { name: 'Products', path: '/admin/products', icon: <Package size={20} /> },
     { name: 'Subscriptions', path: '/admin/subscriptions', icon: <CalendarDays size={20} /> },
+    { name: "Today's Orders", path: '/admin/today-orders', icon: <ShoppingCart size={20} /> },
     { name: 'Live Tracking', path: '/admin/deliveries', icon: <Truck size={20} /> },
     { name: 'Delivery Staff', path: '/admin/delivery-boys', icon: <Bike size={20} /> },
     { name: 'Revenue', path: '/admin/revenue', icon: <BarChart3 size={20} /> },
