@@ -65,3 +65,24 @@ export const markOrderDelivered = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+export const markOrderFailed = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    order.deliveryStatus = 'Failed';
+    order.isDelivered = false;
+    order.failedReason = reason || '';
+    
+    const updatedOrder = await order.save();
+    res.json(updatedOrder);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};

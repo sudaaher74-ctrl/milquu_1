@@ -38,14 +38,11 @@ const Orders = () => {
             ? areaStaff[index % areaStaff.length] 
             : (staffData.length > 0 ? staffData[index % staffData.length] : { name: 'Unassigned' });
           
-          const deliveryStatuses = ['Assigned', 'Picked Up', 'Out For Delivery', 'Delivered'];
-          const randomStatus = order.status === 'Delivered' ? 'Delivered' : deliveryStatuses[Math.floor(Math.random() * (deliveryStatuses.length - 1))];
-          
           return {
             ...order,
             deliveryArea: area,
             assignedBoy: selectedStaff.name,
-            deliveryStatus: order.status === 'Pending' ? 'Pending Assignment' : randomStatus
+            deliveryStatus: order.deliveryStatus || (order.isDelivered ? 'Delivered' : 'Pending Assignment')
           };
         });
         

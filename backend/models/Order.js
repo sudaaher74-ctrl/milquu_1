@@ -44,6 +44,8 @@ const orderSchema = new mongoose.Schema({
   isDelivered: { type: Boolean, required: true, default: false },
   deliveredAt: { type: Date },
   proofOfDelivery: { type: String },
+  deliveryStatus: { type: String, default: 'Pending' },
+  failedReason: { type: String },
   deliveryStaff: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'DeliveryStaff',

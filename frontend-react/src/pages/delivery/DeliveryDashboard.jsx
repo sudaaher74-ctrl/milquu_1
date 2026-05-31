@@ -30,7 +30,7 @@ const DeliveryDashboard = () => {
         paymentMethod: order.paymentMethod || 'COD',
         paymentStatus: order.paymentStatus || 'PENDING',
         totalPrice: order.totalPrice || 0,
-        status: order.isDelivered ? 'Delivered' : 'Pending',
+        status: order.deliveryStatus || (order.isDelivered ? 'Delivered' : 'Pending'),
         time: 'Morning Delivery'
       }));
       setTasks(formattedTasks);
@@ -131,6 +131,22 @@ const DeliveryDashboard = () => {
       } catch (error) {
         console.error("Failed to mark delivered", error);
       }
+    } else if (newStatus === 'Failed') {
+      try {
+        const staffTokenStr = localStorage.getItem('deliveryToken');
+        const token = staffTokenStr ? JSON.parse(staffTokenStr).token : '';
+        
+        await fetch(`https://milquu-backend.onrender.com/api/delivery/orders/${id}/fail`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ reason: proofNote })
+        });
+        
+        setTimeout(() => setSelectedTask(null), 1000);
+      } catch(e) { console.error(e) }
     }
   };
 
@@ -289,28 +305,10 @@ const DeliveryDashboard = () => {
                   </div>
 
                   {/* Status Progression Buttons */}
-                  <div className="space-y-3">
+                  <div className="space-y-3 mt-4 pt-4 border-t border-gray-100">
                     <h4 className="text-xs font-bold uppercase text-gray-400 mb-2">Update Status</h4>
-                    
-                    {(task.status === 'Pending Assignment' || task.status === 'Assigned') && (
-                      <button 
-                        onClick={() => updateTaskStatus(task.id, 'Picked Up')}
-                        className="w-full bg-milquu-dark text-white py-3.5 rounded-xl text-sm font-bold shadow-md shadow-gray-900/20 flex items-center justify-center transition-transform active:scale-95"
-                      >
-                        <PackageCheck size={18} className="mr-2" /> Mark Picked Up
-                      </button>
-                    )}
 
-                    {task.status === 'Picked Up' && (
-                      <button 
-                        onClick={() => updateTaskStatus(task.id, 'Out For Delivery')}
-                        className="w-full bg-blue-600 text-white py-3.5 rounded-xl text-sm font-bold shadow-md shadow-blue-900/20 flex items-center justify-center transition-transform active:scale-95"
-                      >
-                        <Truck size={18} className="mr-2" /> Mark Out For Delivery
-                      </button>
-                    )}
-
-                    {task.status === 'Out For Delivery' && (
+                    {task.status !== 'Delivered' && task.status !== 'Failed' && (
                       <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-4">
                         
                         <div>
@@ -357,21 +355,28 @@ const DeliveryDashboard = () => {
                           </div>
                         )}
 
-                        <button 
-                          onClick={() => {
-                            if (task.paymentMethod === 'COD' && task.paymentStatus === 'PENDING' && !cashCollected) {
-                              alert("Please confirm you have collected the cash before confirming delivery.");
-                              return;
-                            }
-                            updateTaskStatus(task.id, 'Delivered')
-                          }}
-                          className="w-full bg-green-500 text-white py-3.5 rounded-xl text-sm font-bold shadow-md shadow-green-900/20 flex items-center justify-center transition-transform active:scale-95"
-                        >
-                          <CheckCircle2 size={18} className="mr-2" /> Confirm Delivery
-                        </button>
+                        <div className="flex space-x-3">
+                          <button 
+                            onClick={() => updateTaskStatus(task.id, 'Failed')}
+                            className="flex-1 bg-red-50 text-red-600 border border-red-200 py-3.5 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center transition-transform active:scale-95 hover:bg-red-100"
+                          >
+                            Mark Failed
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (task.paymentMethod === 'COD' && task.paymentStatus === 'PENDING' && !cashCollected) {
+                                alert("Please confirm you have collected the cash before confirming delivery.");
+                                return;
+                              }
+                              updateTaskStatus(task.id, 'Delivered')
+                            }}
+                            className="flex-[2] bg-green-500 text-white py-3.5 rounded-xl text-sm font-bold shadow-md shadow-green-900/20 flex items-center justify-center transition-transform active:scale-95 hover:bg-green-600"
+                          >
+                            <CheckCircle2 size={18} className="mr-2" /> Mark Delivered
+                          </button>
+                        </div>
                       </div>
                     )}
-
                   </div>
                 </motion.div>
               )}
