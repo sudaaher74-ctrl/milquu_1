@@ -14,6 +14,7 @@ const trendData = [];
 const Purchases = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [purchaseData, setPurchaseData] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Modal State
@@ -25,6 +26,7 @@ const Purchases = () => {
     productName: '',
     quantity: '',
     rate: '',
+    sellingPrice: '',
     status: 'Pending'
   });
 
@@ -56,6 +58,7 @@ const Purchases = () => {
         productName: '',
         quantity: '',
         rate: '',
+        sellingPrice: '',
         status: 'Pending'
       });
     } catch (error) {
@@ -65,18 +68,26 @@ const Purchases = () => {
   };
 
   useEffect(() => {
-    const fetchPurchases = async () => {
+    const fetchData = async () => {
       try {
-        const { data } = await api.get('/api/erp/purchases');
-        setPurchaseData(data);
+        const [purchaseRes, productRes] = await Promise.all([
+          api.get('/api/erp/purchases'),
+          api.get('/api/products')
+        ]);
+        setPurchaseData(purchaseRes.data);
+        setProducts(productRes.data);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching purchases", error);
+        console.error("Error fetching data", error);
         setLoading(false);
       }
     };
-    fetchPurchases();
+    fetchData();
   }, []);
+
+  const rateVal = Number(formData.rate) || 0;
+  const spVal = Number(formData.sellingPrice) || 0;
+  const marginPercentage = rateVal > 0 ? (((spVal - rateVal) / rateVal) * 100).toFixed(2) : 0;
 
   const totalMonthlyCost = purchaseData.reduce((acc, curr) => acc + curr.totalCost, 0);
 
@@ -256,16 +267,33 @@ const Purchases = () => {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Product Name</label>
-                <input required type="text" name="productName" value={formData.productName} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" placeholder="e.g. Buffalo Milk" />
+                <select required name="productName" value={formData.productName} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2">
+                  <option value="" disabled>Select a product</option>
+                  {products.map(p => (
+                    <option key={p._id} value={p.name}>{p.name}</option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Quantity</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Purchase Quantity</label>
                   <input required type="number" name="quantity" value={formData.quantity} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" placeholder="e.g. 50" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Rate / Unit (₹)</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Purchase Rate / Unit (₹)</label>
                   <input required type="number" name="rate" value={formData.rate} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" placeholder="e.g. 60" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Selling Price / Unit (₹)</label>
+                  <input required type="number" name="sellingPrice" value={formData.sellingPrice} onChange={handleInputChange} className="w-full border border-gray-200 rounded-lg px-4 py-2" placeholder="e.g. 80" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Calculated Margin (%)</label>
+                  <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-2 text-gray-600 font-medium">
+                    {marginPercentage}%
+                  </div>
                 </div>
               </div>
               <div>

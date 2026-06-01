@@ -19,8 +19,27 @@ export const getPurchases = async (req, res) => {
 
 export const createPurchase = async (req, res) => {
   try {
-    const purchase = new Purchase(req.body);
+    const { sellingPrice, ...purchaseData } = req.body;
+    const purchase = new Purchase(purchaseData);
     const createdPurchase = await purchase.save();
+
+    if (sellingPrice !== undefined && sellingPrice !== '') {
+      const product = await Product.findOne({ name: purchaseData.productName });
+      if (product) {
+        const rate = Number(purchaseData.rate) || 0;
+        const sp = Number(sellingPrice);
+        product.purchasePrice = rate;
+        product.price = sp;
+        if (rate > 0) {
+          product.marginPercentage = ((sp - rate) / rate) * 100;
+        } else {
+          product.marginPercentage = 100;
+        }
+        product.stock += Number(purchaseData.quantity) || 0;
+        await product.save();
+      }
+    }
+
     res.status(201).json(createdPurchase);
   } catch (error) {
     res.status(400).json({ message: 'Invalid purchase data', error: error.message });
