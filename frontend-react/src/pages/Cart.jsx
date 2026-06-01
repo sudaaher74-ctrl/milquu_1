@@ -125,10 +125,11 @@ const Cart = () => {
           },
           prefill: {
             name: formData.name,
-            contact: formData.phone
+            contact: formData.phone,
+            method: paymentMethod !== 'COD' && paymentMethod !== 'ONLINE' ? 'upi' : undefined
           },
           theme: {
-            color: "#D3AC67" // milquu-gold
+            color: paymentMethod === 'PHONEPE' ? "#5f259f" : paymentMethod === 'GPAY' ? "#1a73e8" : paymentMethod === 'CRED' ? "#000000" : "#D3AC67" 
           }
         };
 
@@ -438,7 +439,7 @@ const Cart = () => {
                     <div className="mt-4 space-y-3">
                       <h4 className="font-serif font-bold text-milquu-dark text-sm mb-2">Payment Method</h4>
                       
-                      <label htmlFor="payment-cod" className={`flex items-center p-3 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'COD' ? 'bg-milquu-gold/10 border-milquu-gold/50' : 'bg-gray-50/50 border-gray-200'}`}>
+                      <label htmlFor="payment-cod" className={`flex items-center p-4 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'COD' ? 'bg-milquu-gold/10 border-milquu-gold/50 shadow-sm' : 'bg-gray-50/50 border-gray-200 hover:bg-gray-50'}`}>
                         <input 
                           id="payment-cod"
                           type="radio" 
@@ -446,27 +447,79 @@ const Cart = () => {
                           value="COD" 
                           checked={paymentMethod === 'COD'}
                           onChange={() => setPaymentMethod('COD')}
-                          className="mr-3 w-4 h-4 text-milquu-gold focus:ring-milquu-gold"
+                          className="mr-4 w-5 h-5 text-milquu-gold focus:ring-milquu-gold"
                         />
-                        <div className="flex-1">
-                          <span className="font-bold text-sm text-milquu-dark block">Cash on Delivery</span>
-                          <span className="text-xs text-gray-500">Pay with cash when your milk arrives</span>
+                        <div className="flex-1 flex items-center space-x-3 sm:space-x-4">
+                          <div className="w-16 h-12 flex items-center justify-center bg-white rounded-lg border border-gray-100 p-2 shadow-sm">
+                            <span className="font-bold text-milquu-dark text-xl">💵</span>
+                          </div>
+                          <div>
+                            <span className="font-bold text-base text-milquu-dark block">Cash on Delivery</span>
+                            <span className="text-sm text-gray-500">Pay with cash when milk arrives</span>
+                          </div>
                         </div>
                       </label>
 
-                      <label htmlFor="payment-online" className={`flex items-center p-3 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'ONLINE' ? 'bg-milquu-gold/10 border-milquu-gold/50' : 'bg-gray-50/50 border-gray-200'}`}>
+                      <label htmlFor="payment-phonepe" className={`flex items-center p-4 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'PHONEPE' ? 'bg-[#5f259f]/10 border-[#5f259f]/50 shadow-sm' : 'bg-gray-50/50 border-gray-200 hover:bg-gray-50'}`}>
                         <input 
-                          id="payment-online"
+                          id="payment-phonepe"
                           type="radio" 
                           name="payment" 
-                          value="ONLINE" 
-                          checked={paymentMethod === 'ONLINE'}
-                          onChange={() => setPaymentMethod('ONLINE')}
-                          className="mr-3 w-4 h-4 text-milquu-gold focus:ring-milquu-gold"
+                          value="PHONEPE" 
+                          checked={paymentMethod === 'PHONEPE'}
+                          onChange={() => setPaymentMethod('PHONEPE')}
+                          className="mr-4 w-5 h-5 text-[#5f259f] focus:ring-[#5f259f]"
                         />
-                        <div className="flex-1">
-                          <span className="font-bold text-sm text-milquu-dark block">Pay Online (GPay, PhonePe, Cards)</span>
-                          <span className="text-xs text-gray-500">Secure online payment via Razorpay</span>
+                        <div className="flex-1 flex items-center space-x-3 sm:space-x-4">
+                          <div className="w-16 h-12 flex items-center justify-center bg-white rounded-lg border border-gray-100 p-1 shadow-sm">
+                            <img src="https://download.logo.wine/logo/PhonePe/PhonePe-Logo.wine.png" alt="PhonePe" className="h-full w-full object-contain" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-base text-milquu-dark block">PhonePe</span>
+                            <span className="text-sm text-gray-500">Pay directly using PhonePe UPI</span>
+                          </div>
+                        </div>
+                      </label>
+
+                      <label htmlFor="payment-gpay" className={`flex items-center p-4 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'GPAY' ? 'bg-[#1a73e8]/10 border-[#1a73e8]/50 shadow-sm' : 'bg-gray-50/50 border-gray-200 hover:bg-gray-50'}`}>
+                        <input 
+                          id="payment-gpay"
+                          type="radio" 
+                          name="payment" 
+                          value="GPAY" 
+                          checked={paymentMethod === 'GPAY'}
+                          onChange={() => setPaymentMethod('GPAY')}
+                          className="mr-4 w-5 h-5 text-[#1a73e8] focus:ring-[#1a73e8]"
+                        />
+                        <div className="flex-1 flex items-center space-x-3 sm:space-x-4">
+                          <div className="w-16 h-12 flex items-center justify-center bg-white rounded-lg border border-gray-100 p-2 shadow-sm">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png" alt="GPay" className="h-full w-full object-contain" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-base text-milquu-dark block">Google Pay</span>
+                            <span className="text-sm text-gray-500">Pay directly using GPay UPI</span>
+                          </div>
+                        </div>
+                      </label>
+
+                      <label htmlFor="payment-cred" className={`flex items-center p-4 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'CRED' ? 'bg-black/5 border-black/50 shadow-sm' : 'bg-gray-50/50 border-gray-200 hover:bg-gray-50'}`}>
+                        <input 
+                          id="payment-cred"
+                          type="radio" 
+                          name="payment" 
+                          value="CRED" 
+                          checked={paymentMethod === 'CRED'}
+                          onChange={() => setPaymentMethod('CRED')}
+                          className="mr-4 w-5 h-5 text-black focus:ring-black"
+                        />
+                        <div className="flex-1 flex items-center space-x-3 sm:space-x-4">
+                          <div className="w-16 h-12 flex items-center justify-center bg-white rounded-lg border border-gray-100 p-2 shadow-sm">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/CRED_%28logo%29.png" alt="CRED" className="h-full w-full object-contain" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-base text-milquu-dark block">CRED UPI</span>
+                            <span className="text-sm text-gray-500">Pay directly using CRED UPI</span>
+                          </div>
                         </div>
                       </label>
                     </div>

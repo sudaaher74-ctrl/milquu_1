@@ -139,7 +139,7 @@ const Subscription = () => {
         description: "Monthly Subscription Upfront",
         order_id: orderData.id,
         handler: async function (response) {
-          await saveSubscription(response.razorpay_payment_id, paymentMethod === 'PHONEPE' ? 'PhonePe' : 'GPay', true);
+          await saveSubscription(response.razorpay_payment_id, paymentMethod === 'PHONEPE' ? 'PhonePe' : paymentMethod === 'GPAY' ? 'GPay' : 'Cred', true);
         },
         prefill: {
           name: formData.name,
@@ -165,7 +165,7 @@ const Subscription = () => {
           }
         },
         theme: {
-          color: paymentMethod === 'PHONEPE' ? "#5f259f" : "#1a73e8" 
+          color: paymentMethod === 'PHONEPE' ? "#5f259f" : paymentMethod === 'GPAY' ? "#1a73e8" : "#000000" 
         }
       };
 
@@ -454,8 +454,10 @@ const Subscription = () => {
                     onChange={() => setPaymentMethod('PHONEPE')}
                     className="mr-4 w-5 h-5 text-[#5f259f] focus:ring-[#5f259f]"
                   />
-                  <div className="flex-1 flex items-center space-x-3">
-                    <img src="https://download.logo.wine/logo/PhonePe/PhonePe-Logo.wine.png" alt="PhonePe" className="h-8 object-contain" />
+                  <div className="flex-1 flex items-center space-x-3 sm:space-x-4">
+                    <div className="w-16 h-12 flex items-center justify-center bg-white rounded-lg border border-gray-100 p-1 shadow-sm">
+                      <img src="https://download.logo.wine/logo/PhonePe/PhonePe-Logo.wine.png" alt="PhonePe" className="h-full w-full object-contain" />
+                    </div>
                     <div>
                       <span className="font-bold text-base text-milquu-dark block">PhonePe</span>
                       <span className="text-sm text-gray-500">Pay directly using PhonePe UPI</span>
@@ -473,11 +475,34 @@ const Subscription = () => {
                     onChange={() => setPaymentMethod('GPAY')}
                     className="mr-4 w-5 h-5 text-[#1a73e8] focus:ring-[#1a73e8]"
                   />
-                  <div className="flex-1 flex items-center space-x-3">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png" alt="GPay" className="h-6 object-contain ml-1" />
+                  <div className="flex-1 flex items-center space-x-3 sm:space-x-4">
+                    <div className="w-16 h-12 flex items-center justify-center bg-white rounded-lg border border-gray-100 p-2 shadow-sm">
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png" alt="GPay" className="h-full w-full object-contain" />
+                    </div>
                     <div>
                       <span className="font-bold text-base text-milquu-dark block">Google Pay</span>
                       <span className="text-sm text-gray-500">Pay directly using GPay UPI</span>
+                    </div>
+                  </div>
+                </label>
+
+                <label htmlFor="payment-cred" className={`flex items-center p-4 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'CRED' ? 'bg-black/5 border-black/50 shadow-sm' : 'bg-gray-50/50 border-gray-200 hover:bg-gray-50'}`}>
+                  <input 
+                    id="payment-cred"
+                    type="radio" 
+                    name="payment" 
+                    value="CRED" 
+                    checked={paymentMethod === 'CRED'}
+                    onChange={() => setPaymentMethod('CRED')}
+                    className="mr-4 w-5 h-5 text-black focus:ring-black"
+                  />
+                  <div className="flex-1 flex items-center space-x-3 sm:space-x-4">
+                    <div className="w-16 h-12 flex items-center justify-center bg-white rounded-lg border border-gray-100 p-2 shadow-sm">
+                      <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/CRED_%28logo%29.png" alt="CRED" className="h-full w-full object-contain" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-base text-milquu-dark block">CRED UPI</span>
+                      <span className="text-sm text-gray-500">Pay directly using CRED UPI</span>
                     </div>
                   </div>
                 </label>
