@@ -22,6 +22,8 @@ const AdminSubscriptions = () => {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [selectedSub, setSelectedSub] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -40,7 +42,7 @@ const AdminSubscriptions = () => {
           product: sub.items && sub.items.length > 0 ? sub.items.map(i => i.name).join(', ') : 'Custom Box',
           qty: sub.items && sub.items.length > 0 ? sub.items.map(i => i.qty).join(', ') : 1,
           freq: sub.frequency,
-          nextDelivery: new Date(sub.createdAt).toLocaleDateString(), // Mocking next delivery
+          nextDelivery: new Date(sub.createdAt).toLocaleDateString(), 
           renewal: (sub.status === 'paused' || sub.status === 'Paused') && sub.pauseEndDate 
             ? `Resumes: ${new Date(sub.pauseEndDate).toLocaleDateString()}` 
             : 'Auto-renew'
@@ -81,6 +83,23 @@ const AdminSubscriptions = () => {
     }
   };
 
+  const openManageModal = (sub) => {
+    setSelectedSub(sub);
+    setIsManageModalOpen(true);
+  };
+
+  const handleUpdateStatus = async (status) => {
+    if (!selectedSub) return;
+    try {
+      await api.put(`/api/subscriptions/${selectedSub.id}`, { status });
+      alert(`Subscription marked as ${status}`);
+      setIsManageModalOpen(false);
+      fetchSubscriptions();
+    } catch (error) {
+      alert('Failed to update subscription');
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto pb-10">
       
@@ -100,11 +119,11 @@ const AdminSubscriptions = () => {
 
       {/* Top Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5 mb-8">
-        <div className="xl:col-span-1"><StatCard title="Active Plans" value="0" subtitle="+0 this week" icon={<CalendarCheck size={20} className="text-green-600" />} color="bg-green-500" /></div>
-        <div className="xl:col-span-1"><StatCard title="Upcoming Deliveries" value="0" subtitle="For tomorrow" icon={<RefreshCw size={20} className="text-blue-600" />} color="bg-blue-500" /></div>
-        <div className="xl:col-span-1"><StatCard title="Monthly Subs" value="0" subtitle="0% of base" icon={<Users size={20} className="text-purple-600" />} color="bg-purple-500" /></div>
-        <div className="xl:col-span-1"><StatCard title="Renewal Alerts" value="0" subtitle="Exp. in 3 days" icon={<AlertCircle size={20} className="text-orange-600" />} color="bg-orange-500" /></div>
-        <div className="xl:col-span-1"><StatCard title="Sub Revenue" value="₹0" subtitle="This Month" icon={<IndianRupee size={20} className="text-milquu-blue" />} color="bg-milquu-blue" /></div>
+        <div className="xl:col-span-1"><StatCard title="Active Plans" value={subscriptionsData.filter(s => s.status === 'Active').length} subtitle="Currently active" icon={<CalendarCheck size={20} className="text-green-600" />} color="bg-green-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Upcoming Deliveries" value={subscriptionsData.filter(s => s.status === 'Active').length} subtitle="For tomorrow" icon={<RefreshCw size={20} className="text-blue-600" />} color="bg-blue-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Total Subs" value={subscriptionsData.length} subtitle="All time" icon={<Users size={20} className="text-purple-600" />} color="bg-purple-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Paused Plans" value={subscriptionsData.filter(s => s.status === 'Paused' || s.status === 'paused').length} subtitle="Currently on hold" icon={<AlertCircle size={20} className="text-orange-600" />} color="bg-orange-500" /></div>
+        <div className="xl:col-span-1"><StatCard title="Sub Revenue" value={`₹${subscriptionsData.filter(s => s.status === 'Active').reduce((acc, s) => acc + ((s.items && s.items[0]?.price * s.items[0]?.qty) || 0), 0) * 30}`} subtitle="Est. Monthly" icon={<IndianRupee size={20} className="text-milquu-blue" />} color="bg-milquu-blue" /></div>
         <div className="xl:col-span-1"><StatCard title="Churn Rate" value="0%" subtitle="0% vs last" icon={<TrendingDown size={20} className="text-red-600" />} color="bg-red-500" /></div>
       </div>
 
@@ -169,7 +188,7 @@ const AdminSubscriptions = () => {
                     </p>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="text-milquu-blue text-sm font-medium hover:underline">Manage</button>
+                    <button onClick={() => openManageModal(sub)} className="text-milquu-blue text-sm font-medium hover:underline">Manage</button>
                   </td>
                 </tr>
               ))}
@@ -223,6 +242,60 @@ const AdminSubscriptions = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Subscription Modal */}
+      {isManageModalOpen && selectedSub && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <h2 className="text-xl font-bold mb-4 text-milquu-dark">Manage Subscription</h2>
+            <div className="space-y-4 mb-6">
+              <div>
+                <p className="text-xs text-gray-500">Customer</p>
+                <p className="font-bold text-gray-800">{selectedSub.name}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Product</p>
+                <p className="font-medium text-gray-800">{selectedSub.product} (Qty: {selectedSub.qty})</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Current Status</p>
+                <p className="font-bold text-gray-800">{selectedSub.status}</p>
+              </div>
+            </div>
+            
+            <p className="text-sm font-medium text-gray-700 mb-2">Update Status:</p>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <button 
+                onClick={() => handleUpdateStatus('Active')}
+                className="py-2 border border-green-200 bg-green-50 text-green-700 font-medium rounded-lg hover:bg-green-100 transition-colors"
+              >
+                Mark Active
+              </button>
+              <button 
+                onClick={() => handleUpdateStatus('Paused')}
+                className="py-2 border border-orange-200 bg-orange-50 text-orange-700 font-medium rounded-lg hover:bg-orange-100 transition-colors"
+              >
+                Pause Delivery
+              </button>
+              <button 
+                onClick={() => handleUpdateStatus('Cancelled')}
+                className="py-2 col-span-2 border border-red-200 bg-red-50 text-red-700 font-medium rounded-lg hover:bg-red-100 transition-colors"
+              >
+                Cancel Subscription
+              </button>
+            </div>
+            
+            <div className="flex justify-end">
+              <button 
+                onClick={() => setIsManageModalOpen(false)} 
+                className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

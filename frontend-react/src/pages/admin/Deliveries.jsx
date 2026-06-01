@@ -38,15 +38,23 @@ const Deliveries = () => {
         ]);
         
         const staff = staffRes.data;
+        const orders = ordersRes.data;
 
         const deliveriesByStaff = staff.map(boy => {
+          const boyOrders = orders.filter(o => 
+            (o.deliveryStaff && (o.deliveryStaff === boy._id || o.deliveryStaff._id === boy._id)) || 
+            (o.shippingAddress?.city?.toLowerCase() === boy.area.toLowerCase()) // Fallback matching area if not assigned
+          );
+          
+          const completedOrders = boyOrders.filter(o => o.isDelivered || o.deliveryStatus === 'Delivered');
+
           return {
             id: boy._id,
             boy: boy.name,
             route: boy.area,
             status: boy.status === 'Active' ? 'Active' : 'Offline',
-            assigned: Math.floor(Math.random() * 20) + 10,
-            completed: Math.floor(Math.random() * 10),
+            assigned: boyOrders.length || 0,
+            completed: completedOrders.length || 0,
             battery: Math.floor(Math.random() * 60) + 40,
             signal: 'Strong',
             speed: '12 km/h',

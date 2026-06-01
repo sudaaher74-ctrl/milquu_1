@@ -34,11 +34,11 @@ const AdminProducts = () => {
         name: p.name,
         sku: p.sku || `MIL-${p._id.substring(0,4).toUpperCase()}`,
         category: p.category,
-        purchasePrice: p.price * 0.7, 
+        purchasePrice: p.purchasePrice || 0, 
         sellingPrice: p.price,
-        stock: p.stock || 50,
+        stock: p.stock || 0,
         image: p.image,
-        status: p.stock > 20 ? 'Active' : (p.stock > 0 ? 'Low Stock' : 'Out of Stock')
+        status: (p.stock || 0) > 20 ? 'Active' : ((p.stock || 0) > 0 ? 'Low Stock' : 'Out of Stock')
       }));
       
       setProducts(mapped);

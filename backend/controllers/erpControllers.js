@@ -3,6 +3,9 @@ import Expense from '../models/Expense.js';
 import Procurement from '../models/Procurement.js';
 import Wastage from '../models/Wastage.js';
 import Order from '../models/Order.js';
+import Product from '../models/Product.js';
+import User from '../models/User.js';
+import Subscription from '../models/Subscription.js';
 
 // --- PURCHASES ---
 export const getPurchases = async (req, res) => {
@@ -166,12 +169,133 @@ export const getDashboardAnalytics = async (req, res) => {
 
     const netProfit = totalRevenue - (totalExpenses + totalPurchases);
 
+    // Revenue Data (Last 7 Days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const dailyRevenuePipeline = await Order.aggregate([
+      { $match: { isPaid: true, createdAt: { $gte: sevenDaysAgo } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          revenue: { $sum: "$totalPrice" }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    // Map daily revenue to names
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const revenueData = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sevenDaysAgo);
+      d.setDate(d.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      const found = dailyRevenuePipeline.find(x => x._id === dateStr);
+      const rev = found ? found.revenue : 0;
+      revenueData.push({
+        name: days[d.getDay()],
+        revenue: rev,
+        profit: rev * 0.3, // Simple proxy for profit
+        web: rev,
+        shop: 0
+      });
+    }
+
+    // Customer Growth (Last 5 Months)
+    const fiveMonthsAgo = new Date();
+    fiveMonthsAgo.setMonth(fiveMonthsAgo.getMonth() - 4);
+    fiveMonthsAgo.setDate(1);
+
+    const usersMonthly = await User.aggregate([
+      { $match: { createdAt: { $gte: fiveMonthsAgo } } },
+      {
+        $group: {
+          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+          customers: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const subsMonthly = await Subscription.aggregate([
+      { $match: { createdAt: { $gte: fiveMonthsAgo } } },
+      {
+        $group: {
+          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
+          subs: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const customerData = [];
+    let cumulativeCustomers = await User.countDocuments({ createdAt: { $lt: fiveMonthsAgo } });
+    let cumulativeSubs = await Subscription.countDocuments({ createdAt: { $lt: fiveMonthsAgo } });
+
+    for (let i = 0; i < 5; i++) {
+      const d = new Date(fiveMonthsAgo);
+      d.setMonth(d.getMonth() + i);
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      
+      const userCount = usersMonthly.find(x => x._id.year === y && x._id.month === m)?.customers || 0;
+      const subCount = subsMonthly.find(x => x._id.year === y && x._id.month === m)?.subs || 0;
+      
+      cumulativeCustomers += userCount;
+      cumulativeSubs += subCount;
+
+      customerData.push({
+        name: monthNames[m - 1],
+        customers: cumulativeCustomers,
+        subs: cumulativeSubs
+      });
+    }
+
+    // Top Performers
+    const topPerformersPipeline = await Order.aggregate([
+      { $match: { isPaid: true } },
+      { $unwind: "$orderItems" },
+      {
+        $group: {
+          _id: "$orderItems.name",
+          volume: { $sum: "$orderItems.qty" },
+          revenue: { $sum: { $multiply: ["$orderItems.qty", "$orderItems.price"] } }
+        }
+      },
+      { $sort: { volume: -1 } },
+      { $limit: 3 }
+    ]);
+    const topPerformers = topPerformersPipeline.map(item => ({
+      name: item._id,
+      volume: item.volume,
+      revenue: item.revenue
+    }));
+
+    // Action Required
+    const lowStockProducts = await Product.find({ stock: { $lt: 20 } }).select('name stock').limit(5);
+
+    // Operations Live
+    const pendingDeliveries = await Order.countDocuments({ deliveryStatus: { $in: ['Pending', 'Out For Delivery'] } });
+    const completedDeliveries = await Order.countDocuments({ deliveryStatus: 'Delivered' });
+    const recentExpenses = await Expense.find({}).sort({ createdAt: -1 }).limit(2).select('category amount');
+
     res.json({
       revenue: totalRevenue,
       expenses: totalExpenses,
       purchases: totalPurchases,
       netProfit,
-      orders: totalOrders
+      orders: totalOrders,
+      revenueData,
+      customerData,
+      topPerformers,
+      actionRequired: lowStockProducts.map(p => ({ name: p.name, stock: p.stock })),
+      operationsLive: {
+        pendingDeliveries,
+        completedDeliveries,
+        totalDeliveries: pendingDeliveries + completedDeliveries,
+        recentExpenses
+      }
     });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });

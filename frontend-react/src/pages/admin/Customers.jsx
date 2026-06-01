@@ -4,24 +4,18 @@ import { Users, UserPlus, UserCheck, Star, ArrowUpRight, ArrowDownRight, Downloa
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import ExportButton from '../../components/admin/ExportButton';
 
-const growthData = [
-  { name: 'Jan', new: 45, returning: 120 },
-  { name: 'Feb', new: 52, returning: 125 },
-  { name: 'Mar', new: 38, returning: 140 },
-  { name: 'Apr', new: 65, returning: 145 },
-  { name: 'May', new: 72, returning: 160 },
-  { name: 'Jun', new: 85, returning: 180 },
-];
-
-const segmentData = [
-  { name: 'Daily Milk', value: 45, color: '#0D47A1' },
-  { name: 'Alt Days', value: 30, color: '#2E7D32' },
-  { name: 'Weekend', value: 15, color: '#D4AF37' },
-  { name: 'Occasional', value: 10, color: '#9CA3AF' },
-];
+// Data is now fetched dynamically from API
 
 const Customers = () => {
   const [topCustomers, setTopCustomers] = React.useState([]);
+  const [growthData, setGrowthData] = React.useState([]);
+  const [segmentData, setSegmentData] = React.useState([]);
+  const [stats, setStats] = React.useState({
+    totalCustomers: 0,
+    newCustomers30d: 0,
+    retentionRate: 0,
+    avgLTV: 0
+  });
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -29,15 +23,18 @@ const Customers = () => {
       try {
         const res = await api.get('/api/admin/customers');
         const data = res.data;
-        const mapped = data.map(c => ({
+        const mapped = data.topCustomers.map(c => ({
           id: c._id,
           name: c.name,
           joined: new Date(c.createdAt).toLocaleDateString(),
-          orders: 0, // In reality, we'd need to fetch or aggregate their orders
-          lifetimeValue: '₹0',
-          status: 'New'
+          orders: c.orders, 
+          lifetimeValue: `₹${c.lifetimeValue}`,
+          status: c.status
         }));
         setTopCustomers(mapped);
+        setGrowthData(data.growthData || []);
+        setSegmentData(data.segmentData || []);
+        if (data.stats) setStats(data.stats);
       } catch (error) {
         console.error("Failed to fetch customers", error);
       } finally {
@@ -90,10 +87,10 @@ const StatCard = ({ title, value, icon, trend, colorClass }) => (
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        <StatCard title="Total Customers" value="842" trend={12.5} icon={<Users size={24} className="text-blue-600"/>} colorClass="from-blue-400 to-blue-600" />
-        <StatCard title="New Customers (30d)" value="85" trend={24.1} icon={<UserPlus size={24} className="text-green-600"/>} colorClass="from-green-400 to-green-600" />
-        <StatCard title="Retention Rate" value="92.4%" trend={1.2} icon={<UserCheck size={24} className="text-purple-600"/>} colorClass="from-purple-400 to-purple-600" />
-        <StatCard title="Avg Lifetime Value" value="₹24K" trend={-2.4} icon={<Star size={24} className="text-orange-600"/>} colorClass="from-orange-400 to-orange-600" />
+        <StatCard title="Total Customers" value={stats.totalCustomers} trend={12.5} icon={<Users size={24} className="text-blue-600"/>} colorClass="from-blue-400 to-blue-600" />
+        <StatCard title="New Customers (30d)" value={stats.newCustomers30d} trend={24.1} icon={<UserPlus size={24} className="text-green-600"/>} colorClass="from-green-400 to-green-600" />
+        <StatCard title="Retention Rate" value={`${stats.retentionRate}%`} trend={1.2} icon={<UserCheck size={24} className="text-purple-600"/>} colorClass="from-purple-400 to-purple-600" />
+        <StatCard title="Avg Lifetime Value" value={`₹${stats.avgLTV.toLocaleString()}`} trend={-2.4} icon={<Star size={24} className="text-orange-600"/>} colorClass="from-orange-400 to-orange-600" />
       </div>
 
       {/* Charts Section */}
