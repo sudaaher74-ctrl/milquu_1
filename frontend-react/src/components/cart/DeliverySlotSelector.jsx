@@ -7,17 +7,17 @@ import { motion } from 'framer-motion';
  * Evening slot cutoff: 4:00 PM IST the same day
  */
 const getSlotInfo = () => {
-  // Get current IST time
+  // Get current IST time using toLocaleString for accurate timezone conversion
   const now = new Date();
-  const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
-  const istNow = new Date(now.getTime() + istOffset - now.getTimezoneOffset() * 60000);
+  const istString = now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+  const istNow = new Date(istString);
 
   const hours = istNow.getHours();
   const minutes = istNow.getMinutes();
   const currentMinutes = hours * 60 + minutes; // minutes since midnight
 
   const MORNING_CUTOFF = 23 * 60; // 11:00 PM = 1380 minutes
-  const EVENING_CUTOFF = 16 * 60; // 4:00 PM = 960 minutes
+  const EVENING_CUTOFF = 15 * 60; // 3:00 PM = 900 minutes
 
   // --- Morning Slot ---
   // Delivery: next day 4-7 AM if ordered before 11 PM tonight
@@ -36,7 +36,7 @@ const getSlotInfo = () => {
   }
 
   // --- Evening Slot ---
-  // Delivery: today 5-7 PM if ordered before 4 PM; else tomorrow 5-7 PM
+  // Delivery: today 5-7 PM if ordered before 3 PM; else tomorrow 5-7 PM
   const eveningAvailableToday = currentMinutes < EVENING_CUTOFF;
   let eveningDeliveryDate;
   let eveningLabel;
@@ -49,7 +49,7 @@ const getSlotInfo = () => {
     eveningLabel = 'Tomorrow';
   }
 
-  // Countdown to 4 PM (only if today's slot is open)
+  // Countdown to 3 PM (only if today's slot is open)
   let eveningCountdown = null;
   if (eveningAvailableToday) {
     const cutoffMins = EVENING_CUTOFF - currentMinutes;
@@ -109,7 +109,7 @@ const DeliverySlotSelector = ({ value, onChange }) => {
       icon: '🌇',
       title: 'Evening Delivery',
       time: '5:00 PM – 7:00 PM',
-      cutoffText: slotInfo.evening.dateLabel === 'Today' ? 'Order before 4:00 PM today' : 'Order placed for tomorrow',
+      cutoffText: slotInfo.evening.dateLabel === 'Today' ? 'Order before 3:00 PM today' : 'Order placed for tomorrow',
       available: slotInfo.evening.available,
       dateLabel: slotInfo.evening.dateLabel,
       deliveryDate: slotInfo.evening.deliveryDate,
