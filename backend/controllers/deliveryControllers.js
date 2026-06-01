@@ -5,7 +5,8 @@ import generateToken from '../utils/generateToken.js';
 export const loginDeliveryStaff = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const staff = await DeliveryStaff.findOne({ email });
+    // Use case-insensitive search for email
+    const staff = await DeliveryStaff.findOne({ email: new RegExp('^' + email + '$', 'i') });
     
     if (staff && (await staff.matchPassword(password))) {
       res.json({
