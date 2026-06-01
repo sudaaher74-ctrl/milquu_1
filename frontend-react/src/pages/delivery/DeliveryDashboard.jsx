@@ -19,8 +19,20 @@ const DeliveryDashboard = () => {
   const fetchTasks = async () => {
     try {
       const { data } = await api.get('/api/delivery/my-deliveries');
+      
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const cutoff = new Date(startOfToday);
+      cutoff.setHours(-2); // 10 PM yesterday
+
+      // Filter on frontend as a fallback in case backend changes aren't deployed yet
+      const todayTasks = data.filter(order => {
+        const orderDate = order.scheduledDeliveryDate ? new Date(order.scheduledDeliveryDate) : new Date(order.createdAt);
+        return orderDate >= cutoff;
+      });
+
       // For now, map DB orders to task structure
-      const formattedTasks = data.map(order => ({
+      const formattedTasks = todayTasks.map(order => ({
         id: order._id,
         customer: order.name || order.user?.name || 'Unknown',
         phone: order.phone || order.user?.phone || 'Not Provided',
@@ -52,7 +64,7 @@ const DeliveryDashboard = () => {
     const staff = staffData ? JSON.parse(staffData) : null;
     
     if (staff && staff._id) {
-      socketRef.current = io('https://milquu-backend.onrender.com'); // Connect to your backend
+      socketRef.current = io(api.defaults.baseURL); // Connect to your backend
       
       // Join Tracking Room
       socketRef.current.emit('join_tracking', { deliveryBoyId: staff._id });
@@ -94,35 +106,20 @@ const DeliveryDashboard = () => {
           const imageFormData = new FormData();
           imageFormData.append('image', proofImageFile);
           
-          const staffTokenStr = localStorage.getItem('deliveryToken');
-          const token = staffTokenStr ? JSON.parse(staffTokenStr).token : '';
-          
-          const uploadRes = await fetch('https://milquu-backend.onrender.com/api/upload', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: imageFormData
-          });
-          
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json();
-            uploadedImageUrl = uploadData.url;
+          try {
+            const uploadRes = await api.post('/api/upload', imageFormData, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            uploadedImageUrl = uploadRes.data.url;
+          } catch (err) {
+            console.error("Upload failed", err);
           }
         }
         
         // 2. Mark order as delivered in backend
-        const staffTokenStr = localStorage.getItem('deliveryToken');
-        const token = staffTokenStr ? JSON.parse(staffTokenStr).token : '';
-        
-        await fetch(`https://milquu-backend.onrender.com/api/delivery/orders/${id}/deliver`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ 
-            proofImageUrl: uploadedImageUrl,
-            cashCollected: cashCollected
-          })
+        await api.put(`/api/delivery/orders/${id}/deliver`, { 
+          proofImageUrl: uploadedImageUrl,
+          cashCollected: cashCollected
         });
         
         setTimeout(() => {
@@ -136,17 +133,7 @@ const DeliveryDashboard = () => {
       }
     } else if (newStatus === 'Failed') {
       try {
-        const staffTokenStr = localStorage.getItem('deliveryToken');
-        const token = staffTokenStr ? JSON.parse(staffTokenStr).token : '';
-        
-        await fetch(`https://milquu-backend.onrender.com/api/delivery/orders/${id}/fail`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ reason: proofNote })
-        });
+        await api.put(`/api/delivery/orders/${id}/fail`, { reason: proofNote });
         
         setTimeout(() => setSelectedTask(null), 1000);
       } catch(e) { console.error(e) }
