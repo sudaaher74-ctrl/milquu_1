@@ -476,8 +476,8 @@ const Subscription = () => {
                     className="mr-4 w-5 h-5 text-[#1a73e8] focus:ring-[#1a73e8]"
                   />
                   <div className="flex-1 flex items-center space-x-3 sm:space-x-4">
-                    <div className="w-16 h-12 flex items-center justify-center bg-white rounded-lg border border-gray-100 p-2 shadow-sm">
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png" alt="GPay" className="h-full w-full object-contain" />
+                    <div className="w-16 h-12 flex items-center justify-center bg-white rounded-lg border border-gray-100 p-1 shadow-sm">
+                      <img src="https://pay.google.com/about/static_kcs/images/logos/google-pay-logo.svg" alt="GPay" className="h-full w-full object-contain" />
                     </div>
                     <div>
                       <span className="font-bold text-base text-milquu-dark block">Google Pay</span>
@@ -497,8 +497,11 @@ const Subscription = () => {
                     className="mr-4 w-5 h-5 text-black focus:ring-black"
                   />
                   <div className="flex-1 flex items-center space-x-3 sm:space-x-4">
-                    <div className="w-16 h-12 flex items-center justify-center bg-white rounded-lg border border-gray-100 p-2 shadow-sm">
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/CRED_%28logo%29.png" alt="CRED" className="h-full w-full object-contain" />
+                    <div className="w-16 h-12 flex items-center justify-center bg-black rounded-lg border border-gray-100 p-2 shadow-sm">
+                      <img src="https://cred.club/assets/images/cred-logo-white.svg" alt="CRED"
+                        onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
+                        className="h-full w-full object-contain" />
+                      <span style={{display:'none'}} className="text-white font-black text-lg tracking-widest">CRED</span>
                     </div>
                     <div>
                       <span className="font-bold text-base text-milquu-dark block">CRED UPI</span>
