@@ -38,6 +38,9 @@ export const startSubscriptionEngine = () => {
         }
 
         // Generate an order for this subscription for tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
         const order = new Order({
           user: sub.user,
           name: sub.name,
@@ -60,6 +63,7 @@ export const startSubscriptionEngine = () => {
           totalPrice: sub.monthlyTotal / 30, // Rough estimate for daily price
           isPaid: false,
           isDelivered: false,
+          scheduledDeliveryDate: tomorrow,
           orderSource: 'Website'
         });
 

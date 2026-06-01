@@ -28,9 +28,23 @@ export const loginDeliveryStaff = async (req, res) => {
 
 export const getMyDeliveries = async (req, res) => {
   try {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const cutoff = new Date(startOfToday);
+    cutoff.setHours(-2); // 10 PM yesterday, to catch cron orders
+
     const deliveries = await Order.find({ 
       deliveryStaff: req.user._id, 
-      isDelivered: false 
+      isDelivered: false,
+      $or: [
+        { scheduledDeliveryDate: { $gte: startOfToday, $lte: endOfToday } },
+        { scheduledDeliveryDate: null, createdAt: { $gte: cutoff, $lte: endOfToday } },
+        { scheduledDeliveryDate: { $exists: false }, createdAt: { $gte: cutoff, $lte: endOfToday } }
+      ]
     }).populate('user', 'name email phone');
     res.json(deliveries);
   } catch (error) {
