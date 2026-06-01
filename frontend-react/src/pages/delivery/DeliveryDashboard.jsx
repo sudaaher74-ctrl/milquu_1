@@ -27,8 +27,12 @@ const DeliveryDashboard = () => {
 
       // Filter on frontend as a fallback in case backend changes aren't deployed yet
       const todayTasks = data.filter(order => {
-        const orderDate = order.scheduledDeliveryDate ? new Date(order.scheduledDeliveryDate) : new Date(order.createdAt);
-        return orderDate >= cutoff;
+        if (order.scheduledDeliveryDate) {
+          return new Date(order.scheduledDeliveryDate) >= cutoff;
+        }
+        const created = new Date(order.createdAt);
+        const updated = new Date(order.updatedAt);
+        return created >= cutoff || updated >= cutoff;
       });
 
       // For now, map DB orders to task structure

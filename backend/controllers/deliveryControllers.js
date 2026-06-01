@@ -43,7 +43,9 @@ export const getMyDeliveries = async (req, res) => {
       $or: [
         { scheduledDeliveryDate: { $gte: startOfToday, $lte: endOfToday } },
         { scheduledDeliveryDate: null, createdAt: { $gte: cutoff, $lte: endOfToday } },
-        { scheduledDeliveryDate: { $exists: false }, createdAt: { $gte: cutoff, $lte: endOfToday } }
+        { scheduledDeliveryDate: { $exists: false }, createdAt: { $gte: cutoff, $lte: endOfToday } },
+        { scheduledDeliveryDate: null, updatedAt: { $gte: cutoff, $lte: endOfToday } },
+        { scheduledDeliveryDate: { $exists: false }, updatedAt: { $gte: cutoff, $lte: endOfToday } }
       ]
     }).populate('user', 'name email phone');
     res.json(deliveries);
