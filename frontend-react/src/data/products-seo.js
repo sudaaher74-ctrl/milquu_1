@@ -156,5 +156,59 @@ export const productSEOData = {
         buildFAQSchema(this.faqs)
       ];
     }
+  },
+  'fresh-dahi': {
+    name: 'Fresh Farm Dahi',
+    slug: 'fresh-dahi',
+    title: 'Fresh Thick Dahi | Probiotic Curd | MilQuu',
+    description: 'Thick, naturally set farm-fresh curd with a smooth velvety texture. Contains natural probiotics.',
+    keywords: 'fresh dahi, buy curd online, probiotic curd',
+    price: 60,
+    image: '/img/Dahi.png',
+    nutrition: [
+      { label: 'Energy', value: '98 kcal' },
+      { label: 'Protein', value: '3.4 g' }
+    ],
+    details: 'Our Fresh Dahi is set naturally without any synthetic coagulants. It boasts a thick, creamy texture that reminds you of traditional homemade curd.',
+    faqs: [],
+    get schema() {
+      return [
+        buildProductSchema({
+          name: this.name,
+          description: this.description,
+          image: this.image,
+          price: this.price,
+          sku: 'MQ-DAHI-500G'
+        }),
+        buildFAQSchema(this.faqs)
+      ];
+    }
+  },
+  'sweet-lassi': {
+    name: 'Sweet Lassi',
+    slug: 'sweet-lassi',
+    title: 'Traditional Sweet Lassi | Refreshing Drink | MilQuu',
+    description: 'Traditional churned yogurt drink, refreshing and lightly sweetened.',
+    keywords: 'sweet lassi, traditional lassi, buy lassi online',
+    price: 40,
+    image: '/img/lassi.png',
+    nutrition: [
+      { label: 'Energy', value: '110 kcal' },
+      { label: 'Protein', value: '3.0 g' }
+    ],
+    details: 'A beautifully balanced sweet lassi crafted from our pure farm dahi. Churned to perfection to give you that authentic taste of Punjab.',
+    faqs: [],
+    get schema() {
+      return [
+        buildProductSchema({
+          name: this.name,
+          description: this.description,
+          image: this.image,
+          price: this.price,
+          sku: 'MQ-LASSI-250ML'
+        }),
+        buildFAQSchema(this.faqs)
+      ];
+    }
   }
 };

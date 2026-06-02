@@ -27,6 +27,16 @@ const CategoryListing = () => {
   const [categories, setCategories] = useState({});
   const [loading, setLoading] = useState(true);
 
+  const getProductSlug = (name) => {
+    const n = name.toLowerCase();
+    if (n.includes('buffalo')) return 'pure-buffalo-milk';
+    if (n.includes('paneer')) return 'fresh-paneer';
+    if (n.includes('ghee')) return 'desi-cow-ghee';
+    if (n.includes('dahi')) return 'fresh-dahi';
+    if (n.includes('lassi')) return 'sweet-lassi';
+    return 'farm-fresh-cow-milk';
+  };
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -96,7 +106,7 @@ const CategoryListing = () => {
                   <div className="h-full flex flex-col items-center text-center relative group-hover:-translate-y-2 transition-transform duration-500">
 
                     {/* Floating Image */}
-                    <div className="relative h-[160px] sm:h-[180px] lg:h-[280px] w-full flex justify-center items-center mb-4 sm:mb-8">
+                    <Link to={`/product/${getProductSlug(product.name)}`} className="relative h-[160px] sm:h-[180px] lg:h-[280px] w-full flex justify-center items-center mb-4 sm:mb-8 cursor-pointer">
                       {/* Very subtle glow */}
                       <div className={`absolute w-[80%] h-[80%] rounded-full blur-[40px] sm:blur-[80px] ${category.blobColor} opacity-40 mix-blend-multiply group-hover:opacity-70 transition-opacity duration-500`}></div>
                       
@@ -111,13 +121,15 @@ const CategoryListing = () => {
                           className="h-full object-contain drop-shadow-xl sm:drop-shadow-2xl scale-110 sm:scale-125 lg:scale-[1.3] origin-center"
                         />
                       </motion.div>
-                    </div>
+                    </Link>
 
                     {/* Product Info */}
                     <div className="flex flex-col items-center text-center w-full max-w-[280px]">
-                      <h3 className="text-base sm:text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-1 sm:mb-4 leading-tight">
-                        {product.name}
-                      </h3>
+                      <Link to={`/product/${getProductSlug(product.name)}`}>
+                        <h3 className="text-base sm:text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-1 sm:mb-4 leading-tight hover:text-milquu-gold transition-colors cursor-pointer">
+                          {product.name}
+                        </h3>
+                      </Link>
                       
                       <div className="flex flex-col items-center space-y-0.5 sm:space-y-1.5 mb-4 sm:mb-8">
                         <p className="text-gray-500 font-sans text-xs sm:text-sm">
