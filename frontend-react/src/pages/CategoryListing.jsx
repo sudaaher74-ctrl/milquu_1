@@ -31,7 +31,8 @@ const ProductCard = ({ product, index, category, getProductSlug, addToCart }) =>
     ? Math.ceil(product.price / 2) 
     : product.price;
 
-  const isOutOfStock = product.stock <= 0;
+  const stockLevel = product.stock || 0;
+  const isOutOfStock = stockLevel <= 0;
 
   const handleAddToCart = () => {
     const productToAdd = {

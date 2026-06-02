@@ -120,6 +120,17 @@ export const createOrder = async (req, res) => {
   try {
     const orderData = { ...req.body };
     
+    // Clean up product IDs from frontend if they include appended units (e.g. "64ac4...-1Litre")
+    if (orderData.orderItems && Array.isArray(orderData.orderItems)) {
+      orderData.orderItems = orderData.orderItems.map(item => {
+        let productId = item.product;
+        if (typeof productId === 'string' && productId.includes('-')) {
+          productId = productId.split('-')[0];
+        }
+        return { ...item, product: productId };
+      });
+    }
+
     // Auto-assign delivery boy based on shipping area
     if (orderData.shippingAddress && orderData.shippingAddress.city) {
       const area = orderData.shippingAddress.city;
@@ -136,6 +147,21 @@ export const createOrder = async (req, res) => {
 
     const order = new Order(orderData);
     const createdOrder = await order.save();
+
+    // Deduct stock for each item in the order
+    if (orderData.orderItems && Array.isArray(orderData.orderItems)) {
+      for (const item of orderData.orderItems) {
+        if (item.product) {
+          try {
+            await Product.findByIdAndUpdate(item.product, {
+              $inc: { stock: -item.qty }
+            });
+          } catch (err) {
+            console.error(`Failed to deduct stock for product ${item.product}:`, err);
+          }
+        }
+      }
+    }
 
     res.status(201).json(createdOrder);
   } catch (error) {

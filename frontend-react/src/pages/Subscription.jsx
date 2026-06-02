@@ -192,7 +192,7 @@ const Subscription = () => {
         const { data } = await api.get('/api/products');
         const map = {};
         data.forEach(p => {
-          map[p.name] = p.stock;
+          map[p.name] = p.stock || 0;
         });
         setStockMap(map);
       } catch (err) {
