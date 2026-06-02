@@ -96,7 +96,7 @@ const CategoryListing = () => {
                   <div className="h-full flex flex-col items-center text-center relative group-hover:-translate-y-2 transition-transform duration-500">
 
                     {/* Floating Image */}
-                    <div className="relative h-[120px] sm:h-[180px] lg:h-[280px] w-full flex justify-center items-center mb-4 sm:mb-8">
+                    <div className="relative h-[160px] sm:h-[180px] lg:h-[280px] w-full flex justify-center items-center mb-4 sm:mb-8">
                       {/* Very subtle glow */}
                       <div className={`absolute w-[80%] h-[80%] rounded-full blur-[40px] sm:blur-[80px] ${category.blobColor} opacity-40 mix-blend-multiply group-hover:opacity-70 transition-opacity duration-500`}></div>
                       
@@ -108,22 +108,22 @@ const CategoryListing = () => {
                         <img 
                           src={product.image} 
                           alt={product.name} 
-                          className="h-full object-contain drop-shadow-xl sm:drop-shadow-2xl scale-100 sm:scale-125 lg:scale-[1.3] origin-center"
+                          className="h-full object-contain drop-shadow-xl sm:drop-shadow-2xl scale-110 sm:scale-125 lg:scale-[1.3] origin-center"
                         />
                       </motion.div>
                     </div>
 
                     {/* Product Info */}
                     <div className="flex flex-col items-center text-center w-full max-w-[280px]">
-                      <h3 className="text-sm sm:text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-1 sm:mb-4 leading-tight">
+                      <h3 className="text-base sm:text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-1 sm:mb-4 leading-tight">
                         {product.name}
                       </h3>
                       
                       <div className="flex flex-col items-center space-y-0.5 sm:space-y-1.5 mb-4 sm:mb-8">
-                        <p className="text-gray-500 font-sans text-[10px] sm:text-sm">
+                        <p className="text-gray-500 font-sans text-xs sm:text-sm">
                           Price: <span className="font-semibold text-milquu-dark">₹{product.price}</span>
                         </p>
-                        <p className="text-gray-500 font-sans text-[10px] sm:text-sm">
+                        <p className="text-gray-500 font-sans text-xs sm:text-sm">
                           Unit: <span className="font-semibold text-milquu-dark">{product.unit}</span>
                         </p>
                       </div>
@@ -131,7 +131,7 @@ const CategoryListing = () => {
                       {/* Minimal Text CTA Button */}
                       <button 
                         onClick={() => addToCart(product)}
-                        className="group/btn flex items-center justify-center space-x-1 sm:space-x-2 font-sans font-bold text-milquu-gold hover:text-milquu-green transition-colors uppercase tracking-widest text-[10px] sm:text-sm"
+                        className="group/btn flex items-center justify-center space-x-1 sm:space-x-2 font-sans font-bold text-milquu-gold hover:text-milquu-green transition-colors uppercase tracking-widest text-xs sm:text-sm"
                       >
                         <span>Add To Cart</span>
                         <motion.span
