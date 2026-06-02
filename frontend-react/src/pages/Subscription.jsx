@@ -7,8 +7,8 @@ const products = [
   { id: 'a2', name: 'A2 Cow Milk', basePrice: 95, image: '/img/A2milk.webp' },
   { id: 'buffalo', name: 'Premium Buffalo Milk', basePrice: 105, image: '/img/buffalomilk.webp' },
   { id: 'cow', name: 'Pure Cow Milk', basePrice: 85, image: '/img/cowmilk.webp' },
-  { id: 'cow-pouch', name: 'Cow Milk (Pouch)', basePrice: 58, image: '/img/cow-milk-pouch.webp' },
-  { id: 'buffalo-pouch', name: 'Buffalo Milk (Pouch)', basePrice: 75, image: '/img/buffalo-milk-pouch.webp' },
+  { id: 'cow-pouch', name: 'Cow Milk (Pouch)', basePrice: 58, image: '/img/cowmilkplasticbag.png' },
+  { id: 'buffalo-pouch', name: 'Buffalo Milk (Pouch)', basePrice: 75, image: '/img/buffalomilkplasticbag.png' },
 ];
 
 const frequencies = [

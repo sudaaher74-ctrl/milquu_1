@@ -218,7 +218,7 @@ export const productSEOData = {
     description: 'Fresh cow milk available in convenient pouch packaging. Daily morning delivery.',
     keywords: 'cow milk pouch, daily milk bag, buy milk pouch online',
     price: 58,
-    image: '/img/cow-milk-pouch.webp',
+    image: '/img/cowmilkplasticbag.png',
     nutrition: [
       { label: 'Energy', value: '62 kcal' },
       { label: 'Protein', value: '3.2 g' }
@@ -245,7 +245,7 @@ export const productSEOData = {
     description: 'Thick buffalo milk available in convenient pouch packaging. Daily morning delivery.',
     keywords: 'buffalo milk pouch, buffalo milk bag, buy buffalo milk online',
     price: 75,
-    image: '/img/buffalo-milk-pouch.webp',
+    image: '/img/buffalomilkplasticbag.png',
     nutrition: [
       { label: 'Energy', value: '97 kcal' },
       { label: 'Protein', value: '3.7 g' }
