@@ -101,47 +101,7 @@ const ProductPage = () => {
         </div>
       </section>
 
-      {/* Description & Nutrition */}
-      <section className="py-16 px-4 bg-gray-50 border-y border-gray-100">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
-          <div className="md:col-span-2">
-            <h2 className="text-2xl font-bold font-serif mb-6">Product Description</h2>
-            <div className="prose prose-blue text-gray-700">
-              <p>{product.details}</p>
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-              Nutrition Facts
-            </h3>
-            <div className="space-y-3">
-              {product.nutrition.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-50 last:border-0">
-                  <span className="text-gray-600">{item.label}</span>
-                  <span className="font-bold text-gray-900">{item.value}</span>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-gray-400 mt-4 text-center">*Approximate values per 100ml/100g</p>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="py-16 px-4">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold font-serif text-center mb-10">Frequently Asked Questions</h2>
-          <div className="space-y-4">
-            {product.faqs.map((faq, index) => (
-              <div key={index} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h3 className="text-lg font-bold text-gray-800 mb-2">{faq.question}</h3>
-                <p className="text-gray-600">{faq.answer}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Description, Nutrition, and FAQ removed as requested */}
 
       <StickyMobileCTA />
     </div>

@@ -71,19 +71,7 @@ const CategoryListing = () => {
             Home
           </Link>
           
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="mt-8 md:mt-0"
-          >
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold text-milquu-dark mb-4 md:mb-6 leading-tight">
-              Farm Fresh Products
-            </h1>
-            <p className="text-lg md:text-xl text-gray-500 font-sans leading-relaxed">
-              Experience the rich, natural taste of authentic dairy, delivered straight from our organic farms to your doorstep.
-            </p>
-          </motion.div>
+            {/* Text removed as requested */}
         </div>
 
         {loading ? (
@@ -91,11 +79,7 @@ const CategoryListing = () => {
         ) : (
           Object.entries(categories).map(([key, category]) => (
           <div key={key} className="mb-20">
-            <div className="flex items-center justify-center mb-10">
-              <div className="h-px w-12 bg-milquu-gold/50 mr-4"></div>
-              <h2 className="text-3xl font-serif font-bold text-milquu-dark">{category.title}</h2>
-              <div className="h-px w-12 bg-milquu-gold/50 ml-4"></div>
-            </div>
+            {/* Category title removed */}
 
             {/* Products Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-6">
