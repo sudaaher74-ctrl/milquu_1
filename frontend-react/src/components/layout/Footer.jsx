@@ -63,15 +63,15 @@ const Footer = () => {
             <ul className="space-y-4 font-sans text-sm text-gray-400">
               <li className="flex items-start space-x-3">
                 <MapPin size={18} className="text-milquu-gold flex-shrink-0 mt-0.5" />
-                <span>123 Dairy Farm Road,<br/>Green Valley Estate, 400001</span>
+                <span>Lakhani Centrium,<br/>4th Floor</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Phone size={18} className="text-milquu-gold flex-shrink-0" />
-                <span>+1 (800) MILQUU-FRESH</span>
+                <span>+91 87670 67884</span>
               </li>
               <li className="flex items-center space-x-3">
                 <Mail size={18} className="text-milquu-gold flex-shrink-0" />
-                <span>hello@milquufresh.com</span>
+                <span>milquufresh@gmail.com</span>
               </li>
             </ul>
           </div>

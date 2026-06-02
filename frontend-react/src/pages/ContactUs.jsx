@@ -58,9 +58,9 @@ const ContactUs = () => {
                   <div className="ml-6">
                     <h4 className="text-lg font-sans font-bold text-milquu-dark mb-1">Farm Location</h4>
                     <p className="text-gray-500 font-sans leading-relaxed">
-                      MILQUU FRESH Dairy Farm<br />
-                      Village Green, Rural District<br />
-                      State, 123456
+                      Lakhani Centrium<br />
+                      4th Floor<br />
+                      Office Address
                     </p>
                   </div>
                 </div>
@@ -73,7 +73,7 @@ const ContactUs = () => {
                   <div className="ml-6">
                     <h4 className="text-lg font-sans font-bold text-milquu-dark mb-1">Call Us</h4>
                     <p className="text-gray-500 font-sans leading-relaxed">
-                      +91 98765 43210<br />
+                      +91 87670 67884<br />
                       <span className="text-sm">Mon-Sat: 9am - 6pm</span>
                     </p>
                   </div>
@@ -87,7 +87,7 @@ const ContactUs = () => {
                   <div className="ml-6">
                     <h4 className="text-lg font-sans font-bold text-milquu-dark mb-1">Email Us</h4>
                     <p className="text-gray-500 font-sans leading-relaxed">
-                      hello@milquufresh.com<br />
+                      milquufresh@gmail.com<br />
                       <span className="text-sm">We reply within 24 hours</span>
                     </p>
                   </div>
@@ -150,7 +150,7 @@ const ContactUs = () => {
                     <input 
                       type="tel" 
                       id="phone" 
-                      placeholder="+91 98765 43210"
+                      placeholder="+91 87670 67884"
                       className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans"
                     />
                   </div>

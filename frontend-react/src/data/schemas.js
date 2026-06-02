@@ -13,7 +13,7 @@ export const LocalBusinessSchema = {
   description: 'Premium farm-fresh dairy delivery service in Navi Mumbai. A2 cow milk, buffalo milk, paneer, ghee delivered daily to your doorstep.',
   url: BASE_URL,
   telephone: PHONE,
-  email: 'contact@milquufresh.in',
+  email: 'milquufresh@gmail.com',
   logo: `${BASE_URL}/favicon.svg`,
   image: `${BASE_URL}/og-image.jpg`,
   priceRange: '₹₹',
@@ -21,7 +21,7 @@ export const LocalBusinessSchema = {
   paymentAccepted: 'Cash, UPI, Credit Card, Debit Card',
   address: {
     '@type': 'PostalAddress',
-    streetAddress: 'New Panvel',
+    streetAddress: 'Lakhani Centrium, 4th Floor',
     addressLocality: 'Navi Mumbai',
     addressRegion: 'Maharashtra',
     postalCode: '410206',
