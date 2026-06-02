@@ -31,6 +31,8 @@ const ProductCard = ({ product, index, category, getProductSlug, addToCart }) =>
     ? Math.ceil(product.price / 2) 
     : product.price;
 
+  const isOutOfStock = product.stock <= 0;
+
   const handleAddToCart = () => {
     const productToAdd = {
       ...product,
@@ -56,6 +58,13 @@ const ProductCard = ({ product, index, category, getProductSlug, addToCart }) =>
 
         {/* Floating Image */}
         <Link to={`/product/${getProductSlug(product.name)}`} className="relative h-[160px] sm:h-[180px] lg:h-[280px] w-full flex justify-center items-center mb-4 sm:mb-8 cursor-pointer">
+          {/* Out of Stock Badge */}
+          {isOutOfStock && (
+            <div className="absolute top-2 right-2 sm:right-6 lg:right-12 z-30 bg-red-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border border-red-400/50">
+              OUT OF STOCK
+            </div>
+          )}
+          
           {/* Very subtle glow */}
           <div className={`absolute w-[80%] h-[80%] rounded-full blur-[40px] sm:blur-[80px] ${category.blobColor} opacity-40 mix-blend-multiply group-hover:opacity-70 transition-opacity duration-500`}></div>
           
@@ -110,17 +119,24 @@ const ProductCard = ({ product, index, category, getProductSlug, addToCart }) =>
           
           {/* Minimal Text CTA Button */}
           <button 
-            onClick={handleAddToCart}
-            className="group/btn flex items-center justify-center space-x-1 sm:space-x-2 font-sans font-bold text-milquu-gold hover:text-milquu-green transition-colors uppercase tracking-widest text-xs sm:text-sm"
+            onClick={isOutOfStock ? null : handleAddToCart}
+            disabled={isOutOfStock}
+            className={`group/btn flex items-center justify-center space-x-1 sm:space-x-2 font-sans font-bold uppercase tracking-widest text-xs sm:text-sm transition-colors ${
+              isOutOfStock 
+              ? 'text-red-400 cursor-not-allowed opacity-70' 
+              : 'text-milquu-gold hover:text-milquu-green'
+            }`}
           >
-            <span>Add To Cart</span>
-            <motion.span
-              className="inline-block"
-              initial={{ x: 0 }}
-              whileHover={{ x: 5 }}
-            >
-              →
-            </motion.span>
+            <span>{isOutOfStock ? 'Unavailable' : 'Add To Cart'}</span>
+            {!isOutOfStock && (
+              <motion.span
+                className="inline-block"
+                initial={{ x: 0 }}
+                whileHover={{ x: 5 }}
+              >
+                →
+              </motion.span>
+            )}
           </button>
         </div>
 
@@ -172,12 +188,11 @@ const CategoryListing = () => {
   }, []);
   
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-24 pb-16 relative overflow-hidden">
+    <div className="min-h-screen bg-white pt-24 pb-16 relative overflow-hidden">
       
-      {/* Soft Background Effects */}
-      <div className="absolute top-0 left-0 w-full h-[60vh] pointer-events-none bg-milquu-gold/5 rounded-b-[120px]"></div>
-      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-green/10 opacity-60 mix-blend-multiply pointer-events-none"></div>
-      <div className="absolute top-40 -left-20 w-[400px] h-[400px] rounded-full blur-[100px] bg-milquu-gold/20 opacity-40 mix-blend-multiply pointer-events-none"></div>
+      {/* Soft Background Effects (kept minimal without sharp horizontal split) */}
+      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-green/10 opacity-30 mix-blend-multiply pointer-events-none"></div>
+      <div className="absolute top-40 -left-20 w-[400px] h-[400px] rounded-full blur-[100px] bg-milquu-gold/20 opacity-20 mix-blend-multiply pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
         

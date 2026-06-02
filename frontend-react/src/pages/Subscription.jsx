@@ -23,6 +23,7 @@ const Subscription = () => {
   const [selectedProduct, setSelectedProduct] = useState('a2');
   const [selectedUnit, setSelectedUnit] = useState('1 Litre');
   const [selectedFreq, setSelectedFreq] = useState('daily');
+  const [stockMap, setStockMap] = useState({});
   const [selectedTime, setSelectedTime] = useState('morning');
   const [paymentMethod, setPaymentMethod] = useState('PHONEPE');
   const [formData, setFormData] = useState({
@@ -186,16 +187,28 @@ const Subscription = () => {
   };
 
   useEffect(() => {
+    const fetchStock = async () => {
+      try {
+        const { data } = await api.get('/api/products');
+        const map = {};
+        data.forEach(p => {
+          map[p.name] = p.stock;
+        });
+        setStockMap(map);
+      } catch (err) {
+        console.error("Error fetching stock data", err);
+      }
+    };
+    fetchStock();
     window.scrollTo(0, 0);
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-32 pb-24 relative overflow-hidden">
+    <div className="min-h-screen bg-white pt-32 pb-24 relative overflow-hidden">
       
       {/* Background Ambience */}
-      <div className="absolute top-0 left-0 w-full h-[60vh] pointer-events-none bg-milquu-green/5 rounded-b-[120px]"></div>
       <div className="absolute top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-green/20 opacity-30 mix-blend-multiply pointer-events-none"></div>
-      <div className="absolute bottom-20 -right-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-gold/20 opacity-40 mix-blend-multiply pointer-events-none"></div>
+      <div className="absolute bottom-20 -right-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-gold/20 opacity-30 mix-blend-multiply pointer-events-none"></div>
 
       {/* Floating Blurred Product Backgrounds */}
       <motion.div 
@@ -249,26 +262,34 @@ const Subscription = () => {
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 mb-6">
                 {products.map(product => {
                   const currentPrice = selectedUnit === '500 ml' ? Math.ceil(product.basePrice / 2) : product.basePrice;
+                  const isOutOfStock = stockMap[product.name] !== undefined && stockMap[product.name] <= 0;
                   return (
                     <button
                       key={product.id}
                       type="button"
-                      onClick={() => setSelectedProduct(product.id)}
+                      disabled={isOutOfStock}
+                      onClick={() => !isOutOfStock && setSelectedProduct(product.id)}
                       className={`relative p-2 sm:p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center text-center ${
+                        isOutOfStock ? 'border-red-200 bg-red-50/40 opacity-60 cursor-not-allowed' :
                         selectedProduct === product.id 
                         ? 'border-milquu-gold bg-[#FFFDF9] shadow-md scale-[1.02]' 
                         : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
                       }`}
                     >
-                      {selectedProduct === product.id && (
+                      {isOutOfStock && (
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-[9px] font-bold px-2 py-1 rounded shadow-lg z-20 whitespace-nowrap -rotate-12">
+                          UNAVAILABLE
+                        </div>
+                      )}
+                      {!isOutOfStock && selectedProduct === product.id && (
                         <div className="absolute top-2 right-2 text-milquu-gold z-10">
                           <CheckCircle2 size={16} className="sm:w-5 sm:h-5" />
                         </div>
                       )}
                       <div className="h-16 sm:h-20 w-full flex items-center justify-center mb-2">
-                        <img src={product.image} alt={product.name} className="h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300" />
+                        <img src={product.image} alt={product.name} className={`h-full object-contain drop-shadow-md transition-transform duration-300 ${!isOutOfStock ? 'group-hover:scale-110' : 'grayscale'}`} />
                       </div>
-                      <span className="font-sans font-bold text-[10px] sm:text-xs text-milquu-dark mb-0.5 leading-tight">{product.name}</span>
+                      <span className={`font-sans font-bold text-[10px] sm:text-xs mb-0.5 leading-tight ${isOutOfStock ? 'text-red-600' : 'text-milquu-dark'}`}>{product.name}</span>
                       <span className="text-[9px] sm:text-xs font-sans font-medium text-gray-500">₹{currentPrice}/{selectedUnit === '500 ml' ? '500ml' : 'L'}</span>
                     </button>
                   );
