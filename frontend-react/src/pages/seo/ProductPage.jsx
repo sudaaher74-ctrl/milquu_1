@@ -51,7 +51,7 @@ const ProductPage = () => {
       <div className="flex flex-col lg:flex-row min-h-screen relative z-10 pt-20 lg:pt-0">
         
         {/* Left Side: Massive Image Container */}
-        <div className="lg:w-1/2 relative flex items-center justify-center p-8 lg:p-20 min-h-[40vh] lg:min-h-screen pt-12 lg:pt-20">
+        <div className="lg:w-1/2 relative flex items-center justify-center p-8 lg:p-20 min-h-[40vh] lg:h-screen lg:sticky lg:top-0 pt-12 lg:pt-20">
           
           <Link to="/products" className="absolute top-8 left-6 lg:left-12 text-gray-500 hover:text-milquu-dark transition-colors flex items-center gap-2 z-20 text-sm font-bold uppercase tracking-widest bg-white/50 backdrop-blur px-4 py-2 rounded-full shadow-sm">
             <ArrowLeft size={18} /> Back
