@@ -68,16 +68,6 @@ const ProductPage = () => {
         {/* Right Side: Form & Details */}
         <div className="lg:w-1/2 p-6 sm:p-12 lg:p-20 flex flex-col justify-center">
           
-          <div className="mb-10 lg:mb-12">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif font-bold mb-4 tracking-tight text-milquu-dark">{product.name}</h1>
-            <div className="text-2xl text-milquu-gold font-bold mb-4">
-              ₹{product.price} <span className="text-sm text-gray-500 font-normal">/ {slug.includes('ghee') ? '1 Ltr' : slug.includes('paneer') ? '250g' : '1 Ltr'}</span>
-            </div>
-            <p className="text-gray-600 leading-relaxed text-lg max-w-xl">
-              {product.description}
-            </p>
-          </div>
-
           {/* Inquiry Form Card */}
           <div className="bg-white/80 backdrop-blur-2xl border border-white/60 rounded-[40px] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.06)] max-w-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-milquu-gold/20 to-transparent opacity-50 rounded-bl-[100px] pointer-events-none"></div>
