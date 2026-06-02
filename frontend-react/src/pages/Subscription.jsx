@@ -15,10 +15,7 @@ const frequencies = [
   { id: 'weekly', name: 'Once a Week', desc: 'Every Sunday' },
 ];
 
-const timeSlots = [
-  { id: 'morning', name: 'Morning', desc: '5:00 AM - 8:00 AM' },
-  { id: 'evening', name: 'Evening', desc: '5:00 PM - 8:00 PM' },
-];
+// timeSlots removed as delivery is only in the morning
 
 const Subscription = () => {
   const [selectedProduct, setSelectedProduct] = useState('a2');
@@ -302,40 +299,7 @@ const Subscription = () => {
               </div>
             </div>
 
-            {/* Step 3: Time Selection */}
-            <div>
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-milquu-gold/10 flex items-center justify-center text-milquu-gold">
-                  <Clock size={20} />
-                </div>
-                <h3 className="text-2xl font-serif font-bold text-milquu-dark">Step 3: Preferred Time</h3>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                {timeSlots.map(time => (
-                  <button
-                    key={time.id}
-                    type="button"
-                    onClick={() => setSelectedTime(time.id)}
-                    className={`relative p-3 sm:p-5 rounded-2xl border-2 transition-all duration-300 flex flex-col sm:flex-row justify-between items-center text-center sm:text-left ${
-                      selectedTime === time.id 
-                      ? 'border-milquu-gold bg-[#FFFDF9] shadow-md scale-[1.02]' 
-                      : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="text-center sm:text-left mb-2 sm:mb-0">
-                      <span className="block font-sans font-bold text-[11px] sm:text-base text-milquu-dark mb-0.5 sm:mb-1">{time.name}</span>
-                      <span className="block text-[10px] sm:text-sm font-sans font-medium text-gray-500 leading-tight sm:leading-normal">{time.desc}</span>
-                    </div>
-                    {selectedTime === time.id && (
-                      <div className="text-milquu-gold">
-                        <CheckCircle2 size={18} className="sm:w-6 sm:h-6" />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Step 3: Time Selection removed as delivery is only morning */}
 
             <hr className="border-gray-100" />
 

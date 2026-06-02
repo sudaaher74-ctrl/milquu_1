@@ -19,9 +19,7 @@ const Footer = () => {
           
           {/* Brand Column */}
           <div className="space-y-6">
-            <h2 className="text-3xl font-serif font-bold text-white tracking-wider">
-              MILQUU <span className="text-milquu-gold">FRESH</span>
-            </h2>
+            <img src="/brand-logo.jpg" alt="Milquu Fresh" className="h-20 w-auto object-contain rounded-full shadow-md" />
             <p className="text-gray-400 font-sans text-sm leading-relaxed max-w-xs">
               Premium dairy products sourced directly from trusted farms and processed with international hygiene standards. Delivered fresh to your doorstep.
             </p>

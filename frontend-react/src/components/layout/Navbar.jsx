@@ -40,9 +40,9 @@ const Navbar = () => {
         <div className="max-w-7xl mx-auto px-6 lg:px-12 flex justify-between items-center">
           {/* Logo */}
           <div className="flex-shrink-0 cursor-pointer">
-            <h1 className="text-2xl font-serif font-bold text-milquu-gold tracking-wider">
-              MILQUU <span className="text-milquu-green">FRESH</span>
-            </h1>
+            <Link to="/">
+              <img src="/brand-logo.jpg" alt="Milquu Fresh" className="h-16 md:h-20 w-auto object-contain rounded-full shadow-sm" />
+            </Link>
           </div>
 
           {/* Desktop Menu */}
