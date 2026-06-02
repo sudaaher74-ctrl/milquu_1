@@ -137,6 +137,8 @@ const AdminSubscriptions = () => {
             <input 
               type="text" 
               placeholder="Search by name, ID or product..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="bg-transparent border-none outline-none text-sm w-full font-sans"
             />
           </div>
@@ -162,7 +164,13 @@ const AdminSubscriptions = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {subscriptionsData.map((sub, i) => (
+              {subscriptionsData
+                .filter(sub => 
+                  (sub.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (sub.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (sub.product || '').toLowerCase().includes(searchTerm.toLowerCase())
+                )
+                .map((sub, i) => (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <p className="text-sm font-bold text-milquu-dark">{sub.name}</p>
