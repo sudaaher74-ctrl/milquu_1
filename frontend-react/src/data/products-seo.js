@@ -210,5 +210,59 @@ export const productSEOData = {
         buildFAQSchema(this.faqs)
       ];
     }
+  },
+  'cow-milk-pouch': {
+    name: 'Cow Milk (Pouch)',
+    slug: 'cow-milk-pouch',
+    title: 'Cow Milk Pouch Delivery | Farm Fresh | MilQuu',
+    description: 'Fresh cow milk available in convenient pouch packaging. Daily morning delivery.',
+    keywords: 'cow milk pouch, daily milk bag, buy milk pouch online',
+    price: 58,
+    image: '/img/cow-milk-pouch.webp',
+    nutrition: [
+      { label: 'Energy', value: '62 kcal' },
+      { label: 'Protein', value: '3.2 g' }
+    ],
+    details: 'Freshly sourced cow milk packaged in food-grade plastic pouches for daily convenience. Available in 1L and 500ml options.',
+    faqs: [],
+    get schema() {
+      return [
+        buildProductSchema({
+          name: this.name,
+          description: this.description,
+          image: this.image,
+          price: this.price,
+          sku: 'MQ-COW-POUCH'
+        }),
+        buildFAQSchema(this.faqs)
+      ];
+    }
+  },
+  'buffalo-milk-pouch': {
+    name: 'Buffalo Milk (Pouch)',
+    slug: 'buffalo-milk-pouch',
+    title: 'Buffalo Milk Pouch Delivery | Thick & Creamy | MilQuu',
+    description: 'Thick buffalo milk available in convenient pouch packaging. Daily morning delivery.',
+    keywords: 'buffalo milk pouch, buffalo milk bag, buy buffalo milk online',
+    price: 75,
+    image: '/img/buffalo-milk-pouch.webp',
+    nutrition: [
+      { label: 'Energy', value: '97 kcal' },
+      { label: 'Protein', value: '3.7 g' }
+    ],
+    details: 'Rich and creamy buffalo milk packaged in food-grade plastic pouches for daily convenience. Available in 1L and 500ml options.',
+    faqs: [],
+    get schema() {
+      return [
+        buildProductSchema({
+          name: this.name,
+          description: this.description,
+          image: this.image,
+          price: this.price,
+          sku: 'MQ-BUFF-POUCH'
+        }),
+        buildFAQSchema(this.faqs)
+      ];
+    }
   }
 };

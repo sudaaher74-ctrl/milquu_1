@@ -219,8 +219,11 @@ const AdminSubscriptions = () => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
                   <select name="productName" value={formData.productName} onChange={handleInputChange} className="w-full border rounded-lg p-2">
-                    <option value="Cow Milk">Cow Milk</option>
-                    <option value="Buffalo Milk">Buffalo Milk</option>
+                    <option value="A2 Cow Milk">A2 Cow Milk</option>
+                    <option value="Premium Buffalo Milk">Premium Buffalo Milk</option>
+                    <option value="Pure Cow Milk">Pure Cow Milk</option>
+                    <option value="Cow Milk (Pouch)">Cow Milk (Pouch)</option>
+                    <option value="Buffalo Milk (Pouch)">Buffalo Milk (Pouch)</option>
                   </select>
                 </div>
                 <div>

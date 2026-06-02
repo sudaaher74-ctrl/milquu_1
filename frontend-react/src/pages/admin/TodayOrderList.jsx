@@ -50,7 +50,7 @@ const TodayOrderList = () => {
 
     const rows = subs.map((sub, i) => {
       const items = (sub.items || [])
-        .map(it => `${it.quantity}x ${it.product?.name || it.name || 'Item'}`)
+        .map(it => `${it.quantity || it.qty || 1}x ${it.product?.name || it.name || 'Item'}`)
         .join('<br/>');
       const slot = (sub.deliverySlot || 'Morning') === 'Evening'
         ? '<span style="background:#e0e7ff;color:#3730a3;padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:bold;">🌇 Evening</span>'
@@ -316,7 +316,7 @@ const TodayOrderList = () => {
                             {items.length > 0 ? items.map((it, i) => (
                               <div key={i} className="flex items-center gap-1.5">
                                 <span className="bg-milquu-blue/10 text-milquu-blue text-[11px] font-bold w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0">
-                                  {it.quantity}x
+                                  {it.quantity || it.qty || 1}x
                                 </span>
                                 <span className="text-[12px] text-gray-700 font-medium">{it.product?.name || it.name || 'Product'}</span>
                               </div>

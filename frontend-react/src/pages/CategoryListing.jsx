@@ -22,6 +22,113 @@ const categoryMeta = {
   }
 };
 
+const ProductCard = ({ product, index, category, getProductSlug, addToCart }) => {
+  const isMilk = product.name.toLowerCase().includes('milk');
+  const [selectedUnit, setSelectedUnit] = useState('1 Litre');
+
+  // If it's milk and 500ml is selected, halve the price (round up). Otherwise use default.
+  const currentPrice = (isMilk && selectedUnit === '500 ml') 
+    ? Math.ceil(product.price / 2) 
+    : product.price;
+
+  const handleAddToCart = () => {
+    const productToAdd = {
+      ...product,
+      _id: isMilk ? `${product._id}-${selectedUnit.replace(' ', '')}` : product._id,
+      id: isMilk ? `${product.id || product._id}-${selectedUnit.replace(' ', '')}` : (product.id || product._id),
+      price: currentPrice,
+      unit: isMilk ? selectedUnit : product.unit,
+      name: isMilk ? `${product.name} (${selectedUnit})` : product.name
+    };
+    addToCart(productToAdd);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.8, delay: index * 0.15, ease: "easeOut" }}
+      className="group h-full"
+    >
+      {/* Transparent Boxless Card */}
+      <div className="h-full flex flex-col items-center text-center relative group-hover:-translate-y-2 transition-transform duration-500">
+
+        {/* Floating Image */}
+        <Link to={`/product/${getProductSlug(product.name)}`} className="relative h-[160px] sm:h-[180px] lg:h-[280px] w-full flex justify-center items-center mb-4 sm:mb-8 cursor-pointer">
+          {/* Very subtle glow */}
+          <div className={`absolute w-[80%] h-[80%] rounded-full blur-[40px] sm:blur-[80px] ${category.blobColor} opacity-40 mix-blend-multiply group-hover:opacity-70 transition-opacity duration-500`}></div>
+          
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 }}
+            className="relative z-10 h-full flex justify-center items-center"
+          >
+            <img 
+              src={product.image} 
+              alt={product.name} 
+              className="h-full object-contain drop-shadow-xl sm:drop-shadow-2xl scale-110 sm:scale-125 lg:scale-[1.3] origin-center"
+            />
+          </motion.div>
+        </Link>
+
+        {/* Product Info */}
+        <div className="flex flex-col items-center text-center w-full max-w-[280px]">
+          <Link to={`/product/${getProductSlug(product.name)}`}>
+            <h3 className="text-base sm:text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-1 sm:mb-4 leading-tight hover:text-milquu-gold transition-colors cursor-pointer">
+              {product.name}
+            </h3>
+          </Link>
+          
+          <div className="flex flex-col items-center space-y-0.5 sm:space-y-1.5 mb-3 sm:mb-4">
+            <p className="text-gray-500 font-sans text-xs sm:text-sm">
+              Price: <span className="font-semibold text-milquu-dark">₹{currentPrice}</span>
+            </p>
+            <p className="text-gray-500 font-sans text-xs sm:text-sm">
+              Unit: <span className="font-semibold text-milquu-dark">{isMilk ? selectedUnit : product.unit}</span>
+            </p>
+          </div>
+
+          {/* Size Selector for Milk */}
+          {isMilk && (
+            <div className="flex bg-gray-100/80 p-1 rounded-full mb-4 sm:mb-6 border border-gray-200/50">
+              <button
+                onClick={() => setSelectedUnit('1 Litre')}
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all duration-300 ${selectedUnit === '1 Litre' ? 'bg-white text-milquu-gold shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                1 Litre
+              </button>
+              <button
+                onClick={() => setSelectedUnit('500 ml')}
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold transition-all duration-300 ${selectedUnit === '500 ml' ? 'bg-white text-milquu-gold shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                500 ml
+              </button>
+            </div>
+          )}
+          {!isMilk && <div className="mb-4 sm:mb-6"></div>}
+          
+          {/* Minimal Text CTA Button */}
+          <button 
+            onClick={handleAddToCart}
+            className="group/btn flex items-center justify-center space-x-1 sm:space-x-2 font-sans font-bold text-milquu-gold hover:text-milquu-green transition-colors uppercase tracking-widest text-xs sm:text-sm"
+          >
+            <span>Add To Cart</span>
+            <motion.span
+              className="inline-block"
+              initial={{ x: 0 }}
+              whileHover={{ x: 5 }}
+            >
+              →
+            </motion.span>
+          </button>
+        </div>
+
+      </div>
+    </motion.div>
+  );
+};
+
 const CategoryListing = () => {
   const { addToCart } = useCart();
   const [categories, setCategories] = useState({});
@@ -94,70 +201,14 @@ const CategoryListing = () => {
             {/* Products Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 sm:gap-6">
               {category.products.map((product, index) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.8, delay: index * 0.15, ease: "easeOut" }}
-                  className="group h-full"
-                >
-                  {/* Transparent Boxless Card */}
-                  <div className="h-full flex flex-col items-center text-center relative group-hover:-translate-y-2 transition-transform duration-500">
-
-                    {/* Floating Image */}
-                    <Link to={`/product/${getProductSlug(product.name)}`} className="relative h-[160px] sm:h-[180px] lg:h-[280px] w-full flex justify-center items-center mb-4 sm:mb-8 cursor-pointer">
-                      {/* Very subtle glow */}
-                      <div className={`absolute w-[80%] h-[80%] rounded-full blur-[40px] sm:blur-[80px] ${category.blobColor} opacity-40 mix-blend-multiply group-hover:opacity-70 transition-opacity duration-500`}></div>
-                      
-                      <motion.div
-                        animate={{ y: [0, -10, 0] }}
-                        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: index * 0.4 }}
-                        className="relative z-10 h-full flex justify-center items-center"
-                      >
-                        <img 
-                          src={product.image} 
-                          alt={product.name} 
-                          className="h-full object-contain drop-shadow-xl sm:drop-shadow-2xl scale-110 sm:scale-125 lg:scale-[1.3] origin-center"
-                        />
-                      </motion.div>
-                    </Link>
-
-                    {/* Product Info */}
-                    <div className="flex flex-col items-center text-center w-full max-w-[280px]">
-                      <Link to={`/product/${getProductSlug(product.name)}`}>
-                        <h3 className="text-base sm:text-2xl lg:text-3xl font-serif font-bold text-milquu-dark mb-1 sm:mb-4 leading-tight hover:text-milquu-gold transition-colors cursor-pointer">
-                          {product.name}
-                        </h3>
-                      </Link>
-                      
-                      <div className="flex flex-col items-center space-y-0.5 sm:space-y-1.5 mb-4 sm:mb-8">
-                        <p className="text-gray-500 font-sans text-xs sm:text-sm">
-                          Price: <span className="font-semibold text-milquu-dark">₹{product.price}</span>
-                        </p>
-                        <p className="text-gray-500 font-sans text-xs sm:text-sm">
-                          Unit: <span className="font-semibold text-milquu-dark">{product.unit}</span>
-                        </p>
-                      </div>
-                      
-                      {/* Minimal Text CTA Button */}
-                      <button 
-                        onClick={() => addToCart(product)}
-                        className="group/btn flex items-center justify-center space-x-1 sm:space-x-2 font-sans font-bold text-milquu-gold hover:text-milquu-green transition-colors uppercase tracking-widest text-xs sm:text-sm"
-                      >
-                        <span>Add To Cart</span>
-                        <motion.span
-                          className="inline-block"
-                          initial={{ x: 0 }}
-                          whileHover={{ x: 5 }}
-                        >
-                          →
-                        </motion.span>
-                      </button>
-                    </div>
-
-                  </div>
-                </motion.div>
+                <ProductCard 
+                  key={product._id || product.id} 
+                  product={product} 
+                  index={index} 
+                  category={category}
+                  getProductSlug={getProductSlug}
+                  addToCart={addToCart}
+                />
               ))}
             </div>
           </div>

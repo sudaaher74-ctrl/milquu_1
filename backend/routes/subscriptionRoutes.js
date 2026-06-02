@@ -1,6 +1,7 @@
 import express from 'express';
 import Subscription from '../models/Subscription.js';
 import DeliveryStaff from '../models/DeliveryStaff.js';
+import Order from '../models/Order.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -91,13 +92,51 @@ router.get('/today-orders', protect, admin, async (req, res) => {
       return true; // default include
     });
 
-    // Attach staff info if assignedStaff exists
+    // Fetch regular cart orders for today
+    const startOfToday = new Date(todayIST);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date(todayIST);
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const cutoff = new Date(startOfToday);
+    cutoff.setHours(-2);
+
+    const todayOrders = await Order.find({
+      isDelivered: false,
+      $or: [
+        { scheduledDeliveryDate: { $gte: startOfToday, $lte: endOfToday } },
+        { scheduledDeliveryDate: null, createdAt: { $gte: cutoff, $lte: endOfToday } },
+        { scheduledDeliveryDate: { $exists: false }, createdAt: { $gte: cutoff, $lte: endOfToday } }
+      ]
+    }).populate('user', 'name').lean();
+
     const staffList = await DeliveryStaff.find({ status: 'Active' }).lean();
 
-    const result = todayDeliveries.map(sub => ({
+    const subResults = todayDeliveries.map(sub => ({
       ...sub,
       assignedStaffInfo: staffList.find(s => s._id.toString() === (sub.assignedStaff || '').toString()) || null
     }));
+
+    const orderResults = todayOrders.map(order => ({
+      _id: order._id,
+      name: order.name || order.user?.name || 'Guest',
+      phone: order.phone,
+      deliveryAddress: order.shippingAddress ? `${order.shippingAddress.address || ''}, ${order.shippingAddress.city || ''}, ${order.shippingAddress.postalCode || ''}` : 'No Address',
+      frequency: 'One-time',
+      status: order.status || 'Active',
+      items: (order.orderItems || []).map(oi => ({
+        name: oi.name,
+        quantity: oi.qty,
+        price: oi.price,
+        product: oi.product
+      })),
+      assignedStaff: order.deliveryStaff,
+      assignedStaffInfo: staffList.find(s => s._id.toString() === (order.deliveryStaff || '').toString()) || null,
+      deliverySlot: order.deliverySlot || 'Morning'
+    }));
+
+    const result = [...subResults, ...orderResults];
 
     res.json({
       date: todayIST.toISOString().split('T')[0],
@@ -113,16 +152,23 @@ router.get('/today-orders', protect, admin, async (req, res) => {
 });
 
 // @route   PUT /api/subscriptions/:id/assign-staff
-// @desc    Assign a delivery boy to a subscription
+// @desc    Assign a delivery boy to a subscription or an order
 // @access  Private/Admin
 router.put('/:id/assign-staff', protect, admin, async (req, res) => {
   try {
     const { staffId } = req.body;
-    const updated = await Subscription.findByIdAndUpdate(
+    let updated = await Subscription.findByIdAndUpdate(
       req.params.id,
       { assignedStaff: staffId },
       { new: true }
     );
+    if (!updated) {
+      updated = await Order.findByIdAndUpdate(
+        req.params.id,
+        { deliveryStaff: staffId, deliveryStatus: 'Out For Delivery' },
+        { new: true }
+      );
+    }
     res.json(updated);
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });

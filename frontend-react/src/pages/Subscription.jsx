@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, CalendarDays, Milk, Clock } from 'lucide-react';
 
 const products = [
-  { id: 'a2', name: 'A2 Cow Milk', price: '₹95/L', image: '/img/A2milk.webp' },
-  { id: 'buffalo', name: 'Premium Buffalo Milk', price: '₹105/L', image: '/img/buffalomilk.webp' },
-  { id: 'cow', name: 'Pure Cow Milk', price: '₹85/L', image: '/img/cowmilk.webp' },
+  { id: 'a2', name: 'A2 Cow Milk', basePrice: 95, image: '/img/A2milk.webp' },
+  { id: 'buffalo', name: 'Premium Buffalo Milk', basePrice: 105, image: '/img/buffalomilk.webp' },
+  { id: 'cow', name: 'Pure Cow Milk', basePrice: 85, image: '/img/cowmilk.webp' },
+  { id: 'cow-pouch', name: 'Cow Milk (Pouch)', basePrice: 58, image: '/img/cow-milk-pouch.webp' },
+  { id: 'buffalo-pouch', name: 'Buffalo Milk (Pouch)', basePrice: 75, image: '/img/buffalo-milk-pouch.webp' },
 ];
 
 const frequencies = [
@@ -19,6 +21,7 @@ const frequencies = [
 
 const Subscription = () => {
   const [selectedProduct, setSelectedProduct] = useState('a2');
+  const [selectedUnit, setSelectedUnit] = useState('1 Litre');
   const [selectedFreq, setSelectedFreq] = useState('daily');
   const [selectedTime, setSelectedTime] = useState('morning');
   const [paymentMethod, setPaymentMethod] = useState('PHONEPE');
@@ -46,7 +49,7 @@ const Subscription = () => {
   const saveSubscription = async (paymentId, method, isPaid = false) => {
     try {
       const selectedProdDetails = products.find(p => p.id === selectedProduct);
-      const priceNum = parseFloat(selectedProdDetails.price.replace(/[^0-9.-]+/g,""));
+      const priceNum = selectedUnit === '500 ml' ? Math.ceil(selectedProdDetails.basePrice / 2) : selectedProdDetails.basePrice;
       
       let orderData = {
         name: formData.name,
@@ -54,7 +57,11 @@ const Subscription = () => {
         deliveryAddress: `${formData.address}, ${formData.city}, ${formData.pincode}`,
         frequency: selectedFreq === 'daily' ? 'Daily' : selectedFreq === 'alt' ? 'Alternate Days' : 'Weekly',
         totalAmount: priceNum * 30, // Estimating 30 days
-        items: [],
+        items: [{
+          name: `${selectedProdDetails.name} (${selectedUnit})`,
+          quantity: 1,
+          price: priceNum
+        }],
         paymentMethod: method,
         isPaid: isPaid
       };
@@ -107,7 +114,7 @@ const Subscription = () => {
 
     try {
       const selectedProdDetails = products.find(p => p.id === selectedProduct);
-      const priceNum = parseFloat(selectedProdDetails.price.replace(/[^0-9.-]+/g,""));
+      const priceNum = selectedUnit === '500 ml' ? Math.ceil(selectedProdDetails.basePrice / 2) : selectedProdDetails.basePrice;
       const total = priceNum * 30; // 30 days upfront
 
       // Create order on backend
@@ -239,30 +246,53 @@ const Subscription = () => {
                 <h3 className="text-2xl font-serif font-bold text-milquu-dark">Step 1: Choose Your Milk</h3>
               </div>
               
-              <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                {products.map(product => (
-                  <button
-                    key={product.id}
-                    type="button"
-                    onClick={() => setSelectedProduct(product.id)}
-                    className={`relative p-2 sm:p-6 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center text-center ${
-                      selectedProduct === product.id 
-                      ? 'border-milquu-gold bg-[#FFFDF9] shadow-md scale-[1.02]' 
-                      : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    {selectedProduct === product.id && (
-                      <div className="absolute top-2 sm:top-4 right-2 sm:right-4 text-milquu-gold z-10">
-                        <CheckCircle2 size={16} className="sm:w-5 sm:h-5" />
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 mb-6">
+                {products.map(product => {
+                  const currentPrice = selectedUnit === '500 ml' ? Math.ceil(product.basePrice / 2) : product.basePrice;
+                  return (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => setSelectedProduct(product.id)}
+                      className={`relative p-2 sm:p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center text-center ${
+                        selectedProduct === product.id 
+                        ? 'border-milquu-gold bg-[#FFFDF9] shadow-md scale-[1.02]' 
+                        : 'border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      {selectedProduct === product.id && (
+                        <div className="absolute top-2 right-2 text-milquu-gold z-10">
+                          <CheckCircle2 size={16} className="sm:w-5 sm:h-5" />
+                        </div>
+                      )}
+                      <div className="h-16 sm:h-20 w-full flex items-center justify-center mb-2">
+                        <img src={product.image} alt={product.name} className="h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300" />
                       </div>
-                    )}
-                    <div className="h-16 sm:h-24 w-full flex items-center justify-center mb-2 sm:mb-4">
-                      <img src={product.image} alt={product.name} className="h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300" />
-                    </div>
-                    <span className="font-sans font-bold text-[10px] sm:text-base text-milquu-dark mb-0.5 sm:mb-1 leading-tight">{product.name}</span>
-                    <span className="text-[9px] sm:text-sm font-sans font-medium text-gray-500">{product.price}</span>
+                      <span className="font-sans font-bold text-[10px] sm:text-xs text-milquu-dark mb-0.5 leading-tight">{product.name}</span>
+                      <span className="text-[9px] sm:text-xs font-sans font-medium text-gray-500">₹{currentPrice}/{selectedUnit === '500 ml' ? '500ml' : 'L'}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Unit Selector */}
+              <div className="flex justify-center mt-6">
+                <div className="flex bg-gray-100/80 p-1.5 rounded-full border border-gray-200/50">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUnit('1 Litre')}
+                    className={`px-6 py-2 sm:px-8 sm:py-3 rounded-full text-sm font-bold transition-all duration-300 ${selectedUnit === '1 Litre' ? 'bg-white text-milquu-gold shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    1 Litre
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUnit('500 ml')}
+                    className={`px-6 py-2 sm:px-8 sm:py-3 rounded-full text-sm font-bold transition-all duration-300 ${selectedUnit === '500 ml' ? 'bg-white text-milquu-gold shadow-md' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    500 ml
+                  </button>
+                </div>
               </div>
             </div>
 
