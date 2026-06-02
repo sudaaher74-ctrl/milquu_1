@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const Hero = () => {
   const navigate = useNavigate();
   return (
-    <section className="relative min-h-[100dvh] flex flex-col lg:flex-row items-center bg-milquu-cream pt-28 lg:pt-24 overflow-hidden">
+    <section className="relative lg:min-h-[100dvh] flex flex-col lg:flex-row items-center bg-milquu-cream pt-28 lg:pt-24 pb-4 lg:pb-0 overflow-hidden">
       
       <div className="w-full h-full flex flex-col lg:grid lg:grid-cols-2">
         

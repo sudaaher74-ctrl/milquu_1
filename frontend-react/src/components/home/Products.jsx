@@ -11,7 +11,7 @@ const categories = [
 
 const Products = () => {
   return (
-    <section id="products" className="py-24 bg-milquu-cream relative overflow-hidden">
+    <section id="products" className="pt-4 pb-16 lg:py-24 bg-milquu-cream relative overflow-hidden">
       
       {/* Background Decorative Blur */}
       <div className="absolute top-40 right-0 w-96 h-96 bg-milquu-gold/5 rounded-full blur-[100px] -z-0 pointer-events-none"></div>
@@ -19,7 +19,7 @@ const Products = () => {
       <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
         
         {/* Section Header */}
-        <div className="flex flex-col items-center text-center mb-20">
+        <div className="flex flex-col items-center text-center mb-10 lg:mb-20">
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
