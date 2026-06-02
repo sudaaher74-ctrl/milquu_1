@@ -220,24 +220,7 @@ const Subscription = () => {
 
       <div className="max-w-4xl mx-auto px-6 lg:px-12 relative z-10">
         
-        {/* Header */}
-        <div className="text-center mb-16 relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <span className="text-milquu-green font-sans font-semibold tracking-widest uppercase text-sm mb-4 block">
-              Farm to Home
-            </span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-milquu-dark mb-6 leading-tight">
-              Subscribe to Freshness
-            </h1>
-            <p className="text-lg text-gray-500 font-sans leading-relaxed max-w-2xl mx-auto">
-              Set up your recurring delivery in three simple steps. Enjoy pure, farm-fresh milk delivered to your doorstep without the hassle of ordering daily.
-            </p>
-          </motion.div>
-        </div>
+        {/* Header text removed as requested */}
 
         {/* Subscription Form Wrapper */}
         <motion.div
