@@ -161,4 +161,96 @@ router.get('/customers', protect, admin, async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/revenue-analytics
+// @desc    Get detailed revenue data for analytics dashboard
+// @access  Private
+router.get('/revenue-analytics', protect, admin, async (req, res) => {
+  try {
+    const { year } = req.query;
+    const selectedYear = parseInt(year) || new Date().getFullYear();
+
+    // 1. Get all Orders (Web, POS) and Subscriptions
+    const startOfYear = new Date(selectedYear, 0, 1);
+    const endOfYear = new Date(selectedYear, 11, 31, 23, 59, 59);
+
+    const orders = await Order.find({
+      isPaid: true,
+      paidAt: { $gte: startOfYear, $lte: endOfYear }
+    });
+
+    const subscriptions = await Subscription.find({
+      createdAt: { $gte: startOfYear, $lte: endOfYear } // Assuming subscriptions are paid at creation
+    });
+
+    // 2. Build monthly data array
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthlyRevenueData = monthNames.map((m, index) => ({
+      month: m,
+      monthIndex: index,
+      web: 0,
+      shop: 0,
+      sub: 0
+    }));
+
+    orders.forEach(order => {
+      const date = new Date(order.paidAt);
+      const monthIndex = date.getMonth();
+      if (order.orderSource === 'POS') {
+        monthlyRevenueData[monthIndex].shop += order.totalPrice;
+      } else {
+        monthlyRevenueData[monthIndex].web += order.totalPrice;
+      }
+    });
+
+    subscriptions.forEach(sub => {
+      const date = new Date(sub.createdAt);
+      const monthIndex = date.getMonth();
+      monthlyRevenueData[monthIndex].sub += sub.totalAmount || 0;
+    });
+
+    // 3. Calculate current month breakdown
+    const currentMonthIndex = new Date().getMonth();
+    const currentMonthData = monthlyRevenueData[currentMonthIndex];
+    const totalCurrentMonth = currentMonthData.web + currentMonthData.shop + currentMonthData.sub;
+    
+    const sourceData = [
+      { name: 'Website Sales', value: currentMonthData.web, color: '#0D47A1' },
+      { name: 'Shop POS', value: currentMonthData.shop, color: '#D4AF37' },
+      { name: 'Subscriptions', value: currentMonthData.sub, color: '#2E7D32' }
+    ].filter(s => s.value > 0);
+
+    // 4. Calculate top stats
+    const todayStart = new Date();
+    todayStart.setHours(0,0,0,0);
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    const yesterdayEnd = new Date(yesterdayStart);
+    yesterdayEnd.setHours(23,59,59,999);
+
+    const todayOrders = await Order.find({ isPaid: true, paidAt: { $gte: todayStart } });
+    const todaySubs = await Subscription.find({ createdAt: { $gte: todayStart } });
+    const revenueToday = todayOrders.reduce((acc, o) => acc + o.totalPrice, 0) + todaySubs.reduce((acc, s) => acc + (s.totalAmount || 0), 0);
+
+    const yesterdayOrders = await Order.find({ isPaid: true, paidAt: { $gte: yesterdayStart, $lte: yesterdayEnd } });
+    const yesterdaySubs = await Subscription.find({ createdAt: { $gte: yesterdayStart, $lte: yesterdayEnd } });
+    const revenueYesterday = yesterdayOrders.reduce((acc, o) => acc + o.totalPrice, 0) + yesterdaySubs.reduce((acc, s) => acc + (s.totalAmount || 0), 0);
+    
+    const revenueThisYear = monthlyRevenueData.reduce((acc, m) => acc + m.web + m.shop + m.sub, 0);
+
+    res.json({
+      monthlyRevenueData,
+      sourceData,
+      stats: {
+        revenueToday,
+        revenueYesterday,
+        revenueThisMonth: totalCurrentMonth,
+        revenueThisYear
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+});
+
 export default router;

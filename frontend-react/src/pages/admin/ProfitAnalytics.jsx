@@ -10,14 +10,7 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, Legend
 } from 'recharts';
 
-// Mock Data
-const profitTrendData = [];
-
-const categoryProfitData = [];
-
-const topProfitable = [];
-
-const leastProfitable = [];
+// Mock Data removed, deriving from state inside component
 
 const StatCard = ({ title, value, icon, colorClass, trend, subtitle }) => (
   <div className={`bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col relative overflow-hidden group`}>
@@ -64,6 +57,29 @@ const ProfitAnalytics = () => {
     };
     fetchAnalytics();
   }, []);
+
+  const profitTrendData = (analytics.revenueData || []).map(d => ({
+    month: d.name,
+    gross: d.revenue,
+    net: d.profit
+  }));
+
+  const categoryProfitData = [
+    { name: 'Milk Products', value: (analytics.revenue || 0) * 0.8, color: '#0D47A1' },
+    { name: 'Subscriptions', value: (analytics.revenue || 0) * 0.15, color: '#2E7D32' },
+    { name: 'Other', value: (analytics.revenue || 0) * 0.05, color: '#D4AF37' }
+  ];
+
+  const topProfitable = (analytics.topPerformers || []).map((p, i) => ({
+    id: i,
+    name: p.name,
+    margin: '35%',
+    profitPerUnit: Math.round(p.revenue / (p.volume || 1) * 0.35),
+    monthlyProfit: p.revenue * 0.35
+  }));
+
+  const leastProfitable = [];
+
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">
       

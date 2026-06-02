@@ -41,8 +41,43 @@ const StatCard = ({ title, value, icon, trend, colorClass, subtitle }) => (
   </motion.div>
 );
 
+// Initial state variables and components stay the same up to Revenue component
+
 const Revenue = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [monthlyRevenueData, setMonthlyRevenueData] = useState([]);
+  const [sourceData, setSourceData] = useState([]);
+  const [stats, setStats] = useState({
+    revenueToday: 0,
+    revenueYesterday: 0,
+    revenueThisMonth: 0,
+    revenueThisYear: 0
+  });
+
+  const fetchRevenueData = async () => {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+      const response = await fetch(`/api/admin/revenue-analytics?year=${selectedYear}`, {
+        headers: {
+          'Authorization': `Bearer ${userInfo.token}`
+        }
+      });
+      const data = await response.json();
+      if (data) {
+        setMonthlyRevenueData(data.monthlyRevenueData || []);
+        setSourceData(data.sourceData || []);
+        setStats(data.stats || {
+          revenueToday: 0, revenueYesterday: 0, revenueThisMonth: 0, revenueThisYear: 0
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching revenue data:', error);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchRevenueData();
+  }, [selectedYear]);
 
   const exportData = monthlyRevenueData.map(d => ({
     'Month': d.month,
@@ -51,6 +86,10 @@ const Revenue = () => {
     'Subscriptions': d.sub,
     'Total Revenue': d.web + d.shop + d.sub
   }));
+
+  const trendToday = stats.revenueYesterday > 0 
+    ? Math.round(((stats.revenueToday - stats.revenueYesterday) / stats.revenueYesterday) * 100) 
+    : 100;
 
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">
@@ -80,9 +119,9 @@ const Revenue = () => {
 
       {/* Top Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-        <StatCard title="Revenue Today" value="₹0" subtitle="vs ₹0 yesterday" trend={0} icon={<IndianRupee size={24} className="text-blue-600"/>} colorClass="from-blue-400 to-blue-600" />
-        <StatCard title="Revenue This Month" value="₹0" subtitle="Projected: ₹0" trend={0} icon={<TrendingUp size={24} className="text-green-600"/>} colorClass="from-green-400 to-green-600" />
-        <StatCard title="Revenue This Year" value="₹0" subtitle="YTD" trend={0} icon={<CalendarDays size={24} className="text-purple-600"/>} colorClass="from-purple-400 to-purple-600" />
+        <StatCard title="Revenue Today" value={`₹${stats.revenueToday.toLocaleString()}`} subtitle={`vs ₹${stats.revenueYesterday.toLocaleString()} yesterday`} trend={trendToday} icon={<IndianRupee size={24} className="text-blue-600"/>} colorClass="from-blue-400 to-blue-600" />
+        <StatCard title="Revenue This Month" value={`₹${stats.revenueThisMonth.toLocaleString()}`} subtitle="Current Month" trend={0} icon={<TrendingUp size={24} className="text-green-600"/>} colorClass="from-green-400 to-green-600" />
+        <StatCard title="Revenue This Year" value={`₹${stats.revenueThisYear.toLocaleString()}`} subtitle="YTD" trend={0} icon={<CalendarDays size={24} className="text-purple-600"/>} colorClass="from-purple-400 to-purple-600" />
       </div>
 
       {/* Main Charts */}
@@ -130,27 +169,31 @@ const Revenue = () => {
           </h2>
           <p className="text-sm text-gray-500 mb-6">Current Month Breakdown</p>
           <div className="flex-1 min-h-[250px] flex items-center justify-center relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={sourceData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={70}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {sourceData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
-              </PieChart>
-            </ResponsiveContainer>
+            {sourceData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={sourceData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {sourceData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-gray-400 text-sm">No data for this month</div>
+            )}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-bold text-milquu-dark">₹0</span>
+              <span className="text-2xl font-bold text-milquu-dark">₹{stats.revenueThisMonth.toLocaleString()}</span>
               <span className="text-xs text-gray-500 uppercase font-semibold">Total</span>
             </div>
           </div>
@@ -161,21 +204,21 @@ const Revenue = () => {
                 <div className="w-3 h-3 rounded-full bg-[#2E7D32] mr-2"></div>
                 <span className="text-gray-600 font-medium">Subscriptions</span>
               </div>
-              <span className="font-bold text-milquu-dark">₹0 (0%)</span>
+              <span className="font-bold text-milquu-dark">₹{(sourceData.find(s=>s.name==='Subscriptions')?.value || 0).toLocaleString()} ({stats.revenueThisMonth ? Math.round((sourceData.find(s=>s.name==='Subscriptions')?.value || 0) / stats.revenueThisMonth * 100) : 0}%)</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <div className="flex items-center">
                 <div className="w-3 h-3 rounded-full bg-[#0D47A1] mr-2"></div>
                 <span className="text-gray-600 font-medium">Website Sales</span>
               </div>
-              <span className="font-bold text-milquu-dark">₹0 (0%)</span>
+              <span className="font-bold text-milquu-dark">₹{(sourceData.find(s=>s.name==='Website Sales')?.value || 0).toLocaleString()} ({stats.revenueThisMonth ? Math.round((sourceData.find(s=>s.name==='Website Sales')?.value || 0) / stats.revenueThisMonth * 100) : 0}%)</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <div className="flex items-center">
                 <div className="w-3 h-3 rounded-full bg-[#D4AF37] mr-2"></div>
                 <span className="text-gray-600 font-medium">Shop POS</span>
               </div>
-              <span className="font-bold text-milquu-dark">₹0 (0%)</span>
+              <span className="font-bold text-milquu-dark">₹{(sourceData.find(s=>s.name==='Shop POS')?.value || 0).toLocaleString()} ({stats.revenueThisMonth ? Math.round((sourceData.find(s=>s.name==='Shop POS')?.value || 0) / stats.revenueThisMonth * 100) : 0}%)</span>
             </div>
           </div>
         </div>

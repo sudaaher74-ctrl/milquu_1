@@ -104,9 +104,9 @@ const Overview = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard title="Total Revenue" value={`₹${metrics.revenue.toLocaleString()}`} icon={<IndianRupee size={22} className="text-blue-600" />} colorClass="from-blue-400 to-blue-600" />
           <StatCard title="Net Profit" value={`₹${metrics.netProfit.toLocaleString()}`} icon={<TrendingUp size={22} className="text-green-600" />} colorClass="from-green-400 to-green-600" />
-          <StatCard title="Total Orders" value={metrics.orders} icon={<ShoppingBag size={22} className="text-purple-600" />} colorClass="from-purple-400 to-purple-600" />
-          <StatCard title="Active Subscribers" value="0" icon={<CalendarDays size={22} className="text-orange-600" />} colorClass="from-orange-400 to-orange-600" />
-          <StatCard title="Inventory Value" value="₹0" icon={<Package size={22} className="text-teal-600" />} colorClass="from-teal-400 to-teal-600" />
+          <StatCard title="Total Orders" value={metrics.orders || 0} icon={<ShoppingBag size={22} className="text-purple-600" />} colorClass="from-purple-400 to-purple-600" />
+          <StatCard title="Active Subscribers" value={metrics.customerData?.length ? metrics.customerData[metrics.customerData.length-1].subs : 0} icon={<CalendarDays size={22} className="text-orange-600" />} colorClass="from-orange-400 to-orange-600" />
+          <StatCard title="Inventory Value" value={`₹${(metrics.purchases || 0).toLocaleString()}`} icon={<Package size={22} className="text-teal-600" />} colorClass="from-teal-400 to-teal-600" />
         </div>
       </div>
 
@@ -114,11 +114,11 @@ const Overview = () => {
       <div>
         <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Secondary Metrics</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <StatCard title="Website Revenue" value={`₹${metrics.revenue.toLocaleString()}`} subtitle="Today" icon={<Globe size={22} className="text-indigo-600" />} colorClass="from-indigo-400 to-indigo-600" />
+          <StatCard title="Website Revenue" value={`₹${(metrics.revenue || 0).toLocaleString()}`} subtitle="Today" icon={<Globe size={22} className="text-indigo-600" />} colorClass="from-indigo-400 to-indigo-600" />
           <StatCard title="Shop POS Revenue" value="₹0" subtitle="Today" icon={<Store size={22} className="text-rose-600" />} colorClass="from-rose-400 to-rose-600" />
-          <StatCard title="Total Expenses" value={`₹${metrics.expenses.toLocaleString()}`} icon={<TrendingDown size={22} className="text-red-500" />} colorClass="from-red-300 to-red-500" />
-          <StatCard title="Total Purchases" value={`₹${metrics.purchases.toLocaleString()}`} icon={<Package size={22} className="text-green-500" />} colorClass="from-green-300 to-green-500" />
-          <StatCard title="Pending Deliveries" value="0" icon={<Truck size={22} className="text-yellow-600" />} colorClass="from-yellow-400 to-yellow-600" />
+          <StatCard title="Total Expenses" value={`₹${(metrics.expenses || 0).toLocaleString()}`} icon={<TrendingDown size={22} className="text-red-500" />} colorClass="from-red-300 to-red-500" />
+          <StatCard title="Total Purchases" value={`₹${(metrics.purchases || 0).toLocaleString()}`} icon={<Package size={22} className="text-green-500" />} colorClass="from-green-300 to-green-500" />
+          <StatCard title="Pending Deliveries" value={metrics.operationsLive?.pendingDeliveries || 0} icon={<Truck size={22} className="text-yellow-600" />} colorClass="from-yellow-400 to-yellow-600" />
         </div>
       </div>
 

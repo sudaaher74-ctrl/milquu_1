@@ -10,7 +10,7 @@ import {
   BarChart, Bar, LineChart, Line, ComposedChart
 } from 'recharts';
 
-const trendData = [];
+// Mock data removed
 
 const StatCard = ({ title, value, icon, subtitle, colorClass, borderClass }) => (
   <div className={`bg-white p-5 rounded-2xl shadow-sm border ${borderClass || 'border-gray-100'} flex flex-col relative overflow-hidden group`}>
@@ -48,6 +48,13 @@ const BusinessOverview = () => {
     fetchAnalytics();
   }, []);
 
+  const trendData = (analytics.revenueData || []).map(d => ({
+    name: d.name,
+    revenue: d.revenue,
+    profit: d.profit,
+    sales: Math.round(d.revenue / 70) // Mock sales volume
+  }));
+
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">
       
@@ -72,9 +79,9 @@ const BusinessOverview = () => {
         
         <StatCard title="Shop Revenue" value="₹0" subtitle="This Month" icon={<Store size={18} className="text-orange-600"/>} colorClass="bg-orange-100" />
         <StatCard title="Website Revenue" value={`₹${(analytics.revenue || 0).toLocaleString()}`} subtitle="This Month" icon={<Globe size={18} className="text-indigo-600"/>} colorClass="bg-indigo-100" />
-        <StatCard title="Active Customers" value="0" icon={<Users size={18} className="text-teal-600"/>} colorClass="bg-teal-100" />
-        <StatCard title="Active Subscribers" value="0" icon={<CalendarDays size={18} className="text-rose-600"/>} colorClass="bg-rose-100" />
-        <StatCard title="Pending Orders" value={analytics.orders || 0} icon={<ShoppingBag size={18} className="text-red-600"/>} colorClass="bg-red-100" borderClass="border-red-100 bg-red-50/30" />
+        <StatCard title="Active Customers" value={analytics.customerData?.length ? analytics.customerData[analytics.customerData.length-1].customers : 0} icon={<Users size={18} className="text-teal-600"/>} colorClass="bg-teal-100" />
+        <StatCard title="Active Subscribers" value={analytics.customerData?.length ? analytics.customerData[analytics.customerData.length-1].subs : 0} icon={<CalendarDays size={18} className="text-rose-600"/>} colorClass="bg-rose-100" />
+        <StatCard title="Pending Orders" value={analytics.operationsLive?.pendingDeliveries || 0} icon={<ShoppingBag size={18} className="text-red-600"/>} colorClass="bg-red-100" borderClass="border-red-100 bg-red-50/30" />
       </div>
 
       {/* Main Charts */}
