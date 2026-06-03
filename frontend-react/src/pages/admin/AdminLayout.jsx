@@ -43,7 +43,6 @@ const AdminLayout = () => {
     
     // New ERP Modules
     { name: 'Business Overview', path: '/admin/business-overview', icon: <Briefcase size={20} /> },
-    { name: 'AI Assistant', path: '/chatbot', icon: <Sparkles size={20} /> },
     { name: 'Shop POS', path: '/admin/pos', icon: <Store size={20} /> },
     { name: 'Purchases', path: '/admin/purchases', icon: <ShoppingCart size={20} /> },
     { name: 'Expenses', path: '/admin/expenses', icon: <Receipt size={20} /> },
