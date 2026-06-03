@@ -75,7 +75,11 @@ const AIChatDashboard = () => {
         // We received the context and API key from the backend. 
         // Make the Gemini request directly from the browser to bypass Render region blocks.
         let hasInjectedSystemPrompt = false;
-        const formattedHistory = newMessages.map((msg) => {
+        
+        // Filter out any previous empty bubbles to avoid breaking the Gemini API
+        const validMessages = newMessages.filter(msg => msg.text && msg.text.trim().length > 0);
+        
+        const formattedHistory = validMessages.map((msg) => {
           let role = msg.role === 'assistant' ? 'model' : 'user';
           let msgText = msg.text;
           
@@ -87,7 +91,8 @@ const AIChatDashboard = () => {
           return { role, parts: [{ text: msgText }] };
         });
 
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${data.apiKey}`, {
+        // The REST API uses gemini-1.5-flash for the fastest, most reliable JSON generation
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${data.apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: formattedHistory })
@@ -104,7 +109,8 @@ const AIChatDashboard = () => {
           try {
             const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
             const parsed = JSON.parse(cleanText);
-            aiReply = parsed.reply;
+            // Robust fallback if the AI uses the wrong JSON key
+            aiReply = parsed.reply || parsed.response || parsed.text || parsed.answer || rawText;
             action = parsed.action || 'none';
           } catch(e) {
             aiReply = rawText; // Fallback if not strict JSON
@@ -112,6 +118,11 @@ const AIChatDashboard = () => {
         } else if (geminiData.error) {
           console.error("Gemini Frontend Error:", geminiData.error);
           aiReply = "Google API Error: " + geminiData.error.message;
+        }
+
+        // Failsafe in case it's still completely empty
+        if (!aiReply || aiReply.trim() === '') {
+            aiReply = "I processed your request, but generated an empty response. Please try asking again in a different way.";
         }
 
         const aiMessage = { role: 'assistant', text: aiReply, action: action !== 'none' ? action : null };
