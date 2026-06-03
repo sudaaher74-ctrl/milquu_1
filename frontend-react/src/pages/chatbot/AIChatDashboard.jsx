@@ -91,8 +91,8 @@ const AIChatDashboard = () => {
           return { role, parts: [{ text: msgText }] };
         });
 
-        // The REST API uses gemini-1.5-flash for the fastest, most reliable JSON generation
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${data.apiKey}`, {
+        // The REST API uses gemini-1.5-flash-latest for the fastest, most reliable JSON generation
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${data.apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: formattedHistory })
