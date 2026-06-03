@@ -70,10 +70,59 @@ const AIChatDashboard = () => {
     try {
       const response = await api.post('/api/ai/chat', { messages: newMessages });
       const data = response.data;
-      
-      setIsTyping(false);
 
-      if (data.success) {
+      if (data.success && data.isFrontendMode && data.apiKey) {
+        // We received the context and API key from the backend. 
+        // Make the Gemini request directly from the browser to bypass Render region blocks.
+        let hasInjectedSystemPrompt = false;
+        const formattedHistory = newMessages.map((msg) => {
+          let role = msg.role === 'assistant' ? 'model' : 'user';
+          let msgText = msg.text;
+          
+          if (role === 'user' && !hasInjectedSystemPrompt) {
+            msgText = data.systemPrompt + "\n\nUser Query: " + msgText;
+            hasInjectedSystemPrompt = true;
+          }
+          
+          return { role, parts: [{ text: msgText }] };
+        });
+
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${data.apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: formattedHistory })
+        });
+        
+        const geminiData = await geminiRes.json();
+        setIsTyping(false);
+
+        let aiReply = "Sorry, I couldn't understand that.";
+        let action = "none";
+        
+        if (geminiData.candidates && geminiData.candidates[0].content) {
+          const rawText = geminiData.candidates[0].content.parts[0].text;
+          try {
+            const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+            const parsed = JSON.parse(cleanText);
+            aiReply = parsed.reply;
+            action = parsed.action || 'none';
+          } catch(e) {
+            aiReply = rawText; // Fallback if not strict JSON
+          }
+        } else if (geminiData.error) {
+          console.error("Gemini Frontend Error:", geminiData.error);
+          aiReply = "Google API Error: " + geminiData.error.message;
+        }
+
+        const aiMessage = { role: 'assistant', text: aiReply, action: action !== 'none' ? action : null };
+        setMessages(prev => [...prev, aiMessage]);
+
+        if (voiceEnabled || useVoice) speakText(aiReply);
+        if (action && action !== 'none') handleAction(action);
+        
+      } else if (data.success) {
+        // Fallback for regular or rule-based response
+        setIsTyping(false);
         const aiMessage = { 
           role: 'assistant', 
           text: data.reply,
@@ -81,14 +130,10 @@ const AIChatDashboard = () => {
         };
         setMessages(prev => [...prev, aiMessage]);
 
-        if (voiceEnabled || useVoice) {
-          speakText(data.reply);
-        }
-
-        if (data.action && data.action !== 'none') {
-          handleAction(data.action);
-        }
+        if (voiceEnabled || useVoice) speakText(data.reply);
+        if (data.action && data.action !== 'none') handleAction(data.action);
       } else {
+        setIsTyping(false);
         setMessages(prev => [...prev, { role: 'assistant', text: "I'm sorry, I encountered an error while processing that request." }]);
       }
     } catch (error) {

@@ -171,36 +171,17 @@ Rules:
 5. "action" must be either "none" or "download_delivery_report". Set to "download_delivery_report" ONLY if the user explicitly asks to download or print today's delivery report/list.
 6. CRITICAL: NEVER invent, hallucinate, or make up data. Use ONLY the real-time Context Data provided above. If the revenue is 0, report it as 0. Do not invent fake products, sales, or metrics.`;
 
-        // Format history for Gemini
-        // Convert [{role: 'user', text: '...'}, {role: 'assistant', text: '...'}]
-        // to [{role: 'user', parts: [{text: '...'}]}, {role: 'model', parts: [{text: '...'}]}]
-        const formattedHistory = chatHistory.map((msg, i) => {
-          let role = msg.role === 'assistant' ? 'model' : 'user';
-          let text = msg.text;
-          // Prepend system prompt to the first user message
-          if (i === 0 && role === 'user') {
-            text = systemPrompt + "\n\nUser Query: " + text;
-          }
-          return { role, parts: [{ text }] };
+        // WORKAROUND: Return the systemPrompt and API key to the frontend
+        // so the frontend can make the call directly from the user's browser, bypassing Render's region restrictions.
+        return res.json({ 
+          success: true, 
+          apiKey: process.env.GEMINI_API_KEY,
+          systemPrompt: systemPrompt,
+          isFrontendMode: true 
         });
-        
-        const response = await ai.models.generateContent({
-          model: 'gemini-flash-latest',
-          contents: formattedHistory,
-        });
-        
-        // Try to parse the JSON response
-        let jsonResponse;
-        try {
-          const text = response.text.replace(/```json/g, '').replace(/```/g, '').trim();
-          jsonResponse = JSON.parse(text);
-        } catch (parseError) {
-          jsonResponse = { reply: response.text, action: "none" };
-        }
-        
-        return res.json({ success: true, ...jsonResponse });
+
       } catch (error) {
-        console.error('Gemini API Error Details:', {
+        console.error('Gemini Context Error Details:', {
           message: error.message,
           status: error.status,
           name: error.name
