@@ -2,6 +2,9 @@ import express from 'express';
 import { GoogleGenAI } from '@google/genai';
 import Order from '../models/Order.js';
 import Subscription from '../models/Subscription.js';
+import Expense from '../models/Expense.js';
+import Wastage from '../models/Wastage.js';
+import Product from '../models/Product.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -62,7 +65,17 @@ export default router;
 
 router.post('/chat', protect, admin, async (req, res) => {
   try {
-    const { query } = req.body;
+    const { query, messages } = req.body;
+    
+    // Construct message history
+    let chatHistory = [];
+    if (messages && Array.isArray(messages)) {
+      chatHistory = messages;
+    } else if (query) {
+      chatHistory = [{ role: 'user', text: query }];
+    } else {
+      return res.status(400).json({ success: false, message: 'No input provided' });
+    }
     
     // Get today's start and end date
     const today = new Date();
@@ -91,6 +104,25 @@ router.post('/chat', protect, admin, async (req, res) => {
     const activeSubscriptions = await Subscription.countDocuments({
       status: 'active'
     });
+    
+    // Fetch anomalies for Dashboard Analysis
+    const unassignedSubs = await Subscription.countDocuments({
+      status: 'active',
+      $or: [{ assignedStaff: null }, { assignedStaff: { $exists: false } }]
+    });
+
+    const expensesToday = await Expense.find({
+      date: { $gte: today, $lte: endOfDay }
+    });
+    const totalExpenseToday = expensesToday.reduce((acc, ex) => acc + ex.amount, 0);
+
+    const wastageToday = await Wastage.find({
+      date: { $gte: today, $lte: endOfDay }
+    });
+    const totalWastageLoss = wastageToday.reduce((acc, w) => acc + (w.lossAmount || 0), 0);
+
+    const lowStockProducts = await Product.find({ countInStock: { $lt: 20 } }).select('name countInStock');
+    const lowStockList = lowStockProducts.map(p => `${p.name} (${p.countInStock} left)`).join(', ') || 'None';
 
     const fallbackResponse = {
       reply: "I'm sorry, I cannot process complex requests without my AI module configured.",
@@ -101,25 +133,40 @@ router.post('/chat', protect, admin, async (req, res) => {
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         
-        const systemPrompt = `You are MilQuu Fresh's AI female voice assistant. You receive a spoken query from the admin and output JSON.
+        const systemPrompt = `You are MilQuu Fresh's AI female voice assistant and advanced business analyst.
 Context Data:
-- Today's Orders: ${totalOrdersTodayCount}
-- Today's Revenue: ₹${revenueToday}
-- This Month's Orders: ${totalOrdersMonthCount}
-- This Month's Revenue: ₹${revenueMonth}
+- Today's Orders: ${totalOrdersTodayCount} | Revenue: ₹${revenueToday}
+- Month's Orders: ${totalOrdersMonthCount} | Revenue: ₹${revenueMonth}
 - Active Subscriptions: ${activeSubscriptions}
+- Unassigned Deliveries: ${unassignedSubs} (Needs attention if > 0)
+- Today's Expenses: ₹${totalExpenseToday}
+- Today's Wastage Loss: ₹${totalWastageLoss}
+- Low Stock Products: ${lowStockList}
 
 Rules:
-1. Output ONLY a raw JSON object with no markdown formatting.
-2. The JSON must have exactly two keys: "reply" (string) and "action" (string).
-3. "reply" is the conversational answer to be spoken aloud. Make it brief and professional but friendly.
-4. "action" must be either "none" or "download_delivery_report". Set to "download_delivery_report" ONLY if the user explicitly asks to download or print today's delivery report/list.
+1. Act as a proactive business advisor. If they ask about the business, point out anomalies (like unassigned deliveries, high wastage, or low stock).
+2. Output ONLY a raw JSON object with no markdown formatting around the JSON block itself.
+3. The JSON must have exactly two keys: "reply" (string) and "action" (string).
+4. "reply" is your conversational answer. You CAN use markdown inside the "reply" string to format lists, bold text, or tables.
+5. "action" must be either "none" or "download_delivery_report". Set to "download_delivery_report" ONLY if the user explicitly asks to download or print today's delivery report/list.
+`;
 
-User Query: "${query}"`;
+        // Format history for Gemini
+        // Convert [{role: 'user', text: '...'}, {role: 'assistant', text: '...'}]
+        // to [{role: 'user', parts: [{text: '...'}]}, {role: 'model', parts: [{text: '...'}]}]
+        const formattedHistory = chatHistory.map((msg, i) => {
+          let role = msg.role === 'assistant' ? 'model' : 'user';
+          let text = msg.text;
+          // Prepend system prompt to the first user message
+          if (i === 0 && role === 'user') {
+            text = systemPrompt + "\n\nUser Query: " + text;
+          }
+          return { role, parts: [{ text }] };
+        });
         
         const response = await ai.models.generateContent({
           model: 'gemini-2.5-flash',
-          contents: systemPrompt,
+          contents: formattedHistory,
         });
         
         // Try to parse the JSON response
@@ -140,7 +187,8 @@ User Query: "${query}"`;
       // Basic rule-based fallback if no Gemini
       let action = 'none';
       let reply = "I heard you, but I need Gemini API to understand properly.";
-      const q = query.toLowerCase();
+      const lastMsg = chatHistory[chatHistory.length - 1];
+      const q = (lastMsg?.text || '').toLowerCase();
       
       if (q.includes('download') || q.includes('report') || q.includes('delivery')) {
         action = 'download_delivery_report';
@@ -149,6 +197,8 @@ User Query: "${query}"`;
         reply = `Today's sales are ${revenueToday} rupees from ${totalOrdersTodayCount} orders.`;
       } else if (q.includes('month') && q.includes('sale')) {
         reply = `This month's sales are ${revenueMonth} rupees.`;
+      } else if (q.includes('dashboard') || q.includes('overview') || q.includes('error')) {
+         reply = `**Business Overview:**\n- Revenue Today: ₹${revenueToday}\n- Unassigned Deliveries: ${unassignedSubs}\n- Low Stock: ${lowStockList}`;
       }
       
       return res.json({ success: true, reply, action });

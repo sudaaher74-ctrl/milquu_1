@@ -38,6 +38,7 @@ const Reports = lazy(() => import('./pages/admin/Reports'));
 const SEOGenerator = lazy(() => import('./pages/admin/SEOGenerator'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const TodayOrderList = lazy(() => import('./pages/admin/TodayOrderList'));
+const AIChatDashboard = lazy(() => import('./pages/admin/AIChatDashboard'));
 
 // SEO & Content Pages
 const AboutUs = lazy(() => import('./pages/seo/AboutUs'));
@@ -217,8 +218,14 @@ function App() {
             }>
               <Route index element={<DeliveryDashboard />} />
               <Route path="map" element={<div className="p-8 text-center text-gray-500">Live Map View (Coming Soon)</div>} />
-              <Route path="profile" element={<div className="p-8 text-center text-gray-500">Profile View (Coming Soon)</div>} />
             </Route>
+
+            {/* Standalone Chatbot Dashboard */}
+            <Route path="/chatbot" element={
+              <ProtectedRoute allowedRole="admin">
+                <AIChatDashboard />
+              </ProtectedRoute>
+            } />
 
             {/* Global Catch-all */}
             <Route path="*" element={<Navigate to="/" replace />} />

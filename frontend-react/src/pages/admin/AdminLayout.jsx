@@ -43,6 +43,7 @@ const AdminLayout = () => {
     
     // New ERP Modules
     { name: 'Business Overview', path: '/admin/business-overview', icon: <Briefcase size={20} /> },
+    { name: 'AI Assistant', path: '/chatbot', icon: <Sparkles size={20} /> },
     { name: 'Shop POS', path: '/admin/pos', icon: <Store size={20} /> },
     { name: 'Purchases', path: '/admin/purchases', icon: <ShoppingCart size={20} /> },
     { name: 'Expenses', path: '/admin/expenses', icon: <Receipt size={20} /> },
@@ -57,84 +58,8 @@ const AdminLayout = () => {
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
-  const processAIQuery = async (queryText) => {
-    try {
-      setIsAIGenerating(true);
-      const response = await api.post('/api/ai/chat', { query: queryText });
-      const data = response.data;
-      setIsAIGenerating(false);
-
-      if (data.success && data.reply) {
-        setIsAISpeaking(true);
-        const utterance = new SpeechSynthesisUtterance(data.reply);
-        
-        // Pick a female voice
-        const voices = synth.getVoices();
-        const femaleVoice = voices.find(v => v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('samantha')) || voices[0];
-        if (femaleVoice) {
-          utterance.voice = femaleVoice;
-        }
-        
-        utterance.rate = 1;
-        utterance.pitch = 1.2;
-
-        utterance.onend = () => setIsAISpeaking(false);
-        utterance.onerror = (e) => setIsAISpeaking(false);
-
-        synth.speak(utterance);
-        
-        // Handle actions
-        if (data.action === 'download_delivery_report') {
-          try {
-            const reportRes = await api.get('/api/subscriptions/today-orders');
-            generateDeliveryReportPDF(reportRes.data, 'All');
-          } catch (err) {
-            console.error("Error downloading report", err);
-            alert("Could not download the delivery report.");
-          }
-        }
-      } else {
-        alert("Could not generate update.");
-      }
-    } catch (error) {
-      console.error("AI Assistant Error:", error);
-      setIsAIGenerating(false);
-      alert("Error fetching business update.");
-    }
-  };
-
   const handleAIAssistantClick = () => {
-    if (isAIGenerating) return;
-    
-    if (isAISpeaking) {
-      synth.cancel();
-      setIsAISpeaking(false);
-      return;
-    }
-
-    if (isListening) {
-      recognition?.stop();
-      setIsListening(false);
-      return;
-    }
-
-    if (recognition) {
-      recognition.onstart = () => setIsListening(true);
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setIsListening(false);
-        processAIQuery(transcript);
-      };
-      recognition.onerror = (event) => {
-        console.error("Speech Recognition Error:", event.error);
-        setIsListening(false);
-      };
-      recognition.onend = () => setIsListening(false);
-      
-      recognition.start();
-    } else {
-      alert("Speech recognition is not supported in this browser.");
-    }
+    navigate('/chatbot');
   };
 
   return (
@@ -281,29 +206,10 @@ const AdminLayout = () => {
         <div className="fixed bottom-8 right-8 z-50">
           <button
             onClick={handleAIAssistantClick}
-            title={isListening ? "Listening..." : "Click to speak to AI Assistant"}
-            className={`relative flex items-center justify-center w-14 h-14 rounded-full shadow-2xl transition-all duration-300 ${
-              isAIGenerating || isListening
-                ? 'bg-gray-100 text-milquu-blue cursor-wait' 
-                : isAISpeaking 
-                  ? 'bg-milquu-blue text-white animate-pulse'
-                  : 'bg-gradient-to-r from-milquu-blue to-indigo-600 text-white hover:scale-110 hover:shadow-milquu-blue/50'
-            }`}
+            title="Chat with AI Assistant"
+            className="relative flex items-center justify-center w-14 h-14 rounded-full shadow-2xl transition-all duration-300 bg-gradient-to-r from-milquu-blue to-indigo-600 text-white hover:scale-110 hover:shadow-milquu-blue/50"
           >
-            {isAIGenerating ? (
-              <Loader2 size={24} className="animate-spin" />
-            ) : isListening ? (
-              <Mic size={24} className="animate-pulse text-red-500" />
-            ) : isAISpeaking ? (
-              <Volume2 size={24} />
-            ) : (
-              <Sparkles size={24} />
-            )}
-            
-            {/* Pulsing ring effect when speaking or listening */}
-            {(isAISpeaking || isListening) && (
-              <span className={`absolute inset-0 rounded-full animate-ping opacity-75 ${isListening ? 'bg-red-400' : 'bg-milquu-blue'}`}></span>
-            )}
+            <Sparkles size={24} />
           </button>
         </div>
       </main>
