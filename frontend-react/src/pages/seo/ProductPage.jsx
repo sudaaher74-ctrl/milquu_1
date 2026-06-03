@@ -22,8 +22,8 @@ const ProductPage = () => {
         const { data } = await api.get('/api/products');
         // Match by image or exact name
         const dbProduct = data.find(p => p.image === product?.image || p.name === product?.name);
-        const stockLevel = dbProduct ? (dbProduct.stock || 0) : 0;
-        if (dbProduct && stockLevel <= 0) {
+        const stockLevel = dbProduct ? parseInt(dbProduct.stock, 10) : NaN;
+        if (dbProduct && (isNaN(stockLevel) || stockLevel <= 0)) {
           setIsOutOfStock(true);
         }
       } catch (err) {

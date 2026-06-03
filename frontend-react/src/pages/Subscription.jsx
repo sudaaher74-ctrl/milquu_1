@@ -192,7 +192,8 @@ const Subscription = () => {
         const { data } = await api.get('/api/products');
         const map = {};
         data.forEach(p => {
-          map[p.name] = p.stock || 0;
+          const stockVal = parseInt(p.stock, 10);
+          map[p.name] = isNaN(stockVal) ? 0 : stockVal;
         });
         setStockMap(map);
       } catch (err) {
