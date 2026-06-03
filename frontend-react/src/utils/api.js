@@ -22,6 +22,7 @@ api.interceptors.request.use(
       try {
         const parsedToken = JSON.parse(adminToken);
         if (parsedToken.token) {
+          console.log('[API DEBUG] Setting admin token:', parsedToken.token);
           config.headers.Authorization = `Bearer ${parsedToken.token}`;
         }
       } catch (e) { console.error(e); }
@@ -36,6 +37,22 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.warn('Unauthorized request - clearing token');
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('deliveryStaff');
+      // If we are in the browser, redirect to login
+      if (typeof window !== 'undefined') {
+        window.location.href = '/admin/login';
+      }
+    }
     return Promise.reject(error);
   }
 );
