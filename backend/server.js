@@ -11,6 +11,7 @@ import deliveryRoutes from './routes/deliveryRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 import { startSubscriptionEngine } from './cron/subscriptionEngine.js';
 
 import path from 'path';
@@ -53,6 +54,7 @@ app.use('/api/delivery', deliveryRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/ai', aiRoutes);
 
 import http from 'http';
 import { initSocket } from './socket.js';
