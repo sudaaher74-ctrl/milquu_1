@@ -133,11 +133,13 @@ function App() {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
   const isDelivery = location.pathname.startsWith('/delivery');
+  const isChatbot = location.pathname.startsWith('/chatbot');
+  const hideLayout = isAdmin || isDelivery || isChatbot;
 
   return (
     <div className="font-sans">
       <ScrollToTop />
-      {!isAdmin && !isDelivery && <Navbar />}
+      {!hideLayout && <Navbar />}
       
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
@@ -233,8 +235,8 @@ function App() {
         </Suspense>
       </ErrorBoundary>
 
-      {!isAdmin && !isDelivery && <FloatingWhatsApp />}
-      {!isAdmin && !isDelivery && <Footer />}
+      {!hideLayout && <FloatingWhatsApp />}
+      {!hideLayout && <Footer />}
     </div>
   );
 }
