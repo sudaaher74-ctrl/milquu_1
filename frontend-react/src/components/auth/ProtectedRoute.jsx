@@ -26,6 +26,19 @@ const ProtectedRoute = ({ children, allowedRole }) => {
         localStorage.removeItem('deliveryStaff');
       }
     }
+  } else if (allowedRole === 'chatbot') {
+    const chatbotData = localStorage.getItem('chatbotToken');
+    if (chatbotData && chatbotData !== 'undefined') {
+      try {
+        const parsedData = JSON.parse(chatbotData);
+        if (parsedData.token) {
+          user = { role: 'chatbot' };
+        }
+      } catch (e) {
+        console.error(e);
+        localStorage.removeItem('chatbotToken');
+      }
+    }
   }
 
   // If no user found, redirect to respective login
@@ -35,6 +48,9 @@ const ProtectedRoute = ({ children, allowedRole }) => {
     }
     if (allowedRole === 'delivery') {
       return <Navigate to="/delivery/login" state={{ from: location }} replace />;
+    }
+    if (allowedRole === 'chatbot') {
+      return <Navigate to="/chatbot/login" state={{ from: location }} replace />;
     }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

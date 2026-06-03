@@ -38,7 +38,10 @@ const Reports = lazy(() => import('./pages/admin/Reports'));
 const SEOGenerator = lazy(() => import('./pages/admin/SEOGenerator'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const TodayOrderList = lazy(() => import('./pages/admin/TodayOrderList'));
-const AIChatDashboard = lazy(() => import('./pages/admin/AIChatDashboard'));
+
+// Chatbot Pages
+const AIChatDashboard = lazy(() => import('./pages/chatbot/AIChatDashboard'));
+const ChatbotLogin = lazy(() => import('./pages/chatbot/ChatbotLogin'));
 
 // SEO & Content Pages
 const AboutUs = lazy(() => import('./pages/seo/AboutUs'));
@@ -223,8 +226,9 @@ function App() {
             </Route>
 
             {/* Standalone Chatbot Dashboard */}
+            <Route path="/chatbot/login" element={<ChatbotLogin />} />
             <Route path="/chatbot" element={
-              <ProtectedRoute allowedRole="admin">
+              <ProtectedRoute allowedRole="chatbot">
                 <AIChatDashboard />
               </ProtectedRoute>
             } />
