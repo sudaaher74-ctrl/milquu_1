@@ -47,7 +47,15 @@ router.get('/business-update', protect, admin, async (req, res) => {
         
         return res.json({ success: true, text: response.text });
       } catch (aiError) {
-        console.error('AI Generation Error:', aiError);
+        console.error('AI Generation Error Details:', {
+          message: aiError.message,
+          status: aiError.status
+        });
+        
+        if (aiError.message && aiError.message.includes('User location is not supported')) {
+          console.warn("WARN: Gemini API is restricted in the server's current deployment region. Falling back to rule-based responses.");
+        }
+        
         return res.json({ success: true, text: fallbackText });
       }
     } else {
@@ -192,10 +200,25 @@ Rules:
         
         return res.json({ success: true, ...jsonResponse });
       } catch (error) {
-        console.error('Gemini Error:', error);
+        console.error('Gemini API Error Details:', {
+          message: error.message,
+          status: error.status,
+          name: error.name
+        });
+
+        if (error.message && error.message.includes('User location is not supported')) {
+          console.warn("WARN: Gemini API is restricted in the server's current deployment region (e.g., Render EU region). Returning fallback response.");
+          return res.json({ 
+            success: true, 
+            reply: "I am having trouble connecting to my AI brain. The server is deployed in a region where the Gemini API is currently restricted. To fix this, change your hosting region (e.g., Render) to a supported region like US Oregon.", 
+            action: "none" 
+          });
+        }
+
         return res.status(500).json({
           success: false,
-          message: error.message
+          message: 'Failed to communicate with AI provider',
+          error: error.message
         });
       }
     } else {
