@@ -94,6 +94,17 @@ router.post('/chat', protect, admin, async (req, res) => {
     const revenueToday = ordersToday.reduce((acc, order) => acc + order.totalPrice, 0);
     const totalOrdersTodayCount = ordersToday.length;
 
+    const yesterdayStart = new Date(today);
+    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+    const yesterdayEnd = new Date(yesterdayStart);
+    yesterdayEnd.setHours(23, 59, 59, 999);
+
+    const ordersYesterday = await Order.find({
+      isPaid: true,
+      paidAt: { $gte: yesterdayStart, $lte: yesterdayEnd }
+    });
+    const revenueYesterday = ordersYesterday.reduce((acc, order) => acc + order.totalPrice, 0);
+
     const ordersMonth = await Order.find({
       isPaid: true,
       paidAt: { $gte: startOfMonth, $lte: endOfDay }
@@ -136,6 +147,7 @@ router.post('/chat', protect, admin, async (req, res) => {
         const systemPrompt = `You are MilQuu Fresh's AI female voice assistant and advanced business analyst.
 Context Data:
 - Today's Orders: ${totalOrdersTodayCount} | Revenue: ₹${revenueToday}
+- Yesterday's Revenue: ₹${revenueYesterday} (Compare with today to see if sales increased or decreased)
 - Month's Orders: ${totalOrdersMonthCount} | Revenue: ₹${revenueMonth}
 - Active Subscriptions: ${activeSubscriptions}
 - Unassigned Deliveries: ${unassignedSubs} (Needs attention if > 0)
@@ -144,7 +156,7 @@ Context Data:
 - Low Stock Products: ${lowStockList}
 
 Rules:
-1. Act as a proactive business advisor. If they ask about the business, point out anomalies (like unassigned deliveries, high wastage, or low stock).
+1. Act as a proactive business advisor. If they ask about the business, point out anomalies (like unassigned deliveries, high wastage, or low stock). Also compare today's revenue (₹${revenueToday}) against yesterday's (₹${revenueYesterday}) to notify them if sales have decreased or increased.
 2. Output ONLY a raw JSON object with no markdown formatting around the JSON block itself.
 3. The JSON must have exactly two keys: "reply" (string) and "action" (string).
 4. "reply" is your conversational answer. You CAN use markdown inside the "reply" string to format lists, bold text, or tables.

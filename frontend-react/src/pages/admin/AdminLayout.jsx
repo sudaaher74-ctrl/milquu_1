@@ -43,7 +43,6 @@ const AdminLayout = () => {
     
     // New ERP Modules
     { name: 'Business Overview', path: '/admin/business-overview', icon: <Briefcase size={20} /> },
-    { name: 'AI Assistant', path: '/chatbot', icon: <Sparkles size={20} /> },
     { name: 'Shop POS', path: '/admin/pos', icon: <Store size={20} /> },
     { name: 'Purchases', path: '/admin/purchases', icon: <ShoppingCart size={20} /> },
     { name: 'Expenses', path: '/admin/expenses', icon: <Receipt size={20} /> },
@@ -51,16 +50,16 @@ const AdminLayout = () => {
     { name: 'Milk Procurement', path: '/admin/procurement', icon: <Droplets size={20} /> },
     { name: 'Wastage', path: '/admin/wastage', icon: <Trash2 size={20} /> },
     { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={20} /> },
-    { name: 'SEO Tools', path: '/admin/seo-tools', icon: <Wand2 size={20} /> },
     { name: 'Notifications', path: '/admin/notifications', icon: <Bell size={20} /> },
     { name: 'Settings', path: '/admin/settings', icon: <Settings size={20} /> },
   ];
 
-  const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
-
-  const handleAIAssistantClick = () => {
-    navigate('/chatbot');
+  const handleLogout = () => {
+    localStorage.removeItem('adminToken');
+    navigate('/admin/login');
   };
+
+  const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
   return (
     <div className="flex h-screen bg-milquu-gray overflow-hidden font-sans">
@@ -119,7 +118,7 @@ const AdminLayout = () => {
             <ArrowLeft size={18} className="text-gray-400" />
             <span>Back to Store</span>
           </NavLink>
-          <button className="w-full flex items-center space-x-3 px-3 py-3 text-sm text-red-500 hover:bg-red-50 rounded-xl transition-all mt-1">
+          <button onClick={handleLogout} className="w-full flex items-center space-x-3 px-3 py-3 text-sm text-red-500 hover:bg-red-50 rounded-xl transition-all mt-1">
             <LogOut size={18} />
             <span>Logout Account</span>
           </button>
@@ -200,17 +199,6 @@ const AdminLayout = () => {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
           <Outlet />
-        </div>
-        
-        {/* AI Voice Assistant Floating Button */}
-        <div className="fixed bottom-8 right-8 z-50">
-          <button
-            onClick={handleAIAssistantClick}
-            title="Chat with AI Assistant"
-            className="relative flex items-center justify-center w-14 h-14 rounded-full shadow-2xl transition-all duration-300 bg-gradient-to-r from-milquu-blue to-indigo-600 text-white hover:scale-110 hover:shadow-milquu-blue/50"
-          >
-            <Sparkles size={24} />
-          </button>
         </div>
       </main>
     </div>
