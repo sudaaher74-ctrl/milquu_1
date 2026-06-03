@@ -136,7 +136,7 @@ router.post('/chat', protect, admin, async (req, res) => {
     const lowStockList = lowStockProducts.map(p => `${p.name} (${p.countInStock} left)`).join(', ') || 'None';
 
     const fallbackResponse = {
-      reply: "I'm sorry, I cannot process complex requests without my AI module configured.",
+      reply: "I'm sorry, my AI module isn't configured yet! Since this is the live website, you need to go to your Render.com dashboard, find your Web Service, and add `GEMINI_API_KEY` to the Environment Variables.",
       action: "none"
     };
 
