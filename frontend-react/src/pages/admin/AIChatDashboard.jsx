@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import { Send, Mic, Sparkles, AlertCircle, RefreshCw, Loader2, Download, Bot, User, ArrowLeft } from 'lucide-react';
+import { Send, Mic, Sparkles, AlertCircle, RefreshCw, Loader2, Download, Bot, User, ArrowLeft, Volume2, VolumeX } from 'lucide-react';
 import api from '../../utils/api';
 import { generateDeliveryReportPDF } from '../../utils/reportUtils';
 
@@ -12,6 +12,7 @@ const AIChatDashboard = () => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
   
@@ -80,7 +81,7 @@ const AIChatDashboard = () => {
         };
         setMessages(prev => [...prev, aiMessage]);
 
-        if (useVoice) {
+        if (voiceEnabled || useVoice) {
           speakText(data.reply);
         }
 
@@ -128,7 +129,7 @@ const AIChatDashboard = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white shadow-sm overflow-hidden relative">
+    <div className="flex flex-col h-[100dvh] bg-white shadow-sm overflow-hidden relative w-full max-w-full">
       
       {/* Chat Header */}
       <div className="bg-white border-b border-gray-100 p-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
@@ -151,6 +152,17 @@ const AIChatDashboard = () => {
             </p>
           </div>
         </div>
+        
+        <button
+          onClick={() => {
+            if (voiceEnabled && synth.speaking) synth.cancel();
+            setVoiceEnabled(!voiceEnabled);
+          }}
+          className={`p-2 rounded-full transition-colors ${voiceEnabled ? 'text-milquu-blue bg-blue-50' : 'text-gray-400 hover:bg-gray-100'}`}
+          title={voiceEnabled ? 'Disable Voice' : 'Enable Voice'}
+        >
+          {voiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+        </button>
       </div>
 
       {/* Chat History Area */}
