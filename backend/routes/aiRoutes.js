@@ -177,7 +177,7 @@ Rules:
         });
         
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-1.5-flash',
           contents: formattedHistory,
         });
         
@@ -191,9 +191,12 @@ Rules:
         }
         
         return res.json({ success: true, ...jsonResponse });
-      } catch (aiError) {
-        console.error('AI Generation Error:', aiError);
-        return res.json({ success: true, ...fallbackResponse });
+      } catch (error) {
+        console.error('Gemini Error:', error);
+        return res.status(500).json({
+          success: false,
+          message: error.message
+        });
       }
     } else {
       // Basic rule-based fallback if no Gemini
