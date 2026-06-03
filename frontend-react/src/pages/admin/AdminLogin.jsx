@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../utils/api.js';
 import { Mail, Lock, LogIn, ShieldAlert } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -10,6 +10,9 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = location.state?.from?.pathname || '/admin';
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -23,7 +26,7 @@ const AdminLogin = () => {
       });
 
       localStorage.setItem('adminToken', JSON.stringify(data));
-      navigate('/admin');
+      navigate(from, { replace: true });
     } catch (err) {
       console.error('Login error:', err);
       setError(err.response?.data?.message || 'Login failed. Please try again.');
