@@ -117,7 +117,10 @@ const AIChatDashboard = () => {
         const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${data.apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: formattedHistory })
+          body: JSON.stringify({ 
+            contents: formattedHistory,
+            tools: [{ googleSearch: {} }] // Enable Google Web Search for real-time market analysis
+          })
         });
         
         const geminiData = await geminiRes.json();

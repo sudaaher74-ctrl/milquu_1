@@ -230,7 +230,7 @@ Rules:
 3. The JSON must have exactly two keys: "reply" (string) and "action" (string).
 4. "reply" is your conversational answer. You CAN use markdown inside the "reply" string to format lists, bold text, or tables.
 5. "action" must be either "none" or "download_delivery_report". Set to "download_delivery_report" ONLY if the user explicitly asks to download or print today's delivery report/list.
-6. CRITICAL: NEVER invent, hallucinate, or make up data. Use ONLY the real-time Context Data provided above. If the revenue is 0, report it as 0. Do not invent fake products, sales, or metrics.
+6. CRITICAL: NEVER invent or hallucinate internal business data. For internal metrics, use ONLY the Context Data above. However, if the user asks about external topics (like competitor pricing, market analysis in Navi Mumbai, etc.), you MUST use your Google Search capability to find real-time answers and summarize them.
 7. ALWAYS start your reply with "Hi Sudarshan".`;
         // WORKAROUND: Return the systemPrompt and API key to the frontend
         // so the frontend can make the call directly from the user's browser, bypassing Render's region restrictions.
