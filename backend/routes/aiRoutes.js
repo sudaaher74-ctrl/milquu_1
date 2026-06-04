@@ -6,6 +6,8 @@ import Expense from '../models/Expense.js';
 import Wastage from '../models/Wastage.js';
 import Product from '../models/Product.js';
 import Purchase from '../models/Purchase.js';
+import User from '../models/User.js';
+import DeliveryStaff from '../models/DeliveryStaff.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -168,6 +170,35 @@ router.post('/chat', protect, admin, async (req, res) => {
     const lowStockProducts = await Product.find({ countInStock: { $lt: 20 } }).select('name countInStock');
     const lowStockList = lowStockProducts.map(p => `${p.name} (${p.countInStock} left)`).join(', ') || 'None';
 
+    // -- Customer Data --
+    const totalCustomers = await User.countDocuments({ role: 'user' });
+    const newCustomersThisMonth = await User.countDocuments({
+      role: 'user',
+      createdAt: { $gte: startOfMonth, $lte: endOfDay }
+    });
+
+    // -- Delivery Staff Data --
+    const deliveryStaff = await DeliveryStaff.find({});
+    const totalDeliveryStaff = deliveryStaff.length;
+    const activeDeliveryStaff = deliveryStaff.filter(s => s.status === 'Active').length;
+    const deliveryStaffList = deliveryStaff.map(s => `${s.name} (${s.status}, ${s.area})`).join(', ') || 'None';
+
+    // -- Product Catalog --
+    const allProducts = await Product.find({});
+    const productCatalog = allProducts.map(p => `${p.name} (₹${p.price}/${p.unit}, Stock: ${p.stock || p.countInStock || 0})`).join(' | ') || 'None';
+
+    // -- Orders Summary --
+    const ordersTodayList = await Order.find({
+      createdAt: { $gte: today, $lte: endOfDay }
+    });
+    const pendingOrdersToday = ordersTodayList.filter(o => o.status === 'Pending' || o.status === 'Processing').length;
+    const deliveredOrdersToday = ordersTodayList.filter(o => o.status === 'Delivered').length;
+
+    // -- Subscription Summary --
+    const allSubscriptions = await Subscription.find({});
+    const totalActiveSubs = allSubscriptions.filter(s => s.status === 'Active').length;
+    const totalPausedSubs = allSubscriptions.filter(s => s.status === 'Paused').length;
+
     const fallbackResponse = {
       reply: "I'm sorry, my AI module isn't configured yet! Since this is the live website, you need to go to your Render.com dashboard, find your Web Service, and add `GEMINI_API_KEY` to the Environment Variables.",
       action: "none"
@@ -179,10 +210,13 @@ router.post('/chat', protect, admin, async (req, res) => {
         
         const systemPrompt = `You are MilQuu Fresh's AI female voice assistant and advanced business analyst.
 Context Data:
-- Today's Orders: ${totalOrdersTodayCount} | Revenue: ₹${revenueToday}
+- Customers: Total ${totalCustomers} | New this month ${newCustomersThisMonth}
+- Delivery Staff: Total ${totalDeliveryStaff} (${activeDeliveryStaff} Active). List: ${deliveryStaffList}
+- Product Catalog: ${productCatalog}
+- Today's Orders: ${totalOrdersTodayCount} (Pending: ${pendingOrdersToday}, Delivered: ${deliveredOrdersToday}) | Revenue: ₹${revenueToday}
 - Yesterday's Revenue: ₹${revenueYesterday} (Compare with today to see if sales increased or decreased)
 - Month's Orders: ${totalOrdersMonthCount} | Revenue: ₹${revenueMonth}
-- Active Subscriptions: ${activeSubscriptions}
+- Subscriptions: Total Active ${totalActiveSubs} | Paused ${totalPausedSubs}
 - Unassigned Deliveries: ${unassignedSubs} (Needs attention if > 0)
 - Expenses: Today ₹${totalExpenseToday} | This Week ₹${totalExpenseWeek} | This Month ₹${totalExpenseMonth}
 - Purchases: Today ₹${totalPurchaseToday} | This Week ₹${totalPurchaseWeek} | This Month ₹${totalPurchaseMonth}
@@ -191,7 +225,7 @@ Context Data:
 - Low Stock Products: ${lowStockList}
 
 Rules:
-1. Act as a proactive business advisor. If they ask about the business, point out anomalies (like unassigned deliveries, high wastage, or low stock). Also compare today's revenue (₹${revenueToday}) against yesterday's (₹${revenueYesterday}) to notify them if sales have decreased or increased.
+1. Act as a proactive business advisor. You have access to admin, delivery, and customer data. If they ask about the business, point out anomalies (like unassigned deliveries, high wastage, or low stock). Also compare today's revenue (₹${revenueToday}) against yesterday's (₹${revenueYesterday}) to notify them if sales have decreased or increased.
 2. Output ONLY a raw JSON object with no markdown formatting around the JSON block itself.
 3. The JSON must have exactly two keys: "reply" (string) and "action" (string).
 4. "reply" is your conversational answer. You CAN use markdown inside the "reply" string to format lists, bold text, or tables.
