@@ -17,13 +17,18 @@ const AIChatDashboard = () => {
   const navigate = useNavigate();
   
   const synth = window.speechSynthesis;
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = SpeechRecognition ? new SpeechRecognition() : null;
-  if (recognition) {
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-  }
+  const recognitionRef = useRef(null);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition && !recognitionRef.current) {
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+      recognitionRef.current = rec;
+    }
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -185,23 +190,47 @@ const AIChatDashboard = () => {
   };
 
   const toggleListen = () => {
+    const recognition = recognitionRef.current;
+    
     if (isListening) {
       recognition?.stop();
       setIsListening(false);
+      // We don't automatically send here to allow them to edit, 
+      // but if they hit Send, it will send normally.
     } else {
       if (synth.speaking) synth.cancel();
       if (recognition) {
-        recognition.onstart = () => setIsListening(true);
-        recognition.onresult = (event) => {
-          const transcript = event.results[0][0].transcript;
-          setIsListening(false);
-          sendMessage(transcript, true);
+        let finalTranscript = '';
+        recognition.onstart = () => {
+          setIsListening(true);
+          setInput(''); // Clear input for fresh speech
         };
+        
+        recognition.onresult = (event) => {
+          let interimTranscript = '';
+          let currentFinal = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              currentFinal += event.results[i][0].transcript + ' ';
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
+          }
+          finalTranscript += currentFinal;
+          // Update input so they can see what they are saying in real-time
+          setInput(finalTranscript + interimTranscript);
+        };
+        
         recognition.onerror = (event) => {
           console.error("Speech Recognition Error:", event.error);
           setIsListening(false);
         };
-        recognition.onend = () => setIsListening(false);
+        
+        recognition.onend = () => {
+          setIsListening(false);
+          // When it ends (either manually or by long pause), they can hit Send
+        };
+        
         recognition.start();
       } else {
         alert("Speech recognition is not supported in this browser.");
