@@ -38,11 +38,33 @@ const AIChatDashboard = () => {
       synth.cancel();
     }
     const utterance = new SpeechSynthesisUtterance(text);
-    const voices = synth.getVoices();
-    const femaleVoice = voices.find(v => v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('zira') || v.name.toLowerCase().includes('samantha')) || voices[0];
-    if (femaleVoice) utterance.voice = femaleVoice;
-    utterance.rate = 1;
-    utterance.pitch = 1.2;
+    
+    // Some browsers load voices asynchronously, so we fetch them exactly when needed
+    let voices = synth.getVoices();
+    
+    // Comprehensive list of common female voices across Windows, Mac, Chrome, iOS, and Android
+    const femaleNames = ['female', 'zira', 'samantha', 'victoria', 'karen', 'moira', 'tessa', 'veena', 'hazel', 'catherine', 'susan', 'fiona', 'lekha'];
+    
+    // 1. Try to find an explicit female voice by name
+    let femaleVoice = voices.find(v => femaleNames.some(name => v.name.toLowerCase().includes(name)));
+    
+    // 2. Fallback to Google's standard voices (US/UK English are female by default on many devices)
+    if (!femaleVoice) {
+      femaleVoice = voices.find(v => v.name.includes('Google UK English Female') || v.name === 'Google US English');
+    }
+    
+    // 3. Fallback to a localized Indian English voice (which is usually female like Veena on Mac)
+    if (!femaleVoice) {
+      femaleVoice = voices.find(v => v.lang === 'en-IN');
+    }
+    
+    // Assign the selected female voice, otherwise it defaults to the OS standard
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
+    }
+    
+    utterance.rate = 1.0;
+    utterance.pitch = 1.2; // Slightly higher pitch often sounds more female
     synth.speak(utterance);
   };
 
