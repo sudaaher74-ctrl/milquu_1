@@ -93,6 +93,11 @@ router.post('/chat', protect, admin, async (req, res) => {
 
     // Get this month's start
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    // Get this week's start (Sunday)
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
 
     // Fetch metrics
     const ordersToday = await Order.find({
@@ -130,15 +135,19 @@ router.post('/chat', protect, admin, async (req, res) => {
       $or: [{ assignedStaff: null }, { assignedStaff: { $exists: false } }]
     });
 
-    const expensesToday = await Expense.find({
-      date: { $gte: today, $lte: endOfDay }
+    const expensesMonthData = await Expense.find({
+      date: { $gte: startOfMonth, $lte: endOfDay }
     });
-    const totalExpenseToday = expensesToday.reduce((acc, ex) => acc + ex.amount, 0);
+    const totalExpenseToday = expensesMonthData.filter(e => new Date(e.date) >= today).reduce((acc, ex) => acc + ex.amount, 0);
+    const totalExpenseWeek = expensesMonthData.filter(e => new Date(e.date) >= startOfWeek).reduce((acc, ex) => acc + ex.amount, 0);
+    const totalExpenseMonth = expensesMonthData.reduce((acc, ex) => acc + ex.amount, 0);
 
-    const wastageToday = await Wastage.find({
-      date: { $gte: today, $lte: endOfDay }
+    const wastageMonthData = await Wastage.find({
+      date: { $gte: startOfMonth, $lte: endOfDay }
     });
-    const totalWastageLoss = wastageToday.reduce((acc, w) => acc + (w.lossAmount || 0), 0);
+    const totalWastageLossToday = wastageMonthData.filter(w => new Date(w.date) >= today).reduce((acc, w) => acc + (w.lossAmount || 0), 0);
+    const totalWastageLossWeek = wastageMonthData.filter(w => new Date(w.date) >= startOfWeek).reduce((acc, w) => acc + (w.lossAmount || 0), 0);
+    const totalWastageLossMonth = wastageMonthData.reduce((acc, w) => acc + (w.lossAmount || 0), 0);
 
     const lowStockProducts = await Product.find({ countInStock: { $lt: 20 } }).select('name countInStock');
     const lowStockList = lowStockProducts.map(p => `${p.name} (${p.countInStock} left)`).join(', ') || 'None';
@@ -159,8 +168,8 @@ Context Data:
 - Month's Orders: ${totalOrdersMonthCount} | Revenue: ₹${revenueMonth}
 - Active Subscriptions: ${activeSubscriptions}
 - Unassigned Deliveries: ${unassignedSubs} (Needs attention if > 0)
-- Today's Expenses: ₹${totalExpenseToday}
-- Today's Wastage Loss: ₹${totalWastageLoss}
+- Expenses: Today ₹${totalExpenseToday} | This Week ₹${totalExpenseWeek} | This Month ₹${totalExpenseMonth}
+- Wastage Loss: Today ₹${totalWastageLossToday} | This Week ₹${totalWastageLossWeek} | This Month ₹${totalWastageLossMonth}
 - Low Stock Products: ${lowStockList}
 
 Rules:
