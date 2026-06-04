@@ -5,6 +5,7 @@ import Subscription from '../models/Subscription.js';
 import Expense from '../models/Expense.js';
 import Wastage from '../models/Wastage.js';
 import Product from '../models/Product.js';
+import Purchase from '../models/Purchase.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -149,6 +150,21 @@ router.post('/chat', protect, admin, async (req, res) => {
     const totalWastageLossWeek = wastageMonthData.filter(w => new Date(w.date) >= startOfWeek).reduce((acc, w) => acc + (w.lossAmount || 0), 0);
     const totalWastageLossMonth = wastageMonthData.reduce((acc, w) => acc + (w.lossAmount || 0), 0);
 
+    const purchaseMonthData = await Purchase.find({
+      date: { $gte: startOfMonth, $lte: endOfDay }
+    });
+    const totalPurchaseToday = purchaseMonthData.filter(p => new Date(p.date) >= today).reduce((acc, p) => acc + p.totalCost, 0);
+    const totalPurchaseWeek = purchaseMonthData.filter(p => new Date(p.date) >= startOfWeek).reduce((acc, p) => acc + p.totalCost, 0);
+    const totalPurchaseMonth = purchaseMonthData.reduce((acc, p) => acc + p.totalCost, 0);
+
+    const supplierSummary = purchaseMonthData.reduce((acc, p) => {
+      acc[p.supplierName] = (acc[p.supplierName] || 0) + p.totalCost;
+      return acc;
+    }, {});
+    const topSuppliersList = Object.entries(supplierSummary)
+      .map(([name, cost]) => `${name} (₹${cost})`)
+      .join(', ') || 'None';
+
     const lowStockProducts = await Product.find({ countInStock: { $lt: 20 } }).select('name countInStock');
     const lowStockList = lowStockProducts.map(p => `${p.name} (${p.countInStock} left)`).join(', ') || 'None';
 
@@ -169,6 +185,8 @@ Context Data:
 - Active Subscriptions: ${activeSubscriptions}
 - Unassigned Deliveries: ${unassignedSubs} (Needs attention if > 0)
 - Expenses: Today ₹${totalExpenseToday} | This Week ₹${totalExpenseWeek} | This Month ₹${totalExpenseMonth}
+- Purchases: Today ₹${totalPurchaseToday} | This Week ₹${totalPurchaseWeek} | This Month ₹${totalPurchaseMonth}
+- Monthly Purchases by Supplier: ${topSuppliersList}
 - Wastage Loss: Today ₹${totalWastageLossToday} | This Week ₹${totalWastageLossWeek} | This Month ₹${totalWastageLossMonth}
 - Low Stock Products: ${lowStockList}
 
