@@ -9,8 +9,6 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
 
-const trendData = [];
-
 const Purchases = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [purchaseData, setPurchaseData] = useState([]);
@@ -89,7 +87,53 @@ const Purchases = () => {
   const spVal = Number(formData.sellingPrice) || 0;
   const marginPercentage = rateVal > 0 ? (((spVal - rateVal) / rateVal) * 100).toFixed(2) : 0;
 
-  const totalMonthlyCost = purchaseData.reduce((acc, curr) => acc + curr.totalCost, 0);
+  const totalMonthlyCost = React.useMemo(() => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    return purchaseData.filter(e => {
+      try {
+        const d = new Date(e.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      } catch { return false; }
+    }).reduce((sum, e) => sum + e.totalCost, 0);
+  }, [purchaseData]);
+
+  const activeSuppliersCount = React.useMemo(() => {
+    return new Set(purchaseData.map(p => p.supplierName).filter(Boolean)).size;
+  }, [purchaseData]);
+
+  const pendingDeliveriesCount = React.useMemo(() => {
+    return purchaseData.filter(p => p.status === 'Pending').length;
+  }, [purchaseData]);
+
+  const trendData = React.useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const currentMonthIndex = new Date().getMonth();
+    const last6Months = [];
+    for (let i = 5; i >= 0; i--) {
+      let d = new Date();
+      d.setMonth(currentMonthIndex - i);
+      last6Months.push({
+        name: months[d.getMonth()],
+        month: d.getMonth(),
+        year: d.getFullYear(),
+        cost: 0
+      });
+    }
+
+    purchaseData.forEach(p => {
+      const d = new Date(p.date);
+      const m = d.getMonth();
+      const y = d.getFullYear();
+      const target = last6Months.find(item => item.month === m && item.year === y);
+      if (target) {
+        target.cost += p.totalCost;
+      }
+    });
+
+    return last6Months;
+  }, [purchaseData]);
 
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">
@@ -128,8 +172,8 @@ const Purchases = () => {
           <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between flex-1">
             <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Active Suppliers</p>
-              <h3 className="text-3xl font-bold text-milquu-dark">0</h3>
-              <p className="text-xs text-gray-500 font-medium mt-1">0 pending deliveries</p>
+              <h3 className="text-3xl font-bold text-milquu-dark">{activeSuppliersCount}</h3>
+              <p className="text-xs text-gray-500 font-medium mt-1">{pendingDeliveriesCount} pending deliveries</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-milquu-blue">
               <Factory size={24} />
