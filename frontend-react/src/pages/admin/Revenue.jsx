@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../../utils/api.js';
 import { 
   Download, TrendingUp, TrendingDown, IndianRupee, Globe, Store, 
   CalendarDays, Calendar, PieChart as PieChartIcon
@@ -56,13 +57,7 @@ const Revenue = () => {
 
   const fetchRevenueData = async () => {
     try {
-      const userInfo = JSON.parse(localStorage.getItem('userInfo'));
-      const response = await fetch(`/api/admin/revenue-analytics?year=${selectedYear}`, {
-        headers: {
-          'Authorization': `Bearer ${userInfo.token}`
-        }
-      });
-      const data = await response.json();
+      const { data } = await api.get(`/api/admin/revenue-analytics?year=${selectedYear}`);
       if (data) {
         setMonthlyRevenueData(data.monthlyRevenueData || []);
         setSourceData(data.sourceData || []);
