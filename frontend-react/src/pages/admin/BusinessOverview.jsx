@@ -1,5 +1,6 @@
 import React from 'react';
 import api from '../../utils/api.js';
+import ExportButton from '../../components/admin/ExportButton';
 import { motion } from 'framer-motion';
 import { 
   Briefcase, IndianRupee, TrendingUp, Package, Globe, Store, 
@@ -55,6 +56,14 @@ const BusinessOverview = () => {
     sales: Math.round(d.revenue / 70) // Mock sales volume
   }));
 
+  const exportData = [
+    { Metric: 'Revenue Today', Value: analytics.revenue || 0 },
+    { Metric: 'Profit Today', Value: analytics.netProfit || 0 },
+    { Metric: 'Inventory Value', Value: analytics.purchases || 0 },
+    { Metric: 'Active Customers', Value: analytics.customerData?.length ? analytics.customerData[analytics.customerData.length-1].customers : 0 },
+    { Metric: 'Pending Deliveries', Value: analytics.operationsLive?.pendingDeliveries || 0 }
+  ];
+
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">
       
@@ -64,9 +73,13 @@ const BusinessOverview = () => {
           <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">CEO Business Overview</h1>
           <p className="text-gray-500 text-sm mt-1">High-level financial and operational summary.</p>
         </div>
-        <button className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
-          <Download size={18} className="mr-2" /> Download Executive Report
-        </button>
+        <ExportButton 
+          data={exportData} 
+          filename="CEO_Executive_Report" 
+          title="Executive Business Overview" 
+          label="Download Executive Report"
+          className="!bg-milquu-dark !text-white hover:!bg-gray-800 !px-5 !py-2.5 !rounded-lg !text-sm !font-medium !shadow-md !flex !items-center !border-0" 
+        />
       </div>
 
       {/* 10 KPI Cards Grid */}
@@ -143,6 +156,16 @@ const BusinessOverview = () => {
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
           <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center"><TrendingUp size={16} className="text-green-600 mr-2"/> Top Products</h3>
           <div className="space-y-3">
+            {(analytics.topPerformers || []).length > 0 ? (
+              (analytics.topPerformers || []).map((p, i) => (
+                <div key={i} className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 font-medium">{p.name || 'Unknown'}</span>
+                  <span className="font-bold text-milquu-dark">₹{p.revenue?.toLocaleString() || 0}</span>
+                </div>
+              ))
+            ) : (
+              <div className="text-xs text-gray-400">No data available</div>
+            )}
           </div>
         </div>
 
@@ -150,6 +173,16 @@ const BusinessOverview = () => {
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-orange-100 bg-orange-50/20">
           <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center"><PackageX size={16} className="text-orange-600 mr-2"/> Low Stock Alerts</h3>
           <div className="space-y-3">
+            {(analytics.actionRequired || []).length > 0 ? (
+              (analytics.actionRequired || []).map((p, i) => (
+                <div key={i} className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 font-medium">{p.name}</span>
+                  <span className="font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-md">{p.stock} left</span>
+                </div>
+              ))
+            ) : (
+              <div className="text-xs text-gray-400">Stock levels healthy</div>
+            )}
           </div>
         </div>
 
@@ -157,6 +190,16 @@ const BusinessOverview = () => {
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
           <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center"><Receipt size={16} className="text-red-500 mr-2"/> Recent Expenses</h3>
           <div className="space-y-3">
+            {(analytics.operationsLive?.recentExpenses || []).length > 0 ? (
+              (analytics.operationsLive?.recentExpenses || []).map((e, i) => (
+                <div key={i} className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 font-medium capitalize">{e.category || 'Expense'}</span>
+                  <span className="font-bold text-milquu-dark">₹{e.amount?.toLocaleString() || 0}</span>
+                </div>
+              ))
+            ) : (
+              <div className="text-xs text-gray-400">No recent expenses</div>
+            )}
           </div>
         </div>
 
@@ -164,7 +207,7 @@ const BusinessOverview = () => {
         <div className="bg-white p-5 rounded-2xl shadow-sm border border-blue-100 bg-blue-50/20">
           <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center"><Truck size={16} className="text-blue-600 mr-2"/> Pending Deliveries</h3>
           <div className="flex flex-col items-center justify-center h-full pb-4">
-            <span className="text-4xl font-bold text-milquu-blue mb-1">0</span>
+            <span className="text-4xl font-bold text-milquu-blue mb-1">{analytics.operationsLive?.pendingDeliveries || 0}</span>
             <span className="text-sm text-gray-500">Orders waiting to be dispatched</span>
             <button className="mt-4 text-xs font-bold text-white bg-milquu-blue px-4 py-2 rounded-lg hover:bg-blue-800 transition-colors w-full">
               View Dispatch Board

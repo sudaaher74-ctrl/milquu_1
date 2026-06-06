@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ChevronDown, FileSpreadsheet, FileText, Download } from 'lucide-react';
 import { exportToExcel, exportToPDF } from '../../utils/exportUtils';
 
-const ExportButton = ({ data, filename = 'export', title = 'Report', className = '' }) => {
+const ExportButton = ({ data, filename = 'export', title = 'Report', className = '', label = 'Export' }) => {
   const [showExportMenu, setShowExportMenu] = useState(false);
 
   const handleExport = (type) => {
@@ -20,7 +20,7 @@ const ExportButton = ({ data, filename = 'export', title = 'Report', className =
         onClick={() => setShowExportMenu(!showExportMenu)}
         className={`px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center ${className}`}
       >
-        <Download size={16} className="mr-2" /> Export <ChevronDown size={14} className="ml-2" />
+        <Download size={16} className="mr-2" /> {label} <ChevronDown size={14} className="ml-2" />
       </button>
       
       {showExportMenu && (
