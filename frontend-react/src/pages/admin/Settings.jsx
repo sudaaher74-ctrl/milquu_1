@@ -108,6 +108,55 @@ const Settings = () => {
             </div>
           )}
 
+          {activeTab === 'Delivery & Taxes' && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+              <h2 className="text-xl font-bold text-milquu-dark mb-6">Delivery & Taxation Settings</h2>
+              
+              <div className="space-y-8">
+                {/* Delivery Settings */}
+                <div>
+                  <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Delivery Logic</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Default Delivery Charge (₹)</label>
+                      <input type="number" defaultValue="20" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-milquu-blue transition-all text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Free Delivery Threshold (₹)</label>
+                      <input type="number" defaultValue="500" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-milquu-blue transition-all text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Morning Delivery Cut-off Time</label>
+                      <input type="time" defaultValue="22:00" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-milquu-blue transition-all text-sm" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tax Settings */}
+                <div>
+                  <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Taxation (GST)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Default Product GST (%)</label>
+                      <select className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-milquu-blue transition-all text-sm">
+                        <option value="0">0% (Exempted)</option>
+                        <option value="5" selected>5% (Standard Dairy)</option>
+                        <option value="12">12%</option>
+                        <option value="18">18%</option>
+                      </select>
+                    </div>
+                    <div className="flex items-end">
+                      <label className="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" defaultChecked className="w-5 h-5 rounded border-gray-300 text-milquu-blue focus:ring-milquu-blue" />
+                        <span className="text-sm font-semibold text-gray-700">Prices Include Tax (Inclusive GST)</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'Employee & Roles' && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="p-6 sm:p-8 border-b border-gray-100 flex justify-between items-center">
