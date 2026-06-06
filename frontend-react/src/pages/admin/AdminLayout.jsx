@@ -61,6 +61,17 @@ const AdminLayout = () => {
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
+  useEffect(() => {
+    if (localStorage.getItem('enterpriseDarkMode') === 'true') {
+      document.documentElement.classList.add('dark-dashboard');
+    } else {
+      document.documentElement.classList.remove('dark-dashboard');
+    }
+    return () => {
+      document.documentElement.classList.remove('dark-dashboard');
+    };
+  }, []);
+
   return (
     <div className="flex h-screen bg-milquu-gray overflow-hidden font-sans">
       

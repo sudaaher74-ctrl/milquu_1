@@ -37,3 +37,82 @@
     scrollbar-width: none;
   }
 }
+
+/* Enterprise Dark Mode Overrides */
+.dark-dashboard {
+  background-color: #111827 !important;
+  color: #F3F4F6 !important;
+}
+.dark-dashboard .bg-white {
+  background-color: #1F2937 !important;
+}
+.dark-dashboard .bg-gray-50 {
+  background-color: #374151 !important;
+}
+.dark-dashboard .bg-milquu-gray {
+  background-color: #111827 !important;
+}
+.dark-dashboard .text-milquu-dark {
+  color: #F9FAFB !important;
+}
+.dark-dashboard .text-gray-900 {
+  color: #F9FAFB !important;
+}
+.dark-dashboard .text-gray-800 {
+  color: #E5E7EB !important;
+}
+.dark-dashboard .text-gray-700 {
+  color: #D1D5DB !important;
+}
+.dark-dashboard .text-gray-600 {
+  color: #9CA3AF !important;
+}
+.dark-dashboard .text-gray-500 {
+  color: #6B7280 !important;
+}
+.dark-dashboard .border-gray-100 {
+  border-color: #374151 !important;
+}
+.dark-dashboard .border-gray-200 {
+  border-color: #4B5563 !important;
+}
+.dark-dashboard .border-b, .dark-dashboard .border-t, .dark-dashboard .border-r, .dark-dashboard .border-l {
+  border-color: #374151 !important;
+}
+.dark-dashboard .bg-milquu-dark {
+  background-color: #3B82F6 !important;
+  color: #FFFFFF !important;
+}
+.dark-dashboard .hover\:bg-gray-800:hover {
+  background-color: #2563EB !important;
+}
+.dark-dashboard .bg-milquu-blue {
+  background-color: #3B82F6 !important;
+}
+.dark-dashboard .text-white {
+  color: #ffffff !important;
+}
+.dark-dashboard .recharts-cartesian-grid-horizontal line, .dark-dashboard .recharts-cartesian-grid-vertical line {
+  stroke: #374151 !important;
+}
+.dark-dashboard .recharts-text {
+  fill: #9CA3AF !important;
+}
+.dark-dashboard .shadow-sm, .dark-dashboard .shadow-md, .dark-dashboard .shadow-lg {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3) !important;
+}
+.dark-dashboard input, .dark-dashboard select, .dark-dashboard textarea {
+  background-color: #374151 !important;
+  color: #F3F4F6 !important;
+  border-color: #4B5563 !important;
+}
+.dark-dashboard input::placeholder {
+  color: #9CA3AF !important;
+}
+.dark-dashboard th {
+  background-color: #1F2937 !important;
+  color: #9CA3AF !important;
+}
+.dark-dashboard tr:hover td {
+  background-color: #374151 !important;
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Store, Truck, CreditCard, Users, Settings as SettingsIcon, Moon, Save, Shield, Activity, Search, ShieldCheck } from 'lucide-react';
 
 const mockAuditLogs = [
@@ -17,6 +17,18 @@ const mockEmployees = [
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('Business Details');
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('enterpriseDarkMode') === 'true');
+
+  const handleDarkModeToggle = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('enterpriseDarkMode', newMode);
+    if (newMode) {
+      document.documentElement.classList.add('dark-dashboard');
+    } else {
+      document.documentElement.classList.remove('dark-dashboard');
+    }
+  };
 
   const tabs = [
     { name: 'Business Details', icon: <Store size={18} /> },
@@ -187,7 +199,7 @@ const Settings = () => {
                   <p className="text-xs text-gray-500 mt-0.5">Switch the dashboard to a high-contrast dark theme.</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
+                  <input type="checkbox" className="sr-only peer" checked={darkMode} onChange={handleDarkModeToggle} />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-milquu-dark"></div>
                 </label>
               </div>
