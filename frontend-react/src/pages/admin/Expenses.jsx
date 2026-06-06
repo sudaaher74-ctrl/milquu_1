@@ -9,10 +9,6 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 
-const categoryData = [];
-
-const monthlyTrendData = [];
-
 const Expenses = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expenseData, setExpenseData] = useState([]);
@@ -72,9 +68,83 @@ const Expenses = () => {
     fetchExpenses();
   }, []);
 
-  const todayExpense = 0;
-  const monthExpense = expenseData.reduce((acc, curr) => acc + curr.amount, 0);
-  const yearExpense = 0;
+  const categoryColors = {
+    'Packaging': '#3B82F6',
+    'Marketing': '#EC4899',
+    'Salaries': '#10B981',
+    'Fuel & Logistics': '#F59E0B',
+    'Fuel': '#F59E0B',
+    'Utilities': '#8B5CF6'
+  };
+
+  const categoryData = React.useMemo(() => {
+    const totals = expenseData.reduce((acc, exp) => {
+      acc[exp.category] = (acc[exp.category] || 0) + exp.amount;
+      return acc;
+    }, {});
+    return Object.entries(totals).map(([name, value]) => ({
+      name,
+      value,
+      color: categoryColors[name] || '#9CA3AF'
+    })).sort((a, b) => b.value - a.value);
+  }, [expenseData]);
+
+  const monthlyTrendData = React.useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    // Create an array of 6 months ending in current month
+    const currentMonthIndex = new Date().getMonth();
+    const last6Months = [];
+    for (let i = 5; i >= 0; i--) {
+      let d = new Date();
+      d.setMonth(currentMonthIndex - i);
+      last6Months.push({
+        name: months[d.getMonth()],
+        month: d.getMonth(),
+        year: d.getFullYear(),
+        expense: 0
+      });
+    }
+
+    expenseData.forEach(exp => {
+      const d = new Date(exp.date);
+      const m = d.getMonth();
+      const y = d.getFullYear();
+      const target = last6Months.find(item => item.month === m && item.year === y);
+      if (target) {
+        target.expense += exp.amount;
+      }
+    });
+
+    return last6Months;
+  }, [expenseData]);
+
+  const todayExpense = React.useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return expenseData.filter(e => {
+        try { return new Date(e.date).toISOString().split('T')[0] === today; } 
+        catch { return false; }
+    }).reduce((sum, e) => sum + e.amount, 0);
+  }, [expenseData]);
+
+  const monthExpense = React.useMemo(() => {
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    return expenseData.filter(e => {
+      try {
+        const d = new Date(e.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      } catch { return false; }
+    }).reduce((sum, e) => sum + e.amount, 0);
+  }, [expenseData]);
+
+  const yearExpense = React.useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return expenseData.filter(e => {
+      try { return new Date(e.date).getFullYear() === currentYear; }
+      catch { return false; }
+    }).reduce((sum, e) => sum + e.amount, 0);
+  }, [expenseData]);
 
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">
