@@ -153,6 +153,8 @@ const CategoryListing = () => {
 
   const getProductSlug = (name) => {
     const n = name.toLowerCase();
+    if (n.includes('buffalo') && n.includes('pouch')) return 'buffalo-milk-pouch';
+    if (n.includes('cow') && n.includes('pouch')) return 'cow-milk-pouch';
     if (n.includes('buffalo')) return 'pure-buffalo-milk';
     if (n.includes('paneer')) return 'fresh-paneer';
     if (n.includes('ghee')) return 'desi-cow-ghee';
