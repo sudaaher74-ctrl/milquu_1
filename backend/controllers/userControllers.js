@@ -249,7 +249,7 @@ export const createRechargeOrder = async (req, res) => {
     const options = {
       amount: amount * 100, // Razorpay works in paise
       currency: 'INR',
-      receipt: `receipt_wallet_${req.user._id}_${Date.now()}`
+      receipt: `rw_${req.user._id.toString().slice(-6)}_${Date.now()}`
     };
 
     const order = await razorpay.orders.create(options);
