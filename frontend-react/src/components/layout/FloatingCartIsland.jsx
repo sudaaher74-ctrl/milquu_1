@@ -30,7 +30,7 @@ const FloatingCartIsland = () => {
           animate={{ y: 0, opacity: 1, scale: 1 }}
           exit={{ y: 150, opacity: 0, scale: 0.9 }}
           transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-          className="fixed bottom-6 left-4 right-4 z-[90] md:hidden"
+          className="fixed bottom-[110px] left-4 right-4 z-[90] md:hidden"
         >
           <Link
             to="/cart"
