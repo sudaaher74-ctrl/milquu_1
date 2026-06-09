@@ -61,6 +61,7 @@ const Overview = () => {
     }
   });
 
+  const reportData = [
     { Metric: 'Total Revenue', Value: metrics.revenue },
     { Metric: 'COGS', Value: metrics.cogs },
     { Metric: 'Gross Profit', Value: metrics.grossProfit },
