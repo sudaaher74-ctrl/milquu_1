@@ -142,6 +142,7 @@ const MyAccount = () => {
       let orderData;
       try {
         orderData = await orderRes.json();
+        console.log("Recharge API Response", orderData);
       } catch (parseErr) {
         alert('Server is still deploying or returned an invalid response. Please try again in 2 minutes.');
         return;
@@ -153,6 +154,7 @@ const MyAccount = () => {
       }
 
       // 3. Open Razorpay Checkout
+      console.log("Opening Razorpay Checkout", { id: orderData.id, amount: orderData.amount });
       const options = {
         key: orderData.key_id || 'rzp_test_mock',
         amount: orderData.amount,
@@ -161,6 +163,7 @@ const MyAccount = () => {
         description: 'Wallet Recharge',
         order_id: orderData.id,
         handler: async function (response) {
+          console.log("Payment Success", response);
           // 4. Verify Payment on Backend
           try {
             const verifyRes = await fetch(`${baseUrl}/api/users/wallet/recharge`, {
