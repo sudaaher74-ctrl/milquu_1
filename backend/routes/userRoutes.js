@@ -7,6 +7,7 @@ import {
   updateSubscriptionStatus,
   getMyOrders,
   getMyWallet,
+  createRechargeOrder,
   rechargeWallet
 } from '../controllers/userControllers.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -24,6 +25,7 @@ router.get('/orders', protect, getMyOrders);
 
 // Wallet routes
 router.get('/wallet', protect, getMyWallet);
+router.post('/wallet/create-recharge-order', protect, createRechargeOrder);
 router.post('/wallet/recharge', protect, rechargeWallet);
 
 export default router;

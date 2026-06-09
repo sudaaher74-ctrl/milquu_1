@@ -99,14 +99,33 @@ const MyAccount = () => {
     }
   };
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleRecharge = async (e) => {
     e.preventDefault();
     try {
       const userInfoStr = localStorage.getItem('userInfo');
       if (!userInfoStr) return;
-      const userToken = JSON.parse(userInfoStr).token;
+      const userObj = JSON.parse(userInfoStr);
+      const userToken = userObj.token;
 
-      const res = await fetch(`${baseUrl}/api/users/wallet/recharge`, {
+      // 1. Load Razorpay Script
+      const resLoad = await loadRazorpayScript();
+      if (!resLoad) {
+        alert('Razorpay SDK failed to load. Are you online?');
+        return;
+      }
+
+      // 2. Create Order on Backend
+      const orderRes = await fetch(`${baseUrl}/api/users/wallet/create-recharge-order`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -114,13 +133,67 @@ const MyAccount = () => {
         },
         body: JSON.stringify({ amount: rechargeAmount })
       });
-      if (res.ok) {
-        setRechargeAmount('');
-        fetchWallet();
-        alert('Wallet Recharged Successfully!');
+      const orderData = await orderRes.json();
+      
+      if (!orderData.id) {
+        alert('Server Error: Could not create Razorpay Order.');
+        return;
       }
+
+      // 3. Open Razorpay Checkout
+      const options = {
+        key: 'rzp_test_mock', // Replace with real key in production
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'MilQuu Fresh',
+        description: 'Wallet Recharge',
+        order_id: orderData.id,
+        handler: async function (response) {
+          // 4. Verify Payment on Backend
+          try {
+            const verifyRes = await fetch(`${baseUrl}/api/users/wallet/recharge`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${userToken}` 
+              },
+              body: JSON.stringify({
+                amount: rechargeAmount,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            });
+            
+            if (verifyRes.ok) {
+              setRechargeAmount('');
+              fetchWallet();
+              alert('Wallet Recharged Successfully via Razorpay!');
+            } else {
+              const errData = await verifyRes.json();
+              alert(`Payment Verification Failed: ${errData.message}`);
+            }
+          } catch (err) {
+            console.error('Verification Error', err);
+            alert('Error verifying payment.');
+          }
+        },
+        prefill: {
+          name: userObj.name,
+          email: userObj.email,
+          contact: userObj.phone || '9999999999'
+        },
+        theme: {
+          color: '#3B82F6' // Milquu Blue
+        }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+
     } catch (err) {
       console.error(err);
+      alert('Error initiating recharge.');
     }
   };
 

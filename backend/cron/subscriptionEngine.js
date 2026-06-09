@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import Subscription from '../models/Subscription.js';
 import Order from '../models/Order.js';
+import User from '../models/User.js';
 
 export const startSubscriptionEngine = () => {
   // Run every night at 11:59 PM
@@ -37,6 +38,21 @@ export const startSubscriptionEngine = () => {
           continue;
         }
 
+        // Fetch User to check Wallet Balance
+        const user = await User.findById(sub.user);
+        const dailyCost = sub.monthlyTotal / 30; // Rough estimate for daily price
+
+        if (!user) continue;
+
+        if (user.walletBalance < dailyCost) {
+          console.log(`Auto-pausing subscription ${sub._id} due to low balance (Balance: ₹${user.walletBalance}, Cost: ₹${dailyCost})`);
+          sub.status = 'paused';
+          await sub.save();
+          continue;
+        } else if (user.walletBalance < (dailyCost * 3)) {
+          console.log(`[SIMULATED SMS to ${user.phone}]: Hi ${user.name}, your MilQuu wallet is critically low (₹${user.walletBalance}). Please recharge to avoid milk delivery pauses.`);
+        }
+
         // Generate an order for this subscription for tomorrow
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -58,9 +74,9 @@ export const startSubscriptionEngine = () => {
             postalCode: '000000',
             country: 'India'
           },
-          paymentMethod: 'Subscription',
+          paymentMethod: 'Wallet', // Changed from 'Subscription' to 'Wallet' for Phase 2/3
           taxPrice: 0,
-          totalPrice: sub.monthlyTotal / 30, // Rough estimate for daily price
+          totalPrice: dailyCost,
           isPaid: false,
           isDelivered: false,
           scheduledDeliveryDate: tomorrow,
