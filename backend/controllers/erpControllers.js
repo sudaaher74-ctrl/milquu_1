@@ -250,7 +250,18 @@ export const getDashboardAnalytics = async (req, res) => {
     const netProfit = orderStats.grossProfit - totalExpenses;
 
     const inventoryPipeline = await Product.aggregate([
-      { $group: { _id: null, totalValue: { $sum: "$currentStockValue" } } }
+      {
+        $project: {
+          computedStockValue: {
+            $max: [
+              { $ifNull: ["$currentStockValue", 0] },
+              { $ifNull: ["$stockValue", 0] },
+              { $multiply: [{ $ifNull: ["$stock", 0] }, { $ifNull: ["$purchasePrice", 0] }] }
+            ]
+          }
+        }
+      },
+      { $group: { _id: null, totalValue: { $sum: "$computedStockValue" } } }
     ]);
     const inventoryValue = inventoryPipeline.length > 0 ? inventoryPipeline[0].totalValue : 0;
 
