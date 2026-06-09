@@ -4,6 +4,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import FloatingWhatsApp from './components/layout/FloatingWhatsApp';
 import FloatingCartIsland from './components/layout/FloatingCartIsland';
+import MobileNav from './components/layout/MobileNav';
 
 // Lazy load all pages to improve mobile load speed significantly
 const Home = lazy(() => import('./pages/Home'));
@@ -147,9 +148,10 @@ function App() {
       <ScrollToTop />
       {!hideLayout && <Navbar />}
       
-      <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
+      <div className={!hideLayout ? "pb-[90px] md:pb-0" : ""}>
+        <ErrorBoundary>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<CategoryListing />} />
             <Route path="/contact" element={<ContactUs />} />
@@ -240,10 +242,12 @@ function App() {
 
             {/* Global Catch-all */}
             <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-      </ErrorBoundary>
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
+      </div>
 
+      {!hideLayout && <MobileNav />}
       {!hideLayout && <FloatingCartIsland />}
       {!hideLayout && <FloatingWhatsApp />}
       {!hideLayout && <Footer />}
