@@ -2,6 +2,7 @@ import express from 'express';
 import Subscription from '../models/Subscription.js';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
+import WalletTransaction from '../models/WalletTransaction.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -98,6 +99,7 @@ router.get('/customers', protect, admin, async (req, res) => {
         ...c,
         orders: stats ? stats.totalOrders : 0,
         lifetimeValue: stats ? stats.lifetimeValue : 0,
+        walletBalance: c.walletBalance || 0,
         status: (stats && stats.totalOrders > 5) ? 'VIP' : (stats && stats.totalOrders > 0 ? 'Active' : 'New')
       };
     }).sort((a, b) => b.lifetimeValue - a.lifetimeValue);
@@ -260,6 +262,62 @@ router.get('/employees', protect, admin, async (req, res) => {
   try {
     const employees = await User.find({ role: { $in: ['admin', 'manager', 'staff', 'superadmin'] } }).select('-password');
     res.json(employees);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+});
+
+// @route   POST /api/admin/wallets/transaction
+// @desc    Credit or Debit a user's wallet
+// @access  Private
+router.post('/wallets/transaction', protect, admin, async (req, res) => {
+  try {
+    const { userId, amount, type, description } = req.body;
+
+    if (!userId || !amount || !type || !description) {
+      return res.status(400).json({ message: 'Please provide all required fields' });
+    }
+
+    if (type !== 'credit' && type !== 'debit') {
+      return res.status(400).json({ message: 'Type must be credit or debit' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const transactionAmount = parseFloat(amount);
+    
+    if (type === 'debit' && user.walletBalance < transactionAmount) {
+      return res.status(400).json({ message: 'Insufficient wallet balance' });
+    }
+
+    // Update balance
+    if (type === 'credit') {
+      user.walletBalance += transactionAmount;
+    } else {
+      user.walletBalance -= transactionAmount;
+    }
+
+    await user.save();
+
+    // Create transaction record
+    const transaction = await WalletTransaction.create({
+      user: user._id,
+      amount: transactionAmount,
+      type,
+      description,
+      balanceAfter: user.walletBalance,
+      performedBy: req.user._id
+    });
+
+    res.status(201).json({
+      message: `Wallet ${type} successful`,
+      walletBalance: user.walletBalance,
+      transaction
+    });
+
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }

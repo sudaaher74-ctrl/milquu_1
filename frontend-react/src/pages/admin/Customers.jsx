@@ -29,6 +29,7 @@ const Customers = () => {
           joined: new Date(c.createdAt).toLocaleDateString(),
           orders: c.orders, 
           lifetimeValue: `₹${c.lifetimeValue}`,
+          walletBalance: c.walletBalance || 0,
           status: c.status
         }));
         setTopCustomers(mapped);
@@ -43,6 +44,37 @@ const Customers = () => {
     };
     fetchCustomers();
   }, []);
+
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [walletForm, setWalletForm] = useState({ amount: '', type: 'credit', description: 'Manual Recharge' });
+
+  const handleWalletSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/api/admin/wallets/transaction', {
+        userId: selectedCustomer.id,
+        amount: walletForm.amount,
+        type: walletForm.type,
+        description: walletForm.description
+      });
+      // Refresh list
+      const res = await api.get('/api/admin/customers');
+      const mapped = res.data.topCustomers.map(c => ({
+          id: c._id,
+          name: c.name,
+          joined: new Date(c.createdAt).toLocaleDateString(),
+          orders: c.orders, 
+          lifetimeValue: `₹${c.lifetimeValue}`,
+          walletBalance: c.walletBalance || 0,
+          status: c.status
+      }));
+      setTopCustomers(mapped);
+      setWalletModalOpen(false);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Transaction failed');
+    }
+  };
 
 const StatCard = ({ title, value, icon, trend, colorClass }) => (
   <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between relative overflow-hidden group">
@@ -172,8 +204,10 @@ const StatCard = ({ title, value, icon, trend, colorClass }) => (
                 <th className="px-6 py-4 font-semibold">Customer</th>
                 <th className="px-6 py-4 font-semibold">Joined Date</th>
                 <th className="px-6 py-4 font-semibold">Total Orders</th>
+                <th className="px-6 py-4 font-semibold">Wallet</th>
                 <th className="px-6 py-4 font-semibold">Lifetime Value</th>
-                <th className="px-6 py-4 font-semibold text-right">Status</th>
+                <th className="px-6 py-4 font-semibold">Status</th>
+                <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -189,8 +223,9 @@ const StatCard = ({ title, value, icon, trend, colorClass }) => (
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">{customer.joined}</td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-700">{customer.orders}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-milquu-blue">₹{customer.walletBalance}</td>
                   <td className="px-6 py-4 text-sm font-bold text-green-600">{customer.lifetimeValue}</td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${
                       customer.status === 'VIP' ? 'bg-orange-100 text-orange-700 border border-orange-200' :
                       customer.status === 'New' ? 'bg-blue-100 text-blue-700' :
@@ -199,12 +234,60 @@ const StatCard = ({ title, value, icon, trend, colorClass }) => (
                       {customer.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-right">
+                    <button 
+                      onClick={() => { setSelectedCustomer(customer); setWalletModalOpen(true); }}
+                      className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded font-bold transition-colors"
+                    >
+                      Manage Wallet
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* Wallet Management Modal */}
+      {walletModalOpen && selectedCustomer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold text-milquu-dark mb-1">Manage Wallet</h2>
+            <p className="text-sm text-gray-500 mb-6">Customer: <span className="font-bold">{selectedCustomer.name}</span> | Balance: <span className="font-bold text-milquu-blue">₹{selectedCustomer.walletBalance}</span></p>
+            
+            <form onSubmit={handleWalletSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Transaction Type</label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input type="radio" name="type" checked={walletForm.type === 'credit'} onChange={() => setWalletForm({...walletForm, type: 'credit', description: 'Manual Recharge'})} className="text-milquu-blue" />
+                    <span className="text-sm font-medium text-gray-700">Credit (Add)</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input type="radio" name="type" checked={walletForm.type === 'debit'} onChange={() => setWalletForm({...walletForm, type: 'debit', description: 'Manual Deduction'})} className="text-red-500" />
+                    <span className="text-sm font-medium text-gray-700">Debit (Deduct)</span>
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Amount (₹)</label>
+                <input type="number" required min="1" value={walletForm.amount} onChange={e => setWalletForm({...walletForm, amount: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-milquu-blue text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Description / Reason</label>
+                <input type="text" required value={walletForm.description} onChange={e => setWalletForm({...walletForm, description: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-milquu-blue text-sm" />
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button type="button" onClick={() => setWalletModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
+                <button type="submit" className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors ${walletForm.type === 'credit' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
+                  Confirm {walletForm.type === 'credit' ? 'Recharge' : 'Deduction'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
