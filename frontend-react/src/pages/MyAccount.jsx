@@ -154,7 +154,7 @@ const MyAccount = () => {
 
       // 3. Open Razorpay Checkout
       const options = {
-        key: 'rzp_test_mock', // Replace with real key in production
+        key: orderData.key_id || 'rzp_test_mock',
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'MilQuu Fresh',
