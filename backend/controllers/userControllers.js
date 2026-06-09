@@ -243,7 +243,7 @@ export const createRechargeOrder = async (req, res) => {
 
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_mock',
-      key_secret: process.env.RAZORPAY_SECRET || 'rzp_secret_mock',
+      key_secret: process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET || 'rzp_secret_mock',
     });
 
     const options = {
@@ -269,7 +269,7 @@ export const rechargeWallet = async (req, res) => {
     if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
 
     // Verify signature
-    const secret = process.env.RAZORPAY_SECRET || 'rzp_secret_mock';
+    const secret = process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET || 'rzp_secret_mock';
     const generated_signature = crypto
       .createHmac('sha256', secret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
