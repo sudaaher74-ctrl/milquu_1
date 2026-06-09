@@ -27,6 +27,7 @@ const Deliveries = () => {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [assignForm, setAssignForm] = useState({ agentId: '', area: '' });
   const [availableStaff, setAvailableStaff] = useState([]);
+  const [deliveryStats, setDeliveryStats] = useState({ avgDeliveryTime: 0, onTimeRate: 0 });
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -62,6 +63,32 @@ const Deliveries = () => {
           };
         }).filter(d => d.status === 'Active');
 
+        const completedOrdersList = orders.filter(o => o.isDelivered && o.deliveredAt);
+        let totalDeliveryTimeMins = 0;
+        let onTimeCount = 0;
+
+        completedOrdersList.forEach(o => {
+          const created = new Date(o.createdAt);
+          const delivered = new Date(o.deliveredAt);
+          const diffMins = Math.round((delivered - created) / 60000);
+          totalDeliveryTimeMins += Math.max(0, diffMins); // fallback against negative
+
+          if (o.scheduledDeliveryDate) {
+            const scheduled = new Date(o.scheduledDeliveryDate);
+            // If delivered same day as scheduled
+            if (delivered.toDateString() === scheduled.toDateString()) {
+              onTimeCount++;
+            }
+          } else {
+            // Default: if delivered within 48 hours
+            if (diffMins <= 48 * 60) onTimeCount++;
+          }
+        });
+
+        const avgDeliveryTime = completedOrdersList.length > 0 ? Math.round(totalDeliveryTimeMins / completedOrdersList.length) : 0;
+        const onTimeRate = completedOrdersList.length > 0 ? Math.round((onTimeCount / completedOrdersList.length) * 100) : 0;
+
+        setDeliveryStats({ avgDeliveryTime, onTimeRate });
         setAvailableStaff(staff);
         setMockDeliveries(deliveriesByStaff);
         setLoading(false);
@@ -278,12 +305,12 @@ const Deliveries = () => {
              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center">
                 <Clock size={32} className="text-blue-500 mb-3" />
                 <h3 className="text-gray-500 text-sm font-medium">Avg Delivery Time</h3>
-                <p className="text-3xl font-bold text-milquu-dark mt-1">0 <span className="text-lg text-gray-400">mins</span></p>
+                <p className="text-3xl font-bold text-milquu-dark mt-1">{deliveryStats.avgDeliveryTime > 0 ? deliveryStats.avgDeliveryTime : '-'}<span className="text-lg text-gray-400">mins</span></p>
              </div>
              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center items-center text-center">
                 <CheckCircle2 size={32} className="text-green-500 mb-3" />
                 <h3 className="text-gray-500 text-sm font-medium">On-Time Rate</h3>
-                <p className="text-3xl font-bold text-milquu-dark mt-1">0%</p>
+                <p className="text-3xl font-bold text-milquu-dark mt-1">{deliveryStats.onTimeRate}%</p>
              </div>
           </div>
         </div>

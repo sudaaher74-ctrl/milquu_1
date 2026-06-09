@@ -53,7 +53,7 @@ const BusinessOverview = () => {
     name: d.name,
     revenue: d.revenue,
     profit: d.profit,
-    sales: Math.round(d.revenue / 70) // Mock sales volume
+    sales: d.salesVolume || 0
   }));
 
   const exportData = [

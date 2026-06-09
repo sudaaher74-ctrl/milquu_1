@@ -253,4 +253,16 @@ router.get('/revenue-analytics', protect, admin, async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/employees
+// @desc    Get all employees/admins
+// @access  Private
+router.get('/employees', protect, admin, async (req, res) => {
+  try {
+    const employees = await User.find({ role: { $in: ['admin', 'manager', 'staff', 'superadmin'] } }).select('-password');
+    res.json(employees);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+});
+
 export default router;

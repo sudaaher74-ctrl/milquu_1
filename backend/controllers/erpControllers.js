@@ -282,11 +282,16 @@ export const getDashboardAnalytics = async (req, res) => {
           createdAt: { $gte: sevenDaysAgo } 
         } 
       },
+      { $unwind: "$orderItems" },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          revenue: { $sum: "$totalPrice" },
-          grossProfit: { $sum: "$grossProfit" }
+          revenue: { $sum: { $multiply: ["$orderItems.price", "$orderItems.qty"] } },
+          grossProfit: { $sum: { $subtract: [
+            { $multiply: ["$orderItems.price", "$orderItems.qty"] },
+            { $multiply: [{ $ifNull: ["$orderItems.cogs", 0] }, "$orderItems.qty"] }
+          ]}},
+          salesVolume: { $sum: "$orderItems.qty" }
         }
       },
       { $sort: { "_id": 1 } }
@@ -302,7 +307,8 @@ export const getDashboardAnalytics = async (req, res) => {
       revenueData.push({
         name: days[d.getDay()],
         revenue: found ? found.revenue : 0,
-        profit: found ? found.grossProfit : 0
+        profit: found ? found.grossProfit : 0,
+        salesVolume: found ? found.salesVolume : 0
       });
     }
 

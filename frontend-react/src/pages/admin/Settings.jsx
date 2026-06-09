@@ -8,16 +8,32 @@ const mockAuditLogs = [
   { id: 4, action: 'Generated Monthly Revenue Report', user: 'Finance Admin', role: 'Admin', time: '2 days ago', ip: '10.0.0.8' },
 ];
 
-const mockEmployees = [
-  { id: 1, name: 'Admin User', email: 'admin@milquufresh.com', role: 'Superadmin', status: 'Active' },
-  { id: 2, name: 'Logistics Mgr', email: 'logistics@milquufresh.com', role: 'Manager', status: 'Active' },
-  { id: 3, name: 'Finance Admin', email: 'finance@milquufresh.com', role: 'Admin', status: 'Active' },
-  { id: 4, name: 'Support Rep', email: 'support@milquufresh.com', role: 'Agent', status: 'Suspended' },
-];
-
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('Business Details');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('enterpriseDarkMode') === 'true');
+  const [employees, setEmployees] = useState([]);
+
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const { data } = await api.get('/api/admin/employees');
+        const formatted = data.map(emp => ({
+          id: emp._id,
+          name: emp.name,
+          email: emp.email,
+          role: emp.role === 'admin' ? 'Superadmin' : emp.role,
+          status: 'Active' // We can assume active or fetch real status if it existed
+        }));
+        setEmployees(formatted);
+      } catch (error) {
+        console.error("Failed to fetch employees", error);
+      }
+    };
+    fetchEmployees();
+  }, []);
+
+
+
 
   const handleDarkModeToggle = () => {
     const newMode = !darkMode;
@@ -180,7 +196,7 @@ const Settings = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {mockEmployees.map((emp) => (
+                    {employees.map((emp) => (
                       <tr key={emp.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4">
                           <p className="text-sm font-bold text-milquu-dark">{emp.name}</p>

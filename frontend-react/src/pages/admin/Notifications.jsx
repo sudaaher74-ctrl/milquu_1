@@ -5,11 +5,59 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const mockAlerts = [];
+
 
 const Notifications = () => {
   const [activeFilter, setActiveFilter] = useState('All');
-  const [alerts, setAlerts] = useState(mockAlerts);
+  const [alerts, setAlerts] = useState([]);
+
+  React.useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        const { data } = await api.get('/api/erp/analytics');
+        const generatedAlerts = [];
+        
+        if (data.actionRequired) {
+          data.actionRequired.forEach((item, index) => {
+            generatedAlerts.push({
+              id: `stock-${index}`,
+              title: 'Critical Stock Alert',
+              message: `${item.name} is running critically low. Current stock is ${item.stock}.`,
+              category: 'Low Stock',
+              type: 'critical',
+              unread: true,
+              time: 'Just now',
+              icon: AlertTriangle,
+              bg: 'bg-red-50',
+              color: 'text-red-600',
+              border: 'border-red-100'
+            });
+          });
+        }
+        
+        if (data.operationsLive?.pendingDeliveries > 0) {
+          generatedAlerts.push({
+            id: 'pending-deliveries',
+            title: 'Pending Deliveries',
+            message: `You have ${data.operationsLive.pendingDeliveries} pending deliveries to process.`,
+            category: 'Delivery Delay',
+            type: 'warning',
+            unread: true,
+            time: 'Just now',
+            icon: Truck,
+            bg: 'bg-orange-50',
+            color: 'text-orange-600',
+            border: 'border-orange-100'
+          });
+        }
+
+        setAlerts(generatedAlerts);
+      } catch (error) {
+        console.error("Failed to fetch alerts", error);
+      }
+    };
+    fetchAlerts();
+  }, []);
 
   const unreadCount = alerts.filter(n => n.unread).length;
   const criticalCount = alerts.filter(n => n.type === 'critical').length;

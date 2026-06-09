@@ -98,7 +98,7 @@ const Inventory = () => {
             ...item,
             id: item._id,
             sellingPrice: item.price,
-            purchasePrice: item.purchasePrice || (item.price * 0.7), // Fallback
+            purchasePrice: (item.currentStockValue && item.currentStockQty > 0) ? (item.currentStockValue / item.currentStockQty) : (item.purchasePrice || (item.price * 0.7)),
             minLevel,
             status
           };
@@ -141,8 +141,8 @@ const Inventory = () => {
   const totalQuantity = inventoryData.reduce((acc, item) => acc + item.stock, 0);
   const lowStockCount = inventoryData.filter(i => i.status === 'Low Stock').length;
   const outOfStockCount = inventoryData.filter(i => i.status === 'Out of Stock').length;
-  // Mock dead inventory
-  const deadInventoryCount = 1;
+  // TODO: Implement staleness tracking on backend for dead inventory
+  const deadInventoryCount = 0;
 
   const filteredData = inventoryData.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
