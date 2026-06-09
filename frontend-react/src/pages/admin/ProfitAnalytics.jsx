@@ -67,21 +67,9 @@ const ProfitAnalytics = () => {
     net: d.profit
   }));
 
-  const categoryProfitData = [
-    { name: 'Milk Products', value: (analytics.revenue || 0) * 0.8, color: '#0D47A1' },
-    { name: 'Subscriptions', value: (analytics.revenue || 0) * 0.15, color: '#2E7D32' },
-    { name: 'Other', value: (analytics.revenue || 0) * 0.05, color: '#D4AF37' }
-  ];
-
-  const topProfitable = (analytics.topPerformers || []).map((p, i) => ({
-    id: i,
-    name: p.name,
-    margin: '35%',
-    profitPerUnit: Math.round(p.revenue / (p.volume || 1) * 0.35),
-    monthlyProfit: p.revenue * 0.35
-  }));
-
-  const leastProfitable = [];
+  const categoryProfitData = analytics.categoryProfitData || [];
+  const topProfitable = analytics.topProfitable || [];
+  const leastProfitable = analytics.leastProfitable || [];
 
   return (
     <div className="max-w-[1400px] mx-auto pb-10 font-sans">

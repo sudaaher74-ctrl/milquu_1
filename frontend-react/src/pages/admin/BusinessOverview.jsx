@@ -60,7 +60,7 @@ const BusinessOverview = () => {
     { Metric: 'Revenue Today', Value: analytics.revenue || 0 },
     { Metric: 'Profit Today', Value: analytics.netProfit || 0 },
     { Metric: 'Inventory Value', Value: analytics.purchases || 0 },
-    { Metric: 'Active Customers', Value: analytics.customerData?.length ? analytics.customerData[analytics.customerData.length-1].customers : 0 },
+    { Metric: 'Active Customers', Value: analytics.activeCustomers || 0 },
     { Metric: 'Pending Deliveries', Value: analytics.operationsLive?.pendingDeliveries || 0 }
   ];
 
@@ -90,10 +90,10 @@ const BusinessOverview = () => {
         <StatCard title="Profit This Month" value={`₹${(analytics.netProfit || 0).toLocaleString()}`} icon={<TrendingUp size={18} className="text-green-600"/>} colorClass="bg-green-100" />
         <StatCard title="Inventory Value" value={`₹${(analytics.purchases || 0).toLocaleString()}`} icon={<Package size={18} className="text-purple-600"/>} colorClass="bg-purple-100" />
         
-        <StatCard title="Shop Revenue" value="₹0" subtitle="This Month" icon={<Store size={18} className="text-orange-600"/>} colorClass="bg-orange-100" />
-        <StatCard title="Website Revenue" value={`₹${(analytics.revenue || 0).toLocaleString()}`} subtitle="This Month" icon={<Globe size={18} className="text-indigo-600"/>} colorClass="bg-indigo-100" />
-        <StatCard title="Active Customers" value={analytics.customerData?.length ? analytics.customerData[analytics.customerData.length-1].customers : 0} icon={<Users size={18} className="text-teal-600"/>} colorClass="bg-teal-100" />
-        <StatCard title="Active Subscribers" value={analytics.customerData?.length ? analytics.customerData[analytics.customerData.length-1].subs : 0} icon={<CalendarDays size={18} className="text-rose-600"/>} colorClass="bg-rose-100" />
+        <StatCard title="Shop Revenue" value={`₹${(analytics.shopRevenue || 0).toLocaleString()}`} subtitle="Filtered" icon={<Store size={18} className="text-orange-600"/>} colorClass="bg-orange-100" />
+        <StatCard title="Website Revenue" value={`₹${(analytics.webRevenue || 0).toLocaleString()}`} subtitle="Filtered" icon={<Globe size={18} className="text-indigo-600"/>} colorClass="bg-indigo-100" />
+        <StatCard title="Active Customers" value={analytics.activeCustomers || 0} icon={<Users size={18} className="text-teal-600"/>} colorClass="bg-teal-100" />
+        <StatCard title="Active Subscribers" value={analytics.activeSubscribers || 0} icon={<CalendarDays size={18} className="text-rose-600"/>} colorClass="bg-rose-100" />
         <StatCard title="Pending Orders" value={analytics.operationsLive?.pendingDeliveries || 0} icon={<ShoppingBag size={18} className="text-red-600"/>} colorClass="bg-red-100" borderClass="border-red-100 bg-red-50/30" />
       </div>
 
