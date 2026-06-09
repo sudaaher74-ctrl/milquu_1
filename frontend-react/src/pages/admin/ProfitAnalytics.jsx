@@ -35,11 +35,14 @@ const StatCard = ({ title, value, icon, colorClass, trend, subtitle }) => (
 );
 
 const ProfitAnalytics = () => {
+  const [dateRange, setDateRange] = React.useState('This Month');
   const [analytics, setAnalytics] = React.useState({
     revenue: 0,
+    cogs: 0,
+    grossProfit: 0,
     expenses: 0,
-    purchases: 0,
     netProfit: 0,
+    inventoryValue: 0,
     orders: 0
   });
   const [loading, setLoading] = React.useState(true);
@@ -47,7 +50,7 @@ const ProfitAnalytics = () => {
   React.useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const res = await api.get('/api/erp/analytics');
+        const res = await api.get(`/api/erp/analytics?dateRange=${encodeURIComponent(dateRange)}`);
         setAnalytics(res.data);
       } catch (error) {
         console.error("Failed to fetch analytics", error);
@@ -56,7 +59,7 @@ const ProfitAnalytics = () => {
       }
     };
     fetchAnalytics();
-  }, []);
+  }, [dateRange]);
 
   const profitTrendData = (analytics.revenueData || []).map(d => ({
     month: d.name,
@@ -89,19 +92,32 @@ const ProfitAnalytics = () => {
           <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Profit Analytics Engine</h1>
           <p className="text-gray-500 text-sm mt-1">Advanced breakdown of margins, costs, and net profitability.</p>
         </div>
-        <button className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
-          <Download size={18} className="mr-2" /> Export Profit P&L
-        </button>
+        <div className="flex items-center gap-4">
+          <select 
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            className="bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-milquu-blue"
+          >
+            <option value="Today">Today</option>
+            <option value="Last 7 Days">Last 7 Days</option>
+            <option value="Last 30 Days">Last 30 Days</option>
+            <option value="This Month">This Month</option>
+            <option value="This Year">This Year</option>
+          </select>
+          <button className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
+            <Download size={18} className="mr-2" /> Export Profit P&L
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <StatCard title="Gross Profit" value={`₹${(analytics.revenue || 0).toLocaleString()}`} subtitle="This Month" icon={<DollarSign size={20} className="text-blue-600"/>} colorClass="from-blue-400 to-blue-600" />
-        <StatCard title="Net Profit" value={`₹${(analytics.netProfit || 0).toLocaleString()}`} subtitle="This Month" trend={0} icon={<TrendingUp size={20} className="text-green-600"/>} colorClass="from-green-400 to-green-600" />
-        <StatCard title="Net Margin %" value={`${analytics.revenue ? Math.round((analytics.netProfit / analytics.revenue) * 100) : 0}%`} subtitle="Overall" trend={0} icon={<PieChartIcon size={20} className="text-purple-600"/>} colorClass="from-purple-400 to-purple-600" />
-        <StatCard title="Daily Profit" value={`₹${Math.round((analytics.netProfit || 0) / 30).toLocaleString()}`} subtitle="Average" icon={<Calculator size={20} className="text-orange-600"/>} colorClass="from-orange-400 to-orange-600" />
-        <StatCard title="Monthly Profit" value={`₹${(analytics.netProfit || 0).toLocaleString()}`} subtitle="Current" icon={<BarChart2 size={20} className="text-teal-600"/>} colorClass="from-teal-400 to-teal-600" />
-        <StatCard title="Yearly Profit" value={`₹${(analytics.netProfit || 0).toLocaleString()}`} subtitle="YTD" icon={<TrendingUp size={20} className="text-rose-600"/>} colorClass="from-rose-400 to-rose-600" />
+        <StatCard title="Total Revenue" value={`₹${(analytics.revenue || 0).toLocaleString()}`} subtitle={dateRange} icon={<DollarSign size={20} className="text-blue-600"/>} colorClass="from-blue-400 to-blue-600" />
+        <StatCard title="Cost of Goods (COGS)" value={`₹${(analytics.cogs || 0).toLocaleString()}`} subtitle={dateRange} icon={<Calculator size={20} className="text-red-600"/>} colorClass="from-red-400 to-red-600" />
+        <StatCard title="Gross Profit" value={`₹${(analytics.grossProfit || 0).toLocaleString()}`} subtitle={dateRange} icon={<PieChartIcon size={20} className="text-purple-600"/>} colorClass="from-purple-400 to-purple-600" />
+        <StatCard title="Operating Expenses" value={`₹${(analytics.expenses || 0).toLocaleString()}`} subtitle={dateRange} icon={<BarChart2 size={20} className="text-orange-600"/>} colorClass="from-orange-400 to-orange-600" />
+        <StatCard title="Net Profit" value={`₹${(analytics.netProfit || 0).toLocaleString()}`} subtitle={dateRange} trend={0} icon={<TrendingUp size={20} className="text-green-600"/>} colorClass="from-green-400 to-green-600" />
+        <StatCard title="Inventory Value" value={`₹${(analytics.inventoryValue || 0).toLocaleString()}`} subtitle="Current Stock" icon={<TrendingUp size={20} className="text-teal-600"/>} colorClass="from-teal-400 to-teal-600" />
       </div>
 
       {/* Main Charts Area */}
@@ -109,37 +125,31 @@ const ProfitAnalytics = () => {
         
         {/* Cost Formula Breakdown */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
-          <h2 className="text-lg font-bold text-milquu-dark mb-4">Profit Formula (Current Month)</h2>
+          <h2 className="text-lg font-bold text-milquu-dark mb-4">Profit Formula ({dateRange})</h2>
           <div className="space-y-3 flex-1 flex flex-col justify-center">
             <div className="flex justify-between items-center text-sm">
               <span className="font-bold text-gray-800">Total Revenue</span>
               <span className="font-bold text-milquu-blue">₹{(analytics.revenue || 0).toLocaleString()}</span>
             </div>
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <span>(-) Cost of Goods Sold (COGS)</span>
+              <span className="text-red-500">-₹{(analytics.cogs || 0).toLocaleString()}</span>
+            </div>
             <div className="border-b border-gray-100 my-1"></div>
-            <div className="flex justify-between items-center text-sm text-gray-600">
-              <span>(-) Raw Product Costs</span>
-              <span className="text-red-500">-₹{(analytics.purchases || 0).toLocaleString()}</span>
+            <div className="flex justify-between items-center text-sm text-gray-800 font-bold">
+              <span>= Gross Profit</span>
+              <span className="text-purple-600">₹{(analytics.grossProfit || 0).toLocaleString()}</span>
             </div>
-            <div className="flex justify-between items-center text-sm text-gray-600">
-              <span>(-) Packaging Cost</span>
-              <span className="text-red-500">-₹0</span>
-            </div>
-            <div className="flex justify-between items-center text-sm text-gray-600">
-              <span>(-) Employee Salaries</span>
-              <span className="text-red-500">-₹0</span>
-            </div>
-            <div className="flex justify-between items-center text-sm text-gray-600">
-              <span>(-) Delivery & Fuel</span>
-              <span className="text-red-500">-₹0</span>
-            </div>
-            <div className="flex justify-between items-center text-sm text-gray-600">
-              <span>(-) Operational Expenses</span>
-              <span className="text-red-500">-₹0</span>
+            <div className="flex justify-between items-center text-sm text-gray-600 mt-2">
+              <span>(-) Operating Expenses</span>
+              <span className="text-red-500">-₹{(analytics.expenses || 0).toLocaleString()}</span>
             </div>
             <div className="border-b border-gray-200 my-1"></div>
             <div className="flex justify-between items-center text-lg mt-2">
               <span className="font-bold text-milquu-dark">= Net Profit</span>
-              <span className="font-bold text-green-600">₹0</span>
+              <span className={`font-bold ${(analytics.netProfit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ₹{(analytics.netProfit || 0).toLocaleString()}
+              </span>
             </div>
           </div>
         </div>

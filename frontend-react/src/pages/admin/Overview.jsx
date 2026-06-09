@@ -43,9 +43,11 @@ const Overview = () => {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({
     revenue: 0,
+    cogs: 0,
+    grossProfit: 0,
     expenses: 0,
-    purchases: 0,
     netProfit: 0,
+    inventoryValue: 0,
     orders: 0,
     revenueData: [],
     customerData: [],
@@ -59,12 +61,13 @@ const Overview = () => {
     }
   });
 
-  const reportData = [
     { Metric: 'Total Revenue', Value: metrics.revenue },
+    { Metric: 'COGS', Value: metrics.cogs },
+    { Metric: 'Gross Profit', Value: metrics.grossProfit },
+    { Metric: 'Total Expenses', Value: metrics.expenses },
     { Metric: 'Net Profit', Value: metrics.netProfit },
     { Metric: 'Total Orders', Value: metrics.orders },
-    { Metric: 'Total Expenses', Value: metrics.expenses },
-    { Metric: 'Total Purchases', Value: metrics.purchases }
+    { Metric: 'Inventory Value', Value: metrics.inventoryValue }
   ];
 
   React.useEffect(() => {
@@ -106,7 +109,7 @@ const Overview = () => {
           <StatCard title="Net Profit" value={`₹${metrics.netProfit.toLocaleString()}`} icon={<TrendingUp size={22} className="text-green-600" />} colorClass="from-green-400 to-green-600" />
           <StatCard title="Total Orders" value={metrics.orders || 0} icon={<ShoppingBag size={22} className="text-purple-600" />} colorClass="from-purple-400 to-purple-600" />
           <StatCard title="Active Subscribers" value={metrics.customerData?.length ? metrics.customerData[metrics.customerData.length-1].subs : 0} icon={<CalendarDays size={22} className="text-orange-600" />} colorClass="from-orange-400 to-orange-600" />
-          <StatCard title="Inventory Value" value={`₹${(metrics.purchases || 0).toLocaleString()}`} icon={<Package size={22} className="text-teal-600" />} colorClass="from-teal-400 to-teal-600" />
+          <StatCard title="Inventory Value" value={`₹${(metrics.inventoryValue || 0).toLocaleString()}`} icon={<Package size={22} className="text-teal-600" />} colorClass="from-teal-400 to-teal-600" />
         </div>
       </div>
 
@@ -117,7 +120,7 @@ const Overview = () => {
           <StatCard title="Website Revenue" value={`₹${(metrics.revenue || 0).toLocaleString()}`} subtitle="Today" icon={<Globe size={22} className="text-indigo-600" />} colorClass="from-indigo-400 to-indigo-600" />
           <StatCard title="Shop POS Revenue" value="₹0" subtitle="Today" icon={<Store size={22} className="text-rose-600" />} colorClass="from-rose-400 to-rose-600" />
           <StatCard title="Total Expenses" value={`₹${(metrics.expenses || 0).toLocaleString()}`} icon={<TrendingDown size={22} className="text-red-500" />} colorClass="from-red-300 to-red-500" />
-          <StatCard title="Total Purchases" value={`₹${(metrics.purchases || 0).toLocaleString()}`} icon={<Package size={22} className="text-green-500" />} colorClass="from-green-300 to-green-500" />
+          <StatCard title="Cost of Goods (COGS)" value={`₹${(metrics.cogs || 0).toLocaleString()}`} icon={<Package size={22} className="text-green-500" />} colorClass="from-green-300 to-green-500" />
           <StatCard title="Pending Deliveries" value={metrics.operationsLive?.pendingDeliveries || 0} icon={<Truck size={22} className="text-yellow-600" />} colorClass="from-yellow-400 to-yellow-600" />
         </div>
       </div>

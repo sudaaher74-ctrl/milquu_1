@@ -13,7 +13,18 @@ const productSchema = new mongoose.Schema({
   purchasePrice: { type: Number, default: 0 },
   marginPercentage: { type: Number, default: 0 },
   stock: { type: Number, default: 0 },
-  stockValue: { type: Number, default: 0 }
+  stockValue: { type: Number, default: 0 },
+  
+  // New Inventory Tracking & COGS Fields
+  openingStockQty: { type: Number, default: 0 },
+  openingStockValue: { type: Number, default: 0 },
+  currentStockQty: { type: Number, default: 0 },
+  currentStockValue: { type: Number, default: 0 },
+  stockBatches: [{
+    qty: { type: Number, required: true },
+    costPerUnit: { type: Number, required: true },
+    date: { type: Date, default: Date.now }
+  }]
 }, {
   timestamps: true
 });

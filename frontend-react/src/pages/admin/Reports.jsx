@@ -52,12 +52,11 @@ const Reports = () => {
   const fetchReportData = async (reportId) => {
     switch (reportId) {
       case 'financial':
-        const p1 = await api.get('/api/erp/purchases');
         const e1 = await api.get('/api/erp/expenses');
         const o1 = await api.get('/api/erp/orders');
         return [
-          { type: 'Revenue', source: 'Online Orders', amount: o1.data.reduce((a,b)=>a+(b.totalPrice||0),0) },
-          { type: 'Cost', source: 'Purchases', amount: p1.data.reduce((a,b)=>a+(b.totalAmount||0),0) },
+          { type: 'Revenue', source: 'Total Sales', amount: o1.data.reduce((a,b)=>a+(b.totalPrice||0),0) },
+          { type: 'Cost', source: 'Cost of Goods Sold (COGS)', amount: o1.data.reduce((a,b)=>a+(b.totalCogs||0),0) },
           { type: 'Cost', source: 'Operating Expenses', amount: e1.data.reduce((a,b)=>a+(b.amount||0),0) }
         ];
       case 'sales':

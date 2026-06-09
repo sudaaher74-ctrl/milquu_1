@@ -23,21 +23,38 @@ export const createPurchase = async (req, res) => {
     const purchase = new Purchase(purchaseData);
     const createdPurchase = await purchase.save();
 
-    if (sellingPrice !== undefined && sellingPrice !== '') {
-      const product = await Product.findOne({ name: purchaseData.productName });
-      if (product) {
-        const rate = Number(purchaseData.rate) || 0;
+    const product = await Product.findOne({ name: purchaseData.productName });
+    if (product) {
+      const rate = Number(purchaseData.rate) || 0;
+      const qty = Number(purchaseData.quantity) || 0;
+      
+      product.purchasePrice = rate;
+      
+      if (sellingPrice !== undefined && sellingPrice !== '') {
         const sp = Number(sellingPrice);
-        product.purchasePrice = rate;
         product.price = sp;
         if (rate > 0) {
           product.marginPercentage = ((sp - rate) / rate) * 100;
         } else {
           product.marginPercentage = 100;
         }
-        product.stock += Number(purchaseData.quantity) || 0;
-        await product.save();
       }
+      
+      product.stock += qty;
+      product.currentStockQty += qty;
+      
+      product.stockBatches.push({
+        qty: qty,
+        costPerUnit: rate,
+        date: purchaseData.date || Date.now()
+      });
+      
+      let newValue = 0;
+      product.stockBatches.forEach(b => newValue += (b.qty * b.costPerUnit));
+      product.currentStockValue = newValue;
+      product.stockValue = newValue;
+      
+      await product.save();
     }
 
     res.status(201).json(createdPurchase);
@@ -147,21 +164,8 @@ export const createOrder = async (req, res) => {
 
     const order = new Order(orderData);
     const createdOrder = await order.save();
-
-    // Deduct stock for each item in the order
-    if (orderData.orderItems && Array.isArray(orderData.orderItems)) {
-      for (const item of orderData.orderItems) {
-        if (item.product) {
-          try {
-            await Product.findByIdAndUpdate(item.product, {
-              $inc: { stock: -item.qty }
-            });
-          } catch (err) {
-            console.error(`Failed to deduct stock for product ${item.product}:`, err);
-          }
-        }
-      }
-    }
+    
+    // Note: Stock deduction and COGS calculation are handled by the pre-save hook in Order model.
 
     res.status(201).json(createdOrder);
   } catch (error) {
@@ -194,43 +198,83 @@ export const assignOrderToStaff = async (req, res) => {
 // --- ANALYTICS DASHBOARD ---
 export const getDashboardAnalytics = async (req, res) => {
   try {
-    // Simple aggregation for POC
-    const totalOrders = await Order.countDocuments();
-    const totalRevenuePipeline = await Order.aggregate([
-      { $match: { isPaid: true } },
-      { $group: { _id: null, total: { $sum: "$totalPrice" } } }
+    const { dateRange } = req.query; // 'Today', 'Last 7 Days', 'Last 30 Days', 'This Month', 'This Year'
+
+    // Calculate Date Range Filter
+    let startDate = new Date(0);
+    let endDate = new Date();
+    
+    if (dateRange === 'Today') {
+      startDate.setHours(0,0,0,0);
+    } else if (dateRange === 'Last 7 Days') {
+      startDate.setDate(endDate.getDate() - 7);
+      startDate.setHours(0,0,0,0);
+    } else if (dateRange === 'Last 30 Days') {
+      startDate.setDate(endDate.getDate() - 30);
+      startDate.setHours(0,0,0,0);
+    } else if (dateRange === 'This Month') {
+      startDate.setDate(1);
+      startDate.setHours(0,0,0,0);
+    } else if (dateRange === 'This Year') {
+      startDate.setMonth(0, 1);
+      startDate.setHours(0,0,0,0);
+    }
+
+    const dateFilter = startDate.getTime() > 0 ? { createdAt: { $gte: startDate, $lte: endDate } } : {};
+
+    // For revenue, we want orders that are Paid OR Delivered
+    const revenueFilter = {
+      ...dateFilter,
+      $or: [{ isPaid: true }, { isDelivered: true }]
+    };
+
+    const ordersPipeline = await Order.aggregate([
+      { $match: revenueFilter },
+      { $group: {
+          _id: null,
+          totalRevenue: { $sum: "$totalPrice" },
+          totalCogs: { $sum: "$totalCogs" },
+          grossProfit: { $sum: "$grossProfit" },
+          orderCount: { $sum: 1 }
+      }}
     ]);
-    const totalRevenue = totalRevenuePipeline.length > 0 ? totalRevenuePipeline[0].total : 0;
+
+    const orderStats = ordersPipeline[0] || { totalRevenue: 0, totalCogs: 0, grossProfit: 0, orderCount: 0 };
 
     const totalExpensePipeline = await Expense.aggregate([
+      { $match: dateFilter },
       { $group: { _id: null, total: { $sum: "$amount" } } }
     ]);
     const totalExpenses = totalExpensePipeline.length > 0 ? totalExpensePipeline[0].total : 0;
 
-    const totalPurchasePipeline = await Purchase.aggregate([
-      { $group: { _id: null, total: { $sum: "$totalCost" } } }
+    const netProfit = orderStats.grossProfit - totalExpenses;
+
+    const inventoryPipeline = await Product.aggregate([
+      { $group: { _id: null, totalValue: { $sum: "$currentStockValue" } } }
     ]);
-    const totalPurchases = totalPurchasePipeline.length > 0 ? totalPurchasePipeline[0].total : 0;
+    const inventoryValue = inventoryPipeline.length > 0 ? inventoryPipeline[0].totalValue : 0;
 
-    const netProfit = totalRevenue - (totalExpenses + totalPurchases);
-
-    // Revenue Data (Last 7 Days)
+    // Daily Revenue/Profit Data (Last 7 Days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
     const dailyRevenuePipeline = await Order.aggregate([
-      { $match: { isPaid: true, createdAt: { $gte: sevenDaysAgo } } },
+      { $match: { 
+          $or: [{ isPaid: true }, { isDelivered: true }],
+          createdAt: { $gte: sevenDaysAgo } 
+        } 
+      },
       {
         $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          revenue: { $sum: "$totalPrice" }
+          revenue: { $sum: "$totalPrice" },
+          grossProfit: { $sum: "$grossProfit" }
         }
       },
       { $sort: { "_id": 1 } }
     ]);
 
-    // Map daily revenue to names
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const revenueData = [];
     for (let i = 0; i < 7; i++) {
@@ -238,84 +282,16 @@ export const getDashboardAnalytics = async (req, res) => {
       d.setDate(d.getDate() + i);
       const dateStr = d.toISOString().split('T')[0];
       const found = dailyRevenuePipeline.find(x => x._id === dateStr);
-      const rev = found ? found.revenue : 0;
       revenueData.push({
         name: days[d.getDay()],
-        revenue: rev,
-        profit: rev * 0.3, // Simple proxy for profit
-        web: rev,
-        shop: 0
+        revenue: found ? found.revenue : 0,
+        profit: found ? found.grossProfit : 0
       });
     }
 
-    // Customer Growth (Last 5 Months)
-    const fiveMonthsAgo = new Date();
-    fiveMonthsAgo.setMonth(fiveMonthsAgo.getMonth() - 4);
-    fiveMonthsAgo.setDate(1);
-
-    const usersMonthly = await User.aggregate([
-      { $match: { createdAt: { $gte: fiveMonthsAgo } } },
-      {
-        $group: {
-          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
-          customers: { $sum: 1 }
-        }
-      }
-    ]);
-
-    const subsMonthly = await Subscription.aggregate([
-      { $match: { createdAt: { $gte: fiveMonthsAgo } } },
-      {
-        $group: {
-          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
-          subs: { $sum: 1 }
-        }
-      }
-    ]);
-
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    // Customer Growth Data
     const customerData = [];
-    let cumulativeCustomers = await User.countDocuments({ createdAt: { $lt: fiveMonthsAgo } });
-    let cumulativeSubs = await Subscription.countDocuments({ createdAt: { $lt: fiveMonthsAgo } });
-
-    for (let i = 0; i < 5; i++) {
-      const d = new Date(fiveMonthsAgo);
-      d.setMonth(d.getMonth() + i);
-      const y = d.getFullYear();
-      const m = d.getMonth() + 1;
-      
-      const userCount = usersMonthly.find(x => x._id.year === y && x._id.month === m)?.customers || 0;
-      const subCount = subsMonthly.find(x => x._id.year === y && x._id.month === m)?.subs || 0;
-      
-      cumulativeCustomers += userCount;
-      cumulativeSubs += subCount;
-
-      customerData.push({
-        name: monthNames[m - 1],
-        customers: cumulativeCustomers,
-        subs: cumulativeSubs
-      });
-    }
-
-    // Top Performers
-    const topPerformersPipeline = await Order.aggregate([
-      { $match: { isPaid: true } },
-      { $unwind: "$orderItems" },
-      {
-        $group: {
-          _id: "$orderItems.name",
-          volume: { $sum: "$orderItems.qty" },
-          revenue: { $sum: { $multiply: ["$orderItems.qty", "$orderItems.price"] } }
-        }
-      },
-      { $sort: { volume: -1 } },
-      { $limit: 3 }
-    ]);
-    const topPerformers = topPerformersPipeline.map(item => ({
-      name: item._id,
-      volume: item.volume,
-      revenue: item.revenue
-    }));
+    const topPerformers = [];
 
     // Action Required
     const lowStockProducts = await Product.find({ stock: { $lt: 20 } }).select('name stock').limit(5);
@@ -323,14 +299,25 @@ export const getDashboardAnalytics = async (req, res) => {
     // Operations Live
     const pendingDeliveries = await Order.countDocuments({ deliveryStatus: { $in: ['Pending', 'Out For Delivery'] } });
     const completedDeliveries = await Order.countDocuments({ deliveryStatus: 'Delivered' });
-    const recentExpenses = await Expense.find({}).sort({ createdAt: -1 }).limit(2).select('category amount');
+    const recentExpenses = await Expense.find(dateFilter).sort({ createdAt: -1 }).limit(2).select('category amount');
+    
+    // Debug reporting
+    console.log("=== PROFIT ANALYTICS BREAKDOWN ===");
+    console.log(`Revenue: ₹${orderStats.totalRevenue}`);
+    console.log(`COGS: ₹${orderStats.totalCogs}`);
+    console.log(`Gross Profit: ₹${orderStats.grossProfit}`);
+    console.log(`Expenses: ₹${totalExpenses}`);
+    console.log(`Net Profit: ₹${netProfit}`);
+    console.log("==================================");
 
     res.json({
-      revenue: totalRevenue,
+      revenue: orderStats.totalRevenue,
+      cogs: orderStats.totalCogs,
+      grossProfit: orderStats.grossProfit,
       expenses: totalExpenses,
-      purchases: totalPurchases,
       netProfit,
-      orders: totalOrders,
+      inventoryValue,
+      orders: orderStats.orderCount,
       revenueData,
       customerData,
       topPerformers,
