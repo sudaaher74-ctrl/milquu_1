@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ShoppingBag, Users, LogOut, ArrowLeft, 
   Package, CalendarDays, Truck, BarChart3, Boxes, 
   Bell, Settings, Search, Plus, Menu, X, ChevronDown, Bike,
-  Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart, MessageCircle, Wand2, Mic, Volume2, Loader2, Sparkles
+  Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart, MessageCircle, Wand2, Mic, Volume2, Loader2, Sparkles, Banknote
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -40,6 +40,7 @@ const AdminLayout = () => {
     { name: 'Delivery Staff', path: '/admin/delivery-boys', icon: <Bike size={20} /> },
     { name: 'Revenue', path: '/admin/revenue', icon: <BarChart3 size={20} /> },
     { name: 'Inventory', path: '/admin/inventory', icon: <Boxes size={20} /> },
+    { name: 'Refunds', path: 'refunds', icon: <Banknote size={20} /> },
     
     // New ERP Modules
     { name: 'Business Overview', path: '/admin/business-overview', icon: <Briefcase size={20} /> },

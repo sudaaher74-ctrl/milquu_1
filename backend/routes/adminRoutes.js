@@ -3,6 +3,7 @@ import Subscription from '../models/Subscription.js';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
 import WalletTransaction from '../models/WalletTransaction.js';
+import { getWithdrawalRequests, updateWithdrawalStatus } from '../controllers/adminWithdrawalControllers.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -322,5 +323,9 @@ router.post('/wallets/transaction', protect, admin, async (req, res) => {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 });
+
+// Admin Withdrawal routes
+router.get('/withdrawals', protect, admin, getWithdrawalRequests);
+router.put('/withdrawals/:id/status', protect, admin, updateWithdrawalStatus);
 
 export default router;

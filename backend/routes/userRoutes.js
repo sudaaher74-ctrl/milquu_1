@@ -8,7 +8,8 @@ import {
   getMyOrders,
   getMyWallet,
   createRechargeOrder,
-  rechargeWallet
+  rechargeWallet,
+  requestWithdrawal
 } from '../controllers/userControllers.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -27,5 +28,6 @@ router.get('/orders', protect, getMyOrders);
 router.get('/wallet', protect, getMyWallet);
 router.post('/wallet/create-recharge-order', protect, createRechargeOrder);
 router.post('/wallet/recharge', protect, rechargeWallet);
+router.post('/wallet/withdraw', protect, requestWithdrawal);
 
 export default router;

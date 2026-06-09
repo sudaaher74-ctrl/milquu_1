@@ -17,9 +17,14 @@ const MyAccount = () => {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [pauseTarget, setPauseTarget] = useState(null);
 
-  const [wallet, setWallet] = useState({ walletBalance: 0, transactions: [] });
+  const [wallet, setWallet] = useState({ walletBalance: 0, reservedBalance: 0, withdrawableBalance: 0, transactions: [], withdrawalRequests: [] });
   const [loadingWallet, setLoadingWallet] = useState(false);
   const [rechargeAmount, setRechargeAmount] = useState('');
+  
+  // Withdrawal Modal States
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawData, setWithdrawData] = useState({ amount: '', method: 'UPI', upiId: '', accNo: '', ifsc: '', name: '' });
+  const [loadingWithdraw, setLoadingWithdraw] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -201,6 +206,66 @@ const MyAccount = () => {
     } catch (err) {
       console.error(err);
       alert(`Error initiating recharge: ${err.message}`);
+    }
+  };
+
+  const handleWithdrawRequest = async (e) => {
+    e.preventDefault();
+    if (withdrawData.amount > wallet.withdrawableBalance) {
+      alert(`You can only withdraw up to ₹${wallet.withdrawableBalance}`);
+      return;
+    }
+    
+    // Auto-pause warning for < 3 days balance
+    // We assume 1 day is already reserved, so if remaining walletBalance < 3 * reservedBalance loosely...
+    // The requirement states: If withdrawal causes wallet to fall below 3 days delivery requirement, show warning.
+    // Let's implement a simple warning if amount > withdrawableBalance - (wallet.reservedBalance * 2).
+    if (wallet.reservedBalance > 0 && (wallet.walletBalance - withdrawData.amount) < (wallet.reservedBalance * 3)) {
+      if (!window.confirm("Warning: Your wallet balance may not be sufficient for upcoming deliveries. Are you sure you want to withdraw?")) {
+        return;
+      }
+    }
+
+    setLoadingWithdraw(true);
+    try {
+      const userInfoStr = localStorage.getItem('userInfo');
+      if (!userInfoStr) return;
+      const userToken = JSON.parse(userInfoStr).token;
+
+      const payload = {
+        amount: withdrawData.amount,
+        refundMethod: withdrawData.method,
+        upiId: withdrawData.method === 'UPI' ? withdrawData.upiId : undefined,
+        bankDetails: withdrawData.method === 'Bank Account' ? {
+          accountNumber: withdrawData.accNo,
+          ifscCode: withdrawData.ifsc,
+          accountName: withdrawData.name
+        } : undefined
+      };
+
+      const res = await fetch(`${baseUrl}/api/users/wallet/withdraw`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}` 
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        alert('Withdrawal request submitted successfully!');
+        setShowWithdrawModal(false);
+        setWithdrawData({ amount: '', method: 'UPI', upiId: '', accNo: '', ifsc: '', name: '' });
+        fetchWallet();
+      } else {
+        alert(data.message || 'Error submitting request');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error');
+    } finally {
+      setLoadingWithdraw(false);
     }
   };
 
@@ -513,11 +578,36 @@ const MyAccount = () => {
                     </div>
                   ) : (
                     <div>
-                      {/* Wallet Balance Card */}
-                      <div className="bg-gradient-to-r from-blue-600 to-milquu-blue p-6 rounded-2xl shadow-md text-white mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
+                      {/* Wallet Balance Cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div className="bg-gradient-to-r from-blue-600 to-milquu-blue p-5 rounded-2xl shadow-md text-white flex flex-col justify-between">
+                          <p className="text-blue-100 text-sm font-medium mb-1">Current Balance</p>
+                          <h2 className="text-3xl font-bold">₹{wallet.walletBalance}</h2>
+                        </div>
+                        <div className="bg-gray-50 border border-gray-200 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+                          <p className="text-gray-500 text-sm font-medium mb-1">Reserved Amount</p>
+                          <div className="flex items-end gap-2">
+                            <h2 className="text-3xl font-bold text-gray-800">₹{wallet.reservedBalance}</h2>
+                            <span className="text-xs text-gray-400 mb-1" title="For active subscriptions & pending orders">ⓘ</span>
+                          </div>
+                        </div>
+                        <div className="bg-green-50 border border-green-200 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+                          <p className="text-green-600 text-sm font-medium mb-1">Withdrawable Balance</p>
+                          <h2 className="text-3xl font-bold text-green-700">₹{wallet.withdrawableBalance}</h2>
+                          <button 
+                            onClick={() => setShowWithdrawModal(true)}
+                            className="mt-2 w-full bg-white text-green-600 border border-green-200 text-sm py-1.5 rounded-lg hover:bg-green-100 font-medium transition"
+                          >
+                            Withdraw Money
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Recharge Form */}
+                      <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
                         <div>
-                          <p className="text-blue-100 text-sm font-medium mb-1">Available Balance</p>
-                          <h2 className="text-4xl font-bold">₹{wallet.walletBalance}</h2>
+                          <h4 className="text-lg font-bold text-gray-800">Add Money</h4>
+                          <p className="text-sm text-gray-500">Recharge instantly via Razorpay</p>
                         </div>
                         <form onSubmit={handleRecharge} className="flex gap-3 w-full md:w-auto">
                           <input 
@@ -527,13 +617,40 @@ const MyAccount = () => {
                             placeholder="Amount (₹)" 
                             value={rechargeAmount}
                             onChange={(e) => setRechargeAmount(e.target.value)}
-                            className="px-4 py-2 rounded-xl text-gray-800 outline-none w-full md:w-32 focus:ring-2 focus:ring-white"
+                            className="px-4 py-2 rounded-xl text-gray-800 outline-none w-full md:w-32 focus:ring-2 focus:ring-blue-100 border border-gray-200"
                           />
-                          <button type="submit" className="bg-white text-milquu-blue px-6 py-2 rounded-xl font-bold hover:bg-blue-50 transition-colors shadow-sm whitespace-nowrap">
+                          <button type="submit" className="bg-milquu-blue text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap">
                             Recharge
                           </button>
                         </form>
                       </div>
+
+                      {/* Withdrawal Tracking */}
+                      {wallet.withdrawalRequests && wallet.withdrawalRequests.length > 0 && (
+                        <div className="mb-8">
+                          <h4 className="text-lg font-bold text-gray-800 mb-4">Refund Requests</h4>
+                          <div className="space-y-3">
+                            {wallet.withdrawalRequests.map(req => (
+                              <div key={req._id} className="flex flex-col md:flex-row justify-between items-start md:items-center bg-orange-50 p-4 rounded-xl border border-orange-100 gap-2">
+                                <div>
+                                  <p className="font-semibold text-gray-800">Withdrawal to {req.refundMethod}</p>
+                                  <p className="text-xs text-gray-500">{new Date(req.createdAt).toLocaleString()} • ID: {req._id.substring(0, 8)}</p>
+                                </div>
+                                <div className="text-right flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                    req.status === 'Completed' ? 'bg-green-100 text-green-700' :
+                                    req.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                                    'bg-orange-200 text-orange-800'
+                                  }`}>
+                                    {req.status}
+                                  </span>
+                                  <p className="font-bold text-gray-800">₹{req.amount}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Transaction History */}
                       <h4 className="text-lg font-bold text-gray-800 mb-4">Transaction History</h4>
@@ -566,6 +683,115 @@ const MyAccount = () => {
                       )}
                     </div>
                   )}
+
+                  {/* Withdrawal Modal */}
+                  {showWithdrawModal && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                      <div className="bg-white rounded-3xl p-6 md:p-8 w-full max-w-md shadow-2xl relative">
+                        <button onClick={() => setShowWithdrawModal(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-800">
+                          <X className="w-6 h-6" />
+                        </button>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 font-serif">Withdraw Funds</h2>
+                        
+                        <div className="mb-6 p-4 bg-green-50 text-green-800 rounded-xl flex justify-between items-center border border-green-200">
+                          <span className="text-sm">Withdrawable Balance</span>
+                          <span className="font-bold text-xl">₹{wallet.withdrawableBalance}</span>
+                        </div>
+
+                        <form onSubmit={handleWithdrawRequest} className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Amount to Withdraw (₹)</label>
+                            <input 
+                              type="number" 
+                              required 
+                              min="1"
+                              max={wallet.withdrawableBalance}
+                              value={withdrawData.amount}
+                              onChange={(e) => setWithdrawData({...withdrawData, amount: e.target.value})}
+                              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-milquu-blue outline-none"
+                              placeholder="Enter amount"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Refund Method</label>
+                            <select 
+                              value={withdrawData.method}
+                              onChange={(e) => setWithdrawData({...withdrawData, method: e.target.value})}
+                              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-milquu-blue outline-none bg-white"
+                            >
+                              <option value="UPI">UPI</option>
+                              <option value="Bank Account">Bank Transfer</option>
+                            </select>
+                          </div>
+
+                          {withdrawData.method === 'UPI' && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-1">UPI ID</label>
+                              <input 
+                                type="text" 
+                                required 
+                                value={withdrawData.upiId}
+                                onChange={(e) => setWithdrawData({...withdrawData, upiId: e.target.value})}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-milquu-blue outline-none"
+                                placeholder="example@upi"
+                              />
+                            </div>
+                          )}
+
+                          {withdrawData.method === 'Bank Account' && (
+                            <div className="space-y-3">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                                <input 
+                                  type="text" 
+                                  required 
+                                  value={withdrawData.accNo}
+                                  onChange={(e) => setWithdrawData({...withdrawData, accNo: e.target.value})}
+                                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-milquu-blue outline-none"
+                                  placeholder="00000000000"
+                                />
+                              </div>
+                              <div className="flex gap-3">
+                                <div className="w-1/2">
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">IFSC Code</label>
+                                  <input 
+                                    type="text" 
+                                    required 
+                                    value={withdrawData.ifsc}
+                                    onChange={(e) => setWithdrawData({...withdrawData, ifsc: e.target.value})}
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-milquu-blue outline-none"
+                                    placeholder="HDFC0001234"
+                                  />
+                                </div>
+                                <div className="w-1/2">
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
+                                  <input 
+                                    type="text" 
+                                    required 
+                                    value={withdrawData.name}
+                                    onChange={(e) => setWithdrawData({...withdrawData, name: e.target.value})}
+                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-milquu-blue outline-none"
+                                    placeholder="John Doe"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          <button 
+                            type="submit" 
+                            disabled={loadingWithdraw}
+                            className={`w-full py-3 mt-4 rounded-xl font-bold text-white shadow-md transition-colors ${loadingWithdraw ? 'bg-gray-400 cursor-not-allowed' : 'bg-milquu-blue hover:bg-blue-700'}`}
+                          >
+                            {loadingWithdraw ? 'Processing...' : `Withdraw ₹${withdrawData.amount || '0'}`}
+                          </button>
+                          <p className="text-xs text-center text-gray-500 mt-2">Refunds take 3-5 business days to process. <a href="/refund-policy" className="text-milquu-blue hover:underline">Read Policy</a></p>
+                        </form>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               )}
             </motion.div>

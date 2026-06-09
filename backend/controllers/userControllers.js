@@ -146,10 +146,91 @@ export const getMyWallet = async (req, res) => {
     const WalletTransaction = (await import('../models/WalletTransaction.js')).default;
     const transactions = await WalletTransaction.find({ user: req.user._id }).sort({ createdAt: -1 });
 
+    const WithdrawalRequest = (await import('../models/WithdrawalRequest.js')).default;
+    const withdrawalRequests = await WithdrawalRequest.find({ user: req.user._id }).sort({ createdAt: -1 });
+
+    // Calculate Reserved Balance dynamically
+    let reservedBalance = 0;
+
+    // 1. Pending Withdrawal Requests (locks up the requested amount)
+    const pendingWithdrawals = withdrawalRequests.filter(req => ['Pending', 'Under Review'].includes(req.status));
+    reservedBalance += pendingWithdrawals.reduce((sum, req) => sum + req.amount, 0);
+
+    // 2. Active Subscriptions (Reserve 1 Day Cost)
+    const Subscription = (await import('../models/Subscription.js')).default;
+    const activeSubs = await Subscription.find({ user: req.user._id, status: { $in: ['Active', 'active'] } });
+    activeSubs.forEach(sub => {
+      reservedBalance += (sub.monthlyTotal / 30); // 1 Day cost
+    });
+
+    // 3. Pending Orders Cost
+    const Order = (await import('../models/Order.js')).default;
+    const pendingOrders = await Order.find({ user: req.user._id, isPaid: false, isDelivered: false });
+    pendingOrders.forEach(order => {
+      reservedBalance += order.totalPrice;
+    });
+
+    reservedBalance = Math.round(reservedBalance * 100) / 100; // Round to 2 decimal places
+
+    const withdrawableBalance = Math.max(0, (user.walletBalance || 0) - reservedBalance);
+
     res.json({
       walletBalance: user.walletBalance || 0,
-      transactions
+      reservedBalance,
+      withdrawableBalance,
+      transactions,
+      withdrawalRequests
     });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+export const requestWithdrawal = async (req, res) => {
+  try {
+    const { amount, refundMethod, upiId, bankDetails } = req.body;
+    
+    if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Re-calculate withdrawable balance
+    let reservedBalance = 0;
+    const WithdrawalRequest = (await import('../models/WithdrawalRequest.js')).default;
+    const pendingWithdrawals = await WithdrawalRequest.find({ user: req.user._id, status: { $in: ['Pending', 'Under Review'] } });
+    reservedBalance += pendingWithdrawals.reduce((sum, r) => sum + r.amount, 0);
+
+    const Subscription = (await import('../models/Subscription.js')).default;
+    const activeSubs = await Subscription.find({ user: req.user._id, status: { $in: ['Active', 'active'] } });
+    activeSubs.forEach(sub => reservedBalance += (sub.monthlyTotal / 30));
+
+    const Order = (await import('../models/Order.js')).default;
+    const pendingOrders = await Order.find({ user: req.user._id, isPaid: false, isDelivered: false });
+    pendingOrders.forEach(order => reservedBalance += order.totalPrice);
+
+    const withdrawableBalance = Math.max(0, (user.walletBalance || 0) - reservedBalance);
+
+    if (amount > withdrawableBalance) {
+      return res.status(400).json({ message: `Insufficient withdrawable balance. You can only withdraw up to ₹${withdrawableBalance.toFixed(2)}` });
+    }
+
+    const withdrawalRequest = await WithdrawalRequest.create({
+      user: user._id,
+      amount: Number(amount),
+      refundMethod,
+      upiId,
+      bankDetails,
+      status: 'Pending'
+    });
+
+    console.log(`[SIMULATED SMS to ${user.phone}]: Hi ${user.name}, your refund request of ₹${amount} has been received and is under review.`);
+
+    res.status(201).json({
+      message: 'Withdrawal request submitted successfully',
+      withdrawalRequest
+    });
+
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
