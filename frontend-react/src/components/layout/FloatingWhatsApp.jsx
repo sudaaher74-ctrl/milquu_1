@@ -1,12 +1,28 @@
 import React from 'react';
+import { useCart } from '../../context/CartContext';
+import { useLocation } from 'react-router-dom';
 
 const FloatingWhatsApp = () => {
+  const { cartCount } = useCart();
+  const location = useLocation();
+
+  // Hide or adjust if cart island is visible on mobile
+  const isIslandVisible = cartCount > 0 && !(
+    location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/delivery') ||
+    location.pathname.startsWith('/chatbot') ||
+    location.pathname === '/cart' ||
+    location.pathname === '/subscribe'
+  );
+
   return (
     <a
       href="https://wa.me/918767067884" 
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 w-14 h-14 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-2xl hover:scale-110 transition-all duration-300 z-50 group"
+      className={`fixed right-6 w-14 h-14 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-2xl hover:scale-110 transition-all duration-300 z-50 group ${
+        isIslandVisible ? 'bottom-24 md:bottom-6' : 'bottom-6'
+      }`}
       aria-label="Chat on WhatsApp"
     >
       <svg

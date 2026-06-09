@@ -3,6 +3,7 @@ import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import FloatingWhatsApp from './components/layout/FloatingWhatsApp';
+import FloatingCartIsland from './components/layout/FloatingCartIsland';
 
 // Lazy load all pages to improve mobile load speed significantly
 const Home = lazy(() => import('./pages/Home'));
@@ -243,6 +244,7 @@ function App() {
         </Suspense>
       </ErrorBoundary>
 
+      {!hideLayout && <FloatingCartIsland />}
       {!hideLayout && <FloatingWhatsApp />}
       {!hideLayout && <Footer />}
     </div>
