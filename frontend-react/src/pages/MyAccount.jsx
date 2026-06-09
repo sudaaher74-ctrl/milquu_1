@@ -133,10 +133,17 @@ const MyAccount = () => {
         },
         body: JSON.stringify({ amount: rechargeAmount })
       });
-      const orderData = await orderRes.json();
       
-      if (!orderData.id) {
-        alert('Server Error: Could not create Razorpay Order.');
+      let orderData;
+      try {
+        orderData = await orderRes.json();
+      } catch (parseErr) {
+        alert('Server is still deploying or returned an invalid response. Please try again in 2 minutes.');
+        return;
+      }
+
+      if (!orderRes.ok || !orderData.id) {
+        alert(`Server Error: ${orderData.message || 'Could not create Razorpay Order.'}`);
         return;
       }
 
@@ -193,7 +200,7 @@ const MyAccount = () => {
 
     } catch (err) {
       console.error(err);
-      alert('Error initiating recharge.');
+      alert(`Error initiating recharge: ${err.message}`);
     }
   };
 
