@@ -304,6 +304,9 @@ export const getDashboardAnalytics = async (req, res) => {
     const customerData = [];
     const topPerformers = [];
 
+    // Active Subscribers
+    const activeSubscribers = await Subscription.countDocuments({ status: { $in: ['Active', 'active'] } });
+
     // Action Required
     const lowStockProducts = await Product.find({ stock: { $lt: 20 } }).select('name stock').limit(5);
 
@@ -329,6 +332,7 @@ export const getDashboardAnalytics = async (req, res) => {
       netProfit,
       inventoryValue,
       orders: orderStats.orderCount,
+      activeSubscribers,
       revenueData,
       customerData,
       topPerformers,
