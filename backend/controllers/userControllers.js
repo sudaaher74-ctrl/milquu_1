@@ -257,7 +257,8 @@ export const createRechargeOrder = async (req, res) => {
 
     res.json(order);
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
+    console.error('Razorpay Create Order Error:', error);
+    res.status(500).json({ message: 'Error creating Razorpay order', error: error.error ? error.error.description : error.message });
   }
 };
 

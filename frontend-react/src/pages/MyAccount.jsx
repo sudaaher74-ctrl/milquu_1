@@ -148,7 +148,7 @@ const MyAccount = () => {
       }
 
       if (!orderRes.ok || !orderData.id) {
-        alert(`Server Error: ${orderData.message || 'Could not create Razorpay Order.'}`);
+        alert(`Server Error: ${orderData.message || ''} - ${orderData.error || 'Could not create Razorpay Order.'}`);
         return;
       }
 
