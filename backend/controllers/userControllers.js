@@ -246,11 +246,25 @@ export const createRechargeOrder = async (req, res) => {
       key_secret: process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET || 'rzp_secret_mock',
     });
 
+    // Generate a unique, short receipt (must be < 40 chars per Razorpay limit)
+    const receiptStr = `WR${Date.now().toString().slice(-10)}_${Math.random().toString(36).substring(2,6)}`;
+
+    // Strict validation before order creation
+    if (receiptStr.length > 40) {
+      throw new Error("Receipt exceeds Razorpay limit");
+    }
+
     const options = {
       amount: amount * 100, // Razorpay works in paise
       currency: 'INR',
-      receipt: `rw_${req.user._id.toString().slice(-6)}_${Date.now()}`
+      receipt: receiptStr
     };
+
+    console.log("Creating Razorpay Order", {
+      amount: options.amount,
+      receipt: options.receipt,
+      receiptLength: options.receipt.length
+    });
 
     const order = await razorpay.orders.create(options);
     if (!order) return res.status(500).json({ message: 'Error creating Razorpay order' });
@@ -258,6 +272,14 @@ export const createRechargeOrder = async (req, res) => {
     res.json(order);
   } catch (error) {
     console.error('Razorpay Create Order Error:', error);
+    
+    if (error.message === "Receipt exceeds Razorpay limit") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid receipt length"
+      });
+    }
+
     res.status(500).json({ message: 'Error creating Razorpay order', error: error.error ? error.error.description : error.message });
   }
 };
