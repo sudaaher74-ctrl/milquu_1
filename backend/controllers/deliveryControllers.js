@@ -74,6 +74,28 @@ export const markOrderDelivered = async (req, res) => {
       order.paymentStatus = 'PAID';
       order.isPaid = true;
       order.paidAt = Date.now();
+    } else if (order.paymentMethod === 'Wallet' && !order.isPaid && order.user) {
+      // Auto deduct from Wallet Phase 2
+      const User = (await import('../models/User.js')).default;
+      const WalletTransaction = (await import('../models/WalletTransaction.js')).default;
+      
+      const user = await User.findById(order.user);
+      if (user) {
+        user.walletBalance -= order.totalPrice;
+        await user.save();
+        
+        await WalletTransaction.create({
+          user: user._id,
+          amount: order.totalPrice,
+          type: 'debit',
+          description: `Auto-deduction for delivery of Order #${order._id}`,
+          balanceAfter: user.walletBalance
+        });
+
+        order.paymentStatus = 'PAID';
+        order.isPaid = true;
+        order.paidAt = Date.now();
+      }
     }
 
     const updatedOrder = await order.save();

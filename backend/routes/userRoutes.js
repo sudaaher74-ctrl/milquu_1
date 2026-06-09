@@ -5,7 +5,9 @@ import {
   getUserProfile,
   getMySubscriptions,
   updateSubscriptionStatus,
-  getMyOrders
+  getMyOrders,
+  getMyWallet,
+  rechargeWallet
 } from '../controllers/userControllers.js';
 import { protect } from '../middleware/authMiddleware.js';
 
@@ -19,5 +21,9 @@ router.get('/profile', protect, getUserProfile);
 router.get('/subscriptions', protect, getMySubscriptions);
 router.put('/subscriptions/:id/status', protect, updateSubscriptionStatus);
 router.get('/orders', protect, getMyOrders);
+
+// Wallet routes
+router.get('/wallet', protect, getMyWallet);
+router.post('/wallet/recharge', protect, rechargeWallet);
 
 export default router;

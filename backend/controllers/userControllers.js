@@ -135,3 +135,50 @@ export const getMyOrders = async (req, res) => {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
+
+export const getMyWallet = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const WalletTransaction = (await import('../models/WalletTransaction.js')).default;
+    const transactions = await WalletTransaction.find({ user: req.user._id }).sort({ createdAt: -1 });
+
+    res.json({
+      walletBalance: user.walletBalance || 0,
+      transactions
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+export const rechargeWallet = async (req, res) => {
+  try {
+    const { amount } = req.body;
+    if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
+
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.walletBalance = (user.walletBalance || 0) + Number(amount);
+    await user.save();
+
+    const WalletTransaction = (await import('../models/WalletTransaction.js')).default;
+    const transaction = await WalletTransaction.create({
+      user: user._id,
+      amount: Number(amount),
+      type: 'credit',
+      description: 'Customer Recharge (Simulated)',
+      balanceAfter: user.walletBalance
+    });
+
+    res.json({
+      message: 'Wallet recharged successfully',
+      walletBalance: user.walletBalance,
+      transaction
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};

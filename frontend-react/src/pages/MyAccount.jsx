@@ -17,6 +17,10 @@ const MyAccount = () => {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [pauseTarget, setPauseTarget] = useState(null);
 
+  const [wallet, setWallet] = useState({ walletBalance: 0, transactions: [] });
+  const [loadingWallet, setLoadingWallet] = useState(false);
+  const [rechargeAmount, setRechargeAmount] = useState('');
+
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -28,6 +32,8 @@ const MyAccount = () => {
       fetchSubscriptions();
     } else if (user && activeTab === 'orders') {
       fetchOrders();
+    } else if (user && activeTab === 'wallet') {
+      fetchWallet();
     }
   }, [user, activeTab]);
 
@@ -71,6 +77,50 @@ const MyAccount = () => {
       setOrders([]);
     } finally {
       setLoadingOrders(false);
+    }
+  };
+
+  const fetchWallet = async () => {
+    setLoadingWallet(true);
+    try {
+      const userInfoStr = localStorage.getItem('userInfo');
+      if (!userInfoStr || userInfoStr === 'undefined') return;
+      const userToken = JSON.parse(userInfoStr).token;
+      
+      const res = await fetch(`${baseUrl}/api/users/wallet`, {
+        headers: { 'Authorization': `Bearer ${userToken}` }
+      });
+      const data = await res.json();
+      setWallet(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingWallet(false);
+    }
+  };
+
+  const handleRecharge = async (e) => {
+    e.preventDefault();
+    try {
+      const userInfoStr = localStorage.getItem('userInfo');
+      if (!userInfoStr) return;
+      const userToken = JSON.parse(userInfoStr).token;
+
+      const res = await fetch(`${baseUrl}/api/users/wallet/recharge`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${userToken}` 
+        },
+        body: JSON.stringify({ amount: rechargeAmount })
+      });
+      if (res.ok) {
+        setRechargeAmount('');
+        fetchWallet();
+        alert('Wallet Recharged Successfully!');
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -140,6 +190,16 @@ const MyAccount = () => {
                   }`}
                 >
                   <Package className="mr-3 h-5 w-5" /> Order History
+                </button>
+                <button
+                  onClick={() => setActiveTab('wallet')}
+                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                    activeTab === 'wallet' ? 'bg-blue-50 text-milquu-blue' : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <svg className="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg> My Wallet
                 </button>
                 <button
                   onClick={() => setActiveTab('subscriptions')}
@@ -359,6 +419,71 @@ const MyAccount = () => {
                     <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-100 border-dashed">
                       <Calendar size={48} className="mx-auto text-gray-300 mb-4" />
                       <p className="text-gray-500">You don't have any active milk subscriptions.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'wallet' && (
+                <div>
+                  <h3 className="text-2xl font-bold font-serif text-gray-800 mb-6">My Wallet</h3>
+                  {loadingWallet ? (
+                    <div className="flex justify-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-milquu-blue"></div>
+                    </div>
+                  ) : (
+                    <div>
+                      {/* Wallet Balance Card */}
+                      <div className="bg-gradient-to-r from-blue-600 to-milquu-blue p-6 rounded-2xl shadow-md text-white mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div>
+                          <p className="text-blue-100 text-sm font-medium mb-1">Available Balance</p>
+                          <h2 className="text-4xl font-bold">₹{wallet.walletBalance}</h2>
+                        </div>
+                        <form onSubmit={handleRecharge} className="flex gap-3 w-full md:w-auto">
+                          <input 
+                            type="number" 
+                            required 
+                            min="100" 
+                            placeholder="Amount (₹)" 
+                            value={rechargeAmount}
+                            onChange={(e) => setRechargeAmount(e.target.value)}
+                            className="px-4 py-2 rounded-xl text-gray-800 outline-none w-full md:w-32 focus:ring-2 focus:ring-white"
+                          />
+                          <button type="submit" className="bg-white text-milquu-blue px-6 py-2 rounded-xl font-bold hover:bg-blue-50 transition-colors shadow-sm whitespace-nowrap">
+                            Recharge
+                          </button>
+                        </form>
+                      </div>
+
+                      {/* Transaction History */}
+                      <h4 className="text-lg font-bold text-gray-800 mb-4">Transaction History</h4>
+                      {wallet.transactions && wallet.transactions.length > 0 ? (
+                        <div className="space-y-3">
+                          {wallet.transactions.map(txn => (
+                            <div key={txn._id} className="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-100">
+                              <div className="flex items-center gap-4">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${txn.type === 'credit' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                                  {txn.type === 'credit' ? '+' : '-'}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-gray-800">{txn.description}</p>
+                                  <p className="text-xs text-gray-500">{new Date(txn.createdAt).toLocaleString()}</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className={`font-bold ${txn.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                                  {txn.type === 'credit' ? '+' : '-'} ₹{txn.amount}
+                                </p>
+                                <p className="text-xs text-gray-500">Bal: ₹{txn.balanceAfter}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                          No transactions yet. Recharge your wallet to get started!
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
