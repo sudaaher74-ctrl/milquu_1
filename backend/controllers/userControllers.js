@@ -237,9 +237,15 @@ export const requestWithdrawal = async (req, res) => {
 };
 
 export const createRechargeOrder = async (req, res) => {
+  const requestId = Date.now();
+  console.log(`[${requestId}] Recharge Request Started`);
+  
   try {
     const { amount } = req.body;
     if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
+
+    console.log(`[${requestId}] KEY ID Exists:`, !!process.env.RAZORPAY_KEY_ID);
+    console.log(`[${requestId}] KEY SECRET Exists:`, !!(process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET));
 
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_mock',
@@ -260,18 +266,31 @@ export const createRechargeOrder = async (req, res) => {
       receipt: receiptStr
     };
 
-    console.log("Creating Razorpay Order", {
+    console.log(`[${requestId}] Creating Razorpay Order`, {
       amount: options.amount,
       receipt: options.receipt,
       receiptLength: options.receipt.length
     });
 
+    console.log(`[${requestId}] Before Razorpay Create`, options);
+    
     const order = await razorpay.orders.create(options);
+    
+    console.log(`[${requestId}] Razorpay Order Created Successfully`, order);
+
     if (!order) return res.status(500).json({ message: 'Error creating Razorpay order' });
 
-    res.json(order);
+    console.log(`[${requestId}] Recharge API Response Ready`, { orderId: order.id });
+
+    res.status(200).json({
+      success: true,
+      id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_mock'
+    });
   } catch (error) {
-    console.error('Razorpay Create Order Error:', error);
+    console.error(`[${requestId}] Razorpay Error`, error);
     
     if (error.message === "Receipt exceeds Razorpay limit") {
       return res.status(400).json({
