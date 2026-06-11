@@ -152,7 +152,7 @@ const MobileHome = () => {
       {/* HERO BANNER CAROUSEL */}
       <div className="px-4 py-2 bg-white">
         <div 
-          className="relative rounded-2xl overflow-hidden shadow-lg h-[230px] flex snap-x snap-mandatory overflow-x-auto hide-scrollbar"
+          className="relative rounded-2xl overflow-hidden shadow-lg w-full aspect-[2/1] flex snap-x snap-mandatory overflow-x-auto hide-scrollbar"
           onScroll={(e) => {
             const scrollLeft = e.target.scrollLeft;
             const width = e.target.offsetWidth;
@@ -163,8 +163,8 @@ const MobileHome = () => {
           }}
         >
           {banners.map((banner, idx) => (
-            <div key={idx} className="min-w-full h-full snap-center flex-shrink-0 relative">
-              <img src={banner} alt={`Banner ${idx + 1}`} loading="lazy" className="w-full h-full object-cover" />
+            <div key={idx} className="min-w-full h-full snap-center flex-shrink-0 relative bg-gray-50">
+              <img src={banner} alt={`Banner ${idx + 1}`} loading="lazy" className="w-full h-full object-contain" />
             </div>
           ))}
         </div>
