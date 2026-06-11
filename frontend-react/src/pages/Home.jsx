@@ -5,7 +5,8 @@ import Products from '../components/home/Products';
 import Process from '../components/home/Process';
 import Reviews from '../components/home/Reviews';
 import SEOHead from '../components/seo/SEOHead';
-import { LocalBusinessSchema, buildBreadcrumbSchema, commonFAQs } from '../data/schemas';
+import { LocalBusinessSchema, buildBreadcrumbSchema } from '../data/schemas';
+import MobileHome from '../components/home/MobileHome';
 
 const Home = () => {
   const schema = [
@@ -18,11 +19,14 @@ const Home = () => {
       <SEOHead 
         schema={schema}
       />
-      <Hero />
-      <Products />
-      <About />
-      <Process />
-      <Reviews />
+      <MobileHome />
+      <div className="hidden md:block">
+        <Hero />
+        <Products />
+        <About />
+        <Process />
+        <Reviews />
+      </div>
     </>
   );
 };

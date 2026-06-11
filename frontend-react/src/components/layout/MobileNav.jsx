@@ -40,7 +40,7 @@ const MobileNav = () => {
 
   return (
     <div 
-      className="md:hidden fixed bottom-0 left-0 right-0 z-[60] px-4 pb-[max(env(safe-area-inset-bottom,16px),16px)] flex justify-center"
+      className={`md:hidden fixed bottom-0 left-0 right-0 z-[60] px-4 pb-[max(env(safe-area-inset-bottom,16px),16px)] flex justify-center ${location.pathname === '/' ? 'hidden' : ''}`}
     >
       <div className="bg-white shadow-[0_4px_20px_rgba(0,0,0,0.15)] rounded-full h-[60px] px-6 w-full max-w-[400px] flex justify-between items-center">
         {navItems.map((item) => {

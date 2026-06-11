@@ -10,6 +10,7 @@ const FloatingCartIsland = () => {
 
   // Hide on admin, delivery, chatbot, cart, and checkout/subscribe pages
   if (
+    location.pathname === '/' ||
     location.pathname.startsWith('/admin') ||
     location.pathname.startsWith('/delivery') ||
     location.pathname.startsWith('/chatbot') ||

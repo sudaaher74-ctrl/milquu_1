@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ShoppingCart, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -27,13 +27,16 @@ const Navbar = () => {
     { name: 'Subscriptions', href: '/subscribe' },
   ];
 
+  const location = useLocation();
+  const isHome = location.pathname === '/';
+
   return (
     <>
       <motion.nav
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${isHome ? 'hidden md:block' : 'block'} ${
           isScrolled ? 'py-3 glass' : 'py-6 bg-transparent'
         }`}
       >
