@@ -12,6 +12,14 @@ const MobileHome = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+
+  const banners = [
+    '/img/mobilebanner.png',
+    '/img/coemilkbanner.png',
+    '/img/buffalomilkbanner.png',
+    '/img/cowgheebanner.png'
+  ];
 
   // Calculate cart total
   const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -141,58 +149,36 @@ const MobileHome = () => {
         ))}
       </div>
 
-      {/* HERO BANNER */}
+      {/* HERO BANNER CAROUSEL */}
       <div className="px-4 py-2 bg-white">
-        <div className="relative rounded-2xl overflow-hidden bg-[#0A2540] text-white h-[230px] flex items-center shadow-lg">
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0A2540] via-[#0A2540]/90 to-transparent z-10 w-3/4"></div>
-          
-          {/* Banner image background */}
-          <div className="absolute right-0 top-0 bottom-0 w-[65%] z-0 overflow-hidden">
-            <img src="/img/home2.webp" alt="Banner background" className="w-full h-full object-cover object-right opacity-90 scale-[1.15] translate-x-2" />
-          </div>
-
-          <div className="absolute top-4 right-4 z-20 w-[60px] h-[60px] bg-transparent border-[1.5px] border-yellow-400 rounded-full flex flex-col items-center justify-center backdrop-blur-sm">
-             <span className="text-[10px] font-bold text-yellow-400 leading-none mt-1">UP TO</span>
-             <span className="text-[18px] font-bold text-yellow-400 leading-none">20%</span>
-             <span className="text-[10px] font-bold text-yellow-400 leading-none">OFF</span>
-          </div>
-
-          <div className="relative z-20 pl-6 w-[75%]">
-            <h3 className="text-[14px] font-semibold text-white mb-1">Pure. Fresh.</h3>
-            <h2 className="text-[32px] font-bold text-white leading-[1.1] mb-2 tracking-tight">Naturally<br/>Yours.</h2>
-            <p className="text-[12px] text-yellow-400 mb-5 pr-4 font-medium leading-tight">Farm fresh goodness delivered to your home.</p>
-            
-            <div className="flex space-x-4 mb-5">
-              <div className="flex flex-col items-center">
-                <ShieldCheck className="w-[18px] h-[18px] text-yellow-400 mb-1" />
-                <span className="text-[9px] text-center leading-tight font-medium">100%<br/>Natural</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <Droplets className="w-[18px] h-[18px] text-yellow-400 mb-1" />
-                <span className="text-[9px] text-center leading-tight font-medium">No<br/>Preservatives</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <MapPin className="w-[18px] h-[18px] text-yellow-400 mb-1" />
-                <span className="text-[9px] text-center leading-tight font-medium">From Our<br/>Farms</span>
-              </div>
+        <div 
+          className="relative rounded-2xl overflow-hidden shadow-lg h-[230px] flex snap-x snap-mandatory overflow-x-auto hide-scrollbar"
+          onScroll={(e) => {
+            const scrollLeft = e.target.scrollLeft;
+            const width = e.target.offsetWidth;
+            const newIndex = Math.round(scrollLeft / width);
+            if (newIndex !== currentBannerIndex) {
+              setCurrentBannerIndex(newIndex);
+            }
+          }}
+        >
+          {banners.map((banner, idx) => (
+            <div key={idx} className="min-w-full h-full snap-center flex-shrink-0 relative">
+              <img src={banner} alt={`Banner ${idx + 1}`} className="w-full h-full object-cover" />
             </div>
-
-            <button 
-              onClick={() => navigate('/products')}
-              className="bg-white text-[#1a365d] text-[12px] font-bold px-5 py-2.5 rounded-full flex items-center shadow-md w-max"
-            >
-              Shop Now <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-            </button>
-          </div>
+          ))}
         </div>
         
         {/* Pagination Dots */}
         <div className="flex justify-center mt-4 space-x-2">
-          <div className="w-[6px] h-[6px] rounded-full bg-gray-300"></div>
-          <div className="w-[16px] h-[6px] rounded-full bg-[#1a365d]"></div>
-          <div className="w-[6px] h-[6px] rounded-full bg-gray-300"></div>
-          <div className="w-[6px] h-[6px] rounded-full bg-gray-300"></div>
-          <div className="w-[6px] h-[6px] rounded-full bg-gray-300"></div>
+          {banners.map((_, idx) => (
+            <div 
+              key={idx} 
+              className={`h-[6px] rounded-full transition-all duration-300 ${
+                currentBannerIndex === idx ? 'w-[16px] bg-[#1a365d]' : 'w-[6px] bg-gray-300'
+              }`}
+            ></div>
+          ))}
         </div>
       </div>
 
@@ -280,7 +266,7 @@ const MobileHome = () => {
 
       {/* FLOATING CART (Only show if items in cart) */}
       {cartCount > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 z-50">
+        <div className="fixed bottom-[85px] left-4 right-4 z-50">
           <div className="bg-[#1a365d] rounded-full py-3 px-5 flex justify-between items-center shadow-[0_12px_30px_rgba(26,54,93,0.4)]">
             <div className="flex items-center space-x-4">
               <div className="relative">
