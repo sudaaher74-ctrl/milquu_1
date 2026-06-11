@@ -6,7 +6,7 @@ export const blogPosts = [
     excerpt: 'Why making the switch from packaged supermarket milk to farm-fresh daily delivery can transform your family\'s health.',
     date: '2026-05-10',
     readTime: '4 min read',
-    image: '/img/a2-cow-milk.png',
+    image: '/img/products/a2-cow-milk.png',
     keywords: 'benefits of farm fresh milk, raw milk vs pasteurized, pure milk navi mumbai',
     content: `
       <h2>Why Farm Fresh Milk?</h2>
@@ -33,7 +33,7 @@ export const blogPosts = [
     excerpt: 'What exactly is A2 milk, and why is everyone talking about it? Let\'s break down the science behind the A1 and A2 proteins.',
     date: '2026-05-15',
     readTime: '5 min read',
-    image: '/img/a2-cow-milk.png',
+    image: '/img/products/a2-cow-milk.png',
     keywords: 'A2 milk vs regular milk, what is A2 milk, A1 beta casein, Gir cow milk',
     content: `
       <h2>The Protein Puzzle</h2>
@@ -59,7 +59,7 @@ export const blogPosts = [
     excerpt: 'Explore the journey of dairy from farm to table and why freshness should be your top priority.',
     date: '2026-05-20',
     readTime: '3 min read',
-    image: '/img/paneer.png',
+    image: '/img/products/paneer.png',
     keywords: 'fresh dairy products, farm fresh dairy, organic dairy navi mumbai',
     content: `
       <h2>The True Taste of Dairy</h2>
@@ -75,7 +75,7 @@ export const blogPosts = [
     excerpt: 'A comprehensive guide to choosing a reliable, pure, and hassle-free daily milk subscription in Navi Mumbai.',
     date: '2026-05-22',
     readTime: '6 min read',
-    image: '/img/a2-cow-milk.png',
+    image: '/img/products/a2-cow-milk.png',
     keywords: 'best milk delivery navi mumbai, daily milk subscription, reliable milk delivery',
     content: `
       <h2>The Challenge of Urban Dairy</h2>
@@ -97,7 +97,7 @@ export const blogPosts = [
     excerpt: 'Why this ancient superfood is making a major comeback in modern diets.',
     date: '2026-05-25',
     readTime: '5 min read',
-    image: '/img/desi-ghee.png',
+    image: '/img/products/desi-ghee.png',
     keywords: 'benefits of desi ghee, bilona cow ghee, healthy fats, A2 ghee benefits',
     content: `
       <h2>More Than Just Cooking Oil</h2>
@@ -114,7 +114,7 @@ export const blogPosts = [
     excerpt: 'Learn how to test your milk for adulteration at home and what to look for when choosing a dairy brand.',
     date: '2026-05-27',
     readTime: '4 min read',
-    image: '/img/a2-cow-milk.png',
+    image: '/img/products/a2-cow-milk.png',
     keywords: 'how to test pure milk, milk adulteration, pure milk guide',
     content: `
       <h2>The Adulteration Epidemic</h2>
@@ -131,7 +131,7 @@ export const blogPosts = [
     excerpt: 'Breaking down the nutritional differences between cow and buffalo milk to help you make an informed choice.',
     date: '2026-05-28',
     readTime: '5 min read',
-    image: '/img/buffalo-milk.png',
+    image: '/img/products/buffalo-milk.png',
     keywords: 'cow vs buffalo milk, difference between cow and buffalo milk, high fat milk',
     content: `
       <h2>Different Milks for Different Needs</h2>

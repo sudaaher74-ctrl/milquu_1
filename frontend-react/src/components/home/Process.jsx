@@ -6,31 +6,31 @@ const steps = [
     id: 1,
     title: 'Ethical Farming',
     desc: 'Our process begins at pristine, open-pasture farms. Our cows are grass-fed and nurtured with love, because happy cows produce the purest, most nutritious milk.',
-    image: '/img/process1.webp',
+    image: '/img/process/process1.webp',
   },
   {
     id: 2,
     title: 'Automated Milking',
     desc: '100% untouched by human hands. We use state-of-the-art automated milking parlors to ensure maximum hygiene, speed, and zero contamination.',
-    image: '/img/process2.webp',
+    image: '/img/process/process2.webp',
   },
   {
     id: 3,
     title: 'Purity Testing',
     desc: 'Every single batch undergoes stringent quality checks in our certified labs to guarantee zero adulteration, zero antibiotics, and zero hormones.',
-    image: '/img/process3.webp',
+    image: '/img/process/process3.webp',
   },
   {
     id: 4,
     title: 'Fresh Packaging',
     desc: 'Milk is instantly chilled to 4°C to retain its natural goodness and then packaged in premium, sanitized, eco-friendly containers.',
-    image: '/img/process4.webp',
+    image: '/img/process/process4.webp',
   },
   {
     id: 5,
     title: 'Farm to Doorstep',
     desc: 'Our dedicated cold-chain delivery network ensures that farm-fresh milk reaches your doorstep every morning before you even wake up.',
-    image: '/img/process5.webp',
+    image: '/img/process/process5.webp',
   },
 ];
 

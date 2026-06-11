@@ -109,7 +109,7 @@ const LocationLandingTemplate = ({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="h-48 bg-gray-100 rounded-xl mb-6 flex items-center justify-center overflow-hidden">
-                <img src="/img/a2-cow-milk.png" alt="A2 Cow Milk" className="h-full object-cover" onError={(e) => e.target.style.display='none'} />
+                <img src="/img/products/a2-cow-milk.png" alt="A2 Cow Milk" className="h-full object-cover" onError={(e) => e.target.style.display='none'} />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">A2 Farm Fresh Cow Milk</h3>
               <p className="text-gray-600 mb-4 text-sm line-clamp-2">Pure, natural A2 milk from free-grazing Gir cows. Delivered fresh every morning.</p>
@@ -119,7 +119,7 @@ const LocationLandingTemplate = ({
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="h-48 bg-gray-100 rounded-xl mb-6 flex items-center justify-center overflow-hidden">
-                <img src="/img/buffalo-milk.png" alt="Buffalo Milk" className="h-full object-cover" onError={(e) => e.target.style.display='none'} />
+                <img src="/img/products/buffalo-milk.png" alt="Buffalo Milk" className="h-full object-cover" onError={(e) => e.target.style.display='none'} />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">Premium Buffalo Milk</h3>
               <p className="text-gray-600 mb-4 text-sm line-clamp-2">Thick, creamy buffalo milk perfect for making tea, coffee, curd, and homemade sweets.</p>
@@ -129,7 +129,7 @@ const LocationLandingTemplate = ({
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="h-48 bg-gray-100 rounded-xl mb-6 flex items-center justify-center overflow-hidden">
-                <img src="/img/desi-ghee.png" alt="Desi Cow Ghee" className="h-full object-cover" onError={(e) => e.target.style.display='none'} />
+                <img src="/img/products/desi-ghee.png" alt="Desi Cow Ghee" className="h-full object-cover" onError={(e) => e.target.style.display='none'} />
               </div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">Bilona A2 Cow Ghee</h3>
               <p className="text-gray-600 mb-4 text-sm line-clamp-2">Traditional bilona churned A2 ghee with rich aroma, golden texture, and immense health benefits.</p>

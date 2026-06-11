@@ -8,7 +8,7 @@ export const productSEOData = {
     description: 'Buy pure A2 cow milk online in Navi Mumbai. Sourced from free-grazing Gir cows. Delivered farm-fresh to your home within 24 hours. No preservatives.',
     keywords: 'A2 cow milk, fresh cow milk delivery, pure cow milk navi mumbai, buy A2 milk online',
     price: 85,
-    image: '/img/A2milk.webp',
+    image: '/img/products/A2milk.webp',
     nutrition: [
       { label: 'Energy', value: '62 kcal' },
       { label: 'Protein', value: '3.2 g' },
@@ -47,7 +47,7 @@ export const productSEOData = {
     description: 'Order thick, creamy buffalo milk online. Perfect for tea, coffee, curd, and homemade sweets. Delivered fresh every morning across Navi Mumbai.',
     keywords: 'buffalo milk delivery, thick milk for tea, pure buffalo milk navi mumbai',
     price: 90,
-    image: '/img/buffalomilk.webp',
+    image: '/img/products/buffalomilk.webp',
     nutrition: [
       { label: 'Energy', value: '97 kcal' },
       { label: 'Protein', value: '3.7 g' },
@@ -86,7 +86,7 @@ export const productSEOData = {
     description: 'Buy authentic Bilona A2 cow ghee. Made from curd using the traditional Vedic churning method. Rich aroma, granular texture, and immense health benefits.',
     keywords: 'bilona ghee, A2 cow ghee online, traditional churned ghee, pure desi ghee',
     price: 1800,
-    image: '/img/A2ghee.webp',
+    image: '/img/products/A2ghee.webp',
     nutrition: [
       { label: 'Energy', value: '897 kcal' },
       { label: 'Protein', value: '0 g' },
@@ -125,7 +125,7 @@ export const productSEOData = {
     description: 'Order incredibly soft and fresh malai paneer. Made daily from pure buffalo milk without any synthetic coagulants. Delivered fresh to your home.',
     keywords: 'fresh paneer delivery, malai paneer online, soft paneer navi mumbai',
     price: 120,
-    image: '/img/panner.webp',
+    image: '/img/products/panner.webp',
     nutrition: [
       { label: 'Energy', value: '296 kcal' },
       { label: 'Protein', value: '18 g' },
@@ -164,7 +164,7 @@ export const productSEOData = {
     description: 'Thick, naturally set farm-fresh curd with a smooth velvety texture. Contains natural probiotics.',
     keywords: 'fresh dahi, buy curd online, probiotic curd',
     price: 60,
-    image: '/img/Dahi.webp',
+    image: '/img/products/Dahi.webp',
     nutrition: [
       { label: 'Energy', value: '98 kcal' },
       { label: 'Protein', value: '3.4 g' }
@@ -191,7 +191,7 @@ export const productSEOData = {
     description: 'Traditional churned yogurt drink, refreshing and lightly sweetened.',
     keywords: 'sweet lassi, traditional lassi, buy lassi online',
     price: 40,
-    image: '/img/lassi.webp',
+    image: '/img/products/lassi.webp',
     nutrition: [
       { label: 'Energy', value: '110 kcal' },
       { label: 'Protein', value: '3.0 g' }
@@ -218,7 +218,7 @@ export const productSEOData = {
     description: 'Fresh cow milk available in convenient pouch packaging. Daily morning delivery.',
     keywords: 'cow milk pouch, daily milk bag, buy milk pouch online',
     price: 58,
-    image: '/img/cowmilkplasticbag.png',
+    image: '/img/products/cowmilkplasticbag.png',
     nutrition: [
       { label: 'Energy', value: '62 kcal' },
       { label: 'Protein', value: '3.2 g' }
@@ -245,7 +245,7 @@ export const productSEOData = {
     description: 'Thick buffalo milk available in convenient pouch packaging. Daily morning delivery.',
     keywords: 'buffalo milk pouch, buffalo milk bag, buy buffalo milk online',
     price: 75,
-    image: '/img/buffalomilkplasticbag.png',
+    image: '/img/products/buffalomilkplasticbag.png',
     nutrition: [
       { label: 'Energy', value: '97 kcal' },
       { label: 'Protein', value: '3.7 g' }

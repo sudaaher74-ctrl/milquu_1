@@ -15,10 +15,10 @@ const MobileHome = () => {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
   const banners = [
-    '/img/mobilebanner.webp',
-    '/img/coemilkbanner.webp',
-    '/img/buffalomilkbanner.webp',
-    '/img/cowgheebanner.webp'
+    '/img/banners/mobilebanner.webp',
+    '/img/banners/coemilkbanner.webp',
+    '/img/banners/buffalomilkbanner.webp',
+    '/img/banners/cowgheebanner.webp'
   ];
 
   // Calculate cart total
@@ -72,21 +72,21 @@ const MobileHome = () => {
 
   const quickLinks = [
     { name: 'All', isIcon: true, icon: <div className="w-[22px] h-[22px] grid grid-cols-2 gap-[2px]"><div className="bg-[#1a365d] rounded-[3px]"></div><div className="bg-[#1a365d] rounded-[3px]"></div><div className="bg-[#1a365d] rounded-[3px]"></div><div className="bg-[#1a365d] rounded-[3px]"></div></div>, active: true },
-    { name: 'Milk', image: '/img/cowmilk.webp' },
-    { name: 'Ghee', image: '/img/cowghee.webp' },
-    { name: 'Paneer', image: '/img/panner.webp' },
-    { name: 'Curd', image: '/img/Dahi.webp' },
-    { name: 'Butter', image: '/img/categoris1.webp' },
+    { name: 'Milk', image: '/img/products/cowmilk.webp' },
+    { name: 'Ghee', image: '/img/products/cowghee.webp' },
+    { name: 'Paneer', image: '/img/products/panner.webp' },
+    { name: 'Curd', image: '/img/products/Dahi.webp' },
+    { name: 'Butter', image: '/img/categories/categoris1.webp' },
     { name: 'More', isIcon: true, icon: <ChevronDown className="w-6 h-6 text-[#1a365d]" /> }
   ];
 
   const categories = [
-    { name: 'Milk', image: '/img/cowmilk.webp' },
-    { name: 'Ghee', image: '/img/cowghee.webp' },
-    { name: 'Paneer', image: '/img/panner.webp' },
-    { name: 'Curd', image: '/img/Dahi.webp' },
-    { name: 'Butter', image: '/img/categoris1.webp' },
-    { name: 'Flavoured Milk', image: '/img/lassi.webp' },
+    { name: 'Milk', image: '/img/products/cowmilk.webp' },
+    { name: 'Ghee', image: '/img/products/cowghee.webp' },
+    { name: 'Paneer', image: '/img/products/panner.webp' },
+    { name: 'Curd', image: '/img/products/Dahi.webp' },
+    { name: 'Butter', image: '/img/categories/categoris1.webp' },
+    { name: 'Flavoured Milk', image: '/img/products/lassi.webp' },
   ];
 
   const features = [

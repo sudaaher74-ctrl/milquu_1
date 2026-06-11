@@ -23,7 +23,7 @@ const Hero = () => {
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
             >
               <img 
-                src="/img/home2.webp" 
+                src="/img/banners/home2.webp" 
                 alt="MILQUU FRESH Premium Farm" 
                 className="w-full h-auto object-contain drop-shadow-xl"
               />

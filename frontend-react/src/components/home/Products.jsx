@@ -5,8 +5,8 @@ import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const categories = [
-  { id: 'milk', image: '/img/categoris1.webp' },
-  { id: 'by-products', image: '/img/categorie2.webp' }
+  { id: 'milk', image: '/img/categories/categoris1.webp' },
+  { id: 'by-products', image: '/img/categories/categorie2.webp' }
 ];
 
 const Products = () => {
