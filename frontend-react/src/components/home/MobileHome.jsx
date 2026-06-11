@@ -15,10 +15,10 @@ const MobileHome = () => {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
   const banners = [
-    '/img/mobilebanner.png',
-    '/img/coemilkbanner.png',
-    '/img/buffalomilkbanner.png',
-    '/img/cowgheebanner.png'
+    '/img/mobilebanner.webp',
+    '/img/coemilkbanner.webp',
+    '/img/buffalomilkbanner.webp',
+    '/img/cowgheebanner.webp'
   ];
 
   // Calculate cart total
@@ -164,7 +164,7 @@ const MobileHome = () => {
         >
           {banners.map((banner, idx) => (
             <div key={idx} className="min-w-full h-full snap-center flex-shrink-0 relative">
-              <img src={banner} alt={`Banner ${idx + 1}`} className="w-full h-full object-cover" />
+              <img src={banner} alt={`Banner ${idx + 1}`} loading="lazy" className="w-full h-full object-cover" />
             </div>
           ))}
         </div>
