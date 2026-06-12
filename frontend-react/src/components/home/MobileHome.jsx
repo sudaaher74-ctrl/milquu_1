@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Menu, Bell, ShoppingCart, Search, ScanLine, Heart, ChevronRight, Plus, ChevronDown, ShieldCheck, Truck, Droplets, MapPin, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -37,6 +37,31 @@ const MobileHome = () => {
       }
     };
     fetchProducts();
+  }, []);
+
+  const bannerScrollRef = useRef(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (bannerScrollRef.current) {
+        const container = bannerScrollRef.current;
+        const width = container.offsetWidth;
+        const maxScrollLeft = container.scrollWidth - width;
+        
+        let newScrollLeft = container.scrollLeft + width;
+        // If we reached the end, go back to the first banner
+        if (newScrollLeft >= maxScrollLeft + 10) {
+          newScrollLeft = 0;
+        }
+        
+        container.scrollTo({
+          left: newScrollLeft,
+          behavior: 'smooth'
+        });
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const getProductSlug = (name) => {
@@ -150,9 +175,10 @@ const MobileHome = () => {
       </div>
 
       {/* HERO BANNER CAROUSEL */}
-      <div className="px-4 py-2 bg-white">
+      <div className="bg-white pb-3 pt-1">
         <div 
-          className="relative rounded-2xl overflow-hidden shadow-lg w-full aspect-[2/1] flex snap-x snap-mandatory overflow-x-auto hide-scrollbar"
+          ref={bannerScrollRef}
+          className="relative w-full aspect-[2/1] flex snap-x snap-mandatory overflow-x-auto hide-scrollbar"
           onScroll={(e) => {
             const scrollLeft = e.target.scrollLeft;
             const width = e.target.offsetWidth;
@@ -164,13 +190,13 @@ const MobileHome = () => {
         >
           {banners.map((banner, idx) => (
             <div key={idx} className="min-w-full h-full snap-center flex-shrink-0 relative bg-gray-50">
-              <img src={banner} alt={`Banner ${idx + 1}`} loading="lazy" className="w-full h-full object-contain" />
+              <img src={banner} alt={`Banner ${idx + 1}`} loading="lazy" className="w-full h-full object-cover" />
             </div>
           ))}
         </div>
         
         {/* Pagination Dots */}
-        <div className="flex justify-center mt-4 space-x-2">
+        <div className="flex justify-center mt-3 space-x-2">
           {banners.map((_, idx) => (
             <div 
               key={idx} 
