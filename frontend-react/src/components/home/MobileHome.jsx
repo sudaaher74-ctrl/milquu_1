@@ -127,7 +127,7 @@ const MobileHome = () => {
       {/* HEADER */}
       <div className="sticky top-0 z-40 bg-white">
         <div className="flex items-center justify-between px-4 py-3">
-          <Menu className="text-[#1a365d] w-7 h-7" onClick={() => navigate('/menu')} />
+          <div className="w-7 h-7"></div>
           <img src="/brand-logo.jpg" alt="MilQuu Fresh" className="h-10 object-contain rounded-full" />
           <div className="flex items-center space-x-3">
             <Bell className="text-[#1a365d] w-6 h-6" />
@@ -144,7 +144,10 @@ const MobileHome = () => {
 
         {/* SEARCH BAR */}
         <div className="px-4 pb-3 pt-1">
-          <div className="flex items-center bg-white border border-gray-200 rounded-full px-4 py-3 shadow-sm">
+          <div 
+            className="flex items-center bg-white border border-gray-200 rounded-full px-4 py-3 shadow-sm cursor-pointer"
+            onClick={() => navigate('/products')}
+          >
             <Search className="text-[#1a365d] w-5 h-5 mr-3" />
             <input 
               type="text" 
@@ -161,7 +164,7 @@ const MobileHome = () => {
       {/* QUICK LINKS */}
       <div className="px-4 py-4 overflow-x-auto hide-scrollbar flex space-x-3 bg-white">
         {quickLinks.map((link, idx) => (
-          <div key={idx} className="flex flex-col items-center flex-shrink-0 w-[70px]">
+          <div key={idx} className="flex flex-col items-center flex-shrink-0 w-[70px] cursor-pointer" onClick={() => navigate('/products')}>
             <div className={`w-[60px] h-[60px] rounded-[18px] flex items-center justify-center mb-2 ${link.active ? 'bg-[#f0f4f8] border border-[#d0dbeb]' : 'bg-white border border-gray-100 shadow-sm'}`}>
               {link.isIcon ? (
                 link.icon
