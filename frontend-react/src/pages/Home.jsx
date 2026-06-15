@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Hero from '../components/home/Hero';
 import About from '../components/home/About';
 import Products from '../components/home/Products';
@@ -13,6 +14,16 @@ const Home = () => {
     LocalBusinessSchema,
     buildBreadcrumbSchema([{ name: 'Home', url: '/' }])
   ];
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Redirect to campaign page if they haven't claimed or skipped it
+    const hasClaimed = localStorage.getItem('freeSampleClaimed');
+    if (!hasClaimed) {
+      navigate('/free-sample', { replace: true });
+    }
+  }, [navigate]);
 
   return (
     <>

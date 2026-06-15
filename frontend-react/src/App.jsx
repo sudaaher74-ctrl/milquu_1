@@ -16,6 +16,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const MyAccount = lazy(() => import('./pages/MyAccount'));
 const RefundPolicy = lazy(() => import('./pages/RefundPolicy'));
+const FreeSampleCampaign = lazy(() => import('./pages/FreeSampleCampaign'));
 
 // Admin Pages
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
@@ -42,6 +43,7 @@ const Reports = lazy(() => import('./pages/admin/Reports'));
 const SEOGenerator = lazy(() => import('./pages/admin/SEOGenerator'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const TodayOrderList = lazy(() => import('./pages/admin/TodayOrderList'));
+const FreeSamples = lazy(() => import('./pages/admin/FreeSamples'));
 
 // Chatbot Pages
 const AIChatDashboard = lazy(() => import('./pages/chatbot/AIChatDashboard'));
@@ -141,7 +143,8 @@ function App() {
   const isAdmin = location.pathname.startsWith('/admin');
   const isDelivery = location.pathname.startsWith('/delivery');
   const isChatbot = location.pathname.startsWith('/chatbot');
-  const hideLayout = isAdmin || isDelivery || isChatbot;
+  const isCampaign = location.pathname === '/free-sample';
+  const hideLayout = isAdmin || isDelivery || isChatbot || isCampaign;
 
   return (
     <div className="font-sans">
@@ -158,6 +161,7 @@ function App() {
             <Route path="/subscribe" element={<Subscription />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
+            <Route path="/free-sample" element={<FreeSampleCampaign />} />
             
             {/* Customer Auth */}
             <Route path="/login" element={<Login />} />
@@ -215,6 +219,7 @@ function App() {
               <Route path="procurement" element={<Procurement />} />
               <Route path="wastage" element={<Wastage />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="free-samples" element={<FreeSamples />} />
               <Route path="seo-tools" element={<SEOGenerator />} />
               <Route path="today-orders" element={<TodayOrderList />} />
               <Route path="notifications" element={<Notifications />} />

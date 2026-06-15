@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ShoppingBag, Users, LogOut, ArrowLeft, 
   Package, CalendarDays, Truck, BarChart3, Boxes, 
   Bell, Settings, Search, Plus, Menu, X, ChevronDown, Bike,
-  Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart, MessageCircle, Wand2, Mic, Volume2, Loader2, Sparkles, Banknote
+  Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart, MessageCircle, Wand2, Mic, Volume2, Loader2, Sparkles, Banknote, Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -34,6 +34,7 @@ const AdminLayout = () => {
     { name: 'Orders', path: '/admin/orders', icon: <ShoppingBag size={20} /> },
     { name: 'Customers', path: '/admin/customers', icon: <Users size={20} /> },
     { name: 'Products', path: '/admin/products', icon: <Package size={20} /> },
+    { name: 'Free Samples', path: '/admin/free-samples', icon: <Gift size={20} /> },
     { name: 'Subscriptions', path: '/admin/subscriptions', icon: <CalendarDays size={20} /> },
     { name: "Today's Orders", path: '/admin/today-orders', icon: <ShoppingCart size={20} /> },
     { name: 'Live Tracking', path: '/admin/deliveries', icon: <Truck size={20} /> },
