@@ -177,39 +177,7 @@ const MobileHome = () => {
         ))}
       </div>
 
-      {/* HERO BANNER CAROUSEL */}
-      <div className="bg-white pb-3 pt-1">
-        <div 
-          ref={bannerScrollRef}
-          className="relative w-full flex snap-x snap-mandatory overflow-x-auto hide-scrollbar"
-          onScroll={(e) => {
-            const scrollLeft = e.target.scrollLeft;
-            const width = e.target.offsetWidth;
-            const newIndex = Math.round(scrollLeft / width);
-            if (newIndex !== currentBannerIndex) {
-              setCurrentBannerIndex(newIndex);
-            }
-          }}
-        >
-          {banners.map((banner, idx) => (
-            <div key={idx} className="min-w-full snap-center flex-shrink-0 relative bg-white flex items-center justify-center">
-              <img src={banner} alt={`Banner ${idx + 1}`} loading="lazy" className="w-full h-auto object-contain block" />
-            </div>
-          ))}
-        </div>
-        
-        {/* Pagination Dots */}
-        <div className="flex justify-center mt-3 space-x-2">
-          {banners.map((_, idx) => (
-            <div 
-              key={idx} 
-              className={`h-[6px] rounded-full transition-all duration-300 ${
-                currentBannerIndex === idx ? 'w-[16px] bg-[#1a365d]' : 'w-[6px] bg-gray-300'
-              }`}
-            ></div>
-          ))}
-        </div>
-      </div>
+
 
       {/* WHY CHOOSE / FEATURES */}
       <div className="px-4 mt-4">
