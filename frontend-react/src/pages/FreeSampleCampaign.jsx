@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, CheckCircle, ShieldCheck, Truck, Star, Sparkles, MapPinOff } from 'lucide-react';
-import api from '../../utils/api';
+import api from '../utils/api';
 
 const FreeSampleCampaign = () => {
   const navigate = useNavigate();

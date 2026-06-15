@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PackageOpen, MapPin, CheckCircle, Clock, XCircle, Search, Map, Download } from 'lucide-react';
-import api from '../../../utils/api';
+import api from '../../utils/api';
 
 const FreeSamples = () => {
   const [samples, setSamples] = useState([]);
