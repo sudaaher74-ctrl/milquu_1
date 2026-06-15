@@ -181,7 +181,7 @@ const MobileHome = () => {
       <div className="bg-white pb-3 pt-1">
         <div 
           ref={bannerScrollRef}
-          className="relative w-full aspect-[4/3] flex snap-x snap-mandatory overflow-x-auto hide-scrollbar"
+          className="relative w-full flex snap-x snap-mandatory overflow-x-auto hide-scrollbar"
           onScroll={(e) => {
             const scrollLeft = e.target.scrollLeft;
             const width = e.target.offsetWidth;
@@ -192,8 +192,8 @@ const MobileHome = () => {
           }}
         >
           {banners.map((banner, idx) => (
-            <div key={idx} className="min-w-full h-full snap-center flex-shrink-0 relative bg-white flex items-center justify-center">
-              <img src={banner} alt={`Banner ${idx + 1}`} loading="lazy" className="w-full h-full object-contain" />
+            <div key={idx} className="min-w-full snap-center flex-shrink-0 relative bg-white flex items-center justify-center">
+              <img src={banner} alt={`Banner ${idx + 1}`} loading="lazy" className="w-full h-auto object-contain block" />
             </div>
           ))}
         </div>
