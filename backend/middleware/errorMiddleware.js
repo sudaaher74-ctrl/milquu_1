@@ -1,10 +1,9 @@
+import logger from '../utils/logger.js';
+
 export const errorHandler = (err, req, res, next) => {
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   
-  console.error(`[Error] ${err.message}`);
-  if (process.env.NODE_ENV !== 'production') {
-    console.error(err.stack);
-  }
+  logger.error(`${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`, { stack: err.stack });
 
   res.status(statusCode).json({
     message: err.message,
