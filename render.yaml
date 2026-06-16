@@ -1,0 +1,37 @@
+services:
+  # Backend API Service
+  - type: web
+    name: milquu-api
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5001
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+
+  # Frontend Static Site
+  - type: web
+    name: milquu-frontend
+    env: static
+    buildCommand: cd frontend-react && npm install && npm run build
+    staticPublishPath: frontend-react/dist
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: VITE_API_URL
+        value: https://milquu-api.onrender.com
+    routes:
+      # Redirect all 404s to index.html for React Router
+      - type: rewrite
+        source: /*
+        destination: /index.html

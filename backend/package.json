@@ -20,6 +20,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
@@ -31,10 +32,12 @@
     "razorpay": "^2.9.6",
     "socket.io": "^4.8.3",
     "winston": "^3.19.0",
+    "xss-clean": "^0.1.4",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.14",
+    "supertest": "^7.2.2",
     "vitest": "^4.1.9"
   }
 }
