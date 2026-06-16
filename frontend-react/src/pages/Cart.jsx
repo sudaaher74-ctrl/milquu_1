@@ -216,22 +216,26 @@ const Cart = () => {
 
   if (step === 3) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-24 pb-12 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-24 pb-12 flex items-center justify-center relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] mix-blend-overlay pointer-events-none"></div>
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white/80 backdrop-blur-xl p-8 rounded-[24px] shadow-2xl border border-white/60 text-center max-w-md mx-4"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.5, type: 'spring' }}
+          className="bg-white/90 backdrop-blur-2xl p-8 sm:p-10 rounded-[2rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] border border-white text-center max-w-md mx-4 relative overflow-hidden"
         >
-          <motion.div 
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-            className="w-16 h-16 bg-milquu-green/10 rounded-full flex items-center justify-center mx-auto mb-4 text-milquu-green"
-          >
-            <CheckCircle size={32} />
-          </motion.div>
-          <h2 className="text-2xl font-serif font-bold text-milquu-dark mb-2">Order Confirmed! 🥛</h2>
-          <p className="text-gray-600 text-sm font-sans mb-2">
+          <div className="absolute inset-0 bg-gradient-to-tr from-milquu-green/5 to-milquu-gold/5 pointer-events-none"></div>
+          <div className="relative z-10">
+            <motion.div 
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+              className="w-20 h-20 bg-gradient-to-br from-milquu-green/20 to-milquu-green/5 rounded-full flex items-center justify-center mx-auto mb-6 text-milquu-green shadow-inner"
+            >
+              <CheckCircle size={40} />
+            </motion.div>
+            <h2 className="text-3xl font-serif font-bold text-milquu-dark mb-3">Order Confirmed! 🥛</h2>
+            <p className="text-gray-600 text-base font-sans mb-6">
             Thank you, {formData.name}. Your order has been placed!
           </p>
           {selectedSlot && (
@@ -245,11 +249,12 @@ const Cart = () => {
               <p className="text-gray-600 text-xs">⏰ {selectedSlot.window}</p>
             </div>
           )}
-          <Link to="/">
-            <button className="bg-milquu-dark hover:bg-milquu-gold text-white px-6 py-2.5 rounded-full font-sans text-sm font-bold transition-colors shadow-lg">
-              Return Home
-            </button>
-          </Link>
+            <Link to="/">
+              <button className="bg-milquu-dark hover:bg-milquu-gold text-white px-8 py-3.5 rounded-full font-sans text-sm font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5 mt-2">
+                Return Home
+              </button>
+            </Link>
+          </div>
         </motion.div>
       </div>
     );
@@ -315,10 +320,10 @@ const Cart = () => {
                         <motion.div 
                           key={item._id || item.id}
                           layout
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
+                          initial={{ opacity: 0, height: 0, y: -10 }}
+                          animate={{ opacity: 1, height: 'auto', y: 0 }}
                           exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
-                          className="flex items-center justify-between border-b border-gray-100 pb-4"
+                          className="flex items-center justify-between border border-gray-100 bg-white/60 hover:bg-white p-4 rounded-2xl mb-3 shadow-sm hover:shadow-md transition-all duration-300"
                         >
                           <div className="flex items-center gap-3 sm:gap-4">
                             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-50 rounded-xl flex-shrink-0 flex items-center justify-center p-1">
@@ -383,8 +388,8 @@ const Cart = () => {
                       <h3 className="text-lg font-serif font-bold text-milquu-dark mb-4">You Might Also Like</h3>
                       <div className="flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar">
                         {recommendedProducts.map(product => (
-                          <div key={product._id || product.id} className="min-w-[140px] max-w-[140px] bg-gray-50/50 border border-gray-100 rounded-2xl p-3 snap-start shadow-sm flex flex-col hover:shadow-md transition-shadow">
-                            <img src={product.image} className="h-16 object-contain mx-auto mb-3 drop-shadow-md" alt={product.name} />
+                          <div key={product._id || product.id} className="min-w-[140px] max-w-[140px] bg-white border border-gray-100 rounded-2xl p-3 snap-start shadow-sm flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+                            <img src={product.image} className="h-16 object-contain mx-auto mb-3 drop-shadow-md group-hover:scale-110 transition-transform duration-300" alt={product.name} />
                             <h4 className="font-serif font-bold text-sm text-milquu-dark leading-tight mb-1">{product.name}</h4>
                             <p className="text-[10px] text-gray-500 font-sans mb-2">{product.unit}</p>
                             <div className="flex justify-between items-center mt-auto">
@@ -421,14 +426,14 @@ const Cart = () => {
                     />
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <input required type="text" name="name" pattern="[A-Za-z\s]+" title="Name should only contain letters and spaces" placeholder="Full Name" onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30" />
-                      <input required type="tel" name="phone" placeholder="Phone Number" onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30" />
+                      <input required type="text" name="name" pattern="[A-Za-z\s]+" title="Name should only contain letters and spaces" placeholder="Full Name" onChange={handleInputChange} className="w-full bg-white/80 border border-gray-200 rounded-xl px-4 py-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/50 shadow-sm transition-all hover:bg-white" />
+                      <input required type="tel" name="phone" placeholder="Phone Number" onChange={handleInputChange} className="w-full bg-white/80 border border-gray-200 rounded-xl px-4 py-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/50 shadow-sm transition-all hover:bg-white" />
                     </div>
                     
-                    <textarea required name="address" placeholder="Full Delivery Address" onChange={handleInputChange} rows="2" className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30 resize-none"></textarea>
+                    <textarea required name="address" placeholder="Full Delivery Address" onChange={handleInputChange} rows="2" className="w-full bg-white/80 border border-gray-200 rounded-xl px-4 py-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/50 shadow-sm transition-all hover:bg-white resize-none"></textarea>
                     
                     <div className="grid grid-cols-2 gap-3">
-                      <select required name="city" value={formData.city} onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30 appearance-none text-gray-600">
+                      <select required name="city" value={formData.city} onChange={handleInputChange} className="w-full bg-white/80 border border-gray-200 rounded-xl px-4 py-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/50 shadow-sm transition-all hover:bg-white appearance-none text-gray-600">
                         <option value="" disabled>Select Delivery Area</option>
                         <option value="Panvel">Panvel</option>
                         <option value="New Panvel">New Panvel</option>
@@ -439,13 +444,13 @@ const Cart = () => {
                         <option value="Belapur">Belapur</option>
                         <option value="Nerul">Nerul</option>
                       </select>
-                      <input required type="text" name="pincode" placeholder="Pincode" onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30" />
+                      <input required type="text" name="pincode" placeholder="Pincode" onChange={handleInputChange} className="w-full bg-white/80 border border-gray-200 rounded-xl px-4 py-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/50 shadow-sm transition-all hover:bg-white" />
                     </div>
 
                     <div className="mt-4 space-y-3">
                       <h4 className="font-serif font-bold text-milquu-dark text-sm mb-2">Payment Method</h4>
                       
-                      <label htmlFor="payment-cod" className={`flex items-center p-4 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'COD' ? 'bg-milquu-gold/10 border-milquu-gold/50 shadow-sm' : 'bg-gray-50/50 border-gray-200 hover:bg-gray-50'}`}>
+                      <label htmlFor="payment-cod" className={`flex items-center p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${paymentMethod === 'COD' ? 'bg-milquu-gold/5 border-milquu-gold shadow-[0_4px_20px_-4px_rgba(211,172,103,0.3)] scale-[1.02]' : 'bg-white/60 border-gray-100 hover:bg-white hover:shadow-md hover:-translate-y-0.5'}`}>
                         <input 
                           id="payment-cod"
                           type="radio" 
@@ -466,7 +471,7 @@ const Cart = () => {
                         </div>
                       </label>
 
-                      <label htmlFor="payment-phonepe" className={`flex items-center p-4 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'PHONEPE' ? 'bg-[#5f259f]/10 border-[#5f259f]/50 shadow-sm' : 'bg-gray-50/50 border-gray-200 hover:bg-gray-50'}`}>
+                      <label htmlFor="payment-phonepe" className={`flex items-center p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${paymentMethod === 'PHONEPE' ? 'bg-[#5f259f]/5 border-[#5f259f] shadow-[0_4px_20px_-4px_rgba(95,37,159,0.3)] scale-[1.02]' : 'bg-white/60 border-gray-100 hover:bg-white hover:shadow-md hover:-translate-y-0.5'}`}>
                         <input 
                           id="payment-phonepe"
                           type="radio" 
@@ -487,7 +492,7 @@ const Cart = () => {
                         </div>
                       </label>
 
-                      <label htmlFor="payment-gpay" className={`flex items-center p-4 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'GPAY' ? 'bg-[#1a73e8]/10 border-[#1a73e8]/50 shadow-sm' : 'bg-gray-50/50 border-gray-200 hover:bg-gray-50'}`}>
+                      <label htmlFor="payment-gpay" className={`flex items-center p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${paymentMethod === 'GPAY' ? 'bg-[#1a73e8]/5 border-[#1a73e8] shadow-[0_4px_20px_-4px_rgba(26,115,232,0.3)] scale-[1.02]' : 'bg-white/60 border-gray-100 hover:bg-white hover:shadow-md hover:-translate-y-0.5'}`}>
                         <input 
                           id="payment-gpay"
                           type="radio" 
@@ -508,7 +513,7 @@ const Cart = () => {
                         </div>
                       </label>
 
-                      <label htmlFor="payment-cred" className={`flex items-center p-4 rounded-xl border cursor-pointer transition-colors ${paymentMethod === 'CRED' ? 'bg-black/5 border-black/50 shadow-sm' : 'bg-gray-50/50 border-gray-200 hover:bg-gray-50'}`}>
+                      <label htmlFor="payment-cred" className={`flex items-center p-4 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${paymentMethod === 'CRED' ? 'bg-black/5 border-black shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] scale-[1.02]' : 'bg-white/60 border-gray-100 hover:bg-white hover:shadow-md hover:-translate-y-0.5'}`}>
                         <input 
                           id="payment-cred"
                           type="radio" 
