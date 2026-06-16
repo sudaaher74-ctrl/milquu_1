@@ -13,7 +13,12 @@ const OurProcess = () => {
   ];
 
   return (
-    <div className="bg-white min-h-screen pb-16 md:pb-0">
+    <div className="bg-gradient-to-br from-[#FDFBF7] to-white min-h-screen pb-16 md:pb-0 relative overflow-hidden">
+      {/* Background Orbs */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0 fixed">
+        <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] rounded-full blur-[100px] bg-milquu-blue/5 opacity-60"></div>
+        <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] rounded-full blur-[120px] bg-milquu-gold/10 opacity-50"></div>
+      </div>
       <SEOHead 
         title="Our Farm to Home Process | MilQuu Fresh"
         description="Learn how MilQuu Fresh delivers pure milk from the farm to your home within 24 hours while maintaining a strict 4°C cold chain."
@@ -22,7 +27,7 @@ const OurProcess = () => {
         schema={schema}
       />
 
-      <section className="bg-milquu-blue text-white py-20 px-4">
+      <section className="bg-gradient-to-br from-milquu-blue to-blue-900 text-white pt-32 pb-24 px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold font-serif mb-6">Our Process</h1>
           <p className="text-xl md:text-2xl font-light opacity-90">
@@ -31,8 +36,8 @@ const OurProcess = () => {
         </div>
       </section>
 
-      <section className="py-16 px-4">
-        <div className="max-w-4xl mx-auto prose prose-lg prose-blue">
+      <section className="py-16 px-4 relative z-10 -mt-10">
+        <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-2xl rounded-[32px] p-8 md:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 prose prose-lg prose-blue">
           <h2>The 4°C Cold Chain</h2>
           <p>
             The secret to maintaining the freshness and extending the natural shelf life of unpasteurized raw milk is temperature control. Milk leaves the cow's udder at body temperature (around 37°C), which is ideal for bacterial growth. 

@@ -13,7 +13,12 @@ const OurFarm = () => {
   ];
 
   return (
-    <div className="bg-white min-h-screen pb-16 md:pb-0">
+    <div className="bg-gradient-to-br from-[#FDFBF7] to-white min-h-screen pb-16 md:pb-0 relative overflow-hidden">
+      {/* Background Orbs */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0 fixed">
+        <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] rounded-full blur-[100px] bg-milquu-blue/5 opacity-60"></div>
+        <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] rounded-full blur-[120px] bg-milquu-gold/10 opacity-50"></div>
+      </div>
       <SEOHead 
         title="Our Ethical Dairy Farms | MilQuu Fresh"
         description="Discover the ethical dairy farms behind MilQuu Fresh. Happy cows, natural grazing, and hygienic milking processes ensure the highest quality A2 milk."
@@ -22,7 +27,7 @@ const OurFarm = () => {
         schema={schema}
       />
 
-      <section className="bg-green-700 text-white py-20 px-4">
+      <section className="bg-gradient-to-br from-green-700 to-green-900 text-white pt-32 pb-24 px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold font-serif mb-6">Our Farms & Cattle</h1>
           <p className="text-xl md:text-2xl font-light opacity-90">
@@ -31,8 +36,8 @@ const OurFarm = () => {
         </div>
       </section>
 
-      <section className="py-16 px-4">
-        <div className="max-w-4xl mx-auto prose prose-lg prose-green">
+      <section className="py-16 px-4 relative z-10 -mt-10">
+        <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-2xl rounded-[32px] p-8 md:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 prose prose-lg prose-green">
           <h2>Ethical Dairy Farming</h2>
           <p>
             At MilQuu Fresh, we believe that the quality of milk is directly linked to the well-being of the cattle. Our partner farms practice ethical dairy farming, ensuring a stress-free environment for our Gir cows and Murrah buffaloes.

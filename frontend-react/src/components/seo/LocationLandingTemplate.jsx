@@ -38,7 +38,12 @@ const LocationLandingTemplate = ({
   ];
 
   return (
-    <div className="bg-milquu-cream min-h-screen pb-16 md:pb-0 font-sans">
+    <div className="bg-gradient-to-br from-[#FDFBF7] to-white min-h-screen pb-16 md:pb-0 font-sans relative overflow-hidden">
+      {/* Background Orbs */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0 fixed">
+        <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] rounded-full blur-[100px] bg-milquu-blue/5 opacity-60"></div>
+        <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] rounded-full blur-[120px] bg-milquu-gold/10 opacity-50"></div>
+      </div>
       <SEOHead 
         title={title}
         description={description}
@@ -106,7 +111,7 @@ const LocationLandingTemplate = ({
           initial="hidden"
           whileInView="show"
           viewport={{ once: true }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center"
+          className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center bg-white/80 backdrop-blur-2xl p-8 rounded-[32px] border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)]"
         >
           <motion.div variants={itemVariants} className="flex flex-col items-center group">
             <div className="w-16 h-16 bg-blue-50 text-milquu-blue rounded-full flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-blue-100 transition-all shadow-sm">
@@ -146,14 +151,14 @@ const LocationLandingTemplate = ({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.8 }}
-          className="max-w-4xl mx-auto prose prose-lg prose-blue prose-h2:font-serif prose-h2:text-4xl prose-h3:font-serif prose-h3:text-2xl text-gray-700"
+          className="max-w-4xl mx-auto bg-white/80 backdrop-blur-2xl p-8 md:p-12 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 prose prose-lg prose-blue prose-h2:font-serif prose-h2:text-4xl prose-h3:font-serif prose-h3:text-2xl text-gray-700 relative z-10"
         >
           {mainContent}
         </motion.div>
       </section>
 
       {/* Popular Products Localized */}
-      <section className="py-20 px-4 bg-gray-50 border-t border-gray-100">
+      <section className="py-20 px-4 relative z-10">
         <div className="max-w-6xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -177,8 +182,8 @@ const LocationLandingTemplate = ({
               { title: "Premium Buffalo Milk", img: "buffalo-milk.png", link: "pure-buffalo-milk", desc: "Thick, creamy buffalo milk perfect for making tea, coffee, curd, and homemade sweets." },
               { title: "Bilona A2 Cow Ghee", img: "desi-ghee.png", link: "desi-cow-ghee", desc: "Traditional bilona churned A2 ghee with rich aroma, golden texture, and immense health benefits." }
             ].map((product, i) => (
-              <motion.div key={i} variants={itemVariants} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group">
-                <div className="h-56 bg-gray-50 rounded-2xl mb-6 flex items-center justify-center overflow-hidden relative">
+              <motion.div key={i} variants={itemVariants} className="bg-white/80 backdrop-blur-xl p-6 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-2 transition-all duration-300 group">
+                <div className="h-56 bg-gradient-to-br from-gray-50 to-white rounded-[24px] mb-6 flex items-center justify-center overflow-hidden relative border border-gray-100">
                   <div className="absolute inset-0 bg-blue-900/0 group-hover:bg-blue-900/5 transition-colors z-10"></div>
                   <img src={`/img/products/${product.img}`} alt={product.title} className="h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => e.target.style.display='none'} />
                 </div>
@@ -194,7 +199,7 @@ const LocationLandingTemplate = ({
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-20 px-4 relative z-10">
         <div className="max-w-4xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -214,7 +219,7 @@ const LocationLandingTemplate = ({
             className="space-y-6"
           >
             {combinedFAQs.map((faq, index) => (
-              <motion.div key={index} variants={itemVariants} className="glass p-8 rounded-2xl hover:shadow-md transition-shadow">
+              <motion.div key={index} variants={itemVariants} className="bg-white/60 backdrop-blur-xl p-8 rounded-[24px] shadow-[0_4px_15px_rgb(0,0,0,0.02)] border border-white/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all">
                 <h3 className="text-xl font-bold text-gray-900 mb-3 font-serif flex items-start">
                   <span className="text-milquu-gold mr-3 mt-1">Q.</span>
                   {faq.question}

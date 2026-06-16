@@ -56,7 +56,7 @@ const ProductPage = () => {
   };
 
   return (
-    <div className="bg-white min-h-screen text-milquu-dark font-sans overflow-x-hidden relative">
+    <div className="bg-gradient-to-br from-[#FDFBF7] to-white min-h-screen text-milquu-dark font-sans overflow-x-hidden relative">
       
       {/* Background Ambience */}
       <div className="absolute top-20 right-0 w-[500px] h-[500px] rounded-full blur-[120px] bg-milquu-gold/20 opacity-20 mix-blend-multiply pointer-events-none"></div>
