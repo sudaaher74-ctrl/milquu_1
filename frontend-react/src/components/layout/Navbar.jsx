@@ -2,14 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, ShoppingCart, User } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { t, i18n } = useTranslation();
   const { cartCount } = useCart();
   const { user } = useAuth();
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,11 +26,11 @@ const Navbar = () => {
   }, []);
 
   const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'Products', href: '/products' },
-    { name: 'About Us', href: '/#about' },
-    { name: 'Contact Us', href: '/contact' },
-    { name: 'Subscriptions', href: '/subscribe' },
+    { name: t('nav.home', 'Home'), href: '/' },
+    { name: t('nav.products', 'Products'), href: '/products' },
+    { name: t('nav.aboutUs', 'About Us'), href: '/#about' },
+    { name: t('nav.contact', 'Contact Us'), href: '/contact' },
+    { name: t('nav.subscriptions', 'Subscriptions'), href: '/subscribe' },
   ];
 
   const location = useLocation();
@@ -65,6 +71,15 @@ const Navbar = () => {
 
           {/* Right Section */}
           <div className="hidden md:flex items-center space-x-6">
+            <select 
+              onChange={(e) => changeLanguage(e.target.value)}
+              value={i18n.language}
+              className={`bg-transparent text-sm font-medium outline-none cursor-pointer transition-colors ${isScrolled ? 'text-milquu-dark' : 'text-milquu-dark'}`}
+            >
+              <option value="en">EN</option>
+              <option value="hi">HI</option>
+              <option value="mr">MR</option>
+            </select>
             <Link to="/cart" className="relative group flex items-center justify-center p-2">
               <ShoppingCart size={22} className="text-milquu-dark group-hover:text-milquu-gold transition-colors duration-200" />
               {cartCount > 0 && (
@@ -94,6 +109,15 @@ const Navbar = () => {
 
           {/* Mobile Menu Toggle */}
           <div className="md:hidden flex items-center space-x-4">
+            <select 
+              onChange={(e) => changeLanguage(e.target.value)}
+              value={i18n.language}
+              className="bg-transparent text-sm font-medium outline-none cursor-pointer text-milquu-dark"
+            >
+              <option value="en">EN</option>
+              <option value="hi">HI</option>
+              <option value="mr">MR</option>
+            </select>
             <Link to="/cart" className="relative group flex items-center justify-center p-2">
               <ShoppingCart size={22} className="text-milquu-dark" />
               {cartCount > 0 && (

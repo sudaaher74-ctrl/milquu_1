@@ -7,6 +7,10 @@ import { router } from './router.jsx'
 import { CartProvider } from './context/CartContext.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import * as Sentry from '@sentry/react'
+import './i18n'
+import { initGA } from './utils/analytics'
+
+initGA();
 
 if (import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({

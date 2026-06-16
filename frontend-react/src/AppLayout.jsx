@@ -6,6 +6,7 @@ import Footer from './components/layout/Footer';
 import FloatingWhatsApp from './components/layout/FloatingWhatsApp';
 import FloatingCartIsland from './components/layout/FloatingCartIsland';
 import MobileNav from './components/layout/MobileNav';
+import { trackPageView } from './utils/analytics';
 
 // Loading Fallback Component
 const PageLoader = () => (
@@ -94,6 +95,10 @@ export default function AppLayout() {
     const unsubscribe = eventBus.on('UNAUTHORIZED', handleUnauthorized);
     return () => unsubscribe();
   }, [location.pathname, navigate]);
+
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location]);
 
   return (
     <div className="font-sans">
