@@ -2,6 +2,8 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import compression from 'compression';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import connectDB from './config/db.js';
 import productRoutes from './routes/productRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
@@ -35,6 +37,18 @@ const app = express();
 // Use compression
 app.use(compression());
 
+// Security Headers
+app.use(helmet());
+
+// Rate Limiter for sensitive endpoints
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Limit each IP to 20 requests per `window`
+  message: { message: 'Too many requests from this IP, please try again after 15 minutes' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Body parser
 app.use(express.json());
 
@@ -53,10 +67,12 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/erp', erpRoutes); // Mounted ERP routes
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api/users', userRoutes);
+
+// Apply rate limiting to user and free sample routes
+app.use('/api/users', apiLimiter, userRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/free-sample', freeSampleRoutes);
+app.use('/api/free-sample', apiLimiter, freeSampleRoutes);
 
 import http from 'http';
 import { initSocket } from './socket.js';

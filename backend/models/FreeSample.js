@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const freeSampleSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
-  mobileNumber: { type: String, required: true },
+  mobileNumber: { type: String, required: true, index: true },
   whatsappNumber: { type: String },
   selectedProduct: { type: String, required: true },
   

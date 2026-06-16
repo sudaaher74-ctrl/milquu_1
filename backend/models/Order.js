@@ -6,6 +6,7 @@ const orderSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: false, // Optional for POS walk-in customers
     ref: 'User',
+    index: true
   },
   name: { type: String }, // For guest checkout
   phone: { type: String }, // For guest checkout
@@ -32,7 +33,7 @@ const orderSchema = new mongoose.Schema({
     country: { type: String },
   },
   paymentMethod: { type: String, required: true, default: 'Cash on Delivery' },
-  paymentStatus: { type: String, required: true, enum: ['PENDING', 'PAID', 'FAILED'], default: 'PENDING' },
+  paymentStatus: { type: String, required: true, enum: ['PENDING', 'PAID', 'FAILED'], default: 'PENDING', index: true },
   razorpayOrderId: { type: String },
   razorpayPaymentId: { type: String },
   razorpaySignature: { type: String },
@@ -48,7 +49,7 @@ const orderSchema = new mongoose.Schema({
   isDelivered: { type: Boolean, required: true, default: false },
   deliveredAt: { type: Date },
   proofOfDelivery: { type: String },
-  deliveryStatus: { type: String, default: 'Pending' },
+  deliveryStatus: { type: String, default: 'Pending', index: true },
   failedReason: { type: String },
   deliverySlot: { type: String, enum: ['Morning', 'Evening'], default: 'Morning' },
   scheduledDeliveryDate: { type: Date },
