@@ -170,22 +170,22 @@ const LocationLandingTemplate = ({
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: "-50px" }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8"
           >
             {[
               { title: "A2 Farm Fresh Cow Milk", img: "a2-cow-milk.png", link: "farm-fresh-cow-milk", desc: "Pure, natural A2 milk from free-grazing Gir cows. Delivered fresh every morning." },
               { title: "Premium Buffalo Milk", img: "buffalo-milk.png", link: "pure-buffalo-milk", desc: "Thick, creamy buffalo milk perfect for making tea, coffee, curd, and homemade sweets." },
               { title: "Bilona A2 Cow Ghee", img: "desi-ghee.png", link: "desi-cow-ghee", desc: "Traditional bilona churned A2 ghee with rich aroma, golden texture, and immense health benefits." }
             ].map((product, i) => (
-              <motion.div key={i} variants={itemVariants} className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group">
-                <div className="h-56 bg-gray-50 rounded-2xl mb-6 flex items-center justify-center overflow-hidden relative">
+              <motion.div key={i} variants={itemVariants} className="bg-white p-4 md:p-6 rounded-2xl md:rounded-3xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group">
+                <div className="h-32 md:h-56 bg-gray-50 rounded-xl md:rounded-2xl mb-4 md:mb-6 flex items-center justify-center overflow-hidden relative">
                   <div className="absolute inset-0 bg-blue-900/0 group-hover:bg-blue-900/5 transition-colors z-10"></div>
-                  <img src={`/img/products/${product.img}`} alt={product.title} className="h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={(e) => e.target.style.display='none'} />
+                  <img src={`/img/products/${product.img}`} alt={product.title} className="h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500" onError={(e) => e.target.style.display='none'} />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3 font-serif">{product.title}</h3>
-                <p className="text-gray-600 mb-6 text-base leading-relaxed line-clamp-2">{product.desc}</p>
-                <Link to={`/product/${product.link}`} className="inline-flex items-center text-milquu-blue font-bold hover:text-blue-800 transition-colors bg-blue-50 px-4 py-2 rounded-lg group-hover:bg-blue-100">
-                  View Details <ChevronRight size={18} className="ml-1" />
+                <h3 className="text-sm md:text-2xl font-bold text-gray-900 mb-2 md:mb-3 font-serif line-clamp-2">{product.title}</h3>
+                <p className="hidden md:block text-gray-600 mb-6 text-base leading-relaxed line-clamp-2">{product.desc}</p>
+                <Link to={`/product/${product.link}`} className="inline-flex items-center text-milquu-blue font-bold hover:text-blue-800 transition-colors bg-blue-50 px-3 py-1.5 md:px-4 md:py-2 rounded-lg group-hover:bg-blue-100 text-xs md:text-base">
+                  View <ChevronRight size={16} className="ml-0.5 md:ml-1" />
                 </Link>
               </motion.div>
             ))}

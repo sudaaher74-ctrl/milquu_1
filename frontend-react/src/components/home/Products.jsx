@@ -34,7 +34,7 @@ const Products = () => {
         </div>
 
         {/* Categories Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 sm:gap-16 lg:gap-24 items-center justify-items-center">
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-4 sm:gap-16 lg:gap-24 items-center justify-items-center">
           {categories.map((category, index) => (
             <motion.div
               key={index}
@@ -49,29 +49,29 @@ const Products = () => {
                 {/* Premium Background Card */}
                 <div className="absolute inset-0 bg-gray-50/80 rounded-[3rem] border border-gray-100 shadow-sm group-hover:shadow-2xl group-hover:bg-blue-50/50 transition-all duration-500 -z-10 transform group-hover:-translate-y-2"></div>
 
-                <div className="flex flex-col items-center py-10 px-4">
+                <div className="flex flex-col items-center py-6 px-2 md:py-10 md:px-4">
                   <motion.div 
                     animate={{ 
                       y: [0, 8, 0, -4, 0], 
                     }}
                     transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: index * 0.8 }}
-                    className="w-full transform transition-transform duration-700 cursor-pointer origin-bottom group-hover:scale-110 mb-8"
+                    className="w-full transform transition-transform duration-700 cursor-pointer origin-bottom group-hover:scale-110 mb-4 md:mb-8"
                   >
                     <div className="relative">
-                      <div className="absolute inset-0 bg-white/20 blur-3xl rounded-full"></div>
+                      <div className="absolute inset-0 bg-white/20 blur-2xl md:blur-3xl rounded-full"></div>
                       <img 
                         src={category.image} 
                         alt={category.title} 
-                        className="w-full h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.15)] relative z-10" 
+                        className="w-full h-auto object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.15)] md:drop-shadow-[0_20px_40px_rgba(0,0,0,0.15)] relative z-10" 
                       />
                     </div>
                   </motion.div>
 
                   {/* Title Label */}
-                  <h3 className="text-2xl md:text-3xl font-serif font-bold text-gray-800 group-hover:text-milquu-blue transition-colors">
+                  <h3 className="text-base sm:text-2xl md:text-3xl font-serif font-bold text-gray-800 group-hover:text-milquu-blue transition-colors text-center leading-tight">
                     {category.title}
                   </h3>
-                  <div className="mt-4 flex items-center text-milquu-gold font-bold uppercase tracking-wider text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
+                  <div className="hidden md:flex mt-4 items-center text-milquu-gold font-bold uppercase tracking-wider text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
                     View Range <span className="ml-2">→</span>
                   </div>
                 </div>
