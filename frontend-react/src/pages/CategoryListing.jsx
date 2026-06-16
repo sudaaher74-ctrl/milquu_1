@@ -23,7 +23,7 @@ const categoryMeta = {
 };
 
 const ProductCard = ({ product, index, category, getProductSlug, addToCart }) => {
-  const isMilk = product.name.toLowerCase().includes('milk');
+  const isMilk = (product.name || '').toLowerCase().includes('milk');
   const [selectedUnit, setSelectedUnit] = useState('1 Litre');
 
   // If it's milk and 500ml is selected, halve the price (round up). Otherwise use default.
@@ -167,8 +167,11 @@ const CategoryListing = () => {
         };
         
         data.forEach(p => {
-          if (grouped[p.category]) {
-            grouped[p.category].products.push(p);
+          let cat = (p.category || '').toLowerCase().trim();
+          if (cat === 'milk' || cat.includes('milk')) {
+            grouped['milk'].products.push(p);
+          } else {
+            grouped['by-products'].products.push(p);
           }
         });
         

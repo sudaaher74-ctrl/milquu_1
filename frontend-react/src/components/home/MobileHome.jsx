@@ -80,7 +80,8 @@ const MobileHome = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    const isMilk = product.name.toLowerCase().includes('milk');
+    const productName = product.name || '';
+    const isMilk = productName.toLowerCase().includes('milk');
     const selectedUnit = '500 ml'; // default for mobile quick add
     const currentPrice = isMilk ? Math.ceil(product.price / 2) : product.price;
 
@@ -90,7 +91,7 @@ const MobileHome = () => {
       id: isMilk ? `${product.id || product._id}-500ml` : (product.id || product._id),
       price: currentPrice,
       unit: isMilk ? selectedUnit : product.unit,
-      name: isMilk ? `${product.name} (500 ml)` : product.name
+      name: isMilk ? `${productName} (500 ml)` : productName
     };
     addToCart(productToAdd);
   };
@@ -231,7 +232,7 @@ const MobileHome = () => {
           <div className="grid grid-cols-2 gap-4">
             {products.map((product) => (
               <div key={product._id || product.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col relative group">
-                <Link to={`/product/${getProductSlug(product.name)}`} className="block flex-grow relative pb-3 mb-3 border-b border-gray-50">
+                <Link to={`/product/${getProductSlug(product.name || '')}`} className="block flex-grow relative pb-3 mb-3 border-b border-gray-50">
                   <div className="h-[120px] w-full flex justify-center items-center">
                     <img 
                       src={product.image} 
@@ -242,10 +243,10 @@ const MobileHome = () => {
                 </Link>
                 
                 <div className="flex flex-col">
-                  <span className="text-[11px] text-gray-500 font-medium mb-1">{product.name.toLowerCase().includes('milk') ? '500 ml' : product.unit || '1 Pack'}</span>
+                  <span className="text-[11px] text-gray-500 font-medium mb-1">{(product.name || '').toLowerCase().includes('milk') ? '500 ml' : product.unit || '1 Pack'}</span>
                   <div className="flex justify-between items-center">
                     <span className="text-[18px] font-bold text-[#1a365d]">
-                      ₹{product.name.toLowerCase().includes('milk') ? Math.ceil(product.price / 2) : product.price}
+                      ₹{(product.name || '').toLowerCase().includes('milk') ? Math.ceil(product.price / 2) : product.price}
                     </span>
                     <button 
                       onClick={(e) => handleAddToCart(product, e)}
