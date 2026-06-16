@@ -109,7 +109,7 @@ const MobileHome = () => {
   ];
 
   // Primary Blue: #1E3A8A, Fresh Green: #22C55E, Background: #FFF8F0 or #F9FAFB
-  const userName = user?.name ? user.name.split(' ')[0] : 'Rahul';
+  const userName = user?.name ? user.name.split(' ')[0] : '';
 
   return (
     <div className="bg-[#fafafc] min-h-screen pb-28 font-poppins w-full max-w-[100vw] overflow-x-hidden md:hidden">
@@ -119,7 +119,7 @@ const MobileHome = () => {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-[22px] font-bold text-[#111827] leading-tight">
-              Good Morning, {userName} <span className="inline-block origin-bottom-right hover:animate-waving-hand">👋</span>
+              Good Morning{userName ? `, ${userName}` : ''} <span className="inline-block origin-bottom-right hover:animate-waving-hand">👋</span>
             </h1>
             <p className="text-[13px] text-gray-500 mt-1 font-medium">Fresh dairy delivered daily</p>
           </div>
