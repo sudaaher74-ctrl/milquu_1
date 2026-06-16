@@ -163,11 +163,11 @@ const MobileHome = () => {
           ref={bannerScrollRef}
         >
           {banners.map((banner, index) => (
-            <img 
+              <img 
               key={index}
               src={banner} 
               alt={`Special Offer ${index + 1}`} 
-              className="w-full h-full object-cover flex-shrink-0 snap-start cursor-pointer" 
+              className="w-full h-full object-contain bg-white flex-shrink-0 snap-start cursor-pointer" 
               onClick={() => index === 0 ? navigate('/subscription') : navigate('/products')}
             />
           ))}
@@ -179,8 +179,8 @@ const MobileHome = () => {
         <div className="flex overflow-x-auto hide-scrollbar space-x-5 pb-2">
           {categories.map((cat, idx) => (
             <div key={idx} className="flex flex-col items-center flex-shrink-0 cursor-pointer" onClick={() => navigate('/products')}>
-              <div className="w-[68px] h-[68px] rounded-full bg-white mb-2 shadow-[0_4px_12px_rgba(0,0,0,0.04)] border border-gray-50 flex items-center justify-center overflow-hidden">
-                  <img src={cat.image} alt={cat.name} className="w-[46px] h-[46px] object-contain drop-shadow-sm scale-110" />
+              <div className="w-[68px] h-[68px] rounded-full bg-white mb-2 shadow-[0_4px_12px_rgba(0,0,0,0.04)] border border-gray-50 flex items-center justify-center p-2">
+                  <img src={cat.image} alt={cat.name} className="w-full h-full object-contain drop-shadow-sm" />
               </div>
               <span className="text-[12px] font-bold text-gray-800 text-center">{cat.name}</span>
             </div>
@@ -248,7 +248,7 @@ const MobileHome = () => {
                   <img 
                     src={product.image} 
                     alt={product.name} 
-                    className="h-full w-auto object-contain drop-shadow-sm scale-[1.15]"
+                    className="max-w-full max-h-full object-contain drop-shadow-sm"
                   />
                 </Link>
                 
@@ -301,8 +301,8 @@ const MobileHome = () => {
           <div className="flex overflow-x-auto hide-scrollbar space-x-4 pb-4 pr-5">
             {freshPicks.map((product) => (
               <div key={product._id || product.id} className="w-[180px] flex-shrink-0 bg-white rounded-[16px] p-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-row items-center">
-                <div className="w-[50px] h-[50px] flex justify-center items-center flex-shrink-0">
-                  <img src={product.image} alt={product.name} className="h-full w-auto object-contain drop-shadow-sm scale-110" />
+                <div className="w-[50px] h-[50px] flex justify-center items-center flex-shrink-0 p-1">
+                  <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain drop-shadow-sm" />
                 </div>
                 <div className="flex flex-col ml-2 justify-center">
                   <h4 className="text-[12px] font-bold text-[#111827] leading-tight line-clamp-2">{product.name}</h4>
