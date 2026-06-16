@@ -14,7 +14,7 @@ const FreeSampleCampaign = () => {
     fullName: '',
     mobileNumber: '',
     whatsappNumber: '',
-    selectedProduct: 'A2 Cow Milk',
+    selectedProduct: 'Cow Milk',
     address: {
       houseFlat: '',
       buildingSociety: '',
@@ -284,7 +284,7 @@ const FreeSampleCampaign = () => {
             <div className="space-y-3">
               <label className="text-sm font-bold text-gray-700 block">Select Your Free Sample *</label>
               <div className="grid grid-cols-2 gap-3">
-                {['A2 Cow Milk', 'Buffalo Milk'].map(prod => (
+                {['Cow Milk', 'Buffalo Milk'].map(prod => (
                   <div 
                     key={prod}
                     onClick={() => selectProduct(prod)}
