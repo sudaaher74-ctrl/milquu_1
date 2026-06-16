@@ -61,10 +61,10 @@ const apiLimiter = rateLimit({
 app.use(express.json());
 
 // Sanitize data against NoSQL query injection
-app.use(mongoSanitize());
+// app.use(mongoSanitize());
 
 // Sanitize data against XSS
-app.use(xss());
+// app.use(xss());
 
 // Enable CORS
 app.use(cors());
