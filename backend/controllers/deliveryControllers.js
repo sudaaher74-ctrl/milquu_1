@@ -1,5 +1,7 @@
 import DeliveryStaff from '../models/DeliveryStaff.js';
 import Order from '../models/Order.js';
+import User from '../models/User.js';
+import WalletTransaction from '../models/WalletTransaction.js';
 import generateToken from '../utils/generateToken.js';
 
 export const loginDeliveryStaff = async (req, res) => {
@@ -76,9 +78,6 @@ export const markOrderDelivered = async (req, res) => {
       order.paidAt = Date.now();
     } else if (order.paymentMethod === 'Wallet' && !order.isPaid && order.user) {
       // Auto deduct from Wallet Phase 2
-      const User = (await import('../models/User.js')).default;
-      const WalletTransaction = (await import('../models/WalletTransaction.js')).default;
-      
       const user = await User.findById(order.user);
       if (user) {
         user.walletBalance -= order.totalPrice;

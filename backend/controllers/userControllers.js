@@ -1,4 +1,8 @@
 import User from '../models/User.js';
+import Subscription from '../models/Subscription.js';
+import Order from '../models/Order.js';
+import WalletTransaction from '../models/WalletTransaction.js';
+import WithdrawalRequest from '../models/WithdrawalRequest.js';
 import generateToken from '../utils/generateToken.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
@@ -87,7 +91,6 @@ export const getUserProfile = async (req, res) => {
 export const getMySubscriptions = async (req, res) => {
   try {
     // We need to import Subscription at the top
-    const Subscription = (await import('../models/Subscription.js')).default;
     const subscriptions = await Subscription.find({ user: req.user._id }).populate('items.product');
     res.json(subscriptions);
   } catch (error) {
@@ -98,7 +101,6 @@ export const getMySubscriptions = async (req, res) => {
 export const updateSubscriptionStatus = async (req, res) => {
   try {
     const { status, pauseStartDate, pauseEndDate } = req.body; // e.g. 'paused', 'Active', 'Cancelled'
-    const Subscription = (await import('../models/Subscription.js')).default;
     
     const subscription = await Subscription.findById(req.params.id);
     
@@ -130,7 +132,6 @@ export const updateSubscriptionStatus = async (req, res) => {
 
 export const getMyOrders = async (req, res) => {
   try {
-    const Order = (await import('../models/Order.js')).default;
     const orders = await Order.find({ user: req.user._id }).sort({ createdAt: -1 });
     res.json(orders);
   } catch (error) {
@@ -143,10 +144,8 @@ export const getMyWallet = async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const WalletTransaction = (await import('../models/WalletTransaction.js')).default;
     const transactions = await WalletTransaction.find({ user: req.user._id }).sort({ createdAt: -1 });
 
-    const WithdrawalRequest = (await import('../models/WithdrawalRequest.js')).default;
     const withdrawalRequests = await WithdrawalRequest.find({ user: req.user._id }).sort({ createdAt: -1 });
 
     // Calculate Reserved Balance dynamically
@@ -157,14 +156,12 @@ export const getMyWallet = async (req, res) => {
     reservedBalance += pendingWithdrawals.reduce((sum, req) => sum + req.amount, 0);
 
     // 2. Active Subscriptions (Reserve 1 Day Cost)
-    const Subscription = (await import('../models/Subscription.js')).default;
     const activeSubs = await Subscription.find({ user: req.user._id, status: { $in: ['Active', 'active'] } });
     activeSubs.forEach(sub => {
       reservedBalance += (sub.monthlyTotal / 30); // 1 Day cost
     });
 
     // 3. Pending Orders Cost
-    const Order = (await import('../models/Order.js')).default;
     const pendingOrders = await Order.find({ user: req.user._id, isPaid: false, isDelivered: false });
     pendingOrders.forEach(order => {
       reservedBalance += order.totalPrice;
@@ -197,15 +194,12 @@ export const requestWithdrawal = async (req, res) => {
 
     // Re-calculate withdrawable balance
     let reservedBalance = 0;
-    const WithdrawalRequest = (await import('../models/WithdrawalRequest.js')).default;
     const pendingWithdrawals = await WithdrawalRequest.find({ user: req.user._id, status: { $in: ['Pending', 'Under Review'] } });
     reservedBalance += pendingWithdrawals.reduce((sum, r) => sum + r.amount, 0);
 
-    const Subscription = (await import('../models/Subscription.js')).default;
     const activeSubs = await Subscription.find({ user: req.user._id, status: { $in: ['Active', 'active'] } });
     activeSubs.forEach(sub => reservedBalance += (sub.monthlyTotal / 30));
 
-    const Order = (await import('../models/Order.js')).default;
     const pendingOrders = await Order.find({ user: req.user._id, isPaid: false, isDelivered: false });
     pendingOrders.forEach(order => reservedBalance += order.totalPrice);
 
@@ -330,7 +324,6 @@ export const rechargeWallet = async (req, res) => {
     user.walletBalance = (user.walletBalance || 0) + Number(amount);
     await user.save();
 
-    const WalletTransaction = (await import('../models/WalletTransaction.js')).default;
     const transaction = await WalletTransaction.create({
       user: user._id,
       amount: Number(amount),

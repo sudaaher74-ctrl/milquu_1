@@ -1,6 +1,8 @@
 import WithdrawalRequest from '../models/WithdrawalRequest.js';
 import User from '../models/User.js';
 import WalletTransaction from '../models/WalletTransaction.js';
+import Subscription from '../models/Subscription.js';
+import Order from '../models/Order.js';
 
 export const getWithdrawalRequests = async (req, res) => {
   try {
@@ -29,11 +31,9 @@ export const updateWithdrawalStatus = async (req, res) => {
       // Re-verify withdrawable balance before completing to prevent race conditions
       let reservedBalance = 0;
       
-      const Subscription = (await import('../models/Subscription.js')).default;
       const activeSubs = await Subscription.find({ user: user._id, status: { $in: ['Active', 'active'] } });
       activeSubs.forEach(sub => reservedBalance += (sub.monthlyTotal / 30));
 
-      const Order = (await import('../models/Order.js')).default;
       const pendingOrders = await Order.find({ user: user._id, isPaid: false, isDelivered: false });
       pendingOrders.forEach(order => reservedBalance += order.totalPrice);
 
