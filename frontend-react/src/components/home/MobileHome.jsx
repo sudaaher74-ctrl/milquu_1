@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, ShoppingCart, Search, Mic, ShieldCheck, Leaf, FlaskConical, Truck, Plus, Star, Home, ShoppingBag, CalendarCheck, Package, User } from 'lucide-react';
+import { Bell, ShoppingCart, Search, Mic, ShieldCheck, Leaf, FlaskConical, Truck, Plus, Star, Home, ShoppingBag, CalendarCheck, Package, User, Wallet, Store } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -323,18 +323,18 @@ const MobileHome = () => {
             <div className="w-1 h-1 bg-[#1E3A8A] rounded-full mt-0.5"></div>
           </div>
           <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/products')}>
-            <ShoppingBag className="w-6 h-6 text-gray-400" />
+            <Store className="w-6 h-6 text-gray-400" />
             <span className="text-[10px] font-bold text-gray-400 mt-1">Shop</span>
+            <div className="w-1 h-1 bg-transparent rounded-full mt-0.5"></div>
+          </div>
+          <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/wallet')}>
+            <Wallet className="w-6 h-6 text-gray-400" />
+            <span className="text-[10px] font-bold text-gray-400 mt-1">Wallet</span>
             <div className="w-1 h-1 bg-transparent rounded-full mt-0.5"></div>
           </div>
           <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/subscription')}>
             <CalendarCheck className="w-6 h-6 text-gray-400" />
-            <span className="text-[10px] font-bold text-gray-400 mt-1">Subscription</span>
-            <div className="w-1 h-1 bg-transparent rounded-full mt-0.5"></div>
-          </div>
-          <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/my-account')}>
-            <Package className="w-6 h-6 text-gray-400" />
-            <span className="text-[10px] font-bold text-gray-400 mt-1">Orders</span>
+            <span className="text-[10px] font-bold text-gray-400 mt-1">Subscribe</span>
             <div className="w-1 h-1 bg-transparent rounded-full mt-0.5"></div>
           </div>
           <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/my-account')}>
