@@ -239,10 +239,16 @@ const AIChatDashboard = () => {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-white shadow-sm overflow-hidden relative w-full max-w-full">
+    <div className="flex flex-col h-[100dvh] bg-gradient-to-br from-[#FDFBF7] to-white relative overflow-hidden w-full max-w-full">
       
+      {/* Background Orbs */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-blue/10 opacity-70"></div>
+        <div className="absolute bottom-10 -right-20 w-[500px] h-[500px] rounded-full blur-[100px] bg-milquu-gold/20 opacity-60"></div>
+      </div>
+
       {/* Chat Header */}
-      <div className="bg-white border-b border-gray-100 p-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+      <div className="bg-white/70 backdrop-blur-md border-b border-white/60 p-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate('/admin')}
@@ -276,7 +282,7 @@ const AIChatDashboard = () => {
       </div>
 
       {/* Chat History Area */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 relative z-10">
         {messages.map((msg, index) => (
           <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             
@@ -286,10 +292,10 @@ const AIChatDashboard = () => {
               </div>
             )}
             
-            <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-4 shadow-sm ${
+            <div className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-4 shadow-sm backdrop-blur-sm ${
               msg.role === 'user' 
-                ? 'bg-milquu-blue text-white rounded-br-none' 
-                : 'bg-white border border-gray-100 text-gray-800 rounded-bl-none'
+                ? 'bg-gradient-to-r from-milquu-blue to-indigo-600 text-white rounded-br-none shadow-[0_4px_15px_rgb(0,0,0,0.1)]' 
+                : 'bg-white/80 border border-white/60 text-gray-800 rounded-bl-none shadow-[0_4px_20px_rgb(0,0,0,0.03)]'
             }`}>
               {msg.role === 'assistant' ? (
                 <div className="prose prose-sm max-w-none prose-blue">
@@ -301,10 +307,10 @@ const AIChatDashboard = () => {
 
               {/* Action Buttons inside chat */}
               {msg.action === 'download_delivery_report' && (
-                <div className="mt-4 pt-3 border-t border-gray-100">
+                <div className="mt-4 pt-3 border-t border-white/40">
                   <button 
                     onClick={() => handleAction('download_delivery_report')}
-                    className="flex items-center gap-2 text-sm text-milquu-blue font-medium bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100 transition-colors"
+                    className="flex items-center gap-2 text-sm text-milquu-blue font-bold bg-white/50 px-3 py-2 rounded-lg hover:bg-white transition-colors"
                   >
                     <Download size={16} />
                     Download Delivery Report Again
@@ -326,7 +332,7 @@ const AIChatDashboard = () => {
             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-milquu-blue to-indigo-600 flex-shrink-0 flex items-center justify-center text-white mr-3 mt-1 shadow-sm">
               <Bot size={16} />
             </div>
-            <div className="bg-white border border-gray-100 text-gray-800 rounded-2xl rounded-bl-none p-4 shadow-sm flex items-center gap-2">
+            <div className="bg-white/80 backdrop-blur-md border border-white/60 text-gray-800 rounded-2xl rounded-bl-none p-4 shadow-[0_4px_20px_rgb(0,0,0,0.03)] flex items-center gap-2">
               <div className="flex space-x-1">
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                 <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -339,13 +345,13 @@ const AIChatDashboard = () => {
       </div>
 
       {/* Input Area */}
-      <div className="bg-white border-t border-gray-100 p-4">
+      <div className="bg-white/70 backdrop-blur-md border-t border-white/60 p-4 relative z-10">
         <form onSubmit={handleSubmit} className="relative flex items-center gap-3">
           <button
             type="button"
             onClick={toggleListen}
-            className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all ${
-              isListening ? 'bg-red-100 text-red-500 animate-pulse' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-sm ${
+              isListening ? 'bg-red-50 text-red-500 animate-pulse border border-red-200' : 'bg-white/80 text-gray-600 hover:bg-white border border-white/60'
             }`}
           >
             <Mic size={20} />
@@ -356,7 +362,7 @@ const AIChatDashboard = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={isListening ? "Listening..." : "Ask me anything about your business..."}
-            className="flex-1 bg-gray-100 text-gray-800 rounded-full px-6 py-3 focus:outline-none focus:ring-2 focus:ring-milquu-blue/50"
+            className="flex-1 bg-white/80 backdrop-blur-sm border border-white/60 text-gray-800 rounded-full px-6 py-3 focus:outline-none focus:ring-2 focus:ring-milquu-gold/50 shadow-sm placeholder-gray-400"
             disabled={isListening}
           />
           

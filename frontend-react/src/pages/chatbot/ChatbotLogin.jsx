@@ -38,16 +38,18 @@ const ChatbotLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4 font-sans relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#FDFBF7] to-white flex flex-col justify-center items-center p-4 font-sans relative overflow-hidden">
       
-      {/* Background decoration */}
-      <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-72 h-72 bg-blue-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+      {/* Background Orbs */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-20 -left-20 w-[400px] h-[400px] rounded-full blur-[100px] bg-milquu-blue/10 opacity-60"></div>
+        <div className="absolute bottom-20 -right-20 w-[500px] h-[500px] rounded-full blur-[120px] bg-milquu-gold/20 opacity-50"></div>
+      </div>
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 p-8 relative z-10"
+        className="w-full max-w-md bg-white/80 backdrop-blur-2xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 p-8 relative z-10"
       >
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-r from-milquu-blue to-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-white mb-4 shadow-lg shadow-indigo-500/30">
@@ -73,7 +75,7 @@ const ChatbotLogin = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all"
+                className="w-full bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-milquu-gold focus:border-transparent outline-none transition-all duration-300"
                 placeholder="admin@milquu.com"
               />
             </div>
@@ -88,7 +90,7 @@ const ChatbotLogin = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all"
+                className="w-full bg-white/50 backdrop-blur-sm border border-gray-200 rounded-xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-milquu-gold focus:border-transparent outline-none transition-all duration-300"
                 placeholder="••••••••"
               />
             </div>
@@ -97,7 +99,7 @@ const ChatbotLogin = () => {
           <button 
             type="submit" 
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-milquu-blue to-indigo-600 text-white py-3.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-600/20 flex items-center justify-center transition-all hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+            className="w-full bg-gradient-to-r from-milquu-blue to-indigo-600 text-white py-3.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-600/20 flex items-center justify-center hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-70 disabled:transform-none disabled:cursor-not-allowed mt-2"
           >
             {isLoading ? (
               <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
