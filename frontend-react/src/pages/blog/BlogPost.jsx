@@ -34,7 +34,12 @@ const BlogPost = () => {
   }
 
   return (
-    <div className="bg-white min-h-screen pb-16 md:pb-0">
+    <div className="bg-gradient-to-br from-[#FDFBF7] to-white min-h-screen pb-16 md:pb-0 relative overflow-hidden">
+      {/* Background Orbs */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0 fixed">
+        <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] rounded-full blur-[100px] bg-milquu-blue/5 opacity-60"></div>
+        <div className="absolute bottom-1/4 -right-20 w-[500px] h-[500px] rounded-full blur-[120px] bg-milquu-gold/10 opacity-50"></div>
+      </div>
       <SEOHead 
         title={`${post.title} | MilQuu Fresh Blog`}
         description={post.excerpt}
@@ -66,15 +71,15 @@ const BlogPost = () => {
 
       {/* Content */}
       <section className="px-4 -mt-20 relative z-20 pb-16">
-        <div className="max-w-3xl mx-auto bg-white rounded-3xl shadow-xl p-6 md:p-12 border border-gray-100">
+        <div className="max-w-3xl mx-auto bg-white/80 backdrop-blur-2xl rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-6 md:p-12 border border-white/60">
           <div className="prose prose-lg prose-blue max-w-none" dangerouslySetInnerHTML={{ __html: post.content }} />
           
           {post.faqs && post.faqs.length > 0 && (
-            <div className="mt-12 pt-8 border-t border-gray-100">
+            <div className="mt-12 pt-8 border-t border-white/40">
               <h2 className="text-2xl font-bold font-serif mb-6">Frequently Asked Questions</h2>
               <div className="space-y-4">
                 {post.faqs.map((faq, idx) => (
-                  <div key={idx} className="bg-gray-50 p-4 rounded-xl">
+                  <div key={idx} className="bg-white/50 backdrop-blur-md p-5 rounded-2xl border border-white/60 shadow-[0_4px_15px_rgb(0,0,0,0.02)]">
                     <h4 className="font-bold text-gray-800 mb-2">{faq.question}</h4>
                     <p className="text-gray-600 text-sm m-0">{faq.answer}</p>
                   </div>
@@ -83,10 +88,12 @@ const BlogPost = () => {
             </div>
           )}
 
-          <div className="mt-12 p-8 bg-blue-50 rounded-2xl text-center">
-            <h3 className="text-2xl font-bold font-serif text-gray-900 mb-4">Ready to switch to pure dairy?</h3>
+          <div className="mt-12 p-10 bg-gradient-to-br from-blue-50/80 to-white/50 backdrop-blur-md border border-white/60 rounded-3xl text-center shadow-[0_8px_30px_rgb(0,0,0,0.03)] relative overflow-hidden">
+            {/* Subtle orb inside the CTA */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-milquu-blue/10 rounded-full blur-2xl pointer-events-none"></div>
+            <h3 className="text-2xl font-bold font-serif text-gray-900 mb-4 relative z-10">Ready to switch to pure dairy?</h3>
             <p className="text-gray-600 mb-6">Experience the health benefits of 100% natural, farm-fresh milk delivered daily to your home in Navi Mumbai.</p>
-            <Link to="/subscribe" className="bg-milquu-blue text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-800 transition-colors inline-block">
+            <Link to="/subscribe" className="bg-milquu-blue text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-milquu-blue/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-300 inline-block relative z-10">
               Start Subscription Today
             </Link>
           </div>

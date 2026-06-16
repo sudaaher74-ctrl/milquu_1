@@ -28,7 +28,7 @@ const AboutUs = () => {
   ];
 
   return (
-    <div className="bg-milquu-cream min-h-screen pb-16 md:pb-0 relative overflow-hidden">
+    <div className="bg-gradient-to-br from-[#FDFBF7] to-white min-h-screen pb-16 md:pb-0 relative overflow-hidden">
       <SEOHead 
         title="About MilQuu Fresh | Premium Dairy Brand in Navi Mumbai"
         description="Learn about MilQuu Fresh's journey to becoming Navi Mumbai's most trusted premium dairy brand. Discover our commitment to pure, ethical, and farm-fresh milk."
@@ -38,7 +38,7 @@ const AboutUs = () => {
       />
 
       {/* Hero Section with Glassmorphism & Gradient */}
-      <section className="relative bg-gradient-to-br from-milquu-blue via-blue-800 to-indigo-900 text-white py-32 px-4 overflow-hidden">
+      <section className="relative bg-gradient-to-br from-milquu-blue via-blue-800 to-indigo-900 text-white pt-32 pb-32 px-4 overflow-hidden z-10">
         {/* Animated background blobbing */}
         <motion.div 
           animate={{ scale: [1, 1.1, 1], rotate: [0, 5, 0] }}
@@ -78,7 +78,7 @@ const AboutUs = () => {
           whileInView="show"
           viewport={{ once: true, margin: "-100px" }}
           variants={itemVariants}
-          className="max-w-4xl mx-auto glass p-10 md:p-14 rounded-3xl -mt-20 relative z-20"
+          className="max-w-4xl mx-auto bg-white/80 backdrop-blur-2xl p-10 md:p-14 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-white/60 -mt-20 relative z-20"
         >
           <h2 className="text-3xl md:text-4xl font-serif font-bold text-milquu-blue mb-6">Our Story</h2>
           <div className="prose prose-lg prose-blue max-w-none text-gray-700 leading-loose">
@@ -93,8 +93,12 @@ const AboutUs = () => {
       </section>
 
       {/* Core Values with Animated Cards */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-5xl mx-auto">
+      <section className="py-16 px-4 relative z-10">
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+          <div className="absolute top-1/2 -left-20 w-[400px] h-[400px] rounded-full blur-[100px] bg-milquu-blue/5 opacity-60"></div>
+          <div className="absolute top-1/4 -right-20 w-[500px] h-[500px] rounded-full blur-[120px] bg-milquu-gold/10 opacity-50"></div>
+        </div>
+        <div className="max-w-5xl mx-auto relative z-10">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -112,7 +116,7 @@ const AboutUs = () => {
             viewport={{ once: true, margin: "-50px" }}
             className="grid grid-cols-1 md:grid-cols-2 gap-8"
           >
-            <motion.div variants={itemVariants} className="group glass p-8 rounded-2xl hover:bg-gray-50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border border-gray-100 flex gap-5">
+            <motion.div variants={itemVariants} className="group bg-white/60 backdrop-blur-xl p-8 rounded-[24px] hover:bg-white/80 transition-all duration-300 shadow-[0_4px_15px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:-translate-y-2 border border-white/60 flex gap-5">
               <div className="text-blue-600 mt-1 bg-blue-50 p-4 rounded-xl group-hover:bg-blue-100 transition-colors">
                 <ShieldCheck size={32} />
               </div>
@@ -122,7 +126,7 @@ const AboutUs = () => {
               </div>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="group glass p-8 rounded-2xl hover:bg-gray-50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border border-gray-100 flex gap-5">
+            <motion.div variants={itemVariants} className="group bg-white/60 backdrop-blur-xl p-8 rounded-[24px] hover:bg-white/80 transition-all duration-300 shadow-[0_4px_15px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:-translate-y-2 border border-white/60 flex gap-5">
               <div className="text-red-500 mt-1 bg-red-50 p-4 rounded-xl group-hover:bg-red-100 transition-colors">
                 <Heart size={32} />
               </div>
@@ -132,7 +136,7 @@ const AboutUs = () => {
               </div>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="group glass p-8 rounded-2xl hover:bg-gray-50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border border-gray-100 flex gap-5">
+            <motion.div variants={itemVariants} className="group bg-white/60 backdrop-blur-xl p-8 rounded-[24px] hover:bg-white/80 transition-all duration-300 shadow-[0_4px_15px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:-translate-y-2 border border-white/60 flex gap-5">
               <div className="text-green-600 mt-1 bg-green-50 p-4 rounded-xl group-hover:bg-green-100 transition-colors">
                 <Leaf size={32} />
               </div>
@@ -142,7 +146,7 @@ const AboutUs = () => {
               </div>
             </motion.div>
 
-            <motion.div variants={itemVariants} className="group glass p-8 rounded-2xl hover:bg-gray-50 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border border-gray-100 flex gap-5">
+            <motion.div variants={itemVariants} className="group bg-white/60 backdrop-blur-xl p-8 rounded-[24px] hover:bg-white/80 transition-all duration-300 shadow-[0_4px_15px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.1)] hover:-translate-y-2 border border-white/60 flex gap-5">
               <div className="text-purple-600 mt-1 bg-purple-50 p-4 rounded-xl group-hover:bg-purple-100 transition-colors">
                 <Users size={32} />
               </div>
@@ -156,7 +160,7 @@ const AboutUs = () => {
       </section>
 
       {/* EEAT Section */}
-      <section className="py-20 px-4 bg-milquu-cream">
+      <section className="py-20 px-4 relative z-10">
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
