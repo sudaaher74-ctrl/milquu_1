@@ -159,15 +159,15 @@ const MobileHome = () => {
       {/* HERO BANNER CAROUSEL */}
       <div className="px-5 mt-4">
         <div 
-          className="relative w-full h-[160px] rounded-3xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex overflow-x-auto snap-x snap-mandatory hide-scrollbar"
+          className="relative w-full h-[190px] rounded-3xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex overflow-x-auto snap-x snap-mandatory hide-scrollbar"
           ref={bannerScrollRef}
         >
           {banners.map((banner, index) => (
-              <img 
+            <img 
               key={index}
               src={banner} 
               alt={`Special Offer ${index + 1}`} 
-              className="w-full h-full object-contain bg-white flex-shrink-0 snap-start cursor-pointer" 
+              className="w-full h-full object-cover flex-shrink-0 snap-start cursor-pointer" 
               onClick={() => index === 0 ? navigate('/subscription') : navigate('/products')}
             />
           ))}
