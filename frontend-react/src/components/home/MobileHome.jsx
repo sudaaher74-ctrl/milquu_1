@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Menu, Bell, ShoppingCart, Search, ScanLine, Heart, ChevronRight, Plus, ChevronDown, ShieldCheck, Truck, Droplets, MapPin, ArrowRight } from 'lucide-react';
+import { Bell, ShoppingCart, Search, Mic, ShieldCheck, Leaf, FlaskConical, Truck, Plus, Star, Home, ShoppingBag, CalendarCheck, Package, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -8,28 +8,17 @@ import api from '../../utils/api';
 
 const MobileHome = () => {
   const navigate = useNavigate();
-  const { cartCount, cartItems, addToCart } = useCart();
+  const { cartCount, addToCart } = useCart();
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
-  const banners = [
-    '/img/banners/mobilebanner.webp',
-    '/img/banners/coemilkbanner.webp',
-    '/img/banners/buffalomilkbanner.webp',
-    '/img/banners/cowgheebanner.webp'
-  ];
-
-  // Calculate cart total
-  const cartTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
+  // Fetch some products for Best Sellers and Fresh Picks
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const { data } = await api.get('/api/products');
-        // Filter some best sellers (just taking the first 4 for the mockup feel)
-        setProducts(data.slice(0, 4));
+        setProducts(data);
       } catch (error) {
         console.error('Error fetching products', error);
       } finally {
@@ -39,33 +28,11 @@ const MobileHome = () => {
     fetchProducts();
   }, []);
 
-  const bannerScrollRef = useRef(null);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (bannerScrollRef.current) {
-        const container = bannerScrollRef.current;
-        const width = container.offsetWidth;
-        const maxScrollLeft = container.scrollWidth - width;
-        
-        let newScrollLeft = container.scrollLeft + width;
-        // If we reached the end, go back to the first banner
-        if (newScrollLeft >= maxScrollLeft + 10) {
-          newScrollLeft = 0;
-        }
-        
-        container.scrollTo({
-          left: newScrollLeft,
-          behavior: 'smooth'
-        });
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, []);
+  const bestSellers = products.slice(0, 4);
+  const freshPicks = products.slice(4, 7); // just grabbing a few
 
   const getProductSlug = (name) => {
-    const n = name.toLowerCase();
+    const n = (name || '').toLowerCase();
     if (n.includes('buffalo') && n.includes('pouch')) return 'buffalo-milk-pouch';
     if (n.includes('cow') && n.includes('pouch')) return 'cow-milk-pouch';
     if (n.includes('buffalo')) return 'pure-buffalo-milk';
@@ -96,46 +63,44 @@ const MobileHome = () => {
     addToCart(productToAdd);
   };
 
-  const quickLinks = [
-    { name: 'All', isIcon: true, icon: <div className="w-[22px] h-[22px] grid grid-cols-2 gap-[2px]"><div className="bg-[#1a365d] rounded-[3px]"></div><div className="bg-[#1a365d] rounded-[3px]"></div><div className="bg-[#1a365d] rounded-[3px]"></div><div className="bg-[#1a365d] rounded-[3px]"></div></div>, active: true },
-    { name: 'Milk', image: '/img/products/cowmilk.webp' },
-    { name: 'Ghee', image: '/img/products/cowghee.webp' },
-    { name: 'Paneer', image: '/img/products/panner.webp' },
-    { name: 'Curd', image: '/img/products/Dahi.webp' },
-    { name: 'Butter', image: '/img/categories/categoris1.webp' },
-    { name: 'More', isIcon: true, icon: <ChevronDown className="w-6 h-6 text-[#1a365d]" /> }
-  ];
-
   const categories = [
     { name: 'Milk', image: '/img/products/cowmilk.webp' },
     { name: 'Ghee', image: '/img/products/cowghee.webp' },
     { name: 'Paneer', image: '/img/products/panner.webp' },
     { name: 'Curd', image: '/img/products/Dahi.webp' },
     { name: 'Butter', image: '/img/categories/categoris1.webp' },
-    { name: 'Flavoured Milk', image: '/img/products/lassi.webp' },
   ];
 
   const features = [
-    { title: 'Quality You Can Trust', desc: 'Tested & Certified', icon: <ShieldCheck className="w-5 h-5 text-white" /> },
-    { title: 'From Our Farms', desc: 'Sourced Daily', icon: <MapPin className="w-5 h-5 text-white" /> },
-    { title: 'Super Fast Delivery', desc: 'On Time, Every Time', icon: <Truck className="w-5 h-5 text-white" /> },
-    { title: 'Safe & Hygienic', desc: 'Packed with Care', icon: <Droplets className="w-5 h-5 text-white" /> },
+    { title: 'Tested & Certified', icon: <ShieldCheck className="w-5 h-5 text-green-500" /> },
+    { title: 'Farm Fresh Daily', icon: <Leaf className="w-5 h-5 text-green-500" /> },
+    { title: 'No Preservatives', icon: <FlaskConical className="w-5 h-5 text-green-500" /> },
+    { title: 'Fast Delivery', icon: <Truck className="w-5 h-5 text-green-500" /> },
   ];
 
+  // Primary Blue: #1E3A8A, Fresh Green: #22C55E, Background: #FFF8F0 or #F9FAFB
+  const userName = user?.name ? user.name.split(' ')[0] : 'Rahul';
+
   return (
-    <div className="bg-[#f8f9fa] min-h-screen pb-28 font-sans w-full max-w-[100vw] overflow-x-hidden md:hidden">
+    <div className="bg-[#fafafc] min-h-screen pb-28 font-poppins w-full max-w-[100vw] overflow-x-hidden md:hidden">
       
       {/* HEADER */}
-      <div className="sticky top-0 z-40 bg-white">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="w-7 h-7"></div>
-          <img src="/brand-logo.jpg" alt="MilQuu Fresh" className="h-10 object-contain rounded-full" />
-          <div className="flex items-center space-x-3">
-            <Bell className="text-[#1a365d] w-6 h-6" />
-            <div className="relative" onClick={() => navigate('/cart')}>
-              <ShoppingCart className="text-[#1a365d] w-6 h-6" />
+      <div className="px-5 pt-6 pb-2">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-[22px] font-bold text-[#111827] leading-tight">
+              Good Morning, {userName} <span className="inline-block origin-bottom-right hover:animate-waving-hand">👋</span>
+            </h1>
+            <p className="text-[13px] text-gray-500 mt-1 font-medium">Fresh dairy delivered daily</p>
+          </div>
+          <div className="flex items-center space-x-3 mt-1">
+            <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100">
+              <Bell className="text-[#1E3A8A] w-5 h-5" />
+            </div>
+            <div className="relative w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100" onClick={() => navigate('/cart')}>
+              <ShoppingCart className="text-[#1E3A8A] w-5 h-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-2 bg-[#1a365d] text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+                <span className="absolute -top-1 -right-1 bg-[#22C55E] border-2 border-white text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
                   {cartCount}
                 </span>
               )}
@@ -144,115 +109,142 @@ const MobileHome = () => {
         </div>
 
         {/* SEARCH BAR */}
-        <div className="px-4 pb-3 pt-1">
+        <div className="mt-5">
           <div 
-            className="flex items-center bg-white border border-gray-200 rounded-full px-4 py-3 shadow-sm cursor-pointer"
+            className="flex items-center bg-white border border-gray-200 rounded-full px-4 py-3.5 shadow-[0_2px_10px_rgba(0,0,0,0.03)] cursor-pointer"
             onClick={() => navigate('/products')}
           >
-            <Search className="text-[#1a365d] w-5 h-5 mr-3" />
+            <Search className="text-gray-400 w-5 h-5 mr-3" />
             <input 
               type="text" 
-              placeholder="Search for milk, ghee, paneer, curd..." 
-              className="bg-transparent flex-grow outline-none text-[14px] text-gray-700 font-medium placeholder-gray-400" 
+              placeholder="Search milk, paneer, ghee..." 
+              className="bg-transparent flex-grow outline-none text-[14px] text-gray-700 font-medium placeholder-gray-400 pointer-events-none" 
+              readOnly
             />
-            <ScanLine className="text-gray-500 w-5 h-5 ml-2" />
-            <div className="w-px h-5 bg-gray-200 mx-3"></div>
-            <Heart className="text-gray-500 w-5 h-5" />
+            <Mic className="text-gray-400 w-5 h-5 ml-2" />
           </div>
         </div>
       </div>
 
-      {/* QUICK LINKS */}
-      <div className="px-4 py-4 overflow-x-auto hide-scrollbar flex space-x-3 bg-white">
-        {quickLinks.map((link, idx) => (
-          <div key={idx} className="flex flex-col items-center flex-shrink-0 w-[70px] cursor-pointer" onClick={() => navigate('/products')}>
-            <div className={`w-[60px] h-[60px] rounded-[18px] flex items-center justify-center mb-2 ${link.active ? 'bg-[#f0f4f8] border border-[#d0dbeb]' : 'bg-white border border-gray-100 shadow-sm'}`}>
-              {link.isIcon ? (
-                link.icon
-              ) : (
-                <img src={link.image} alt={link.name} className="w-[42px] h-[42px] object-contain drop-shadow-sm" />
-              )}
-            </div>
-            <span className={`text-[12px] font-bold ${link.active ? 'text-[#1a365d]' : 'text-gray-800'}`}>{link.name}</span>
+      {/* HERO BANNER */}
+      <div className="px-5 mt-4">
+        <div className="relative w-full h-[160px] rounded-3xl overflow-hidden shadow-sm bg-gradient-to-r from-[#eef7f0] to-[#e4f2eb]">
+          <img src="/img/banners/mobilebanner.webp" alt="Farm Fresh" className="absolute inset-0 w-full h-full object-cover opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/60 to-transparent"></div>
+          
+          <div className="relative z-10 p-5 h-full flex flex-col justify-center max-w-[65%]">
+            <h2 className="text-[20px] font-bold text-[#1E3A8A] leading-tight mb-1">Farm Fresh Milk</h2>
+            <p className="text-[11px] text-gray-600 font-medium mb-3 leading-snug">Delivered within hours of milking</p>
+            <button className="bg-[#22C55E] text-white text-[12px] font-bold px-4 py-2 rounded-full w-fit flex items-center shadow-md">
+              Subscribe Now <span className="ml-1">→</span>
+            </button>
           </div>
-        ))}
-      </div>
-
-
-
-      {/* WHY CHOOSE / FEATURES */}
-      <div className="px-4 mt-4">
-        <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 flex overflow-x-auto hide-scrollbar space-x-6">
-          {features.map((feature, idx) => (
-            <div key={idx} className="flex items-center flex-shrink-0 space-x-3">
-              <div className="w-[42px] h-[42px] rounded-full bg-[#1a365d] flex items-center justify-center flex-shrink-0 shadow-md">
-                {feature.icon}
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[13px] font-bold text-gray-900 leading-tight mb-0.5">{feature.title}</span>
-                <span className="text-[11px] text-gray-500 font-medium">{feature.desc}</span>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 
-      {/* SHOP BY CATEGORY */}
-      <div className="px-4 mt-8">
-        <div className="flex justify-between items-center mb-5">
-          <h3 className="font-[#1a365d] font-bold text-[#1a365d] text-[18px]">Shop by Category</h3>
-          <span onClick={() => navigate('/products')} className="text-[#1a365d] text-[13px] font-bold flex items-center cursor-pointer">
-            View all <ChevronRight className="w-4 h-4 ml-0.5" />
-          </span>
-        </div>
-        <div className="flex overflow-x-auto hide-scrollbar space-x-4 pb-2">
+      {/* CATEGORIES */}
+      <div className="px-5 mt-6">
+        <div className="flex overflow-x-auto hide-scrollbar space-x-5 pb-2">
           {categories.map((cat, idx) => (
-            <div key={idx} className="flex flex-col items-center flex-shrink-0 w-20" onClick={() => navigate('/products')}>
-              <div className="w-[72px] h-[72px] rounded-full bg-white mb-2 shadow-sm border border-gray-100 flex items-center justify-center overflow-hidden">
-                  <img src={cat.image} alt={cat.name} className="w-[54px] h-[54px] object-contain drop-shadow-md scale-[1.15]" />
+            <div key={idx} className="flex flex-col items-center flex-shrink-0 cursor-pointer" onClick={() => navigate('/products')}>
+              <div className="w-[68px] h-[68px] rounded-full bg-white mb-2 shadow-[0_4px_12px_rgba(0,0,0,0.04)] border border-gray-50 flex items-center justify-center overflow-hidden">
+                  <img src={cat.image} alt={cat.name} className="w-[46px] h-[46px] object-contain drop-shadow-sm scale-110" />
               </div>
-              <span className="text-[12px] font-medium text-gray-800 text-center leading-tight">{cat.name}</span>
+              <span className="text-[12px] font-bold text-gray-800 text-center">{cat.name}</span>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* TRUST FEATURES */}
+      <div className="px-5 mt-4">
+        <div className="bg-white rounded-[20px] p-4 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 flex overflow-x-auto hide-scrollbar space-x-6 items-center">
+          {features.map((feature, idx) => (
+            <React.Fragment key={idx}>
+              <div className="flex items-center flex-shrink-0 space-x-2">
+                <div className="flex items-center justify-center">
+                  {feature.icon}
+                </div>
+                <div className="flex flex-col justify-center">
+                  <span className="text-[12px] font-bold text-gray-800 leading-tight w-16">{feature.title}</span>
+                </div>
+              </div>
+              {idx < features.length - 1 && <div className="w-px h-8 bg-gray-100 flex-shrink-0"></div>}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+
+      {/* SUBSCRIPTION PROMOTION CARD */}
+      <div className="px-5 mt-6">
+        <div className="relative w-full rounded-3xl overflow-hidden shadow-sm bg-gradient-to-r from-[#eef8eb] to-[#f5fdf2] border border-green-50 p-5 flex items-center">
+          <div className="absolute top-0 right-0 w-32 h-full opacity-60">
+            {/* Background elements to represent farm/bottles */}
+            <div className="absolute bottom-0 right-0 w-24 h-24 bg-green-100/50 rounded-full blur-xl"></div>
+          </div>
+          
+          <div className="relative z-10 w-full">
+            <div className="absolute top-0 right-0 bg-[#1E3A8A] text-white text-[11px] font-bold px-3 py-1.5 rounded-bl-xl rounded-tr-xl">
+              Save 15%
+            </div>
+            <h3 className="text-[18px] font-bold text-[#111827] mb-1">Never run out of milk</h3>
+            <p className="text-[13px] font-bold text-[#22C55E] mb-1">Save 15% every month</p>
+            <p className="text-[11px] text-gray-500 font-medium mb-3">Flexible delivery • Pause anytime</p>
+            <button className="bg-[#22C55E] text-white text-[12px] font-bold px-4 py-2 rounded-full w-fit flex items-center shadow-md">
+              Start Subscription <span className="ml-1">→</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* BEST SELLERS */}
-      <div className="px-4 mt-8 mb-12">
-        <div className="flex justify-between items-center mb-5">
-          <h3 className="font-[#1a365d] font-bold text-[#1a365d] text-[18px]">Best Sellers</h3>
-          <span onClick={() => navigate('/products')} className="text-[#1a365d] text-[13px] font-bold flex items-center cursor-pointer">
-            View all <ChevronRight className="w-4 h-4 ml-0.5" />
+      <div className="pl-5 mt-8">
+        <div className="flex justify-between items-center mb-4 pr-5">
+          <h3 className="font-bold text-[#111827] text-[18px]">Best Sellers</h3>
+          <span onClick={() => navigate('/products')} className="text-[#1E3A8A] text-[13px] font-bold flex items-center cursor-pointer">
+            View all <span className="ml-0.5 text-[16px]">›</span>
           </span>
         </div>
         
         {loading ? (
-          <div className="text-center py-10 text-gray-500 text-sm">Loading best sellers...</div>
+          <div className="text-center py-6 text-gray-500 text-sm">Loading best sellers...</div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
-            {products.map((product) => (
-              <div key={product._id || product.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col relative group">
-                <Link to={`/product/${getProductSlug(product.name || '')}`} className="block flex-grow relative pb-3 mb-3 border-b border-gray-50">
-                  <div className="h-[120px] w-full flex justify-center items-center">
-                    <img 
-                      src={product.image} 
-                      alt={product.name} 
-                      className="h-full w-auto object-contain drop-shadow-md scale-105"
-                    />
-                  </div>
+          <div className="flex overflow-x-auto hide-scrollbar space-x-4 pb-4 pr-5">
+            {bestSellers.map((product) => (
+              <div key={product._id || product.id} className="w-[280px] flex-shrink-0 bg-white rounded-[20px] p-3 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 flex flex-row items-center relative group">
+                <Link to={`/product/${getProductSlug(product.name || '')}`} className="w-[100px] h-[100px] flex justify-center items-center bg-[#F9FAFB] rounded-[14px] p-2 flex-shrink-0">
+                  <img 
+                    src={product.image} 
+                    alt={product.name} 
+                    className="h-full w-auto object-contain drop-shadow-sm scale-[1.15]"
+                  />
                 </Link>
                 
-                <div className="flex flex-col">
-                  <span className="text-[11px] text-gray-500 font-medium mb-1">{(product.name || '').toLowerCase().includes('milk') ? '500 ml' : product.unit || '1 Pack'}</span>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[18px] font-bold text-[#1a365d]">
-                      ₹{(product.name || '').toLowerCase().includes('milk') ? Math.ceil(product.price / 2) : product.price}
-                    </span>
+                <div className="flex flex-col ml-3 flex-grow h-full justify-between py-1">
+                  <div>
+                    <h4 className="text-[14px] font-bold text-[#111827] leading-tight line-clamp-1">{product.name}</h4>
+                    <span className="text-[11px] text-gray-500 font-medium mt-0.5 block">{(product.name || '').toLowerCase().includes('milk') ? '100% Pure A2 Milk' : 'Made from Bilona Method'}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-end mt-2">
+                    <div className="flex flex-col">
+                      <span className="text-[16px] font-bold text-[#111827]">
+                        ₹{(product.name || '').toLowerCase().includes('milk') ? Math.ceil(product.price / 2) : product.price}
+                      </span>
+                      <div className="flex items-center mt-0.5 space-x-0.5">
+                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                        <span className="text-[10px] text-gray-400 font-medium ml-1">(4.8)</span>
+                      </div>
+                    </div>
                     <button 
                       onClick={(e) => handleAddToCart(product, e)}
-                      className="w-8 h-8 rounded-full bg-[#1a365d] flex items-center justify-center text-white shadow-md active:scale-95 transition-transform"
+                      className="px-3 py-1.5 rounded-full border border-[#22C55E] text-[#22C55E] flex items-center justify-center font-bold text-[12px] bg-green-50/30 hover:bg-[#22C55E] hover:text-white transition-colors"
                     >
-                      <Plus className="w-5 h-5" />
+                      <Plus className="w-3.5 h-3.5 mr-0.5" /> Add
                     </button>
                   </div>
                 </div>
@@ -262,35 +254,64 @@ const MobileHome = () => {
         )}
       </div>
 
-      {/* FLOATING CART (Only show if items in cart) */}
-      {cartCount > 0 && (
-        <div className="fixed bottom-[85px] left-4 right-4 z-50">
-          <div className="bg-[#1a365d] rounded-full py-3 px-5 flex justify-between items-center shadow-[0_12px_30px_rgba(26,54,93,0.4)]">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <ShoppingCart className="w-8 h-8 text-white" />
-                <span className="absolute -top-1 -right-2 bg-blue-500 text-white text-[11px] font-bold w-5 h-5 rounded-full flex justify-center items-center border-2 border-[#1a365d]">
-                  {cartCount}
-                </span>
+      {/* TODAY'S FRESH PICKS */}
+      <div className="pl-5 mt-4 mb-8">
+        <div className="flex justify-between items-center mb-4 pr-5">
+          <h3 className="font-bold text-[#111827] text-[18px]">Today's Fresh Picks</h3>
+          <span onClick={() => navigate('/products')} className="text-[#1E3A8A] text-[13px] font-bold flex items-center cursor-pointer">
+            View all <span className="ml-0.5 text-[16px]">›</span>
+          </span>
+        </div>
+        
+        {loading ? (
+          <div className="text-center py-4 text-gray-500 text-sm">Loading picks...</div>
+        ) : (
+          <div className="flex overflow-x-auto hide-scrollbar space-x-4 pb-4 pr-5">
+            {freshPicks.map((product) => (
+              <div key={product._id || product.id} className="w-[180px] flex-shrink-0 bg-white rounded-[16px] p-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-row items-center">
+                <div className="w-[50px] h-[50px] flex justify-center items-center flex-shrink-0">
+                  <img src={product.image} alt={product.name} className="h-full w-auto object-contain drop-shadow-sm scale-110" />
+                </div>
+                <div className="flex flex-col ml-2 justify-center">
+                  <h4 className="text-[12px] font-bold text-[#111827] leading-tight line-clamp-2">{product.name}</h4>
+                  <span className="text-[13px] font-bold text-[#1E3A8A] mt-1">₹{product.price}</span>
+                </div>
               </div>
-              <div className="flex flex-col">
-                <span className="text-white text-[14px] font-bold leading-tight">{cartCount} {cartCount === 1 ? 'Item' : 'Items'} in cart</span>
-                <span className="text-green-400 text-[11px] font-medium leading-tight mt-0.5">You are saving ₹18 on this order</span>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <span className="text-white font-bold text-[16px]">₹{cartTotal}</span>
-              <button 
-                onClick={() => navigate('/cart')}
-                className="bg-white text-[#1a365d] text-[13px] font-bold px-4 py-2 rounded-full flex items-center"
-              >
-                View Cart <ChevronRight className="w-4 h-4 ml-1" />
-              </button>
-            </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* FLOATING BOTTOM NAVIGATION */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[24px] shadow-[0_-4px_20px_rgba(0,0,0,0.05)] px-6 py-3 pb-safe border-t border-gray-100">
+        <div className="flex justify-between items-center max-w-md mx-auto">
+          <div className="flex flex-col items-center cursor-pointer">
+            <Home className="w-6 h-6 text-[#1E3A8A]" />
+            <span className="text-[10px] font-bold text-[#1E3A8A] mt-1">Home</span>
+            <div className="w-1 h-1 bg-[#1E3A8A] rounded-full mt-0.5"></div>
+          </div>
+          <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/products')}>
+            <ShoppingBag className="w-6 h-6 text-gray-400" />
+            <span className="text-[10px] font-bold text-gray-400 mt-1">Shop</span>
+            <div className="w-1 h-1 bg-transparent rounded-full mt-0.5"></div>
+          </div>
+          <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/subscription')}>
+            <CalendarCheck className="w-6 h-6 text-gray-400" />
+            <span className="text-[10px] font-bold text-gray-400 mt-1">Subscription</span>
+            <div className="w-1 h-1 bg-transparent rounded-full mt-0.5"></div>
+          </div>
+          <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/my-account')}>
+            <Package className="w-6 h-6 text-gray-400" />
+            <span className="text-[10px] font-bold text-gray-400 mt-1">Orders</span>
+            <div className="w-1 h-1 bg-transparent rounded-full mt-0.5"></div>
+          </div>
+          <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/my-account')}>
+            <User className="w-6 h-6 text-gray-400" />
+            <span className="text-[10px] font-bold text-gray-400 mt-1">Profile</span>
+            <div className="w-1 h-1 bg-transparent rounded-full mt-0.5"></div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

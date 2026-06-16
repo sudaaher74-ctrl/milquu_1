@@ -55,13 +55,13 @@ const ProductCard = ({ product, index, category, getProductSlug, addToCart }) =>
       className="group h-full"
     >
       {/* Glassmorphic Box Card */}
-      <div className="h-full flex flex-col items-center text-center relative group-hover:-translate-y-2 transition-all duration-500 bg-white border border-gray-100 shadow-sm hover:shadow-2xl rounded-3xl p-4 sm:p-6 pb-8 overflow-hidden z-10">
+      <div className="h-full flex flex-col items-center text-center relative group-hover:-translate-y-2 transition-all duration-500 bg-white border border-gray-100 shadow-sm hover:shadow-2xl rounded-2xl sm:rounded-3xl p-3 sm:p-6 pb-4 sm:pb-8 overflow-hidden z-10">
 
         {/* Decorative Background Glow inside Card */}
-        <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-[50px] ${category.blobColor} opacity-20 group-hover:opacity-60 transition-opacity duration-500 -z-10`}></div>
+        <div className={`absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 rounded-full blur-[40px] sm:blur-[50px] ${category.blobColor} opacity-20 group-hover:opacity-60 transition-opacity duration-500 -z-10`}></div>
 
         {/* Floating Image */}
-        <Link to={`/product/${getProductSlug(product.name)}`} className="relative h-[160px] sm:h-[180px] lg:h-[240px] w-full flex justify-center items-center mb-6 cursor-pointer">
+        <Link to={`/product/${getProductSlug(product.name || '')}`} className="relative h-[110px] sm:h-[180px] lg:h-[240px] w-full flex justify-center items-center mb-4 sm:mb-6 cursor-pointer">
           {/* Out of Stock Badge */}
           {isOutOfStock && (
             <div className="absolute top-2 right-2 z-30 bg-red-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border border-red-400/50">
@@ -84,52 +84,52 @@ const ProductCard = ({ product, index, category, getProductSlug, addToCart }) =>
 
         {/* Product Info */}
         <div className="flex flex-col items-center text-center w-full z-20">
-          <Link to={`/product/${getProductSlug(product.name)}`}>
-            <h3 className="text-xl sm:text-2xl font-serif font-bold text-gray-900 mb-3 leading-tight group-hover:text-milquu-blue transition-colors cursor-pointer">
+          <Link to={`/product/${getProductSlug(product.name || '')}`}>
+            <h3 className="text-base sm:text-2xl font-serif font-bold text-gray-900 mb-2 sm:mb-3 leading-tight group-hover:text-milquu-blue transition-colors cursor-pointer line-clamp-2">
               {product.name}
             </h3>
           </Link>
           
-          <div className="flex flex-col items-center space-y-1 mb-5">
-            <p className="text-gray-600 font-sans text-sm sm:text-base">
-              <span className="font-bold text-gray-900 text-lg">₹{currentPrice}</span>
+          <div className="flex flex-col items-center space-y-0 sm:space-y-1 mb-3 sm:mb-5">
+            <p className="text-gray-600 font-sans text-xs sm:text-base">
+              <span className="font-bold text-gray-900 text-base sm:text-lg">₹{currentPrice}</span>
             </p>
-            <p className="text-gray-400 font-sans text-xs sm:text-sm">
+            <p className="text-gray-400 font-sans text-[10px] sm:text-sm">
               Unit: {isMilk ? selectedUnit : product.unit}
             </p>
           </div>
 
           {/* Size Selector for Milk */}
           {isMilk && (
-            <div className="flex bg-gray-50 p-1.5 rounded-full mb-6 border border-gray-200">
+            <div className="flex flex-col sm:flex-row bg-gray-50 p-1 rounded-xl sm:rounded-full mb-4 sm:mb-6 border border-gray-200 w-full sm:w-auto">
               <button
                 onClick={() => setSelectedUnit('1 Litre')}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 ${selectedUnit === '1 Litre' ? 'bg-white text-milquu-blue shadow border border-gray-100' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-2 sm:px-4 py-1.5 rounded-lg sm:rounded-full text-[10px] sm:text-xs font-bold transition-all duration-300 w-full sm:w-auto ${selectedUnit === '1 Litre' ? 'bg-white text-milquu-blue shadow border border-gray-100' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 1 Litre
               </button>
               <button
                 onClick={() => setSelectedUnit('500 ml')}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-300 ${selectedUnit === '500 ml' ? 'bg-white text-milquu-blue shadow border border-gray-100' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-2 sm:px-4 py-1.5 rounded-lg sm:rounded-full text-[10px] sm:text-xs font-bold transition-all duration-300 w-full sm:w-auto ${selectedUnit === '500 ml' ? 'bg-white text-milquu-blue shadow border border-gray-100' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 500 ml
               </button>
             </div>
           )}
-          {!isMilk && <div className="mb-6 h-[34px]"></div>}
+          {!isMilk && <div className="mb-4 sm:mb-6 h-[50px] sm:h-[34px]"></div>}
           
           {/* Premium CTA Button */}
           <button 
             onClick={isOutOfStock ? null : handleAddToCart}
             disabled={isOutOfStock}
-            className={`w-full flex items-center justify-center space-x-2 font-sans font-bold py-3 rounded-xl transition-all duration-300 shadow-sm hover:shadow-md ${
+            className={`w-full flex items-center justify-center space-x-1 sm:space-x-2 font-sans font-bold text-xs sm:text-base py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all duration-300 shadow-sm hover:shadow-md ${
               isOutOfStock 
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
               : 'bg-milquu-cream text-milquu-blue border border-blue-100 hover:bg-milquu-blue hover:text-white'
             }`}
           >
-            <ShoppingCart size={16} />
-            <span>{isOutOfStock ? 'Unavailable' : 'Add To Cart'}</span>
+            <ShoppingCart size={14} className="sm:w-4 sm:h-4" />
+            <span>{isOutOfStock ? 'Sold Out' : 'Add'}</span>
           </button>
         </div>
 
@@ -227,7 +227,7 @@ const CategoryListing = () => {
                 </div>
 
                 {/* Products Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8">
                   {category.products.map((product, index) => (
                     <ProductCard 
                       key={product._id || product.id} 
