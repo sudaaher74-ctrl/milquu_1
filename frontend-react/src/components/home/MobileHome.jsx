@@ -128,17 +128,11 @@ const MobileHome = () => {
 
       {/* HERO BANNER */}
       <div className="px-5 mt-4">
-        <div className="relative w-full h-[160px] rounded-3xl overflow-hidden shadow-sm bg-gradient-to-r from-[#eef7f0] to-[#e4f2eb]">
-          <img src="/img/banners/mobilebanner.webp" alt="Farm Fresh" className="absolute inset-0 w-full h-full object-cover opacity-80" />
-          <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/60 to-transparent"></div>
-          
-          <div className="relative z-10 p-5 h-full flex flex-col justify-center max-w-[65%]">
-            <h2 className="text-[20px] font-bold text-[#1E3A8A] leading-tight mb-1">Farm Fresh Milk</h2>
-            <p className="text-[11px] text-gray-600 font-medium mb-3 leading-snug">Delivered within hours of milking</p>
-            <button className="bg-[#22C55E] text-white text-[12px] font-bold px-4 py-2 rounded-full w-fit flex items-center shadow-md">
-              Subscribe Now <span className="ml-1">→</span>
-            </button>
-          </div>
+        <div 
+          className="relative w-full h-[160px] rounded-3xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.05)] cursor-pointer"
+          onClick={() => navigate('/subscription')}
+        >
+          <img src="/img/banners/subcription.png" alt="Subscription Offers" className="w-full h-full object-cover" />
         </div>
       </div>
 
