@@ -17,7 +17,7 @@ const StatCard = ({ title, value, icon, trend, colorClass, subtitle }) => (
   <motion.div 
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
-    className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden group"
+    className="bg-white/80 backdrop-blur-xl p-6 rounded-[24px] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-white/60 relative overflow-hidden group"
   >
     <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${colorClass} opacity-10 rounded-bl-[100px] transition-transform duration-500 group-hover:scale-110 pointer-events-none`}></div>
     <div className="flex justify-between items-start mb-4">
@@ -130,7 +130,7 @@ const Overview = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Revenue & Profit Trend */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[24px] shadow-sm hover:shadow-xl transition-shadow duration-300 border border-white/60">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-bold text-milquu-dark">Revenue & Profit Trend</h2>
           </div>
@@ -155,7 +155,7 @@ const Overview = () => {
         </div>
 
         {/* Growth Trends */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-white/80 backdrop-blur-xl p-6 rounded-[24px] shadow-sm hover:shadow-xl transition-shadow duration-300 border border-white/60">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-bold text-milquu-dark">Growth & Acquisition</h2>
           </div>
@@ -179,7 +179,7 @@ const Overview = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Top Selling & Profitable */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white/80 backdrop-blur-xl rounded-[24px] shadow-sm hover:shadow-xl transition-shadow duration-300 border border-white/60 p-6">
           <h2 className="text-lg font-bold text-milquu-dark mb-4">Top Performers</h2>
           <div className="space-y-4">
             {metrics.topPerformers?.length > 0 ? metrics.topPerformers.map((item, idx) => (
@@ -197,7 +197,7 @@ const Overview = () => {
         </div>
 
         {/* Alerts & Low Stock */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white/80 backdrop-blur-xl rounded-[24px] shadow-sm hover:shadow-xl transition-shadow duration-300 border border-white/60 p-6">
           <h2 className="text-lg font-bold text-milquu-dark mb-4 flex items-center">
             <AlertTriangle size={18} className="text-orange-500 mr-2" /> Action Required
           </h2>
@@ -222,7 +222,7 @@ const Overview = () => {
         </div>
 
         {/* Delivery & Operations */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white/80 backdrop-blur-xl rounded-[24px] shadow-sm hover:shadow-xl transition-shadow duration-300 border border-white/60 p-6">
           <h2 className="text-lg font-bold text-milquu-dark mb-4">Operations Live</h2>
           <div className="space-y-4">
             <div>

@@ -75,8 +75,14 @@ const AdminLayout = () => {
   }, []);
 
   return (
-    <div className="flex h-screen bg-milquu-gray overflow-hidden font-sans">
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden font-sans relative">
       
+      {/* Ambient Background Orbs */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-gold/10 opacity-60"></div>
+        <div className="absolute bottom-0 right-0 w-[800px] h-[800px] rounded-full blur-[150px] bg-milquu-green/10 opacity-50"></div>
+      </div>
+
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {mobileMenuOpen && (
@@ -91,7 +97,7 @@ const AdminLayout = () => {
       </AnimatePresence>
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white/80 backdrop-blur-2xl border-r border-white/60 shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-20 flex items-center justify-between px-6 border-b border-gray-100">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-milquu-green to-milquu-blue rounded-xl flex items-center justify-center text-white font-serif font-bold text-xl shadow-md">M</div>
@@ -111,17 +117,17 @@ const AdminLayout = () => {
               end={item.path === '/admin'}
               onClick={() => setMobileMenuOpen(false)}
               className={({ isActive }) =>
-                `flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-200 group ${
+                `flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-300 group relative z-10 ${
                   isActive 
-                    ? 'bg-milquu-blue text-white font-medium shadow-lg shadow-milquu-blue/20' 
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-milquu-dark'
+                    ? 'bg-milquu-blue/10 text-milquu-blue font-bold shadow-sm' 
+                    : 'text-gray-500 hover:bg-white/60 hover:text-milquu-dark'
                 }`
               }
             >
-              <div className={({ isActive }) => isActive ? 'text-white' : 'text-gray-400 group-hover:text-milquu-blue transition-colors'}>
-                {React.cloneElement(item.icon, { className: location.pathname === item.path || (item.path === '/admin' && location.pathname === '/admin') ? 'text-white' : 'text-gray-400 group-hover:text-milquu-blue transition-colors' })}
+              <div className={({ isActive }) => isActive ? 'text-milquu-blue' : 'text-gray-400 group-hover:text-milquu-blue transition-colors'}>
+                {React.cloneElement(item.icon, { className: location.pathname === item.path || (item.path === '/admin' && location.pathname === '/admin') ? 'text-milquu-blue' : 'text-gray-400 group-hover:text-milquu-blue transition-colors' })}
               </div>
-              <span className="text-sm">{item.name}</span>
+              <span className="text-sm relative z-10">{item.name}</span>
             </NavLink>
           ))}
         </nav>
@@ -142,7 +148,7 @@ const AdminLayout = () => {
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
         
         {/* Top Header */}
-        <header className="h-20 bg-white/80 backdrop-blur-xl border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 z-30 sticky top-0">
+        <header className="h-20 bg-white/70 backdrop-blur-2xl border-b border-white/50 shadow-sm flex items-center justify-between px-4 sm:px-8 z-30 sticky top-0">
           
           <div className="flex items-center">
             <button onClick={toggleMobileMenu} className="mr-4 lg:hidden text-gray-500 hover:text-milquu-dark transition-colors">
