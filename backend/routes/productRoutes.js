@@ -6,6 +6,29 @@ import { productSchema } from '../validations/productValidations.js';
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * /api/products:
+ *   get:
+ *     summary: Retrieve a list of products
+ *     description: Retrieve a list of all active products from the database.
+ *     responses:
+ *       200:
+ *         description: A list of products.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     description: The product ID.
+ *                   name:
+ *                     type: string
+ *                     description: The product name.
+ */
 // @route   GET /api/products
 // @desc    Get all products
 // @access  Public
@@ -18,6 +41,19 @@ router.get('/', async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/products:
+ *   post:
+ *     summary: Create a new product
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Product created successfully.
+ *       401:
+ *         description: Unauthorized.
+ */
 // @route   POST /api/products
 // @desc    Create a product
 // @access  Private/Admin

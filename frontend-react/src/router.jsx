@@ -57,6 +57,9 @@ const ProductPage = lazy(() => import('./pages/seo/ProductPage'));
 const BlogIndex = lazy(() => import('./pages/blog/BlogIndex'));
 const BlogPost = lazy(() => import('./pages/blog/BlogPost'));
 
+// System Pages
+const OfflineFallback = lazy(() => import('./pages/OfflineFallback'));
+
 // Location Landing Pages
 const MilkDeliveryPanvel = lazy(() => import('./pages/seo/MilkDeliveryPanvel'));
 const MilkDeliveryNewPanvel = lazy(() => import('./pages/seo/MilkDeliveryNewPanvel'));
@@ -96,6 +99,8 @@ export const router = createBrowserRouter([
       { path: "blog", element: <BlogIndex /> },
       { path: "blog/:slug", element: <BlogPost /> },
       { path: "product/:slug", element: <ProductPage /> },
+      
+      { path: "offline", element: <OfflineFallback /> },
       
       { path: "milk-delivery-panvel", element: <MilkDeliveryPanvel /> },
       { path: "milk-delivery-new-panvel", element: <MilkDeliveryNewPanvel /> },

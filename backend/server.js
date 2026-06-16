@@ -10,6 +10,8 @@ import xss from 'xss-clean';
 import morgan from 'morgan';
 import logger from './utils/logger.js';
 import connectDB from './config/db.js';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger.js';
 import productRoutes from './routes/productRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
@@ -89,6 +91,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/erp', erpRoutes); // Mounted ERP routes
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/upload', uploadRoutes);
+
+// API Documentation Route
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 
 // Apply rate limiting to user and free sample routes
 app.use('/api/users', apiLimiter, userRoutes);
