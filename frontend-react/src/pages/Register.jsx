@@ -24,6 +24,13 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(formData.name)) {
+      setError("Please enter a valid name without numbers or special characters.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -79,6 +86,8 @@ const Register = () => {
                   type="text"
                   name="name"
                   required
+                  pattern="[A-Za-z\s]+"
+                  title="Name should only contain letters and spaces"
                   value={formData.name}
                   onChange={handleChange}
                   className="focus:ring-milquu-blue focus:border-milquu-blue block w-full pl-10 sm:text-sm border-gray-300 rounded-xl py-3 bg-gray-50"

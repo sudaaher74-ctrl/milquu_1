@@ -55,6 +55,12 @@ const Cart = () => {
       alert('Please choose a delivery slot before placing your order.');
       return;
     }
+
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(formData.name)) {
+      alert("Please enter a valid name without numbers or special characters.");
+      return;
+    }
     
     if (paymentMethod === 'COD') {
       await saveOrder(null, 'COD', 'PENDING');
@@ -415,7 +421,7 @@ const Cart = () => {
                     />
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <input required type="text" name="name" placeholder="Full Name" onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30" />
+                      <input required type="text" name="name" pattern="[A-Za-z\s]+" title="Name should only contain letters and spaces" placeholder="Full Name" onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30" />
                       <input required type="tel" name="phone" placeholder="Phone Number" onChange={handleInputChange} className="w-full bg-gray-50/50 border border-gray-200 rounded-xl px-4 py-2.5 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-milquu-gold/30" />
                     </div>
                     

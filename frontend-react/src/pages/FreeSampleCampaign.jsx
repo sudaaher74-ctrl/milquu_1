@@ -103,6 +103,12 @@ const FreeSampleCampaign = () => {
       return;
     }
 
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(formData.fullName)) {
+      setError("Please enter a valid name without numbers or special characters.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Build final payload
@@ -312,7 +318,7 @@ const FreeSampleCampaign = () => {
               <label className="text-sm font-bold text-gray-700 block border-b border-gray-100 pb-2">Personal Details</label>
               
               <div>
-                <input required type="text" name="fullName" value={formData.fullName} onChange={handleInputChange} placeholder="Full Name *" className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-milquu-blue focus:border-milquu-blue block p-3.5 outline-none transition-all" />
+                <input required type="text" name="fullName" pattern="[A-Za-z\s]+" title="Name should only contain letters and spaces" value={formData.fullName} onChange={handleInputChange} placeholder="Full Name *" className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-milquu-blue focus:border-milquu-blue block p-3.5 outline-none transition-all" />
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
