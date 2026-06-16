@@ -5,6 +5,7 @@ const withdrawalRequestSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'User',
+    index: true
   },
   amount: {
     type: Number,
@@ -28,6 +29,7 @@ const withdrawalRequestSchema = new mongoose.Schema({
     required: true,
     enum: ['Pending', 'Under Review', 'Approved', 'Rejected', 'Completed'],
     default: 'Pending',
+    index: true
   },
   adminRemarks: {
     type: String,

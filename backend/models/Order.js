@@ -44,9 +44,9 @@ const orderSchema = new mongoose.Schema({
   },
   taxPrice: { type: Number, required: true, default: 0.0 },
   totalPrice: { type: Number, required: true, default: 0.0 },
-  isPaid: { type: Boolean, required: true, default: false },
+  isPaid: { type: Boolean, required: true, default: false, index: true },
   paidAt: { type: Date },
-  isDelivered: { type: Boolean, required: true, default: false },
+  isDelivered: { type: Boolean, required: true, default: false, index: true },
   deliveredAt: { type: Date },
   proofOfDelivery: { type: String },
   deliveryStatus: { type: String, default: 'Pending', index: true },
@@ -67,6 +67,9 @@ const orderSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Compound/System indexes
+orderSchema.index({ createdAt: -1 });
 
 // Pre-save hook to calculate COGS using FIFO
 orderSchema.pre('save', async function(next) {

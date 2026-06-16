@@ -186,8 +186,6 @@ export const getMyWallet = async (req, res) => {
 export const requestWithdrawal = async (req, res) => {
   try {
     const { amount, refundMethod, upiId, bankDetails } = req.body;
-    
-    if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });

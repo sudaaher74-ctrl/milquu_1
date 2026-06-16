@@ -1,6 +1,8 @@
 import express from 'express';
 import Product from '../models/Product.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
+import { validateRequest } from '../middleware/validateRequest.js';
+import { productSchema } from '../validations/productValidations.js';
 
 const router = express.Router();
 
@@ -19,7 +21,7 @@ router.get('/', async (req, res) => {
 // @route   POST /api/products
 // @desc    Create a product
 // @access  Private/Admin
-router.post('/', protect, admin, async (req, res) => {
+router.post('/', protect, admin, validateRequest(productSchema), async (req, res) => {
   try {
     const product = new Product(req.body);
     const createdProduct = await product.save();
@@ -48,7 +50,7 @@ router.get('/:id', async (req, res) => {
 // @route   PUT /api/products/:id
 // @desc    Update a product
 // @access  Private/Admin
-router.put('/:id', protect, admin, async (req, res) => {
+router.put('/:id', protect, admin, validateRequest(productSchema), async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (product) {
