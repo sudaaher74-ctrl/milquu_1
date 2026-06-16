@@ -59,6 +59,7 @@ const BlogPost = lazy(() => import('./pages/blog/BlogPost'));
 
 // System Pages
 const OfflineFallback = lazy(() => import('./pages/OfflineFallback'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Location Landing Pages
 const MilkDeliveryPanvel = lazy(() => import('./pages/seo/MilkDeliveryPanvel'));
@@ -159,7 +160,7 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRole="chatbot"><AIChatDashboard /></ProtectedRoute>
       },
 
-      { path: "*", element: <Navigate to="/" replace /> }
+      { path: "*", element: <NotFound /> }
     ]
   }
 ]);

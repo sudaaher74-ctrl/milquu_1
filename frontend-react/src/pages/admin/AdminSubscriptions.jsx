@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../utils/api.js';
 import { Users, CalendarCheck, RefreshCw, AlertCircle, Search, Filter, TrendingDown, IndianRupee } from 'lucide-react';
+import ExportButton from '../../components/admin/ExportButton';
 
 const StatCard = ({ title, value, subtitle, icon, color }) => (
   <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start space-x-4 relative overflow-hidden">
@@ -109,12 +110,15 @@ const AdminSubscriptions = () => {
           <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Subscriptions</h1>
           <p className="text-gray-500 text-sm mt-1">Manage recurring orders and monthly subscribers.</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-milquu-blue text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors shadow-md shadow-milquu-blue/20"
-        >
-          Create Subscription
-        </button>
+        <div className="flex space-x-3">
+          <ExportButton data={subscriptionsData} filename="Subscriptions_Export" title="Subscriptions Report" />
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-milquu-blue text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors shadow-md shadow-milquu-blue/20"
+          >
+            Create Subscription
+          </button>
+        </div>
       </div>
 
       {/* Top Stats */}

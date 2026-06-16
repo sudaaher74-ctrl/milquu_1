@@ -5,6 +5,7 @@ import { Truck, MapPin, CheckCircle2, Clock, Navigation, AlertTriangle, Battery,
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import ExportButton from '../../components/admin/ExportButton';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -154,6 +155,7 @@ const Deliveries = () => {
           <p className="text-gray-500 text-sm mt-1">Live GPS tracking, route efficiency, and driver performance.</p>
         </div>
         <div className="flex space-x-3">
+          <ExportButton data={mockDeliveries} filename="Deliveries_Export" title="Deliveries Live Tracking Report" />
           <button 
             onClick={() => setIsAssignModalOpen(true)}
             className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md shadow-gray-900/20 flex items-center"
