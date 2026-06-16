@@ -202,7 +202,7 @@ const DeliveryDashboard = () => {
     <div className="p-4 relative">
       
       {/* Live Tracking Toggle */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-4 flex justify-between items-center">
+      <div className="bg-white/80 backdrop-blur-xl p-4 rounded-2xl shadow-sm border border-white/60 mb-4 flex justify-between items-center relative z-10">
         <div>
           <h3 className="font-bold text-gray-800 text-sm flex items-center">
             <Navigation size={16} className="mr-2 text-milquu-blue" /> Live GPS Tracking
@@ -218,26 +218,26 @@ const DeliveryDashboard = () => {
       </div>
       
       {/* Stats Summary */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 text-center">
+      <div className="grid grid-cols-3 gap-3 mb-6 relative z-10">
+        <div className="bg-white/80 backdrop-blur-xl p-3 rounded-2xl shadow-sm border border-white/60 text-center">
           <p className="text-xl font-bold text-milquu-dark">{tasks.length}</p>
           <p className="text-[10px] uppercase font-bold text-gray-400 mt-1">Total</p>
         </div>
-        <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div className="bg-white/80 backdrop-blur-xl p-3 rounded-2xl shadow-sm border border-white/60 text-center">
           <p className="text-xl font-bold text-blue-600">{tasks.filter(t => t.status === 'Out For Delivery').length}</p>
           <p className="text-[10px] uppercase font-bold text-gray-400 mt-1">Ongoing</p>
         </div>
-        <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 text-center">
+        <div className="bg-white/80 backdrop-blur-xl p-3 rounded-2xl shadow-sm border border-white/60 text-center">
           <p className="text-xl font-bold text-green-600">{tasks.filter(t => t.status === 'Delivered').length}</p>
           <p className="text-[10px] uppercase font-bold text-gray-400 mt-1">Done</p>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 relative z-10">
         {loading ? (
           <div className="text-center py-10 text-gray-500">Loading deliveries...</div>
         ) : tasks.filter(t => t.status !== 'Delivered').map((task) => (
-          <div key={task.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div key={task.id} className="bg-white/80 backdrop-blur-xl rounded-[20px] shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 border border-white/60 overflow-hidden">
             
             {/* Card Header (Always Visible) */}
             <div 
@@ -267,9 +267,9 @@ const DeliveryDashboard = () => {
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="bg-gray-50/80 border-t border-gray-100 p-4"
+                  className="bg-gray-50/50 backdrop-blur-md border-t border-white/40 p-4"
                 >
-                  <div className="bg-white p-3 rounded-xl border border-gray-100 mb-4 shadow-sm">
+                  <div className="bg-white/90 p-3 rounded-xl border border-white/60 mb-4 shadow-sm">
                     <div className="flex items-start mb-2">
                       <Package size={14} className="mr-2 mt-0.5 text-milquu-blue flex-shrink-0" /> 
                       <span className="text-sm font-semibold text-gray-700 leading-tight">Items to Deliver:</span>
@@ -291,13 +291,13 @@ const DeliveryDashboard = () => {
                   <div className="flex space-x-3 mb-6">
                     <button 
                       onClick={() => window.location.href = `tel:${task.phone}`}
-                      className="flex-1 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      className="flex-1 bg-white/90 border border-white/60 text-gray-700 py-3 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center hover:bg-white transition-colors"
                     >
                       <Phone size={16} className="mr-2 text-green-600" /> Call
                     </button>
                     <button 
                       onClick={() => openMaps(task.address)}
-                      className="flex-1 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      className="flex-1 bg-white/90 border border-white/60 text-gray-700 py-3 rounded-xl text-sm font-bold shadow-sm flex items-center justify-center hover:bg-white transition-colors"
                     >
                       <Navigation size={16} className="mr-2 text-blue-600" /> Navigate
                     </button>
@@ -308,7 +308,7 @@ const DeliveryDashboard = () => {
                     <h4 className="text-xs font-bold uppercase text-gray-400 mb-2">Update Status</h4>
 
                     {task.status !== 'Delivered' && task.status !== 'Failed' && (
-                      <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                      <div className="bg-white/90 p-4 rounded-2xl border border-white/60 shadow-sm space-y-4">
                         
                         <div>
                           <label className="text-xs font-bold text-gray-600 mb-2 block">Upload Proof (Optional)</label>

@@ -1,3 +1,4 @@
+import './sentry.js'; // Must be imported before express
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -88,6 +89,10 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/free-sample', apiLimiter, freeSampleRoutes);
 
 // Error Handling Middleware
+import * as Sentry from '@sentry/node';
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
 app.use(notFound);
 app.use(errorHandler);
 

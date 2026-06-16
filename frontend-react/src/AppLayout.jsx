@@ -9,10 +9,20 @@ import MobileNav from './components/layout/MobileNav';
 
 // Loading Fallback Component
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="flex flex-col items-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-milquu-blue mb-4"></div>
-      <p className="text-gray-500 font-medium">Loading Milquu Fresh...</p>
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FDFBF7] to-white relative overflow-hidden">
+    {/* Ambient Orbs */}
+    <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-0">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full blur-[80px] bg-milquu-blue/10 animate-pulse"></div>
+      <div className="absolute top-1/2 left-1/2 translate-x-10 translate-y-10 w-[200px] h-[200px] rounded-full blur-[60px] bg-milquu-gold/20 animate-pulse" style={{ animationDelay: '1s' }}></div>
+    </div>
+    
+    <div className="flex flex-col items-center relative z-10 bg-white/80 backdrop-blur-xl p-10 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60">
+      <div className="relative w-20 h-20 mb-6">
+        <div className="absolute inset-0 border-4 border-milquu-blue/20 rounded-full"></div>
+        <div className="absolute inset-0 border-4 border-milquu-blue rounded-full border-t-transparent animate-spin"></div>
+        <div className="absolute inset-0 flex items-center justify-center text-milquu-blue font-serif font-bold text-2xl">M</div>
+      </div>
+      <p className="text-gray-500 font-medium tracking-wide">Loading Milquu Fresh...</p>
     </div>
   </div>
 );

@@ -53,8 +53,15 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans pt-32 pb-24">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-[#FDFBF7] to-white flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans pt-32 pb-24 relative overflow-hidden">
+      
+      {/* Background Orbs */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-20 -left-20 w-[400px] h-[400px] rounded-full blur-[100px] bg-milquu-blue/10 opacity-60"></div>
+        <div className="absolute bottom-20 -right-20 w-[500px] h-[500px] rounded-full blur-[120px] bg-milquu-gold/20 opacity-50"></div>
+      </div>
+
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <h2 className="mt-6 text-center text-4xl font-extrabold font-serif text-milquu-dark">
           Create an account
         </h2>
@@ -63,8 +70,8 @@ const Register = () => {
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-xl shadow-blue-900/5 sm:rounded-2xl sm:px-10 border border-gray-100">
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        <div className="bg-white/80 backdrop-blur-2xl py-8 px-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:rounded-[24px] sm:px-10 border border-white/60">
           {error && (
             <motion.div 
               initial={{ opacity: 0, y: -10 }} 
@@ -90,7 +97,7 @@ const Register = () => {
                   title="Name should only contain letters and spaces"
                   value={formData.name}
                   onChange={handleChange}
-                  className="focus:ring-milquu-blue focus:border-milquu-blue block w-full pl-10 sm:text-sm border-gray-300 rounded-xl py-3 bg-gray-50"
+                  className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
                   placeholder="John Doe"
                 />
               </div>
@@ -108,7 +115,7 @@ const Register = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="focus:ring-milquu-blue focus:border-milquu-blue block w-full pl-10 sm:text-sm border-gray-300 rounded-xl py-3 bg-gray-50"
+                  className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
                   placeholder="you@example.com"
                 />
               </div>
@@ -126,7 +133,7 @@ const Register = () => {
                   required
                   value={formData.phone}
                   onChange={handleChange}
-                  className="focus:ring-milquu-blue focus:border-milquu-blue block w-full pl-10 sm:text-sm border-gray-300 rounded-xl py-3 bg-gray-50"
+                  className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
                   placeholder="9876543210"
                 />
               </div>
@@ -144,7 +151,7 @@ const Register = () => {
                   required
                   value={formData.address}
                   onChange={handleChange}
-                  className="focus:ring-milquu-blue focus:border-milquu-blue block w-full pl-10 sm:text-sm border-gray-300 rounded-xl py-3 bg-gray-50"
+                  className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
                   placeholder="123 Dairy Lane, City, Zip"
                 />
               </div>
@@ -162,7 +169,7 @@ const Register = () => {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="focus:ring-milquu-blue focus:border-milquu-blue block w-full pl-10 sm:text-sm border-gray-300 rounded-xl py-3 bg-gray-50"
+                  className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
                   placeholder="••••••••"
                   minLength="6"
                 />
@@ -173,7 +180,7 @@ const Register = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-milquu-blue hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-milquu-blue transition-colors disabled:opacity-70"
+                className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-md shadow-milquu-blue/20 text-sm font-bold text-white bg-milquu-blue hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-milquu-blue disabled:opacity-70 disabled:transform-none"
               >
                 {loading ? 'Creating account...' : 'Create account'}
               </button>

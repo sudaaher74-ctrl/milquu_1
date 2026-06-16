@@ -28,10 +28,16 @@ const DeliveryLayout = () => {
   if (!staff) return null; // Wait for redirect or load
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 font-sans">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-[#FDFBF7] to-white font-sans relative overflow-hidden">
       
+      {/* Background Orbs */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-20 -left-20 w-[400px] h-[400px] rounded-full blur-[100px] bg-milquu-gold/20 opacity-60"></div>
+        <div className="absolute bottom-20 -right-20 w-[500px] h-[500px] rounded-full blur-[120px] bg-milquu-green/10 opacity-50"></div>
+      </div>
+
       {/* Top Header */}
-      <header className="bg-white px-4 py-4 shadow-sm border-b border-gray-100 flex items-center justify-between sticky top-0 z-30">
+      <header className="bg-white/70 backdrop-blur-2xl px-4 py-4 shadow-sm border-b border-white/60 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full border-2 border-milquu-blue overflow-hidden shadow-sm">
             <img src={staff.image || "https://i.pravatar.cc/150?img=11"} alt="Profile" className="w-full h-full object-cover" />
@@ -58,7 +64,7 @@ const DeliveryLayout = () => {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center h-16 pb-safe z-40 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+      <nav className="fixed bottom-0 w-full bg-white/80 backdrop-blur-xl border-t border-white/60 flex justify-around items-center h-16 pb-safe z-40 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         <NavLink 
           to="/delivery" 
           end
