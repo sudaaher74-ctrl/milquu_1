@@ -306,43 +306,50 @@ const MyAccount = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-28 pb-20 font-sans">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-28 pb-20 font-sans relative overflow-hidden">
+      {/* Background Orbs */}
+      <div className="absolute top-0 left-0 w-full h-[40vh] pointer-events-none bg-milquu-gold/5 rounded-b-[120px]"></div>
+      <div className="absolute top-40 -right-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-green/10 opacity-40 pointer-events-none"></div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         
         <div className="flex flex-col md:flex-row gap-8">
           
           {/* Sidebar */}
           <div className="w-full md:w-64 flex-shrink-0">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+            <div className="bg-white/80 backdrop-blur-xl rounded-[24px] shadow-lg border border-white/60 p-6 mb-6 transition-all hover:shadow-xl relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none"></div>
+              <div className="relative z-10">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center text-milquu-blue mb-4 mx-auto md:mx-0">
                 <span className="text-2xl font-bold font-serif">{user?.name?.charAt(0) || 'U'}</span>
               </div>
               <h2 className="text-xl font-bold text-gray-800 text-center md:text-left">{user?.name || 'User'}</h2>
-              <p className="text-sm text-gray-500 text-center md:text-left">{user?.email}</p>
+              </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <nav className="flex flex-col space-y-1 p-2">
+            <div className="bg-white/80 backdrop-blur-xl rounded-[24px] shadow-lg border border-white/60 overflow-hidden relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent pointer-events-none"></div>
+              <nav className="flex flex-col space-y-1 p-3 relative z-10">
                 <button
                   onClick={() => setActiveTab('profile')}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
-                    activeTab === 'profile' ? 'bg-blue-50 text-milquu-blue' : 'text-gray-600 hover:bg-gray-50'
+                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 ${
+                    activeTab === 'profile' ? 'bg-milquu-blue/10 text-milquu-blue shadow-sm font-bold' : 'text-gray-600 hover:bg-white hover:shadow-sm'
                   }`}
                 >
                   <User className="mr-3 h-5 w-5" /> Profile Details
                 </button>
                 <button
                   onClick={() => setActiveTab('orders')}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
-                    activeTab === 'orders' ? 'bg-blue-50 text-milquu-blue' : 'text-gray-600 hover:bg-gray-50'
+                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 ${
+                    activeTab === 'orders' ? 'bg-milquu-blue/10 text-milquu-blue shadow-sm font-bold' : 'text-gray-600 hover:bg-white hover:shadow-sm'
                   }`}
                 >
                   <Package className="mr-3 h-5 w-5" /> Order History
                 </button>
                 <button
                   onClick={() => setActiveTab('wallet')}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
-                    activeTab === 'wallet' ? 'bg-blue-50 text-milquu-blue' : 'text-gray-600 hover:bg-gray-50'
+                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 ${
+                    activeTab === 'wallet' ? 'bg-milquu-blue/10 text-milquu-blue shadow-sm font-bold' : 'text-gray-600 hover:bg-white hover:shadow-sm'
                   }`}
                 >
                   <svg className="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -351,8 +358,8 @@ const MyAccount = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab('subscriptions')}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
-                    activeTab === 'subscriptions' ? 'bg-blue-50 text-milquu-blue' : 'text-gray-600 hover:bg-gray-50'
+                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 ${
+                    activeTab === 'subscriptions' ? 'bg-milquu-blue/10 text-milquu-blue shadow-sm font-bold' : 'text-gray-600 hover:bg-white hover:shadow-sm'
                   }`}
                 >
                   <Calendar className="mr-3 h-5 w-5" /> My Subscriptions
@@ -372,10 +379,13 @@ const MyAccount = () => {
           <div className="flex-1">
             <motion.div 
               key={activeTab}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8"
+              transition={{ duration: 0.4 }}
+              className="bg-white/90 backdrop-blur-2xl rounded-[2rem] shadow-xl border border-white/60 p-6 sm:p-10 relative overflow-hidden"
             >
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-white/80 pointer-events-none"></div>
+              <div className="relative z-10">
               {activeTab === 'profile' && (
                 <div>
                   <h3 className="text-2xl font-bold font-serif text-gray-800 mb-6">Profile Information</h3>
@@ -429,7 +439,7 @@ const MyAccount = () => {
                         const delivered = !!order?.isDelivered;
                         const itemCount = order?.orderItems?.length || order?.items?.length || 0;
                         return (
-                          <div key={orderId} className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                          <div key={orderId} className="bg-white/80 border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                               <div>
                                 <h4 className="font-bold text-gray-800">Order #{orderId.substring(0,8).toUpperCase()}</h4>
@@ -469,7 +479,7 @@ const MyAccount = () => {
                   ) : subscriptions.length > 0 ? (
                     <div className="space-y-4">
                       {subscriptions.map(sub => (
-                        <div key={sub._id} className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                        <div key={sub._id} className="bg-white/80 border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
                               <h4 className="font-bold text-gray-800">{sub.name || 'Milk Subscription'}</h4>
@@ -583,23 +593,26 @@ const MyAccount = () => {
                     <div>
                       {/* Wallet Balance Cards */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div className="bg-gradient-to-r from-blue-600 to-milquu-blue p-5 rounded-2xl shadow-md text-white flex flex-col justify-between">
-                          <p className="text-blue-100 text-sm font-medium mb-1">Current Balance</p>
-                          <h2 className="text-3xl font-bold">₹{wallet.walletBalance}</h2>
+                        <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-milquu-blue p-6 rounded-3xl shadow-lg text-white flex flex-col justify-between hover:shadow-xl transition-shadow group">
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl group-hover:scale-110 transition-transform"></div>
+                          <p className="text-blue-100 text-sm font-medium mb-2 relative z-10">Current Balance</p>
+                          <h2 className="text-4xl font-bold relative z-10">₹{wallet.walletBalance}</h2>
                         </div>
-                        <div className="bg-gray-50 border border-gray-200 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
-                          <p className="text-gray-500 text-sm font-medium mb-1">Reserved Amount</p>
+                        
+                        <div className="relative overflow-hidden bg-white/80 backdrop-blur-md border border-gray-200 p-6 rounded-3xl shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                          <p className="text-gray-500 text-sm font-medium mb-2">Reserved Amount</p>
                           <div className="flex items-end gap-2">
-                            <h2 className="text-3xl font-bold text-gray-800">₹{wallet.reservedBalance}</h2>
-                            <span className="text-xs text-gray-400 mb-1" title="For active subscriptions & pending orders">ⓘ</span>
+                            <h2 className="text-4xl font-bold text-gray-800">₹{wallet.reservedBalance}</h2>
+                            <span className="text-xs text-gray-400 mb-1 cursor-help" title="For active subscriptions & pending orders">ⓘ</span>
                           </div>
                         </div>
-                        <div className="bg-green-50 border border-green-200 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
-                          <p className="text-green-600 text-sm font-medium mb-1">Withdrawable Balance</p>
-                          <h2 className="text-3xl font-bold text-green-700">₹{wallet.withdrawableBalance}</h2>
+
+                        <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-green-100/50 border border-green-200 p-6 rounded-3xl shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                          <p className="text-green-700 text-sm font-medium mb-2">Withdrawable Balance</p>
+                          <h2 className="text-4xl font-bold text-green-800">₹{wallet.withdrawableBalance}</h2>
                           <button 
                             onClick={() => setShowWithdrawModal(true)}
-                            className="mt-2 w-full bg-white text-green-600 border border-green-200 text-sm py-1.5 rounded-lg hover:bg-green-100 font-medium transition"
+                            className="mt-4 w-full bg-white text-green-700 border border-green-200 text-sm py-2 rounded-xl hover:bg-green-50 font-bold transition-colors shadow-sm"
                           >
                             Withdraw Money
                           </button>
@@ -797,6 +810,7 @@ const MyAccount = () => {
 
                 </div>
               )}
+              </div>
             </motion.div>
           </div>
         </div>
