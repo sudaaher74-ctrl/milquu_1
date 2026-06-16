@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, ShoppingCart, Search, Mic, ShieldCheck, Leaf, FlaskConical, Truck, Plus, Star, Home, ShoppingBag, CalendarCheck, Package, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -12,6 +12,36 @@ const MobileHome = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const banners = [
+    '/img/banners/subcription.png',
+    '/img/banners/morning.png',
+    '/img/banners/ghee.png'
+  ];
+
+  const bannerScrollRef = useRef(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (bannerScrollRef.current) {
+        const container = bannerScrollRef.current;
+        const width = container.offsetWidth;
+        const maxScrollLeft = container.scrollWidth - width;
+        
+        let newScrollLeft = container.scrollLeft + width;
+        if (newScrollLeft >= maxScrollLeft + 10) {
+          newScrollLeft = 0;
+        }
+        
+        container.scrollTo({
+          left: newScrollLeft,
+          behavior: 'smooth'
+        });
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch some products for Best Sellers and Fresh Picks
   useEffect(() => {
@@ -126,13 +156,21 @@ const MobileHome = () => {
         </div>
       </div>
 
-      {/* HERO BANNER */}
+      {/* HERO BANNER CAROUSEL */}
       <div className="px-5 mt-4">
         <div 
-          className="relative w-full h-[160px] rounded-3xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.05)] cursor-pointer"
-          onClick={() => navigate('/subscription')}
+          className="relative w-full h-[160px] rounded-3xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.05)] flex overflow-x-auto snap-x snap-mandatory hide-scrollbar"
+          ref={bannerScrollRef}
         >
-          <img src="/img/banners/subcription.png" alt="Subscription Offers" className="w-full h-full object-cover" />
+          {banners.map((banner, index) => (
+            <img 
+              key={index}
+              src={banner} 
+              alt={`Special Offer ${index + 1}`} 
+              className="w-full h-full object-cover flex-shrink-0 snap-start cursor-pointer" 
+              onClick={() => index === 0 ? navigate('/subscription') : navigate('/products')}
+            />
+          ))}
         </div>
       </div>
 
