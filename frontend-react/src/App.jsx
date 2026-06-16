@@ -1,5 +1,6 @@
 import React, { useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate, useNavigate } from 'react-router-dom';
+import { eventBus } from './utils/eventBus';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import FloatingWhatsApp from './components/layout/FloatingWhatsApp';
@@ -140,11 +141,29 @@ class ErrorBoundary extends React.Component {
 
 function App() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isAdmin = location.pathname.startsWith('/admin');
   const isDelivery = location.pathname.startsWith('/delivery');
   const isChatbot = location.pathname.startsWith('/chatbot');
   const isCampaign = location.pathname === '/free-sample';
   const hideLayout = isAdmin || isDelivery || isChatbot || isCampaign;
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      if (location.pathname.startsWith('/chatbot')) {
+        navigate('/chatbot/login');
+      } else if (location.pathname.startsWith('/delivery')) {
+        navigate('/delivery/login');
+      } else if (location.pathname.startsWith('/admin')) {
+        navigate('/admin/login');
+      } else {
+        navigate('/login');
+      }
+    };
+
+    const unsubscribe = eventBus.on('UNAUTHORIZED', handleUnauthorized);
+    return () => unsubscribe();
+  }, [location.pathname, navigate]);
 
   return (
     <div className="font-sans">

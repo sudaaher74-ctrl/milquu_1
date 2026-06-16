@@ -16,6 +16,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import freeSampleRoutes from './routes/freeSampleRoutes.js';
 import { startSubscriptionEngine } from './cron/subscriptionEngine.js';
+import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -73,6 +74,10 @@ app.use('/api/users', apiLimiter, userRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/free-sample', apiLimiter, freeSampleRoutes);
+
+// Error Handling Middleware
+app.use(notFound);
+app.use(errorHandler);
 
 import http from 'http';
 import { initSocket } from './socket.js';
