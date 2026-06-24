@@ -44,7 +44,7 @@ const About = () => {
             transition={{ duration: 0.8 }}
             className="relative w-full"
           >
-            <img src="/img/banners/home2.webp" alt="Premium Dairy Quality" className="w-full h-auto object-contain drop-shadow-xl" />
+            <img src="/img/hero/home2.webp" alt="Premium Dairy Quality" className="w-full h-auto object-contain drop-shadow-xl" />
           </motion.div>
 
           {/* Right: Description & Stats */}

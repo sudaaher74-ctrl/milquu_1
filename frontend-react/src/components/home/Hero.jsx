@@ -35,7 +35,7 @@ const Hero = () => {
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
             >
               <img 
-                src="/img/banners/home2.webp" 
+                src="/img/hero/home2.webp" 
                 alt="MILQUU FRESH Premium Dairy" 
                 className="w-full h-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
               />
