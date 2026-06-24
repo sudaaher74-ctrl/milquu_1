@@ -4,32 +4,32 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 const steps = [
   {
     id: 1,
-    title: 'Ethical Farming',
-    desc: 'Our process begins at pristine, open-pasture farms. Our cows are grass-fed and nurtured with love, because happy cows produce the purest, most nutritious milk.',
+    title: 'Sourced From Trusted Dairy Partners',
+    desc: 'Our process begins by partnering with trusted dairy suppliers who share our commitment to providing pure, high-quality milk.',
     image: '/img/process/process1.webp',
   },
   {
     id: 2,
-    title: 'Automated Milking',
-    desc: '100% untouched by human hands. We use state-of-the-art automated milking parlors to ensure maximum hygiene, speed, and zero contamination.',
+    title: 'Quality Verification',
+    desc: 'Every single batch undergoes stringent quality checks to guarantee freshness and ensure it meets our strict quality standards before proceeding.',
     image: '/img/process/process2.webp',
   },
   {
     id: 3,
-    title: 'Purity Testing',
-    desc: 'Every single batch undergoes stringent quality checks in our certified labs to guarantee zero adulteration, zero antibiotics, and zero hormones.',
+    title: 'Safe Packaging',
+    desc: 'Products are instantly chilled to retain their natural goodness and carefully packaged in premium, sanitized containers.',
     image: '/img/process/process3.webp',
   },
   {
     id: 4,
-    title: 'Fresh Packaging',
-    desc: 'Milk is instantly chilled to 4°C to retain its natural goodness and then packaged in premium, sanitized, eco-friendly containers.',
+    title: 'Order Processing',
+    desc: 'Your daily requirements are processed accurately, ensuring the right fresh products are assigned to our delivery team on time.',
     image: '/img/process/process4.webp',
   },
   {
     id: 5,
-    title: 'Farm to Doorstep',
-    desc: 'Our dedicated cold-chain delivery network ensures that farm-fresh milk reaches your doorstep every morning before you even wake up.',
+    title: 'Fresh Doorstep Delivery',
+    desc: 'Our dedicated cold-chain delivery network ensures that fresh dairy products reach your doorstep every morning before you wake up.',
     image: '/img/process/process5.webp',
   },
 ];
@@ -65,7 +65,7 @@ const Process = () => {
             viewport={{ once: true }}
             className="text-4xl md:text-5xl font-serif font-bold text-milquu-dark mb-4"
           >
-            The <span className="text-milquu-gold italic">Journey</span> of Purity
+            How <span className="text-milquu-gold italic">MilQuu Fresh</span> Works
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -74,7 +74,7 @@ const Process = () => {
             transition={{ delay: 0.1 }}
             className="text-lg text-gray-500 font-sans max-w-2xl mx-auto"
           >
-            A transparent roadmap from our lush green farms directly to your family's table.
+            A transparent roadmap from trusted dairy partners directly to your family's table.
           </motion.p>
         </div>
 

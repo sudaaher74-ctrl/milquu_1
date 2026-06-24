@@ -21,7 +21,7 @@ const Footer = () => {
           <div className="space-y-6">
             <img src="/brand-logo.jpg" alt="Milquu Fresh" className="h-20 w-auto object-contain rounded-full shadow-md" />
             <p className="text-gray-400 font-sans text-sm leading-relaxed max-w-xs">
-              Premium dairy products sourced directly from trusted farms and processed with international hygiene standards. Delivered fresh to your doorstep.
+              MilQuu Fresh is committed to delivering premium-quality dairy products sourced from trusted partners directly to your doorstep. Freshness, quality, and trust in every delivery.
             </p>
             <div className="flex space-x-4">
               <a href="https://instagram.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-milquu-gold transition-colors duration-300 text-white"><InstagramIcon size={18} /></a>
@@ -35,7 +35,7 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-serif font-semibold mb-6 text-white border-b border-white/20 pb-2 inline-block">Quick Links</h3>
             <ul className="space-y-3 font-sans text-sm text-gray-400">
-              <li><a href="#" className="hover:text-milquu-gold transition-colors">Our Heritage</a></li>
+              <li><a href="#" className="hover:text-milquu-gold transition-colors">Our Mission</a></li>
               <li><a href="#" className="hover:text-milquu-gold transition-colors">Why Choose Us</a></li>
               <li><a href="#" className="hover:text-milquu-gold transition-colors">Quality Process</a></li>
               <li><a href="#" className="hover:text-milquu-gold transition-colors">Delivery Map</a></li>
@@ -48,7 +48,7 @@ const Footer = () => {
             <h3 className="text-lg font-serif font-semibold mb-6 text-white border-b border-white/20 pb-2 inline-block">Premium Products</h3>
             <ul className="space-y-3 font-sans text-sm text-gray-400">
               <li><a href="#" className="hover:text-milquu-gold transition-colors">A2 Gir Cow Milk</a></li>
-              <li><a href="#" className="hover:text-milquu-gold transition-colors">Farm Fresh Cow Milk</a></li>
+              <li><a href="#" className="hover:text-milquu-gold transition-colors">Premium Fresh Cow Milk</a></li>
               <li><a href="#" className="hover:text-milquu-gold transition-colors">Rich Buffalo Milk</a></li>
               <li><a href="#" className="hover:text-milquu-gold transition-colors">Pure Desi Ghee</a></li>
               <li><a href="#" className="hover:text-milquu-gold transition-colors">Fresh Malai Paneer</a></li>

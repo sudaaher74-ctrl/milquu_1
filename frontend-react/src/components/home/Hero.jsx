@@ -36,7 +36,7 @@ const Hero = () => {
             >
               <img 
                 src="/img/banners/home2.webp" 
-                alt="MILQUU FRESH Premium Farm" 
+                alt="MILQUU FRESH Premium Dairy" 
                 className="w-full h-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
               />
             </motion.div>
@@ -58,16 +58,16 @@ const Hero = () => {
               className="inline-flex items-center py-1.5 px-4 rounded-full bg-green-100/80 backdrop-blur-sm border border-green-200/50 text-green-700 font-sans text-xs md:text-sm font-bold tracking-widest mb-4 lg:mb-6 mt-2 lg:mt-0 shadow-sm"
             >
               <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-              100% ORGANIC & PURE
+              FRESH. PURE. DELIVERED DAILY.
             </motion.span>
             
             <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-serif font-bold text-gray-900 leading-[1.1] mb-4 lg:mb-6 tracking-tight">
-              Pure Farm Fresh Dairy <br/>
+              Premium Fresh Milk <br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-milquu-gold to-yellow-600 italic font-medium">Delivered Daily.</span>
             </h1>
             
             <p className="text-base sm:text-lg text-gray-600 font-sans mb-8 lg:mb-10 max-w-xl leading-relaxed">
-              Premium quality milk and dairy products processed hygienically and delivered fresh to your doorstep every morning before you wake up.
+              Quality-verified milk and dairy products sourced from trusted dairy partners and delivered fresh to your doorstep every day.
             </p>
             
             <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -75,14 +75,14 @@ const Hero = () => {
                 onClick={() => navigate('/subscribe')}
                 className="w-full sm:w-auto px-8 py-4 bg-milquu-blue hover:bg-blue-900 text-white rounded-full font-sans font-bold transition-all duration-300 shadow-lg hover:shadow-2xl hover:-translate-y-1 flex items-center justify-center group text-base"
               >
-                Start Subscription
+                Subscribe Now
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               <button 
-                onClick={() => navigate('/products')}
+                onClick={() => navigate('/free-sample')}
                 className="w-full sm:w-auto px-8 py-4 bg-white/80 hover:bg-white text-milquu-dark border border-gray-200 rounded-full font-sans font-bold transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-1 text-center text-base"
               >
-                Explore Products
+                Get Free Sample
               </button>
             </div>
           </motion.div>

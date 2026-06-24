@@ -103,7 +103,7 @@ const MobileHome = () => {
 
   const features = [
     { title: 'Tested & Certified', icon: <ShieldCheck className="w-5 h-5 text-green-500" /> },
-    { title: 'Farm Fresh Daily', icon: <Leaf className="w-5 h-5 text-green-500" /> },
+    { title: 'Freshly Sourced Daily', icon: <Leaf className="w-5 h-5 text-green-500" /> },
     { title: 'No Preservatives', icon: <FlaskConical className="w-5 h-5 text-green-500" /> },
     { title: 'Fast Delivery', icon: <Truck className="w-5 h-5 text-green-500" /> },
   ];

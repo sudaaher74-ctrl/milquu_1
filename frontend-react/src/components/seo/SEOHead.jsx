@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 
 const SEOHead = ({
   title = 'MilQuu Fresh – Premium Dairy Delivery in Navi Mumbai',
-  description = 'Get farm-fresh A2 cow milk, buffalo milk, paneer & ghee delivered daily to your doorstep in Panvel, New Panvel, Kharghar, Belapur, Nerul & Karanjade. Subscribe for daily delivery.',
+  description = 'Fresh milk delivery and quality-verified dairy products delivered daily to your doorstep in Panvel, New Panvel, Kharghar, Belapur, Nerul & Karanjade. Subscribe for daily delivery.',
   keywords = 'milk delivery navi mumbai, fresh milk panvel, cow milk delivery, buffalo milk, A2 milk, dairy delivery, MilQuu Fresh',
   canonical = 'https://milquufresh.in',
   ogImage = 'https://milquufresh.in/og-image.jpg',

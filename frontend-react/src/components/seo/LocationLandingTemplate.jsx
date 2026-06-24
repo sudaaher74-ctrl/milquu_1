@@ -76,7 +76,7 @@ const LocationLandingTemplate = ({
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-5xl md:text-7xl font-bold font-serif mb-8 leading-tight drop-shadow-lg"
           >
-            Premium Farm Fresh Milk Delivery in <span className="text-yellow-400">{locationName}</span>
+            Premium Fresh Milk Delivery in <span className="text-yellow-400">{locationName}</span>
           </motion.h1>
           
           <motion.p 
@@ -131,7 +131,7 @@ const LocationLandingTemplate = ({
             <div className="w-16 h-16 bg-yellow-50 text-yellow-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-yellow-100 transition-all shadow-sm">
               <Clock size={28} />
             </div>
-            <h3 className="font-bold text-gray-900 text-lg">Farm to Home</h3>
+            <h3 className="font-bold text-gray-900 text-lg">Fresh to Home</h3>
             <p className="text-sm text-gray-500">Within 24 Hours</p>
           </motion.div>
           <motion.div variants={itemVariants} className="flex flex-col items-center group">
@@ -178,7 +178,7 @@ const LocationLandingTemplate = ({
             className="grid grid-cols-1 md:grid-cols-3 gap-8"
           >
             {[
-              { title: "A2 Farm Fresh Cow Milk", img: "a2-cow-milk.png", link: "farm-fresh-cow-milk", desc: "Pure, natural A2 milk from free-grazing Gir cows. Delivered fresh every morning." },
+              { title: "A2 Fresh Cow Milk", img: "a2-cow-milk.png", link: "farm-fresh-cow-milk", desc: "Pure, natural A2 milk sourced from trusted partners. Delivered fresh every morning." },
               { title: "Premium Buffalo Milk", img: "buffalo-milk.png", link: "pure-buffalo-milk", desc: "Thick, creamy buffalo milk perfect for making tea, coffee, curd, and homemade sweets." },
               { title: "Bilona A2 Cow Ghee", img: "desi-ghee.png", link: "desi-cow-ghee", desc: "Traditional bilona churned A2 ghee with rich aroma, golden texture, and immense health benefits." }
             ].map((product, i) => (

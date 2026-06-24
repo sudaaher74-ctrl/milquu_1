@@ -2,10 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const stats = [
-  { label: 'Daily Deliveries', value: '50,000+' },
-  { label: 'Years Experience', value: '25+' },
-  { label: 'Retail Partners', value: '500+' },
-  { label: 'Pure Milk', value: '100%' },
+  { label: 'Quality Verified', value: '100%' },
+  { label: 'Daily Procurement', value: 'Fresh' },
+  { label: 'Doorstep Delivery', value: 'Reliable' },
+  { label: 'Subscription Plans', value: 'Flexible' },
 ];
 
 const About = () => {
@@ -21,7 +21,7 @@ const About = () => {
             viewport={{ once: true }}
             className="text-milquu-gold font-sans font-semibold tracking-[0.2em] uppercase text-sm"
           >
-            Our Heritage
+            Our Mission
           </motion.span>
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
@@ -30,7 +30,7 @@ const About = () => {
             transition={{ delay: 0.1 }}
             className="text-4xl md:text-5xl font-serif font-bold text-milquu-dark mt-4"
           >
-            From Farm To Family
+            Why Choose MilQuu Fresh
           </motion.h2>
         </div>
 
@@ -44,7 +44,7 @@ const About = () => {
             transition={{ duration: 0.8 }}
             className="relative w-full"
           >
-            <img src="/img/banners/home2.webp" alt="Premium Farm Quality" className="w-full h-auto object-contain drop-shadow-xl" />
+            <img src="/img/banners/home2.webp" alt="Premium Dairy Quality" className="w-full h-auto object-contain drop-shadow-xl" />
           </motion.div>
 
           {/* Right: Description & Stats */}
@@ -56,7 +56,7 @@ const About = () => {
             className="flex flex-col justify-center"
           >
             <p className="text-lg text-gray-600 font-sans leading-relaxed mb-12">
-              <span className="font-semibold text-milquu-dark">MILQUU FRESH</span> delivers premium dairy products sourced directly from trusted farms and processed with international hygiene standards. We believe in purity, freshness, and the timeless tradition of delivering health to your doorstep.
+              <span className="font-semibold text-milquu-dark">MILQUU FRESH</span> was founded with a simple mission: to provide families with reliable access to fresh, high-quality dairy products. We partner with trusted dairy suppliers and carefully selected processing facilities to ensure every product meets our quality standards before reaching your home. Our focus is on freshness, convenience, transparency, and customer satisfaction.
             </p>
 
             <div className="grid grid-cols-2 gap-6">
