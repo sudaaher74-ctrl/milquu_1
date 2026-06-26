@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
@@ -142,6 +142,9 @@ const CategoryListing = () => {
   const { addToCart } = useCart();
   const [categories, setCategories] = useState({});
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const categoryFilter = searchParams.get('category'); // 'milk' or 'by-products'
 
   const getProductSlug = (name) => {
     const n = name.toLowerCase();
@@ -150,7 +153,7 @@ const CategoryListing = () => {
     if (n.includes('buffalo')) return 'pure-buffalo-milk';
     if (n.includes('paneer')) return 'fresh-paneer';
     if (n.includes('ghee')) return 'desi-cow-ghee';
-    if (n.includes('dahi')) return 'fresh-dahi';
+    if (n.includes('dahi') || n.includes('curd')) return 'fresh-dahi';
     if (n.includes('lassi')) return 'sweet-lassi';
     return 'farm-fresh-cow-milk';
   };
@@ -218,7 +221,9 @@ const CategoryListing = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-milquu-blue"></div>
           </div>
         ) : (
-          Object.entries(categories).map(([key, category]) => (
+          Object.entries(categories)
+            .filter(([key]) => !categoryFilter || key === categoryFilter)
+            .map(([key, category]) => (
             category.products.length > 0 && (
               <div key={key} className="mb-24">
                 <div className="mb-10 text-center">

@@ -68,7 +68,7 @@ const MobileHome = () => {
     if (n.includes('buffalo')) return 'pure-buffalo-milk';
     if (n.includes('paneer')) return 'fresh-paneer';
     if (n.includes('ghee')) return 'desi-cow-ghee';
-    if (n.includes('dahi')) return 'fresh-dahi';
+    if (n.includes('dahi') || n.includes('curd')) return 'fresh-dahi';
     if (n.includes('lassi')) return 'sweet-lassi';
     return 'farm-fresh-cow-milk';
   };
@@ -178,7 +178,7 @@ const MobileHome = () => {
       <div className="px-5 mt-6">
         <div className="flex overflow-x-auto hide-scrollbar space-x-5 pb-2">
           {categories.map((cat, idx) => (
-            <div key={idx} className="flex flex-col items-center flex-shrink-0 cursor-pointer" onClick={() => navigate('/products')}>
+            <div key={idx} className="flex flex-col items-center flex-shrink-0 cursor-pointer" onClick={() => navigate(`/product/${getProductSlug(cat.name)}`)}>
               <div className="w-[68px] h-[68px] rounded-full bg-white mb-2 shadow-[0_4px_12px_rgba(0,0,0,0.04)] border border-gray-50 flex items-center justify-center p-2">
                   <img src={cat.image} alt={cat.name} className="w-full h-full object-contain drop-shadow-sm" />
               </div>
