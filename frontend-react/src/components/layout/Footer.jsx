@@ -24,7 +24,7 @@ const Footer = () => {
               MilQuu Fresh is committed to delivering premium-quality dairy products sourced from trusted partners directly to your doorstep. Freshness, quality, and trust in every delivery.
             </p>
             <div className="flex space-x-4">
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-milquu-gold transition-colors duration-300 text-white"><InstagramIcon size={18} /></a>
+              <a href="https://instagram.com/milquufresh" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-milquu-gold transition-colors duration-300 text-white"><InstagramIcon size={18} /></a>
               <a href="https://facebook.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-milquu-gold transition-colors duration-300 text-white"><FacebookIcon size={18} /></a>
               <a href="https://twitter.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-milquu-gold transition-colors duration-300 text-white"><TwitterIcon size={18} /></a>
               <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-milquu-gold transition-colors duration-300 text-white"><LinkedinIcon size={18} /></a>
@@ -69,7 +69,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center space-x-3">
                 <Mail size={18} className="text-milquu-gold flex-shrink-0" />
-                <span>milquufresh@gmail.com</span>
+                <a href="mailto:milquufresh@gmail.com" className="hover:text-milquu-gold transition-colors">milquufresh@gmail.com</a>
               </li>
             </ul>
           </div>
