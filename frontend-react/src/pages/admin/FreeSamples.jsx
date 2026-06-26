@@ -100,15 +100,15 @@ const FreeSamples = () => {
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase text-gray-500 font-semibold">
-                  <th className="p-4">Customer</th>
-                  <th className="p-4">Contact</th>
-                  <th className="p-4">Address & Location</th>
-                  <th className="p-4">Product Request</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 text-right">Actions</th>
+                  <th className="px-6 py-4">Customer</th>
+                  <th className="px-6 py-4">Contact</th>
+                  <th className="px-6 py-4">Address & Location</th>
+                  <th className="px-6 py-4">Product Request</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -119,17 +119,17 @@ const FreeSamples = () => {
                 ) : (
                   filteredSamples.map((sample) => (
                     <tr key={sample._id} className="hover:bg-gray-50 transition-colors">
-                      <td className="p-4">
+                      <td className="px-6 py-4">
                         <div className="font-medium text-gray-900">{sample.fullName}</div>
                         <div className="text-xs text-gray-500 mt-1">{new Date(sample.createdAt).toLocaleString()}</div>
                       </td>
-                      <td className="p-4">
+                      <td className="px-6 py-4">
                         <div className="text-sm font-medium">{sample.mobileNumber}</div>
                         {sample.whatsappNumber && sample.whatsappNumber !== sample.mobileNumber && (
                           <div className="text-xs text-green-600">WA: {sample.whatsappNumber}</div>
                         )}
                       </td>
-                      <td className="p-4">
+                      <td className="px-6 py-4">
                         <div className="text-sm text-gray-700 max-w-xs truncate">
                           {sample.address.houseFlat}, {sample.address.buildingSociety}, {sample.address.streetArea}
                         </div>
@@ -142,18 +142,18 @@ const FreeSamples = () => {
                           )}
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="px-6 py-4">
                         <span className="text-sm font-medium text-gray-900">{sample.selectedProduct}</span>
                         <div className="text-xs text-gray-500 flex items-center mt-1">
                           <Clock className="w-3 h-3 mr-1" /> {sample.preferredDeliveryTime}
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="px-6 py-4">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getStatusColor(sample.status)}`}>
                           {sample.status}
                         </span>
                       </td>
-                      <td className="p-4 text-right">
+                      <td className="px-6 py-4 text-right">
                         <select
                           value={sample.status}
                           onChange={(e) => updateStatus(sample._id, e.target.value)}
