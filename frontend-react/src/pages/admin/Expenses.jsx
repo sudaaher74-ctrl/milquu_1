@@ -13,6 +13,7 @@ const Expenses = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expenseData, setExpenseData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,6 +32,8 @@ const Expenses = () => {
 
   const handleAddExpense = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const newExpense = {
         ...formData,
@@ -38,7 +41,7 @@ const Expenses = () => {
         expenseId: `EXP-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
       };
       const { data } = await api.post('/api/erp/expenses', newExpense);
-      setExpenseData([data, ...expenseData]);
+      setExpenseData(prev => [data, ...prev]);
       setIsModalOpen(false);
       setFormData({
         date: new Date().toISOString().split('T')[0],
@@ -51,6 +54,8 @@ const Expenses = () => {
     } catch (error) {
       console.error("Error creating expense", error);
       alert('Failed to save expense');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -369,8 +374,10 @@ const Expenses = () => {
                 </div>
               </div>
               <div className="flex justify-end space-x-3 pt-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600">Cancel</button>
-                <button type="submit" className="px-6 py-2 bg-milquu-dark text-white rounded-lg hover:bg-gray-800">Save Expense</button>
+                <button type="button" onClick={() => setIsModalOpen(false)} disabled={isSubmitting} className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 disabled:opacity-50">Cancel</button>
+                <button type="submit" disabled={isSubmitting} className="px-6 py-2 bg-milquu-dark text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {isSubmitting ? 'Saving...' : 'Save Expense'}
+                </button>
               </div>
             </form>
           </div>
