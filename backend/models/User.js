@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, index: true },
   address: { type: String },
   role: { type: String, enum: ['user', 'admin', 'manager', 'staff', 'superadmin'], default: 'user' },
-  password: { type: String, required: true },
+  password: { type: String, required: true, minlength: 12 },
   walletBalance: { type: Number, default: 0 }
 }, {
   timestamps: true

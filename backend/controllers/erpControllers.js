@@ -139,13 +139,25 @@ export const createOrder = async (req, res) => {
     
     // Clean up product IDs from frontend if they include appended units (e.g. "64ac4...-1Litre")
     if (orderData.orderItems && Array.isArray(orderData.orderItems)) {
-      orderData.orderItems = orderData.orderItems.map(item => {
+      let calculatedTotalPrice = 0;
+      const secureItems = [];
+      for (const item of orderData.orderItems) {
         let productId = item.product;
         if (typeof productId === 'string' && productId.includes('-')) {
           productId = productId.split('-')[0];
         }
-        return { ...item, product: productId };
-      });
+        const productDoc = await Product.findById(productId);
+        if (productDoc) {
+          secureItems.push({
+            ...item,
+            product: productId,
+            price: productDoc.price // Force secure price from DB
+          });
+          calculatedTotalPrice += productDoc.price * (item.qty || item.quantity || 1);
+        }
+      }
+      orderData.orderItems = secureItems;
+      orderData.totalPrice = calculatedTotalPrice; // Override client total
     }
 
     // Auto-assign delivery boy based on shipping area

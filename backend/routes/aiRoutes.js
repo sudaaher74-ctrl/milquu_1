@@ -232,13 +232,31 @@ Rules:
 5. "action" must be either "none" or "download_delivery_report". Set to "download_delivery_report" ONLY if the user explicitly asks to download or print today's delivery report/list.
 6. CRITICAL: NEVER invent or hallucinate internal business data. For internal metrics, use ONLY the Context Data above. However, if the user asks about external topics (like competitor pricing, market analysis in Navi Mumbai, etc.), you MUST use your Google Search capability to find real-time answers and summarize them.
 7. ALWAYS start your reply with "Hi Sudarshan".`;
-        // WORKAROUND: Return the systemPrompt and API key to the frontend
-        // so the frontend can make the call directly from the user's browser, bypassing Render's region restrictions.
-        return res.json({ 
-          success: true, 
-          apiKey: process.env.GEMINI_API_KEY,
-          systemPrompt: systemPrompt,
-          isFrontendMode: true 
+
+        // Call Gemini from the server — the API key must never be sent to the browser
+        const contents = chatHistory.map((m) => ({
+          role: m.role === 'user' ? 'user' : 'model',
+          parts: [{ text: String(m.text || '') }]
+        }));
+
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents,
+          config: { systemInstruction: systemPrompt }
+        });
+
+        const rawText = (response.text || '').trim();
+        let parsed;
+        try {
+          parsed = JSON.parse(rawText.replace(/^```(json)?/i, '').replace(/```$/, '').trim());
+        } catch {
+          parsed = { reply: rawText, action: 'none' };
+        }
+
+        return res.json({
+          success: true,
+          reply: parsed.reply || rawText,
+          action: parsed.action === 'download_delivery_report' ? 'download_delivery_report' : 'none'
         });
 
       } catch (error) {

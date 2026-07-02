@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -7,15 +7,26 @@ import autoTable from 'jspdf-autotable';
  * @param {Array} data - Array of objects to export
  * @param {String} fileName - The name of the file
  */
-export const exportToExcel = (data, fileName = 'export') => {
+export const exportToExcel = async (data, fileName = 'export') => {
   if (!data || data.length === 0) {
     alert('No data to export');
     return;
   }
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-  XLSX.writeFile(workbook, `${fileName}.xlsx`);
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Sheet1');
+  
+  const headers = Object.keys(data[0]);
+  worksheet.columns = headers.map(key => ({ header: key, key: key }));
+  worksheet.addRows(data);
+  
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `${fileName}.xlsx`;
+  anchor.click();
+  window.URL.revokeObjectURL(url);
 };
 
 /**

@@ -9,15 +9,20 @@ export const protect = async (req, res, next) => {
     try {
       // Get token from header
       token = req.headers.authorization.split(' ')[1];
-      console.log(`[AUTH DEBUG] Received token for path ${req.originalUrl}:`, token);
+
+      if (!process.env.JWT_SECRET) {
+        return res.status(500).json({ message: 'Server auth is not configured' });
+      }
 
       // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Get user or staff from the token
       if (decoded.role === 'delivery') {
         req.user = await DeliveryStaff.findById(decoded.id).select('-password');
-        req.user.role = 'delivery'; // explicitly set role since it might not be in the schema
+        if (req.user) {
+          req.user.role = 'delivery'; // explicitly set role since it might not be in the schema
+        }
       } else {
         req.user = await User.findById(decoded.id).select('-password');
       }
@@ -29,7 +34,6 @@ export const protect = async (req, res, next) => {
 
       next();
     } catch (error) {
-      console.error(error);
       res.status(401).json({ message: 'Not authorized, token failed' });
     }
   } else {

@@ -4,10 +4,9 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import compression from 'compression';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import mongoSanitize from 'express-mongo-sanitize';
-import xss from 'xss-clean';
 import morgan from 'morgan';
+import { globalLimiter, apiLimiter, authLimiter } from './middleware/rateLimiters.js';
+import { sanitizeInput } from './middleware/sanitize.js';
 import logger from './utils/logger.js';
 import connectDB from './config/db.js';
 import swaggerUi from 'swagger-ui-express';
@@ -34,13 +33,20 @@ const __dirname = path.dirname(__filename);
 // Load env vars from root directory
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
+// Fail fast if the auth secret is missing — never run with a guessable default
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set. Exiting.');
+  process.exit(1);
+}
+
 // Connect to database
 connectDB();
 
-// Start cron jobs
-startSubscriptionEngine();
 
 const app = express();
+
+// Behind Render's proxy — needed so req.ip (and rate limiting) sees the real client IP
+app.set('trust proxy', 1);
 
 // Use compression
 app.use(compression());
@@ -48,26 +54,34 @@ app.use(compression());
 // Security Headers
 app.use(helmet());
 
-// Rate Limiter for sensitive endpoints
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Limit each IP to 20 requests per `window`
-  message: { message: 'Too many requests from this IP, please try again after 15 minutes' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Global rate limit for all API routes
+app.use('/api', globalLimiter);
 
-// Body parser
-app.use(express.json());
+// Body parser (capped to prevent oversized-payload abuse)
+app.use(express.json({ limit: '100kb' }));
 
 // Sanitize data against NoSQL query injection
-// app.use(mongoSanitize());
+app.use(sanitizeInput);
 
-// Sanitize data against XSS
-// app.use(xss());
-
-// Enable CORS
-app.use(cors());
+// Enable CORS — restrict to known origins
+const allowedOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+if (process.env.NODE_ENV !== 'production') {
+  allowedOrigins.push('http://localhost:5173', 'http://localhost:3000');
+}
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no Origin header (mobile apps, curl, server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
+  })
+);
 
 // HTTP Logger
 const morganFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
@@ -84,6 +98,12 @@ app.get('/', (req, res) => {
   res.send('MILQUU FRESH API is running...');
 });
 
+// Strict rate limits on all login/register endpoints (brute-force protection)
+app.use('/api/users/login', authLimiter);
+app.use('/api/users/register', authLimiter);
+app.use('/api/admin/login', authLimiter);
+app.use('/api/delivery/login', authLimiter);
+
 // Mount routes
 app.use('/api/products', productRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
@@ -92,12 +112,15 @@ app.use('/api/erp', erpRoutes); // Mounted ERP routes
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// API Documentation Route
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
+// API Documentation Route (development only — don't expose API internals in production)
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
+}
 
-// Apply rate limiting to user and free sample routes
-app.use('/api/users', apiLimiter, userRoutes);
-app.use('/api/payment', paymentRoutes);
+// User routes are covered by the global limiter plus strict login limits above;
+// free-sample and payment stay on the tighter public-endpoint limit
+app.use('/api/users', userRoutes);
+app.use('/api/payment', apiLimiter, paymentRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/free-sample', apiLimiter, freeSampleRoutes);
 

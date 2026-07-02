@@ -12,9 +12,9 @@ const subscriptionSchema = new mongoose.Schema({
     }
   ],
   totalAmount: { type: Number, required: true },
-  status: { type: String, enum: ['Active', 'Pending', 'Cancelled', 'Delivered', 'active', 'paused'], default: 'Pending', index: true },
+  status: { type: String, enum: ['Active', 'Pending', 'Cancelled', 'Delivered', 'Paused', 'Completed'], default: 'Pending', index: true },
   deliveryAddress: { type: String, required: true },
-  frequency: { type: String, enum: ['Daily', 'Alternate Days', 'Weekly', 'One-time', 'daily', 'alternate'], default: 'One-time' },
+  frequency: { type: String, enum: ['Daily', 'Alternate Days', 'Weekly', 'One-time'], default: 'One-time' },
   startDate: { type: Date, default: Date.now },
   pauseStartDate: { type: Date },
   pauseEndDate: { type: Date },

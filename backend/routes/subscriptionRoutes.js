@@ -2,28 +2,47 @@ import express from 'express';
 import Subscription from '../models/Subscription.js';
 import DeliveryStaff from '../models/DeliveryStaff.js';
 import Order from '../models/Order.js';
+import Product from '../models/Product.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
+import { apiLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
 
 // @route   POST /api/subscriptions
 // @desc    Create a new subscription/order
 // @access  Public (Guest Checkout)
-router.post('/', async (req, res) => {
+router.post('/', apiLimiter, async (req, res) => {
   try {
     const { user, name, phone, items, totalAmount, deliveryAddress, frequency, status, monthlyTotal } = req.body;
 
+    // Get product prices to calculate secure totals
+    let secureTotalAmount = 0;
+    const secureItems = [];
+
+    if (items && Array.isArray(items)) {
+      for (const item of items) {
+        const product = await Product.findById(item.product);
+        if (product) {
+          secureItems.push({
+            ...item,
+            price: product.price // Trust DB price
+          });
+          secureTotalAmount += product.price * (item.quantity || 1);
+        }
+      }
+    }
+
     const subscription = new Subscription({
       subscriptionId: 'SUB-' + Date.now() + Math.floor(Math.random() * 1000),
-      user,
+      user: req.user ? req.user._id : user, // fallback to user from body if guest
       name,
       phone,
-      items: items || [],
-      totalAmount: totalAmount || 0,
+      items: secureItems,
+      totalAmount: secureTotalAmount,
       deliveryAddress,
       frequency,
-      status: status || 'Pending',
-      monthlyTotal
+      status: 'Pending', // Force pending
+      monthlyTotal: monthlyTotal // Keep if needed, or calculate based on secureTotalAmount
     });
 
     const createdSubscription = await subscription.save();

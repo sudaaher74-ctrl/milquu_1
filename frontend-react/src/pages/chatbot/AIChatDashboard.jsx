@@ -98,71 +98,7 @@ const AIChatDashboard = () => {
       const response = await api.post('/api/ai/chat', { messages: newMessages });
       const data = response.data;
 
-      if (data.success && data.isFrontendMode && data.apiKey) {
-        // We received the context and API key from the backend. 
-        // Make the Gemini request directly from the browser to bypass Render region blocks.
-        let hasInjectedSystemPrompt = false;
-        
-        // Filter out any previous empty bubbles to avoid breaking the Gemini API
-        const validMessages = newMessages.filter(msg => msg.text && msg.text.trim().length > 0);
-        
-        const formattedHistory = validMessages.map((msg) => {
-          let role = msg.role === 'assistant' ? 'model' : 'user';
-          let msgText = msg.text;
-          
-          if (role === 'user' && !hasInjectedSystemPrompt) {
-            msgText = data.systemPrompt + "\n\nUser Query: " + msgText;
-            hasInjectedSystemPrompt = true;
-          }
-          
-          return { role, parts: [{ text: msgText }] };
-        });
-
-        // The REST API uses gemini-2.5-flash for the fastest, most reliable JSON generation
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${data.apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            contents: formattedHistory,
-            tools: [{ googleSearch: {} }] // Enable Google Web Search for real-time market analysis
-          })
-        });
-        
-        const geminiData = await geminiRes.json();
-        setIsTyping(false);
-
-        let aiReply = "Sorry, I couldn't understand that.";
-        let action = "none";
-        
-        if (geminiData.candidates && geminiData.candidates[0].content) {
-          const rawText = geminiData.candidates[0].content.parts[0].text;
-          try {
-            const cleanText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-            const parsed = JSON.parse(cleanText);
-            // Robust fallback if the AI uses the wrong JSON key
-            aiReply = parsed.reply || parsed.response || parsed.text || parsed.answer || rawText;
-            action = parsed.action || 'none';
-          } catch(e) {
-            aiReply = rawText; // Fallback if not strict JSON
-          }
-        } else if (geminiData.error) {
-          console.error("Gemini Frontend Error:", geminiData.error);
-          aiReply = "Google API Error: " + geminiData.error.message;
-        }
-
-        // Failsafe in case it's still completely empty
-        if (!aiReply || aiReply.trim() === '') {
-            aiReply = "I processed your request, but generated an empty response. Please try asking again in a different way.";
-        }
-
-        const aiMessage = { role: 'assistant', text: aiReply, action: action !== 'none' ? action : null };
-        setMessages(prev => [...prev, aiMessage]);
-
-        if (voiceEnabled || useVoice) speakText(aiReply);
-        if (action && action !== 'none') handleAction(action);
-        
-      } else if (data.success) {
-        // Fallback for regular or rule-based response
+      if (data.success) {
         setIsTyping(false);
         const aiMessage = { 
           role: 'assistant', 

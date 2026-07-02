@@ -230,18 +230,20 @@ export const requestWithdrawal = async (req, res) => {
 
 export const createRechargeOrder = async (req, res) => {
   const requestId = Date.now();
-  console.log(`[${requestId}] Recharge Request Started`);
-  
-  try {
-    const { amount } = req.body;
-    if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
 
-    console.log(`[${requestId}] KEY ID Exists:`, !!process.env.RAZORPAY_KEY_ID);
-    console.log(`[${requestId}] KEY SECRET Exists:`, !!(process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET));
+  try {
+    const amount = Number(req.body.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 100000) {
+      return res.status(400).json({ message: 'Invalid amount' });
+    }
+
+    if (!process.env.RAZORPAY_KEY_ID || !(process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET)) {
+      return res.status(500).json({ message: 'Payment gateway is not configured' });
+    }
 
     const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_mock',
-      key_secret: process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET || 'rzp_secret_mock',
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET,
     });
 
     // Generate a unique, short receipt (must be < 40 chars per Razorpay limit)
@@ -253,33 +255,21 @@ export const createRechargeOrder = async (req, res) => {
     }
 
     const options = {
-      amount: amount * 100, // Razorpay works in paise
+      amount: Math.round(amount * 100), // Razorpay works in paise
       currency: 'INR',
       receipt: receiptStr
     };
 
-    console.log(`[${requestId}] Creating Razorpay Order`, {
-      amount: options.amount,
-      receipt: options.receipt,
-      receiptLength: options.receipt.length
-    });
-
-    console.log(`[${requestId}] Before Razorpay Create`, options);
-    
     const order = await razorpay.orders.create(options);
-    
-    console.log(`[${requestId}] Razorpay Order Created Successfully`, order);
 
     if (!order) return res.status(500).json({ message: 'Error creating Razorpay order' });
-
-    console.log(`[${requestId}] Recharge API Response Ready`, { orderId: order.id });
 
     res.status(200).json({
       success: true,
       id: order.id,
       amount: order.amount,
       currency: order.currency,
-      key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_mock'
+      key_id: process.env.RAZORPAY_KEY_ID
     });
   } catch (error) {
     console.error(`[${requestId}] Razorpay Error`, error);
@@ -297,36 +287,63 @@ export const createRechargeOrder = async (req, res) => {
 
 export const rechargeWallet = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount } = req.body;
-    
-    if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-    // Verify signature
-    const secret = process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET || 'rzp_secret_mock';
+    if (
+      typeof razorpay_order_id !== 'string' ||
+      typeof razorpay_payment_id !== 'string' ||
+      typeof razorpay_signature !== 'string'
+    ) {
+      return res.status(400).json({ message: 'Missing payment details' });
+    }
+
+    const secret = process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET;
+    if (!process.env.RAZORPAY_KEY_ID || !secret) {
+      return res.status(500).json({ message: 'Payment gateway is not configured' });
+    }
+
+    // Verify signature (timing-safe comparison)
     const generated_signature = crypto
       .createHmac('sha256', secret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
-    if (generated_signature !== razorpay_signature) {
-      // In a real environment, we'd fail here. For MVP/testing if keys aren't set, we might bypass, but we'll enforce it here.
-      // If it's a test environment and we want to bypass, we could add a flag, but let's stick to standard validation.
-      if (process.env.NODE_ENV !== 'development' && razorpay_signature !== 'mock_signature') {
-        return res.status(400).json({ message: 'Payment verification failed' });
-      }
+    const provided = Buffer.from(razorpay_signature, 'utf8');
+    const expected = Buffer.from(generated_signature, 'utf8');
+    if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
+      return res.status(400).json({ message: 'Payment verification failed' });
     }
+
+    // Prevent the same payment from being credited twice
+    const alreadyCredited = await WalletTransaction.findOne({
+      description: `Customer Recharge (Razorpay: ${razorpay_payment_id})`
+    });
+    if (alreadyCredited) {
+      return res.status(400).json({ message: 'This payment has already been credited' });
+    }
+
+    // Credit the amount Razorpay actually charged — never the amount the client claims
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: secret,
+    });
+    const order = await razorpay.orders.fetch(razorpay_order_id);
+    if (!order || !order.amount) {
+      return res.status(400).json({ message: 'Payment verification failed' });
+    }
+    const creditAmount = order.amount / 100; // paise -> rupees
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    user.walletBalance = (user.walletBalance || 0) + Number(amount);
+    user.walletBalance = (user.walletBalance || 0) + creditAmount;
     await user.save();
 
     const transaction = await WalletTransaction.create({
       user: user._id,
-      amount: Number(amount),
+      amount: creditAmount,
       type: 'credit',
-      description: `Customer Recharge (Razorpay: ${razorpay_payment_id || 'mock'})`,
+      description: `Customer Recharge (Razorpay: ${razorpay_payment_id})`,
       balanceAfter: user.walletBalance
     });
 

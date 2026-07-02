@@ -11,6 +11,7 @@ import {
   assignOrderToStaff
 } from '../controllers/erpControllers.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
+import { apiLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ router.route('/procurements').get(protect, admin, getProcurements).post(protect,
 router.route('/wastages').get(protect, admin, getWastages).post(protect, admin, createWastage);
 
 // Orders
-router.route('/orders').get(protect, admin, getOrders).post(createOrder); // Public route for checkout
+router.route('/orders').get(protect, admin, getOrders).post(apiLimiter, createOrder); // Public route for checkout
 router.route('/orders/:id/assign').put(protect, admin, assignOrderToStaff);
 
 router.route('/delivery-staff').get(protect, admin, getDeliveryStaff).post(protect, admin, createDeliveryStaff);

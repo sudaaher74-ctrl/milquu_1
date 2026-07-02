@@ -5,9 +5,13 @@ export const errorHandler = (err, req, res, next) => {
   
   logger.error(`${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`, { stack: err.stack });
 
+  const isProduction = process.env.NODE_ENV === 'production';
+  // Don't leak internal error details (DB errors, stack traces) to clients in production
+  const message = isProduction && statusCode >= 500 ? 'Server Error' : err.message;
+
   res.status(statusCode).json({
-    message: err.message,
-    stack: process.env.NODE_ENV === 'production' ? null : err.stack,
+    message,
+    stack: isProduction ? null : err.stack,
   });
 };
 
