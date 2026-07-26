@@ -72,8 +72,6 @@ router.get('/business-update', protect, admin, async (req, res) => {
   }
 });
 
-export default router;
-
 router.post('/chat', protect, admin, async (req, res) => {
   try {
     const { query, messages } = req.body;
@@ -307,3 +305,5 @@ Rules:
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
+export default router;

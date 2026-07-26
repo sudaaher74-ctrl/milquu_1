@@ -21,7 +21,7 @@ import userRoutes from './routes/userRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import freeSampleRoutes from './routes/freeSampleRoutes.js';
-import { startSubscriptionEngine } from './cron/subscriptionEngine.js';
+import { runSubscriptionEngine } from './cron/subscriptionEngine.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 import path from 'path';
