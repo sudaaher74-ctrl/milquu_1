@@ -19,7 +19,9 @@ const userSchema = new mongoose.Schema({
     area: { type: String, index: true }
   },
   role: { type: String, enum: ['user', 'admin', 'manager', 'staff', 'superadmin'], default: 'user' },
-  password: { type: String, required: true, minlength: 12 },
+  // Kept in step with PASSWORD_MIN in validations/userValidations.js — when the
+  // two disagreed, a valid-looking password failed here as an unhandled 500.
+  password: { type: String, required: true, minlength: 8 },
   walletBalance: { type: Number, default: 0 }
 }, {
   timestamps: true
@@ -32,9 +34,11 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 
 // Middleware to hash password before saving to database
 userSchema.pre('save', async function (next) {
-  // Only hash the password if it has been modified (or is new)
+  // Only hash the password if it has been modified (or is new). This must
+  // return — without it every later save (a wallet credit, an address change)
+  // fell through and re-hashed the stored hash, locking the customer out.
   if (!this.isModified('password')) {
-    next();
+    return next();
   }
 
   const salt = await bcrypt.genSalt(10);

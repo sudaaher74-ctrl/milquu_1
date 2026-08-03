@@ -1,21 +1,54 @@
 import { z } from 'zod';
 
+/**
+ * One password rule for the whole app. The model used to require 12 characters
+ * while this schema allowed 6, so a 6–11 character password passed validation
+ * and then died in Mongoose as a 500. Both now agree on this minimum, and the
+ * strength check lives here so the customer gets a field-level 400.
+ */
+export const PASSWORD_MIN = 8;
+
+export const passwordSchema = z
+  .string()
+  .min(PASSWORD_MIN, `Password must be at least ${PASSWORD_MIN} characters`)
+  .max(72, 'Password must be 72 characters or fewer') // bcrypt truncates past 72
+  .refine((v) => /[A-Za-z]/.test(v), 'Password must contain a letter')
+  .refine((v) => /[0-9]/.test(v), 'Password must contain a number');
+
+/** Indian mobile number, with or without a +91 / 0 prefix. */
+export const phoneSchema = z
+  .string()
+  .trim()
+  .regex(/^(?:\+?91|0)?[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number');
+
 export const registerSchema = z.object({
   body: z.object({
     name: z.string().min(2, 'Name is required').max(50),
     email: z.string().email('Invalid email address').optional().or(z.literal('')),
-    phone: z.string().min(10, 'Valid phone number is required'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    phone: phoneSchema,
+    password: passwordSchema,
     address: z.string().optional(),
     city: z.string().optional()
   })
 });
 
+/**
+ * Customers sign in with their phone number; admin, manager and delivery
+ * accounts still sign in with an email. Either arrives as `identifier`, and
+ * `email` is still accepted so existing clients keep working.
+ */
 export const loginSchema = z.object({
-  body: z.object({
-    email: z.string().min(1, 'Email is required'),
-    password: z.string().min(1, 'Password is required')
-  })
+  body: z
+    .object({
+      identifier: z.string().trim().min(1).optional(),
+      email: z.string().trim().min(1).optional(),
+      phone: z.string().trim().min(1).optional(),
+      password: z.string().min(1, 'Password is required')
+    })
+    .refine(
+      (d) => Boolean(d.identifier || d.email || d.phone),
+      { path: ['identifier'], message: 'Enter your phone number or email' }
+    )
 });
 
 export const withdrawalSchema = z.object({

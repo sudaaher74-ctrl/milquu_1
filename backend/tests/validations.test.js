@@ -10,7 +10,7 @@ describe('Zod Validations', () => {
           name: 'John Doe',
           email: 'john@example.com',
           password: 'password123',
-          phone: '1234567890'
+          phone: '9820098200'
         }
       };
       const result = registerSchema.safeParse(validData);
@@ -23,7 +23,7 @@ describe('Zod Validations', () => {
           name: 'John Doe',
           email: 'not-an-email',
           password: 'password123',
-          phone: '1234567890'
+          phone: '9820098200'
         }
       };
       const result = registerSchema.safeParse(invalidData);
@@ -36,13 +36,63 @@ describe('Zod Validations', () => {
         body: {
           name: 'John Doe',
           email: 'john@example.com',
-          password: '123', // Less than 6 characters
-          phone: '1234567890'
+          password: '123', // shorter than PASSWORD_MIN
+          phone: '9820098200'
         }
       };
       const result = registerSchema.safeParse(invalidData);
       expect(result.success).toBe(false);
     });
+
+    // The model requires 8 characters. A password between the old schema
+    // minimum (6) and the old model minimum (12) used to pass here and then
+    // blow up in Mongoose as a 500.
+    it('should fail a password the User model would reject', () => {
+      const result = registerSchema.safeParse({
+        body: {
+          name: 'John Doe',
+          password: 'pass1',
+          phone: '9820098200'
+        }
+      });
+      expect(result.success).toBe(false);
+      expect(result.error.issues[0].message).toBe('Password must be at least 8 characters');
+    });
+
+    it('should accept an 8-character password with a letter and a digit', () => {
+      const result = registerSchema.safeParse({
+        body: { name: 'John Doe', password: 'passwor1', phone: '9820098200' }
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject a password with no digit', () => {
+      const result = registerSchema.safeParse({
+        body: { name: 'John Doe', password: 'passwordonly', phone: '9820098200' }
+      });
+      expect(result.success).toBe(false);
+      expect(result.error.issues[0].message).toBe('Password must contain a number');
+    });
+
+    it.each(['12345', '5820098200', 'not-a-phone', ''])(
+      'should reject the phone number %s',
+      (phone) => {
+        const result = registerSchema.safeParse({
+          body: { name: 'John Doe', password: 'passwor1', phone }
+        });
+        expect(result.success).toBe(false);
+      }
+    );
+
+    it.each(['9820098200', '+919820098200', '09820098200'])(
+      'should accept the phone number %s',
+      (phone) => {
+        const result = registerSchema.safeParse({
+          body: { name: 'John Doe', password: 'passwor1', phone }
+        });
+        expect(result.success).toBe(true);
+      }
+    );
   });
 
   describe('Withdrawal Schema', () => {

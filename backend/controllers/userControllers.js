@@ -8,6 +8,33 @@ import { isServiceableArea } from '../config/serviceAreas.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
+/**
+ * Turn a Mongoose write failure into an honest status code. A schema violation
+ * or a duplicate key is the caller's fault and must be a 400 with the offending
+ * field named — it used to surface as an opaque 500.
+ */
+const sendWriteError = (res, error) => {
+  if (error?.name === 'ValidationError') {
+    const errors = Object.values(error.errors || {}).map((e) => ({
+      path: e.path,
+      message: e.message
+    }));
+    return res.status(400).json({
+      message: errors[0]?.message || 'Validation failed',
+      errors
+    });
+  }
+  if (error?.code === 11000) {
+    const field = Object.keys(error.keyPattern || error.keyValue || {})[0] || 'field';
+    const label = field === 'phone' ? 'phone number' : field;
+    return res.status(400).json({
+      message: `An account with that ${label} already exists`,
+      errors: [{ path: field, message: `That ${label} is already registered` }]
+    });
+  }
+  return res.status(500).json({ message: 'Server error', error: error.message });
+};
+
 /** The public shape of a user, shared by register, login and profile. */
 const publicUser = (user) => ({
   _id: user._id,
@@ -48,7 +75,7 @@ export const registerUser = async (req, res) => {
       res.status(400).json({ message: 'Invalid user data' });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    return sendWriteError(res, error);
   }
 };
 
