@@ -90,15 +90,18 @@ export function StepBar({ step, to }) {
 /** Sticky action footer. With `summary`, the label sits left of the button. */
 export function ActionBar({ summary, children }) {
   return (
-    <div className="mq-sticky">
-      {summary && (
-        <div className="mq-sticky-summary">
-          <span style={{ fontSize: 16, fontWeight: 700 }}>{summary.title}</span>
-          {summary.note && <span className="mq-sub">{summary.note}</span>}
-        </div>
-      )}
-      {children}
-    </div>
+    <>
+      <div className="mq-bar-space mq-bar-space-action" />
+      <div className="mq-bar mq-sticky">
+        {summary && (
+          <div className="mq-sticky-summary">
+            <span style={{ fontSize: 16, fontWeight: 700 }}>{summary.title}</span>
+            {summary.note && <span className="mq-sub">{summary.note}</span>}
+          </div>
+        )}
+        {children}
+      </div>
+    </>
   );
 }
 
@@ -112,19 +115,22 @@ const TABS = [
 
 export function TabBar() {
   return (
-    <nav className="mq-tabbar">
-      {TABS.map(([to, icon, label]) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={to === '/app'}
-          className={({ isActive }) => `mq-tab${isActive ? ' mq-tab-on' : ''}`}
-        >
-          <Icon name={icon} size={23} />
-          {label}
-        </NavLink>
-      ))}
-    </nav>
+    <>
+      <div className="mq-bar-space mq-bar-space-tab" />
+      <nav className="mq-bar mq-tabbar">
+        {TABS.map(([to, icon, label]) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={to === '/app'}
+            className={({ isActive }) => `mq-tab${isActive ? ' mq-tab-on' : ''}`}
+          >
+            <Icon name={icon} size={23} />
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+    </>
   );
 }
 

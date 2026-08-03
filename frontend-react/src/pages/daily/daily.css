@@ -78,7 +78,10 @@
   margin: 0 auto;
   min-height: 100vh;
   min-height: 100dvh;
-  overflow-x: hidden;
+  /* `clip`, not `hidden`: `overflow-x: hidden` computes overflow-y to `auto`,
+     which makes the shell a scroll container. The bottom bars would then anchor
+     to that container instead of the viewport and scroll away with the page. */
+  overflow-x: clip;
   background: var(--mq-page);
 }
 @media (min-width: 500px) {
@@ -484,31 +487,43 @@ textarea.mq-input {
 
 /* ── sticky footers ──────────────────────────────────────────────────────── */
 
-.mq-sticky {
-  position: sticky;
+/* Both bottom bars are fixed to the viewport rather than sticky, so they stay
+   put no matter what any ancestor's overflow does or how the mobile URL bar
+   collapses. They are centred on the same measure as the shell. Each is
+   followed in the markup by a spacer of the same height so the last of the
+   content is never hidden behind the bar. */
+.mq-bar {
+  position: fixed;
   bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 460px;
+  background: var(--mq-surface);
+  border-top: 1px solid var(--mq-divider);
+  border-radius: 28px 28px 0 0;
+}
+
+.mq-sticky {
   z-index: 5;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 14px 22px calc(26px + env(safe-area-inset-bottom));
-  background: var(--mq-surface);
-  border-top: 1px solid var(--mq-divider);
-  border-radius: 28px 28px 0 0;
 }
 .mq-sticky-summary { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
 .mq-tabbar {
-  position: sticky;
-  bottom: 0;
   z-index: 10;
   display: flex;
   justify-content: space-between;
   padding: 12px 22px calc(22px + env(safe-area-inset-bottom));
-  background: var(--mq-surface);
-  border-top: 1px solid var(--mq-divider);
-  border-radius: 28px 28px 0 0;
 }
+
+/* Reserve the bar's footprint at the end of the scrolling column. */
+.mq-bar-space { flex: none; }
+.mq-bar-space-tab { height: calc(74px + env(safe-area-inset-bottom)); }
+.mq-bar-space-action { height: calc(92px + env(safe-area-inset-bottom)); }
 .mq-app .mq-tab {
   display: flex;
   flex-direction: column;
