@@ -2,8 +2,8 @@ import express from 'express';
 import Subscription from '../models/Subscription.js';
 import DeliveryStaff from '../models/DeliveryStaff.js';
 import Order from '../models/Order.js';
-import Product from '../models/Product.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
+import { priceCrate, normaliseRhythm, legacyFrequency, PricingError } from '../services/subscriptionPricing.js';
 import { apiLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
@@ -13,41 +13,42 @@ const router = express.Router();
 // @access  Public (Guest Checkout)
 router.post('/', apiLimiter, async (req, res) => {
   try {
-    const { user, name, phone, items, totalAmount, deliveryAddress, frequency, status, monthlyTotal } = req.body;
+    const { user, name, phone, items, deliveryAddress, frequency } = req.body;
 
-    // Get product prices to calculate secure totals
-    let secureTotalAmount = 0;
-    const secureItems = [];
-
-    if (items && Array.isArray(items)) {
-      for (const item of items) {
-        const product = await Product.findById(item.product);
-        if (product) {
-          secureItems.push({
-            ...item,
-            price: product.price // Trust DB price
-          });
-          secureTotalAmount += product.price * (item.quantity || 1);
-        }
-      }
+    if (!Array.isArray(items) || !items.length) {
+      return res.status(400).json({ message: 'A subscription needs at least one item' });
     }
+    if (!deliveryAddress || !String(deliveryAddress).trim()) {
+      return res.status(400).json({ message: 'A delivery address is required' });
+    }
+
+    // Every price and total is recomputed from the Product collection. The
+    // client's totalAmount and monthlyTotal are read but never trusted — an
+    // unvalidated monthlyTotal used to be stored verbatim and then divided by
+    // 30 to decide what to charge the wallet each day.
+    const rhythm = normaliseRhythm(frequency);
+    const priced = await priceCrate(items, { rhythm, weekdays: [] });
 
     const subscription = new Subscription({
       subscriptionId: 'SUB-' + Date.now() + Math.floor(Math.random() * 1000),
       user: req.user ? req.user._id : user, // fallback to user from body if guest
       name,
       phone,
-      items: secureItems,
-      totalAmount: secureTotalAmount,
+      items: priced.items,
+      totalAmount: priced.dailyTotal,
+      dailyTotal: priced.dailyTotal,
+      monthlyTotal: priced.monthlyTotal,
       deliveryAddress,
-      frequency,
-      status: 'Pending', // Force pending
-      monthlyTotal: monthlyTotal // Keep if needed, or calculate based on secureTotalAmount
+      frequency: legacyFrequency(rhythm),
+      status: 'Pending' // Force pending
     });
 
     const createdSubscription = await subscription.save();
     res.status(201).json(createdSubscription);
   } catch (error) {
+    if (error instanceof PricingError) {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 });
