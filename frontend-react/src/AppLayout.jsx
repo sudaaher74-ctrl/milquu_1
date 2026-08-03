@@ -77,7 +77,9 @@ export default function AppLayout() {
   const isDelivery = location.pathname.startsWith('/delivery');
   const isChatbot = location.pathname.startsWith('/chatbot');
   const isCampaign = location.pathname === '/free-sample';
-  const hideLayout = isAdmin || isDelivery || isChatbot || isCampaign;
+  // The Milquu app carries its own shell, tab bar and design system.
+  const isDailyApp = location.pathname === '/app' || location.pathname.startsWith('/app/');
+  const hideLayout = isAdmin || isDelivery || isChatbot || isCampaign || isDailyApp;
 
   useEffect(() => {
     const handleUnauthorized = () => {

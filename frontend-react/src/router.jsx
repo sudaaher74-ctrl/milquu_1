@@ -70,6 +70,26 @@ const FreshCowMilkBelapur = lazy(() => import('./pages/seo/FreshCowMilkBelapur')
 const FarmFreshMilkNerul = lazy(() => import('./pages/seo/FarmFreshMilkNerul'));
 const MilkDeliveryNaviMumbai = lazy(() => import('./pages/seo/MilkDeliveryNaviMumbai'));
 
+// Milquu app — the mobile ordering experience, its own shell and design system
+const DailyApp = lazy(() => import('./pages/daily/DailyApp'));
+const AppWelcome = lazy(() => import('./pages/daily/screens/Welcome'));
+const AppSample = lazy(() => import('./pages/daily/screens/Sample'));
+const AppAddress = lazy(() => import('./pages/daily/screens/Address'));
+const AppPlanMilk = lazy(() => import('./pages/daily/screens/PlanMilk'));
+const AppPlanRhythm = lazy(() => import('./pages/daily/screens/PlanRhythm'));
+const AppPlanReview = lazy(() => import('./pages/daily/screens/PlanReview'));
+const AppDone = lazy(() => import('./pages/daily/screens/Done'));
+const AppHome = lazy(() => import('./pages/daily/screens/Home'));
+const AppShop = lazy(() => import('./pages/daily/screens/Shop'));
+const AppProduct = lazy(() => import('./pages/daily/screens/Product'));
+const AppCart = lazy(() => import('./pages/daily/screens/Cart'));
+const AppCheckout = lazy(() => import('./pages/daily/screens/Checkout'));
+const AppTrack = lazy(() => import('./pages/daily/screens/Track'));
+const AppPlan = lazy(() => import('./pages/daily/screens/Plan'));
+const AppPause = lazy(() => import('./pages/daily/screens/Pause'));
+const AppWallet = lazy(() => import('./pages/daily/screens/Wallet'));
+const AppAccount = lazy(() => import('./pages/daily/screens/Account'));
+
 // Delivery Pages
 const DeliveryLayout = lazy(() => import('./pages/delivery/DeliveryLayout'));
 const DeliveryDashboard = lazy(() => import('./pages/delivery/DeliveryDashboard'));
@@ -111,6 +131,33 @@ export const router = createBrowserRouter([
       { path: "farm-fresh-milk-nerul", element: <FarmFreshMilkNerul /> },
       { path: "milk-delivery-navi-mumbai", element: <MilkDeliveryNaviMumbai /> },
       
+      {
+        path: "app",
+        element: <DailyApp />,
+        children: [
+          { index: true, element: <AppHome /> },
+          { path: "shop", element: <AppShop /> },
+          { path: "product/:key", element: <AppProduct /> },
+          { path: "cart", element: <AppCart /> },
+          { path: "checkout", element: <AppCheckout /> },
+          { path: "track", element: <AppTrack /> },
+          { path: "plan", element: <AppPlan /> },
+          { path: "plan/pause", element: <AppPause /> },
+          { path: "wallet", element: <AppWallet /> },
+          { path: "account", element: <AppAccount /> },
+
+          { path: "start", element: <AppWelcome /> },
+          { path: "start/sample", element: <AppSample /> },
+          { path: "start/address", element: <AppAddress /> },
+          { path: "start/milk", element: <AppPlanMilk /> },
+          { path: "start/rhythm", element: <AppPlanRhythm /> },
+          { path: "start/review", element: <AppPlanReview /> },
+          { path: "start/done", element: <AppDone /> },
+
+          { path: "*", element: <Navigate to="/app" replace /> }
+        ]
+      },
+
       { path: "admin/login", element: <AdminLogin /> },
       {
         path: "admin",
