@@ -10,6 +10,13 @@ const orderSchema = new mongoose.Schema({
   },
   name: { type: String }, // For guest checkout
   phone: { type: String }, // For guest checkout
+  // Set when the subscription engine generated this order, so the app's Track
+  // screen and the admin views can tell a standing order from a one-off.
+  subscription: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Subscription',
+    index: true
+  },
   orderItems: [
     {
       name: { type: String, required: true },
@@ -70,6 +77,11 @@ const orderSchema = new mongoose.Schema({
 
 // Compound/System indexes
 orderSchema.index({ createdAt: -1 });
+// The delivery round asks for "undelivered orders scheduled for this day", and
+// the app asks for one customer's orders newest-first. Both are hot paths once
+// there are thousands of customers.
+orderSchema.index({ scheduledDeliveryDate: 1, isDelivered: 1 });
+orderSchema.index({ user: 1, createdAt: -1 });
 
 // Pre-save hook to calculate COGS using FIFO
 orderSchema.pre('save', async function(next) {
