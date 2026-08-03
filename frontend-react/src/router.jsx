@@ -2,6 +2,7 @@ import React, { lazy } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import AppLayout from './AppLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import MobileHomeGate from './components/layout/MobileHomeGate';
 
 // Lazy load all pages to improve mobile load speed significantly
 const Home = lazy(() => import('./pages/Home'));
@@ -100,7 +101,7 @@ export const router = createBrowserRouter([
     path: "/",
     element: <AppLayout />,
     children: [
-      { index: true, element: <Home /> },
+      { index: true, element: <MobileHomeGate><Home /></MobileHomeGate> },
       { path: "products", element: <CategoryListing /> },
       { path: "contact", element: <ContactUs /> },
       { path: "subscribe", element: <Subscription /> },
