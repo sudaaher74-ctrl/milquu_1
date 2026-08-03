@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, LogIn, ArrowRight } from 'lucide-react';
 
@@ -11,6 +11,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,7 +29,8 @@ const Login = () => {
       if (!res.ok) throw new Error(data.message || 'Login failed');
 
       login(data);
-      navigate('/account');
+      // Return the customer to wherever they were headed (the app, usually).
+      navigate(location.state?.from || '/account', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

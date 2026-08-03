@@ -1,9 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import { Screen } from '../ui';
 import { FARM_HERO } from '../catalogue';
+import { useDaily } from '../DailyContext';
 
 export default function Welcome() {
   const navigate = useNavigate();
+  const { areaName } = useDaily();
   return (
     <Screen>
       <div style={{ height: 326, flex: 'none', overflow: 'hidden', borderRadius: '0 0 48px 48px' }}>
@@ -18,7 +20,8 @@ export default function Welcome() {
       <div className="mq-body" style={{ paddingTop: 32, gap: 14 }}>
         <h2 style={{ fontSize: 40, lineHeight: 1.02 }}>Milk that was<br />grass this week</h2>
         <p className="mq-lede">
-          Milked at 5 am in Karanjade, at your door by 7:30. Glass bottles, collected the next morning.
+          Milked at 5 am{areaName ? `, at your door in ${areaName}` : ', at your door'} by 7:30.
+          Glass bottles, collected the next morning.
         </p>
         <div className="mq-row" style={{ marginTop: 4 }}>
           <span className="mq-pill">Lab tested daily</span>

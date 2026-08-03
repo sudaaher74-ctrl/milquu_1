@@ -1,10 +1,15 @@
+import { useNavigate } from 'react-router-dom';
 import { Screen, TabBar, Icon } from '../ui';
 import { rupees } from '../catalogue';
-import { addDays, fmtDay, fromKey } from '../dates';
+import { addDays, fmtDay } from '../dates';
 import { useDaily } from '../DailyContext';
 
+/** Wallet transactions come from the API as { type, amount, description, createdAt }. */
+const signOf = (t) => (t.type === 'credit' ? 1 : -1);
+
 export default function Wallet() {
-  const { wallet, topUp, runwayDays, today, ledger, planActive, planDaily } = useDaily();
+  const navigate = useNavigate();
+  const { wallet, runwayDays, today, ledger, planActive, planDaily } = useDaily();
   const runsOut = addDays(today, runwayDays);
 
   return (
@@ -31,14 +36,15 @@ export default function Wallet() {
               : 'Not enough for tomorrow’s crate — top up to keep the round going.'}
         </span>
 
-        <div className="mq-row" style={{ marginTop: 2 }}>
-          <button type="button" className="mq-btn-cream" style={{ flex: 1, fontSize: 14, padding: '13px 0' }} onClick={() => topUp(1000)}>
-            Add ₹1,000
-          </button>
-          <button type="button" className="mq-btn-cream-outline" style={{ flex: 1, fontSize: 14, padding: '13px 0' }} onClick={() => topUp(2000)}>
-            Add ₹2,000
-          </button>
-        </div>
+        {/* Recharge runs through the existing Razorpay flow on the account page. */}
+        <button
+          type="button"
+          className="mq-btn-cream"
+          style={{ marginTop: 2, fontSize: 15, padding: '13px 0' }}
+          onClick={() => navigate('/account')}
+        >
+          Add money
+        </button>
       </div>
 
       <div className="mq-body" style={{ paddingTop: 24, gap: 14 }}>
@@ -60,17 +66,17 @@ export default function Wallet() {
           </span>
         ) : (
           <div className="mq-col">
-            {ledger.map((entry) => (
-              <div key={entry.id} className="mq-item">
+            {ledger.map((t) => (
+              <div key={t._id} className="mq-item">
                 <div className="mq-item-body">
-                  <span className="mq-item-name">{entry.title}</span>
-                  <span className="mq-item-meta">{fmtDay(fromKey(entry.at))} · {entry.note}</span>
+                  <span className="mq-item-name">{t.description}</span>
+                  <span className="mq-item-meta">{fmtDay(new Date(t.createdAt))}</span>
                 </div>
                 <span
                   className="mq-item-price"
-                  style={{ color: entry.amount > 0 ? 'var(--mq-sage-800)' : undefined }}
+                  style={{ color: signOf(t) > 0 ? 'var(--mq-sage-800)' : undefined }}
                 >
-                  {entry.amount > 0 ? '+' : '−'}₹{rupees(Math.abs(entry.amount))}
+                  {signOf(t) > 0 ? '+' : '−'}₹{rupees(Math.abs(t.amount))}
                 </span>
               </div>
             ))}

@@ -12,6 +12,7 @@ import connectDB from './config/db.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
 import productRoutes from './routes/productRoutes.js';
+import { SERVICE_AREAS } from './config/serviceAreas.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import erpRoutes from './routes/erpRoutes.js'; // Added ERP routes
@@ -105,6 +106,9 @@ app.use('/api/admin/login', authLimiter);
 app.use('/api/delivery/login', authLimiter);
 
 // Mount routes
+// Serviceable localities — read by the customer app's address picker.
+app.get('/api/service-areas', (req, res) => res.json(SERVICE_AREAS));
+
 app.use('/api/products', productRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/admin', adminRoutes);

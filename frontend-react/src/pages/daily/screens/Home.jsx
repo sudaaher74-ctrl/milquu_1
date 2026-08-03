@@ -1,6 +1,6 @@
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Screen, TabBar, Icon, Stepper } from '../ui';
-import { PRODUCTS, SUGGESTED, SERVICE_AREA, rupees, priceOf } from '../catalogue';
+import { PRODUCTS, SUGGESTED, rupees, priceOf } from '../catalogue';
 import { fmtDay } from '../dates';
 import { useDaily, itemRows } from '../DailyContext';
 
@@ -8,11 +8,13 @@ export default function Home() {
   const navigate = useNavigate();
   const {
     crate, bumpCrate, tomorrow, tomorrowSkipped, toggleSkipTomorrow,
-    tomorrowTotal, wallet, addToCart, rhythmDef, slotDef, planActive, address,
+    tomorrowTotal, wallet, addToCart, rhythmDef, slotDef, planActive, areaName,
   } = useDaily();
 
   // Nothing to come home to until a plan exists — start at the beginning.
   if (!planActive) return <Navigate to="/app/start" replace />;
+  // A plan without a serviceable address can't be delivered.
+  if (!areaName) return <Navigate to="/app/start/address" replace />;
 
   const rows = itemRows(crate);
 
@@ -22,7 +24,7 @@ export default function Home() {
         <div className="mq-col" style={{ gap: 2 }}>
           <span className="mq-kicker">Deliver to</span>
           <Link to="/app/account" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 16, fontWeight: 700 }}>
-            {address.flat || SERVICE_AREA}
+            {areaName || 'Set your address'}
             <Icon name="down" size={14} />
           </Link>
         </div>

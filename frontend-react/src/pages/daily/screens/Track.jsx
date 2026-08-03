@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { Screen, TopBar, ActionBar, Icon } from '../ui';
 import { rupees } from '../catalogue';
-import { fmtDay, fromKey } from '../dates';
-import { useDaily, itemRows } from '../DailyContext';
+import { fmtDay } from '../dates';
+import { useDaily } from '../DailyContext';
 
 /**
  * Live tracking — the rider, the ETA, the stop count — comes from the delivery
@@ -11,8 +11,8 @@ import { useDaily, itemRows } from '../DailyContext';
  */
 export default function Track() {
   const navigate = useNavigate();
-  const { nextOrder, orders, slotDef } = useDaily();
-  const order = nextOrder ?? orders[0] ?? null;
+  const { orders, slotDef } = useDaily();
+  const order = orders[0] ?? null;
 
   return (
     <Screen>
@@ -31,24 +31,28 @@ export default function Track() {
       ) : (
         <div className="mq-body" style={{ gap: 18 }}>
           <div className="mq-col" style={{ gap: 4 }}>
-            <span className="mq-kicker mq-kicker-sage">Scheduled</span>
-            <h2 style={{ fontSize: 32 }}>{fmtDay(fromKey(order.on))}<br />{slotDef.label}</h2>
+            <span className="mq-kicker mq-kicker-sage">
+              {order.isDelivered ? 'Delivered' : 'Scheduled'}
+            </span>
+            <h2 style={{ fontSize: 32 }}>
+              {fmtDay(new Date(order.scheduledDeliveryDate || order.createdAt))}<br />{slotDef.label}
+            </h2>
           </div>
 
           <div className="mq-card mq-card-list">
-            {itemRows(order.items).map((row) => (
-              <div key={row.key} className="mq-item">
-                <img src={row.img} alt="" className="mq-item-thumb" style={{ width: 36, height: 50 }} />
+            {(order.orderItems || []).map((row) => (
+              <div key={row._id ?? row.name} className="mq-item">
                 <div className="mq-item-body">
                   <span className="mq-item-name">
-                    {row.short} {row.unit}{row.qty > 1 ? ` × ${row.qty}` : ''}
+                    {row.name}{row.qty > 1 ? ` × ${row.qty}` : ''}
                   </span>
                 </div>
+                <span className="mq-item-price">₹{rupees(row.price * row.qty)}</span>
               </div>
             ))}
             <div className="mq-line" style={{ padding: '14px 0', borderTop: '1px solid var(--mq-divider)' }}>
               <span style={{ color: 'var(--mq-neutral-700)' }}>Paid</span>
-              <span className="mq-strong">₹{rupees(order.total)}</span>
+              <span className="mq-strong">₹{rupees(order.totalPrice)}</span>
             </div>
           </div>
 

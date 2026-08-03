@@ -3,6 +3,7 @@ import {
   registerUser, 
   loginUser, 
   getUserProfile,
+  updateUserProfile,
   getMySubscriptions,
   updateSubscriptionStatus,
   getMyOrders,
@@ -20,6 +21,7 @@ const router = express.Router();
 router.post('/register', validateRequest(registerSchema), registerUser);
 router.post('/login', validateRequest(loginSchema), loginUser);
 router.get('/profile', protect, getUserProfile);
+router.put('/profile', protect, updateUserProfile);
 
 // Subscription & Order routes
 router.get('/subscriptions', protect, getMySubscriptions);

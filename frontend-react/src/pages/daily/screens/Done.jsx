@@ -7,7 +7,7 @@ const MILKS = ['cow', 'buf'];
 
 export default function Done() {
   const navigate = useNavigate();
-  const { crate, rhythmDef, slotDef } = useDaily();
+  const { crate, rhythmDef, slotDef, areaName } = useDaily();
   const milkKey = MILKS.find((k) => crate[k] > 0) ?? 'cow';
   const startsAt = slotDef.label.split(' – ')[0].replace(':00', '');
 
@@ -36,8 +36,8 @@ export default function Done() {
           </h2>
 
           <p style={{ fontSize: 16, lineHeight: 1.55, color: 'var(--mq-sage-200)' }}>
-            {crate[milkKey]} L of {PRODUCTS[milkKey].name.toLowerCase()}, {rhythmDef.long.toLowerCase()},
-            {' '}left where you asked us to leave it.
+            {crate[milkKey]} L of {PRODUCTS[milkKey].name.toLowerCase()}, {rhythmDef.long.toLowerCase()}
+            {areaName ? `, delivered in ${areaName}` : ''}, left where you asked us to leave it.
           </p>
 
           <div

@@ -130,7 +130,21 @@ export const RHYTHMS = [
   { key: 'custom', label: 'Pick days', long: 'Mon, Tue, Wed, Fri', days: [0, 1, 2, 4], perMonth: 17 },
 ];
 
-export const SERVICE_AREA = 'Karanjade';
+/**
+ * Fallback locality list, mirroring backend/config/serviceAreas.js. The app
+ * prefers GET /api/service-areas; this keeps the address picker usable if that
+ * request fails, so a customer is never blocked from saving an address.
+ */
+export const FALLBACK_AREAS = [
+  { slug: 'new-panvel', name: 'New Panvel' },
+  { slug: 'panvel', name: 'Panvel' },
+  { slug: 'karanjade', name: 'Karanjade' },
+  { slug: 'kharghar', name: 'Kharghar' },
+  { slug: 'taloja', name: 'Taloja' },
+  { slug: 'kamothe', name: 'Kamothe' },
+  { slug: 'belapur', name: 'CBD Belapur' },
+  { slug: 'nerul', name: 'Nerul' }
+];
 
 /** Farm photography, reused from the storefront. */
 export const FARM_HERO = '/img/hero/home1.png';

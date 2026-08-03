@@ -4,8 +4,21 @@ import Order from '../models/Order.js';
 import WalletTransaction from '../models/WalletTransaction.js';
 import WithdrawalRequest from '../models/WithdrawalRequest.js';
 import generateToken from '../utils/generateToken.js';
+import { isServiceableArea } from '../config/serviceAreas.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+
+/** The public shape of a user, shared by register, login and profile. */
+const publicUser = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  phone: user.phone,
+  address: user.address,
+  deliveryAddress: user.deliveryAddress || null,
+  walletBalance: user.walletBalance || 0,
+  role: user.role
+});
 
 export const registerUser = async (req, res) => {
   try {
@@ -28,12 +41,7 @@ export const registerUser = async (req, res) => {
 
     if (user) {
       res.status(201).json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: user.address,
-        role: user.role,
+        ...publicUser(user),
         token: generateToken(user._id, 'user')
       });
     } else {
@@ -51,12 +59,7 @@ export const loginUser = async (req, res) => {
 
     if (user && (await user.matchPassword(password))) {
       res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: user.address,
-        role: user.role,
+        ...publicUser(user),
         token: generateToken(user._id, user.role)
       });
     } else {
@@ -72,19 +75,57 @@ export const getUserProfile = async (req, res) => {
     const user = await User.findById(req.user._id);
 
     if (user) {
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: user.address,
-        role: user.role,
-      });
+      res.json(publicUser(user));
     } else {
       res.status(404).json({ message: 'User not found' });
     }
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/**
+ * Update the signed-in customer's own profile. Only the fields a customer owns
+ * are writable here — role, wallet balance and email are deliberately not.
+ */
+export const updateUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const { name, phone, deliveryAddress } = req.body;
+
+    if (typeof name === 'string' && name.trim()) user.name = name.trim();
+    if (typeof phone === 'string') user.phone = phone.trim();
+
+    if (deliveryAddress) {
+      const { line1, line2, note, label, area } = deliveryAddress;
+
+      if (!line1 || !String(line1).trim()) {
+        return res.status(400).json({ message: 'A flat or house number is required' });
+      }
+      if (!area || !isServiceableArea(area)) {
+        return res.status(400).json({ message: 'We do not deliver to that area yet' });
+      }
+
+      user.deliveryAddress = {
+        line1: String(line1).trim(),
+        line2: String(line2 || '').trim(),
+        note: String(note || '').trim(),
+        label: ['Home', 'Office', 'Other'].includes(label) ? label : 'Home',
+        area
+      };
+      // Keep the legacy single-line address in step for the storefront checkout
+      // and the delivery lists that still read it.
+      user.address = [user.deliveryAddress.line1, user.deliveryAddress.line2]
+        .filter(Boolean)
+        .join(', ');
+    }
+
+    const saved = await user.save();
+    res.json(publicUser(saved));
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
