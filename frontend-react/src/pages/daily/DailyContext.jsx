@@ -355,6 +355,21 @@ export function DailyProvider({ children }) {
 
   const clearCart = () => patch({ cart: {} });
 
+  /**
+   * Place the one-off extras in the cart as a real order for tomorrow, paid
+   * from the wallet. The plan's own crate is charged by the nightly engine, so
+   * it is deliberately not included here.
+   */
+  const placeOrder = async () => {
+    const items = Object.entries(cart).map(([product, quantity]) => ({ product, quantity }));
+    if (!items.length) throw new Error('Nothing to order');
+
+    const { data } = await api.post('/api/users/orders', { items });
+    setOrders((list) => [data.order, ...list]);
+    setWallet(data.walletBalance);
+    return data.order;
+  };
+
   const value = {
     user,
     loading,
@@ -393,6 +408,7 @@ export function DailyProvider({ children }) {
     bumpCart,
     addToCart,
     clearCart,
+    placeOrder,
 
     wallet,
     ledger,

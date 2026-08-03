@@ -13,6 +13,7 @@ import { makeUser, makeProduct, makeSubscription } from './helpers/factories.js'
 import userRoutes from '../routes/userRoutes.js';
 import generateToken from '../utils/generateToken.js';
 import Order from '../models/Order.js';
+import User from '../models/User.js';
 import Subscription from '../models/Subscription.js';
 import WalletTransaction from '../models/WalletTransaction.js';
 
@@ -251,5 +252,41 @@ describe('criteria 1 and 2: register with a phone number, then sign back in', ()
     });
 
     expect(res.statusCode).toBe(201);
+  });
+});
+
+describe('one-off orders are priced and paid server-side', () => {
+  it('charges the one-off rate and debits the wallet', async () => {
+    const product = await makeProduct(); // ₹68 one-off, ₹60 on a plan
+    const alice = await makeUser({ walletBalance: 500 });
+
+    const res = await request(app)
+      .post('/api/users/orders')
+      .set('Authorization', as(alice))
+      .send({ items: [{ product: product._id.toString(), quantity: 2, price: 1 }] });
+
+    expect(res.statusCode).toBe(201);
+    // The one-off rate, not the plan rate, and not the client's ₹1.
+    expect(res.body.order.totalPrice).toBe(136);
+    expect(res.body.walletBalance).toBe(500 - 136);
+
+    const ledger = await WalletTransaction.find({ user: alice._id, type: 'debit' });
+    expect(ledger).toHaveLength(1);
+    expect(ledger[0].amount).toBe(136);
+  });
+
+  it('refuses when the wallet does not cover it, and takes nothing', async () => {
+    const product = await makeProduct();
+    const alice = await makeUser({ walletBalance: 50 });
+
+    const res = await request(app)
+      .post('/api/users/orders')
+      .set('Authorization', as(alice))
+      .send({ items: [{ product: product._id.toString(), quantity: 2 }] });
+
+    expect(res.statusCode).toBe(402);
+    expect(res.body.shortfall).toBe(86);
+    expect(await Order.countDocuments({ user: alice._id })).toBe(0);
+    expect((await User.findById(alice._id)).walletBalance).toBe(50);
   });
 });

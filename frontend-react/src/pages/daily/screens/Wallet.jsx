@@ -1,16 +1,43 @@
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Screen, TabBar, Icon } from '../ui';
 import { rupees } from '../catalogue';
 import { addDays, fmtDay } from '../dates';
 import { useDaily } from '../DailyContext';
+import { rechargeWallet } from '../../../utils/razorpay';
 
 /** Wallet transactions come from the API as { type, amount, description, createdAt }. */
 const signOf = (t) => (t.type === 'credit' ? 1 : -1);
 
+/** Enough for roughly a week, a fortnight and a month of a typical plan. */
+const PRESETS = [500, 1000, 2000];
+
 export default function Wallet() {
-  const navigate = useNavigate();
-  const { wallet, runwayDays, today, ledger, planActive, planDaily } = useDaily();
+  const { wallet, runwayDays, today, ledger, planActive, planDaily, user, refresh, flash } = useDaily();
   const runsOut = addDays(today, runwayDays);
+
+  /* Recharge happens here now rather than sending the customer out to the
+     marketing site's account page. */
+  const [amount, setAmount] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const addMoney = async (value) => {
+    setError('');
+    setBusy(true);
+    try {
+      const result = await rechargeWallet({ amount: value, user });
+      // A null result means the customer closed the sheet — nothing was charged.
+      if (result) {
+        await refresh();
+        setAmount('');
+        flash(`₹${rupees(result.walletBalance - wallet)} added to your wallet`);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <Screen>
@@ -36,15 +63,48 @@ export default function Wallet() {
               : 'Not enough for tomorrow’s crate — top up to keep the round going.'}
         </span>
 
-        {/* Recharge runs through the existing Razorpay flow on the account page. */}
-        <button
-          type="button"
-          className="mq-btn-cream"
-          style={{ marginTop: 2, fontSize: 15, padding: '13px 0' }}
-          onClick={() => navigate('/account')}
-        >
-          Add money
-        </button>
+        <div className="mq-row" style={{ gap: 8, marginTop: 2 }}>
+          {PRESETS.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              className="mq-btn-cream-outline"
+              style={{ flex: 1, fontSize: 14, padding: '11px 0' }}
+              disabled={busy}
+              onClick={() => addMoney(preset)}
+            >
+              ₹{rupees(preset)}
+            </button>
+          ))}
+        </div>
+
+        <div className="mq-row" style={{ gap: 8 }}>
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value.replace(/[^0-9]/g, ''))}
+            inputMode="numeric"
+            placeholder="Other amount"
+            aria-label="Amount to add, in rupees"
+            style={{
+              flex: 1, minWidth: 0, borderRadius: 999, border: 0, padding: '13px 18px',
+              font: 'inherit', fontSize: 15, background: 'var(--mq-sage-700)',
+              color: 'var(--mq-sage-100)', outline: 'none',
+            }}
+          />
+          <button
+            type="button"
+            className="mq-btn-cream"
+            style={{ fontSize: 15, padding: '13px 22px' }}
+            disabled={busy || !amount}
+            onClick={() => addMoney(amount)}
+          >
+            {busy ? 'Opening…' : 'Add money'}
+          </button>
+        </div>
+
+        {error && (
+          <span role="alert" style={{ fontSize: 13, color: 'var(--mq-sage-200)' }}>{error}</span>
+        )}
       </div>
 
       <div className="mq-body" style={{ paddingTop: 24, gap: 14 }}>

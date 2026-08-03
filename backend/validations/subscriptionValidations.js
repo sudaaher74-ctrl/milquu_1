@@ -61,3 +61,10 @@ export const pauseSchema = z.object({
     to: z.string().min(1, 'An end date is required')
   })
 });
+
+/** A one-off order for tomorrow. Prices are recomputed server-side. */
+export const createOrderSchema = z.object({
+  body: z.object({
+    items: z.array(itemSchema).min(1, 'Add something to your crate first')
+  })
+});

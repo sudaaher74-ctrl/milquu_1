@@ -18,6 +18,7 @@ import {
   skipMySubscriptionDate,
   pauseMySubscription
 } from '../controllers/customerSubscriptionControllers.js';
+import { createMyOrder } from '../controllers/customerOrderControllers.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 import { registerSchema, loginSchema, withdrawalSchema } from '../validations/userValidations.js';
@@ -25,7 +26,8 @@ import {
   createSubscriptionSchema,
   updateSubscriptionSchema,
   skipSchema,
-  pauseSchema
+  pauseSchema,
+  createOrderSchema
 } from '../validations/subscriptionValidations.js';
 
 const router = express.Router();
@@ -44,6 +46,7 @@ router.post('/subscriptions/:id/skip', protect, validateRequest(skipSchema), ski
 router.post('/subscriptions/:id/pause', protect, validateRequest(pauseSchema), pauseMySubscription);
 router.put('/subscriptions/:id/status', protect, updateSubscriptionStatus);
 router.get('/orders', protect, getMyOrders);
+router.post('/orders', protect, validateRequest(createOrderSchema), createMyOrder);
 
 // Wallet routes
 router.get('/wallet', protect, getMyWallet);
