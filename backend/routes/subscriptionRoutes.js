@@ -4,6 +4,8 @@ import DeliveryStaff from '../models/DeliveryStaff.js';
 import Order from '../models/Order.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import { priceCrate, normaliseRhythm, legacyFrequency, PricingError } from '../services/subscriptionPricing.js';
+import { istStartOfDay, istTomorrow, istDayOfWeek, istDateKey } from '../utils/ist.js';
+import { isDeliveryDay } from '../utils/rhythm.js';
 import { apiLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
@@ -82,45 +84,52 @@ router.put('/:id', protect, admin, async (req, res) => {
 // @access  Private/Admin
 router.get('/today-orders', protect, admin, async (req, res) => {
   try {
-    const todayIST = new Date();
-    // IST offset
-    todayIST.setHours(todayIST.getHours() + 5, todayIST.getMinutes() + 30);
-    const dayOfWeek = todayIST.getDay(); // 0=Sun, 1=Mon ... 6=Sat
+    // The day being delivered, as an Indian calendar date. This used to be
+    // computed by adding 5h30m to a Date and then calling getDay(), which reads
+    // the *host's* local day — wrong on any server not already in IST, which
+    // includes Render.
+    const requestedDate = req.query.date ? new Date(req.query.date) : new Date();
+    if (Number.isNaN(requestedDate.getTime())) {
+      return res.status(400).json({ message: 'That date is not valid' });
+    }
+
+    const startOfToday = istStartOfDay(requestedDate);
+    const endOfToday = new Date(istTomorrow(requestedDate).getTime() - 1);
+    const dayOfWeek = istDayOfWeek(requestedDate);
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const todayName = dayNames[dayOfWeek];
 
-    // Get all active subscriptions
-    const activeSubscriptions = await Subscription.find({
-      status: { $in: ['Active', 'active'] }
-    }).populate('items.product', 'name image').lean();
+    // Paginated. Loading every active subscription into an array does not
+    // survive thousands of customers, and the delivery round is read on a
+    // phone. `limit=0` is not accepted — an unbounded page is the thing being
+    // removed.
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit, 10) || 200));
 
-    // Filter by frequency — should this sub deliver today?
-    const todayDeliveries = activeSubscriptions.filter(sub => {
-      const freq = (sub.frequency || 'daily').toLowerCase();
-      if (freq === 'daily') return true;
-      if (freq === 'alternate days' || freq === 'alternate') {
-        // deliver every alternate day from startDate
-        const startDate = new Date(sub.startDate || sub.createdAt);
-        const diffDays = Math.floor((todayIST - startDate) / (1000 * 60 * 60 * 24));
-        return diffDays % 2 === 0;
-      }
-      if (freq === 'weekly') {
-        // deliver on same day of week as start date
-        const startDate = new Date(sub.startDate || sub.createdAt);
-        return startDate.getDay() === dayOfWeek;
-      }
-      return true; // default include
-    });
+    // Narrow in the database as far as the schema allows: active, started, and
+    // not skipped today. The rhythm itself (alternate days, chosen weekdays)
+    // depends on each subscription's own start date, so isDeliveryDay makes the
+    // final call per row — but only over one page, not the whole collection.
+    const query = {
+      status: { $in: ['Active', 'active'] },
+      $and: [
+        { $or: [{ startDate: { $lte: endOfToday } }, { startDate: { $exists: false } }] },
+        { $or: [{ skipDates: { $ne: startOfToday } }, { skipDates: { $exists: false } }] }
+      ]
+    };
+    if (req.query.area) query.deliveryArea = req.query.area;
 
-    // Fetch regular cart orders for today
-    const startOfToday = new Date(todayIST);
-    startOfToday.setHours(0, 0, 0, 0);
+    const totalCandidates = await Subscription.countDocuments(query);
+    const candidates = await Subscription.find(query)
+      .sort({ _id: 1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate('items.product', 'name image')
+      .lean();
 
-    const endOfToday = new Date(todayIST);
-    endOfToday.setHours(23, 59, 59, 999);
+    const todayDeliveries = candidates.filter((sub) => isDeliveryDay(sub, startOfToday));
 
-    const cutoff = new Date(startOfToday);
-    cutoff.setHours(-2);
+    const cutoff = new Date(startOfToday.getTime() - 2 * 60 * 60 * 1000);
 
     const todayOrders = await Order.find({
       isDelivered: false,
@@ -133,12 +142,31 @@ router.get('/today-orders', protect, admin, async (req, res) => {
 
     const staffList = await DeliveryStaff.find({ status: 'Active' }).lean();
 
-    const subResults = todayDeliveries.map(sub => ({
-      ...sub,
-      assignedStaffInfo: staffList.find(s => s._id.toString() === (sub.assignedStaff || '').toString()) || null
-    }));
+    // The engine now generates a real, wallet-paid Order for each subscription
+    // delivery. Listing both the subscription and its order would show the same
+    // bottle of milk twice on the round, so the order is folded into the
+    // subscription row it came from and only genuinely standalone orders (the
+    // storefront, the ERP, guest checkout) are listed separately.
+    const ordersBySubscription = new Map();
+    const standaloneOrders = [];
+    for (const order of todayOrders) {
+      if (order.subscription) ordersBySubscription.set(String(order.subscription), order);
+      else standaloneOrders.push(order);
+    }
 
-    const orderResults = todayOrders.map(order => ({
+    const subResults = todayDeliveries.map(sub => {
+      const generated = ordersBySubscription.get(String(sub._id));
+      return {
+        ...sub,
+        assignedStaffInfo: staffList.find(s => s._id.toString() === (sub.assignedStaff || '').toString()) || null,
+        // Present when tonight's engine run has already produced the order.
+        orderId: generated?._id || null,
+        isPaid: generated?.isPaid ?? false,
+        deliveryStatus: generated?.deliveryStatus || null
+      };
+    });
+
+    const orderResults = standaloneOrders.map(order => ({
       _id: order._id,
       name: order.name || order.user?.name || 'Guest',
       phone: order.phone,
@@ -159,11 +187,15 @@ router.get('/today-orders', protect, admin, async (req, res) => {
     const result = [...subResults, ...orderResults];
 
     res.json({
-      date: todayIST.toISOString().split('T')[0],
+      date: istDateKey(startOfToday),
       dayName: todayName,
       totalDeliveries: result.length,
       subscriptions: result,
-      staffList
+      staffList,
+      page,
+      limit,
+      totalCandidates,
+      hasMore: page * limit < totalCandidates
     });
   } catch (error) {
     console.error(error);
