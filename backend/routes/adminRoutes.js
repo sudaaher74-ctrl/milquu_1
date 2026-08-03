@@ -6,7 +6,8 @@ import {
   getCustomers, 
   getRevenueAnalytics, 
   getEmployees, 
-  createWalletTransaction 
+  createWalletTransaction,
+  triggerSubscriptionEngine
 } from '../controllers/adminControllers.js';
 import { getWithdrawalRequests, updateWithdrawalStatus } from '../controllers/adminWithdrawalControllers.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
@@ -20,6 +21,8 @@ router.get('/customers', protect, admin, getCustomers);
 router.get('/revenue-analytics', protect, admin, getRevenueAnalytics);
 router.get('/employees', protect, admin, getEmployees);
 router.post('/wallets/transaction', protect, admin, createWalletTransaction);
+// Recovery trigger for a missed nightly run. Idempotent — see the controller.
+router.post('/subscription-engine/run', protect, admin, triggerSubscriptionEngine);
 router.get('/withdrawals', protect, admin, getWithdrawalRequests);
 router.put('/withdrawals/:id/status', protect, admin, updateWithdrawalStatus);
 

@@ -26,6 +26,30 @@ services:
       - key: RAZORPAY_KEY_SECRET
         sync: false
 
+  # Nightly subscription run.
+  #
+  # This is the authoritative scheduler. The web service also schedules the run
+  # in-process as a safety net, but a single web instance sleeps and restarts on
+  # deploy, and a missed night means no milk. Both are safe to run: the engine
+  # guards on (subscription, deliveryDate), so the second one to arrive is a
+  # no-op rather than a second charge.
+  #
+  # 16:00 UTC = 21:30 IST — after the 21:00 IST cut-off that closes changes to
+  # tomorrow's crate, so the order is built from the plan the customer settled on.
+  - type: cron
+    name: milquu-subscription-engine
+    env: node
+    schedule: "0 16 * * *"
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node cron/subscriptionEngine.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+
   # Frontend Static Site
   - type: web
     name: milquu-frontend

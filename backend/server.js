@@ -22,7 +22,7 @@ import userRoutes from './routes/userRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import freeSampleRoutes from './routes/freeSampleRoutes.js';
-import { runSubscriptionEngine } from './cron/subscriptionEngine.js';
+import { startScheduler } from './cron/scheduler.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 import path from 'path';
@@ -149,4 +149,7 @@ initSocket(server);
 
 server.listen(PORT, () => {
   logger.info(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  // The nightly subscription run. Previously the engine was imported here and
+  // never called, so no order was ever generated automatically.
+  startScheduler();
 });

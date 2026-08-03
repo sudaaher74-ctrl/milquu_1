@@ -3,6 +3,8 @@ import User from '../models/User.js';
 import Order from '../models/Order.js';
 import WalletTransaction from '../models/WalletTransaction.js';
 import generateToken from '../utils/generateToken.js';
+import { runSubscriptionEngine } from '../cron/subscriptionEngine.js';
+import { istDateKey } from '../utils/ist.js';
 
 export const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
@@ -286,6 +288,35 @@ export const createWalletTransaction = async (req, res) => {
     });
 
     res.status(201).json({ message: `Wallet ${type} successful`, walletBalance: user.walletBalance, transaction });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+/**
+ * Manually run the subscription engine.
+ *
+ * Recovery only: if the nightly run was missed — the service was down, a deploy
+ * restarted it mid-round — an admin can replay it, optionally for a specific
+ * date. Safe to call repeatedly: the engine's (subscription, deliveryDate)
+ * guard means a day already processed is a no-op rather than a second charge.
+ */
+export const triggerSubscriptionEngine = async (req, res) => {
+  try {
+    const { date } = req.body || {};
+
+    if (date && Number.isNaN(new Date(date).getTime())) {
+      return res.status(400).json({ message: 'That date is not valid' });
+    }
+
+    const summary = await runSubscriptionEngine({ date: date ? new Date(date) : undefined });
+
+    res.json({
+      message: `Subscription engine run for ${summary.date}`,
+      requestedBy: req.user?._id,
+      today: istDateKey(),
+      summary
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
