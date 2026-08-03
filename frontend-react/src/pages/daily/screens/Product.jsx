@@ -1,15 +1,17 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Screen, ActionBar, Icon } from '../ui';
-import { PRODUCTS, rupees } from '../catalogue';
+import { rupees } from '../catalogue';
 import { useDaily } from '../DailyContext';
 
 export default function Product() {
+  // `key` is the real Product._id — the same id the orders API is given.
   const { key } = useParams();
   const navigate = useNavigate();
-  const { addToCart } = useDaily();
-  const p = PRODUCTS[key];
+  const { addToCart, productOf, loading } = useDaily();
+  const p = productOf(key);
 
-  if (!p) return <Navigate to="/app/shop" replace />;
+  // Don't bounce the customer out while the catalogue is still arriving.
+  if (!p) return loading ? null : <Navigate to="/app/shop" replace />;
 
   return (
     <Screen>

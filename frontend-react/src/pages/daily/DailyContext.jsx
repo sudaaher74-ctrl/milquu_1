@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { PRODUCTS, RHYTHMS, DELIVERY_SLOTS, FALLBACK_AREAS, priceOf } from './catalogue';
-import { addDays, dayKey, startOfDay } from './dates';
+import { RHYTHMS, DELIVERY_SLOTS, FALLBACK_AREAS, decorate } from './catalogue';
+import { addDays, dayKey, startOfDay, fromKey } from './dates';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 
@@ -11,14 +11,6 @@ export const useDaily = () => {
   if (!ctx) throw new Error('useDaily must be used inside <DailyProvider>');
   return ctx;
 };
-
-/** Total value of an item bucket ({ productKey: qty }) at plan or one-off rates. */
-export const sumItems = (items, onPlan = true) =>
-  Object.keys(items).reduce((total, key) => total + items[key] * priceOf(key, onPlan), 0);
-
-/** Turn an item bucket into rows the list components can render. */
-export const itemRows = (items) =>
-  Object.keys(items).map((key) => ({ ...PRODUCTS[key], qty: items[key] }));
 
 export const countItems = (items) =>
   Object.keys(items).reduce((total, key) => total + items[key], 0);
@@ -33,26 +25,18 @@ const bumped = (items, key, delta, min = 0) => {
 /** The percentage a plan saves against the one-off price. */
 export const SAVINGS_PERCENT = 12;
 
-/* ── per-device draft state ────────────────────────────────────────────────
-   The account is the store of record: profile, address, wallet and orders all
-   come from the API and are scoped to the signed-in user by their token.
-
-   What lives here instead is the plan *draft* — the crate, rhythm, slot and
-   skipped days — because the Subscription model has no per-date skip list yet,
-   so there is nowhere on the server to put it. It is keyed by user id so two
-   accounts on the same phone never see each other's draft. */
+/* ── the account is the store of record ────────────────────────────────────
+   The plan — the crate, the rhythm, the slot and the skipped days — lives on
+   the customer's Subscription, so it is the same on any device they sign in
+   from. What is still per-device is the *draft* a customer builds during
+   onboarding, before they have confirmed anything: there is no subscription to
+   attach it to until they press confirm. It is keyed by user id so two accounts
+   on the same phone never see each other's draft, and it is cleared the moment
+   the plan is created. */
 
 const draftKey = (userId) => `milquu.app.draft.${userId}`;
 
-const EMPTY_DRAFT = {
-  days: {},
-  crate: {},
-  cart: {},
-  rhythm: 'daily',
-  slot: 'early',
-  planActive: false,
-  planStartedOn: null,
-};
+const EMPTY_DRAFT = { crate: {}, cart: {}, rhythm: 'daily', slot: 'early' };
 
 const loadDraft = (userId) => {
   if (!userId || typeof localStorage === 'undefined') return EMPTY_DRAFT;
@@ -66,6 +50,10 @@ const loadDraft = (userId) => {
 
 const BLANK_ADDRESS = { line1: '', line2: '', note: '', label: 'Home', area: '' };
 
+/** The subscription the app treats as "the plan": the live one, if any. */
+const livePlan = (subscriptions) =>
+  subscriptions.find((s) => ['Active', 'Paused'].includes(s.status)) ?? null;
+
 /* The React Compiler memoizes this provider, so nothing here is wrapped by hand. */
 export function DailyProvider({ children }) {
   const { user, login } = useAuth();
@@ -75,7 +63,7 @@ export function DailyProvider({ children }) {
   const tomorrow = addDays(today, 1);
   const tomorrowKey = dayKey(tomorrow);
 
-  /* ── draft, per user ───────────────────────────────────────────────────── */
+  /* ── onboarding draft, per user ────────────────────────────────────────── */
 
   const [loadedFor, setLoadedFor] = useState(userId);
   const [draft, setDraft] = useState(() => loadDraft(userId));
@@ -86,7 +74,6 @@ export function DailyProvider({ children }) {
     setDraft(loadDraft(userId));
   }
 
-  const { days, crate, cart, rhythm, slot, planActive, planStartedOn } = draft;
   const patch = (fields) => setDraft((d) => ({ ...d, ...fields }));
 
   useEffect(() => {
@@ -100,9 +87,12 @@ export function DailyProvider({ children }) {
 
   /* ── account data, from the API ────────────────────────────────────────── */
 
+  const [products, setProducts] = useState({});
+  const [productList, setProductList] = useState([]);
   const [wallet, setWallet] = useState(0);
   const [ledger, setLedger] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
   const [areas, setAreas] = useState(FALLBACK_AREAS);
   const [loading, setLoading] = useState(Boolean(userId));
 
@@ -112,15 +102,24 @@ export function DailyProvider({ children }) {
 
   const refresh = async () => {
     if (!userId) return;
-    const [walletRes, ordersRes] = await Promise.allSettled([
+    const [walletRes, ordersRes, subsRes, productsRes] = await Promise.allSettled([
       api.get('/api/users/wallet'),
       api.get('/api/users/orders'),
+      api.get('/api/users/subscriptions'),
+      api.get('/api/products'),
     ]);
     if (walletRes.status === 'fulfilled') {
       setWallet(walletRes.value.data.walletBalance ?? 0);
       setLedger(walletRes.value.data.transactions ?? []);
     }
     if (ordersRes.status === 'fulfilled') setOrders(ordersRes.value.data ?? []);
+    if (subsRes.status === 'fulfilled') setSubscriptions(subsRes.value.data ?? []);
+    if (productsRes.status === 'fulfilled') {
+      // Prices, names and units are the server's. The app only adds copy.
+      const list = (productsRes.value.data ?? []).map(decorate);
+      setProductList(list);
+      setProducts(Object.fromEntries(list.map((p) => [p.id, p])));
+    }
   };
 
   /* DailyApp only mounts this provider for a signed-in customer, so there is
@@ -154,17 +153,80 @@ export function DailyProvider({ children }) {
     toastTimer.current = setTimeout(() => setToast(''), 2600);
   };
 
-  /* ── derived ───────────────────────────────────────────────────────────── */
+  /* ── catalogue helpers ─────────────────────────────────────────────────── */
+
+  const productOf = (id) => products[id] ?? null;
+
+  /** Price of one unit, at the plan or one-off rate. Both come from the server. */
+  const priceOf = (id, onPlan = true) => {
+    const p = products[id];
+    if (!p) return 0;
+    return onPlan && p.plan ? p.plan : p.price;
+  };
+
+  const sumItems = (items, onPlan = true) =>
+    Object.keys(items).reduce((total, id) => total + items[id] * priceOf(id, onPlan), 0);
+
+  const itemRows = (items) =>
+    Object.keys(items)
+      .filter((id) => products[id])
+      .map((id) => ({ ...products[id], qty: items[id] }));
+
+  const milks = productList.filter((p) => p.cat === 'milk' && p.plan);
+  /** Add-ons offered next to the plan: everything that is not milk. */
+  const suggested = productList.filter((p) => p.cat !== 'milk').slice(0, 3);
+
+  /* ── the plan, from the account ────────────────────────────────────────── */
+
+  const plan = livePlan(subscriptions);
+  const planActive = Boolean(plan);
+
+  /** The crate: the saved plan's items, or the onboarding draft if there is none. */
+  const crate = plan
+    ? Object.fromEntries(
+        plan.items
+          .map((item) => [String(item.product?._id ?? item.product), item.quantity])
+          .filter(([id]) => id && id !== 'undefined')
+      )
+    : draft.crate;
+
+  const cart = draft.cart;
+
+  const rhythm = plan
+    ? (plan.weekdays?.length ? 'custom' : (plan.frequency === 'Alternate Days' ? 'alternate' : 'daily'))
+    : draft.rhythm;
+  const slot = plan ? (plan.slotWindow ?? 'early') : draft.slot;
 
   const rhythmDef = RHYTHMS.find((r) => r.key === rhythm) ?? RHYTHMS[0];
   const slotDef = DELIVERY_SLOTS.find((s) => s.key === slot) ?? DELIVERY_SLOTS[0];
 
-  /** The customer's locality, as shown on the "deliver to" line. */
-  const areaName = areas.find((a) => a.slug === address.area)?.name ?? '';
+  /**
+   * Does the plan deliver on this date? Mirrors the server's isDeliveryDay, so
+   * the calendar the customer sees agrees with what the engine will actually
+   * do. Alternate days are counted from the plan's start date, which is why
+   * this cannot be answered from a fixed weekday list.
+   */
+  const planStart = plan?.startDate ? startOfDay(new Date(plan.startDate)) : tomorrow;
+  const inRhythm = (date) => {
+    const day = startOfDay(date);
+    if (day < planStart) return false;
+    if (rhythm === 'daily') return true;
+    if (rhythm === 'alternate') {
+      const days = Math.round((day - planStart) / 86400000);
+      return days % 2 === 0;
+    }
+    const chosen = plan?.weekdays?.length ? plan.weekdays : rhythmDef.days ?? [];
+    return chosen.includes(day.getDay());
+  };
 
-  const isSkipped = (key) => days[key]?.mode === 'skip';
+  /** Days the customer has skipped, as `YYYY-MM-DD` keys. */
+  const skipped = new Set((plan?.skipDates ?? []).map((d) => dayKey(new Date(d))));
+  const isSkipped = (key) => skipped.has(key);
   const tomorrowSkipped = isSkipped(tomorrowKey);
   const itemsOn = (key) => (isSkipped(key) ? {} : { ...crate });
+
+  /** The customer's locality, as shown on the "deliver to" line. */
+  const areaName = areas.find((a) => a.slug === address.area)?.name ?? '';
 
   const crateTotal = sumItems(crate);
   const cartTotal = sumItems(cart, false);
@@ -174,25 +236,41 @@ export function DailyProvider({ children }) {
   const upiDue = Math.max(0, tomorrowTotal - wallet);
 
   const planDaily = crateTotal;
-  const planMonthly = planDaily * rhythmDef.perMonth;
+  const planMonthly = plan?.monthlyTotal ?? planDaily * rhythmDef.perMonth;
   const savingsMonthly = Math.round((planMonthly * SAVINGS_PERCENT) / (100 - SAVINGS_PERCENT));
   const runwayDays = planDaily > 0 ? Math.floor(wallet / planDaily) : 0;
 
+  const planStartedOn = plan?.startDate ? dayKey(new Date(plan.startDate)) : null;
+
   /* ── actions ───────────────────────────────────────────────────────────── */
 
-  const bumpCrate = (key, delta) =>
-    setDraft((d) => ({ ...d, crate: bumped(d.crate, key, delta) }));
-  const bumpCart = (key, delta) =>
-    setDraft((d) => ({ ...d, cart: bumped(d.cart, key, delta) }));
-
-  const addToCart = (key) => {
-    bumpCart(key, 1);
-    flash(`${PRODUCTS[key].name} added to tomorrow`);
+  /* Crate edits before the plan exists are local; once it exists they are a
+     PUT, so the change is on the account and not just on this phone. */
+  const bumpCrate = async (id, delta) => {
+    if (!plan) {
+      setDraft((d) => ({ ...d, crate: bumped(d.crate, id, delta) }));
+      return;
+    }
+    const next = bumped(crate, id, delta);
+    const items = Object.entries(next).map(([product, quantity]) => ({ product, quantity }));
+    if (!items.length) {
+      flash('A plan needs at least one item');
+      return;
+    }
+    await savePlan({ items });
   };
 
-  const addToPlan = (key) => {
-    bumpCrate(key, 1);
-    flash(`${PRODUCTS[key].name} added to your plan`);
+  const bumpCart = (id, delta) =>
+    setDraft((d) => ({ ...d, cart: bumped(d.cart, id, delta) }));
+
+  const addToCart = (id) => {
+    bumpCart(id, 1);
+    flash(`${products[id]?.name ?? 'Item'} added to tomorrow`);
+  };
+
+  const addToPlan = async (id) => {
+    await bumpCrate(id, 1);
+    flash(`${products[id]?.name ?? 'Item'} added to your plan`);
   };
 
   /**
@@ -200,29 +278,49 @@ export function DailyProvider({ children }) {
    * calling it twice — as StrictMode does — still leaves exactly one litre.
    */
   const ensurePlanMilk = () =>
-    setDraft((d) => (d.crate.cow || d.crate.buf ? d : { ...d, crate: { ...d.crate, cow: 1 } }));
-
-  const toggleSkip = (key) =>
     setDraft((d) => {
-      const next = { ...d.days };
-      if (next[key]?.mode === 'skip') delete next[key];
-      else next[key] = { mode: 'skip' };
-      return { ...d, days: next };
+      if (Object.keys(d.crate).length) return d;
+      const first = milks[0];
+      return first ? { ...d, crate: { ...d.crate, [first.id]: 1 } } : d;
     });
+
+  /** Push a change to the saved plan and refresh from the response. */
+  const savePlan = async (changes) => {
+    if (!plan) return null;
+    const { data } = await api.put(`/api/users/subscriptions/${plan._id}`, changes);
+    setSubscriptions((subs) => subs.map((s) => (s._id === data._id ? data : s)));
+    return data;
+  };
+
+  const toggleSkip = async (key) => {
+    if (!plan) return;
+    const { data } = await api.post(`/api/users/subscriptions/${plan._id}/skip`, {
+      date: fromKey(key).toISOString(),
+    });
+    setSubscriptions((subs) => subs.map((s) => (s._id === data.subscription._id ? data.subscription : s)));
+  };
 
   const toggleSkipTomorrow = () => toggleSkip(tomorrowKey);
 
-  const pauseRange = (from, to) =>
-    setDraft((d) => {
-      const next = { ...d.days };
-      for (let cur = startOfDay(from); cur <= startOfDay(to); cur = addDays(cur, 1)) {
-        next[dayKey(cur)] = { mode: 'skip' };
-      }
-      return { ...d, days: next };
+  const pauseRange = async (from, to) => {
+    if (!plan) return;
+    const { data } = await api.post(`/api/users/subscriptions/${plan._id}/pause`, {
+      from: startOfDay(from).toISOString(),
+      to: startOfDay(to).toISOString(),
     });
+    setSubscriptions((subs) => subs.map((s) => (s._id === data._id ? data : s)));
+  };
 
-  const setRhythm = (value) => patch({ rhythm: value });
-  const setSlot = (value) => patch({ slot: value });
+  const setRhythm = async (value) => {
+    if (!plan) { patch({ rhythm: value }); return; }
+    const def = RHYTHMS.find((r) => r.key === value);
+    await savePlan({ frequency: value, weekdays: value === 'custom' ? def?.days : undefined });
+  };
+
+  const setSlot = async (value) => {
+    if (!plan) { patch({ slot: value }); return; }
+    await savePlan({ slotWindow: value });
+  };
 
   /**
    * Save the delivery address on the account. The PUT response carries no token,
@@ -235,9 +333,24 @@ export function DailyProvider({ children }) {
     return data;
   };
 
-  const startPlan = () => {
-    patch({ planActive: true, planStartedOn: planStartedOn ?? dayKey(today) });
+  /** Confirm the onboarding draft as a real subscription on the account. */
+  const startPlan = async () => {
+    const items = Object.entries(draft.crate).map(([product, quantity]) => ({ product, quantity }));
+    if (!items.length) throw new Error('Add some milk to your plan first');
+
+    const def = RHYTHMS.find((r) => r.key === draft.rhythm);
+    const { data } = await api.post('/api/users/subscriptions', {
+      items,
+      frequency: draft.rhythm,
+      weekdays: draft.rhythm === 'custom' ? def?.days : undefined,
+      slotWindow: draft.slot,
+    });
+
+    setSubscriptions((subs) => [...subs, data]);
+    // The draft has become a real plan; there is nothing left to keep locally.
+    setDraft((d) => ({ ...EMPTY_DRAFT, cart: d.cart }));
     flash('Your plan starts tomorrow morning');
+    return data;
   };
 
   const clearCart = () => patch({ cart: {} });
@@ -248,11 +361,20 @@ export function DailyProvider({ children }) {
     areas,
     areaName,
 
+    products,
+    productList,
+    productOf,
+    priceOf,
+    sumItems,
+    itemRows,
+    milks,
+    suggested,
+
     today,
     tomorrow,
     tomorrowKey,
-    days,
     isSkipped,
+    inRhythm,
     itemsOn,
     toggleSkip,
     toggleSkipTomorrow,
@@ -275,6 +397,8 @@ export function DailyProvider({ children }) {
     wallet,
     ledger,
     orders,
+    subscriptions,
+    plan,
     refresh,
     tomorrowTotal,
     upiDue,

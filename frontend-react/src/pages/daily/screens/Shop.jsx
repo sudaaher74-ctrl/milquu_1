@@ -1,23 +1,23 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, TabBar, Icon } from '../ui';
-import { PRODUCT_LIST, CATEGORIES, rupees } from '../catalogue';
+import { CATEGORIES, rupees } from '../catalogue';
 import { useDaily } from '../DailyContext';
 
 export default function Shop() {
   const navigate = useNavigate();
-  const { addToCart, cartCount } = useDaily();
+  const { addToCart, cartCount, productList } = useDaily();
   const [cat, setCat] = useState('all');
   const [query, setQuery] = useState('');
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return PRODUCT_LIST.filter((p) => {
+    return productList.filter((p) => {
       if (cat !== 'all' && p.cat !== cat) return false;
       if (!q) return true;
       return `${p.name} ${p.kicker} ${p.meta}`.toLowerCase().includes(q);
     });
-  }, [cat, query]);
+  }, [cat, query, productList]);
 
   return (
     <Screen>
@@ -112,7 +112,11 @@ export default function Shop() {
 
       {shown.length === 0 && (
         <p className="mq-sub" style={{ padding: '28px 20px', textAlign: 'center' }}>
-          Nothing matches “{query}”. Try milk, ghee or curd.
+          {productList.length === 0
+            /* An honest empty state: the shop is loaded from the API, so if
+               nothing came back we say so rather than blaming the search. */
+            ? 'We couldn’t load the shop just now. Pull down to try again.'
+            : `Nothing matches “${query}”. Try milk, ghee or curd.`}
         </p>
       )}
 

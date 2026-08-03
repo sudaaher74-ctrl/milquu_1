@@ -1,104 +1,129 @@
-// Catalogue for the Milquu mobile app. Prices, units and copy follow the
-// "Milquu App" design; images are the assets served from /public/img/products.
+// Presentation copy and fixed choices for the Milquu app.
 //
-// Milk carries two prices: `price` is the one-off rate, `plan` the standing-order
-// rate. Everything else is sold at a single price either way.
-export const PRODUCTS = {
-  cow: {
-    key: 'cow',
-    name: 'Desi Cow Milk',
+// The product list itself is NOT here any more — it comes from GET /api/products
+// and is loaded by DailyContext, keyed by Product._id. Prices, names, units and
+// images are the server's. What stays here is the editorial copy the app shows
+// alongside a product (the tagline, the tasting note, the spec table), which is
+// written per product and does not belong in a database row.
+//
+// Copy is looked up by product name. A product with no entry still renders —
+// it just shows what the API actually knows about it, rather than borrowing
+// another product's description.
+
+/** Editorial copy, keyed by the product name as seeded in the database. */
+export const PRESENTATION = {
+  'A2 Cow Milk': {
     short: 'Cow Milk',
-    unit: '1 L',
-    price: 68,
-    plan: 60,
-    cat: 'milk',
     kicker: 'Desi cow',
     meta: 'Light, 4.1% fat · glass bottle',
-    img: '/img/products/cowmilk.webp',
     desc: 'Milked before dawn, chilled within the hour, bottled in glass and driven straight to Karanjade. Nothing added, nothing taken out — the cream still rises.',
-    sub: '1 L glass bottle · Gir and Sahiwal cows',
+    sub: 'Gir and Sahiwal cows',
     tags: ['4.1% fat', 'No preservatives', 'Returnable glass'],
     spec: [['Fat', '4.1%'], ['SNF', '8.6%']],
   },
-  buf: {
-    key: 'buf',
-    name: 'Buffalo Milk',
+  'Pure Cow Milk': {
+    short: 'Cow Milk',
+    kicker: 'Farm fresh',
+    meta: 'Light, 4.0% fat · glass bottle',
+    desc: 'The everyday bottle. Same morning batch, same glass, on the doorstep before the kettle is on.',
+    sub: 'Single-herd cow milk',
+    tags: ['4.0% fat', 'No preservatives', 'Returnable glass'],
+    spec: [['Fat', '4.0%'], ['SNF', '8.5%']],
+  },
+  'Premium Buffalo Milk': {
     short: 'Buffalo Milk',
-    unit: '1 L',
-    price: 82,
-    plan: 72,
-    cat: 'milk',
     kicker: 'Full cream',
     meta: 'Full cream, 6.5% fat · for curd',
-    img: '/img/products/buffalomilk.webp',
     desc: 'Thick and full-cream, the milk families set their curd with. Same morning batch, same glass bottle.',
-    sub: '1 L glass bottle · Murrah buffalo',
+    sub: 'Murrah buffalo',
     tags: ['6.5% fat', 'No preservatives', 'Returnable glass'],
     spec: [['Fat', '6.5%'], ['SNF', '9.2%']],
   },
-  ghee: {
-    key: 'ghee',
-    name: 'A2 Ghee',
+  'A2 Cow Ghee': {
     short: 'A2 Ghee',
-    unit: '250 g',
-    price: 720,
-    cat: 'ghee',
     kicker: 'Bilona',
     meta: 'Bilona churned · monthly',
-    img: '/img/products/A2ghee.webp',
     desc: 'Hand-churned the old way from cultured A2 curd, not cream. Grainy, golden and deeply aromatic.',
-    sub: '250 g jar · bilona churned',
+    sub: 'Bilona churned',
     tags: ['A2 milk', 'Hand churned', 'Glass jar'],
     spec: [['Moisture', '0.2%'], ['Free fatty acid', '0.9%']],
   },
-  dahi: {
-    key: 'dahi',
-    name: 'Dahi',
+  'Pure Cow Ghee': {
+    short: 'Ghee',
+    kicker: 'Slow cooked',
+    meta: 'Slow cooked · monthly',
+    desc: 'Simmered down slowly until it turns clear and nutty. The everyday jar for tadka and rotis.',
+    sub: 'Slow-cooked cow ghee',
+    tags: ['Hand churned', 'No palm oil', 'Glass jar'],
+    spec: [['Moisture', '0.3%'], ['Free fatty acid', '1.0%']],
+  },
+  'Fresh Dahi': {
     short: 'Dahi',
-    unit: '400 g',
-    price: 60,
-    cat: 'curd',
     kicker: 'Set curd',
     meta: 'Set curd · Mon, Wed, Fri',
-    img: '/img/products/Dahi.webp',
     desc: 'Set overnight in the same clay-cool room the milk comes from. Thick enough to hold a spoon.',
-    sub: '400 g tub · naturally set',
+    sub: 'Naturally set',
     tags: ['Live cultures', 'No thickeners', 'Set overnight'],
     spec: [['Fat', '4.0%'], ['pH', '4.4']],
   },
-  pan: {
-    key: 'pan',
-    name: 'Paneer',
+  'Soft Paneer': {
     short: 'Paneer',
-    unit: '200 g',
-    price: 110,
-    cat: 'paneer',
     kicker: 'Made 5 am',
     meta: 'Pressed at 5 am · weekly',
-    img: '/img/products/panner.webp',
     desc: 'Curdled with lemon at five in the morning and pressed by seven. Soft enough to eat raw.',
-    sub: '200 g block · made this morning',
+    sub: 'Made this morning',
     tags: ['High protein', 'No vinegar', 'Made daily'],
     spec: [['Fat', '22%'], ['Protein', '18%']],
   },
-  lassi: {
-    key: 'lassi',
-    name: 'Lassi',
+  'Sweet Lassi': {
     short: 'Lassi',
-    unit: '200 ml',
-    price: 35,
-    cat: 'curd',
     kicker: 'Sweet',
     meta: 'Churned sweet · daily',
-    img: '/img/products/lassi.webp',
     desc: 'Yesterday’s dahi churned with a little sugar and cardamom. Cold, thin and drinkable.',
-    sub: '200 ml bottle · lightly sweetened',
+    sub: 'Lightly sweetened',
     tags: ['Live cultures', 'No stabilisers', 'Churned daily'],
     spec: [['Fat', '3.2%'], ['Sugar', '7 g']],
   },
 };
 
-export const PRODUCT_LIST = Object.values(PRODUCTS);
+/** Group a product's API category into one of the app's shop filters. */
+const categoryOf = (product) => {
+  const raw = `${product.category || ''} ${product.name || ''}`.toLowerCase();
+  if (raw.includes('ghee')) return 'ghee';
+  if (raw.includes('paneer')) return 'paneer';
+  if (raw.includes('dahi') || raw.includes('curd') || raw.includes('lassi')) return 'curd';
+  if (raw.includes('milk')) return 'milk';
+  return 'other';
+};
+
+/**
+ * Merge an API product with its presentation copy into the shape the screens
+ * render. `id` is the real Product._id — it is what gets sent back to the API.
+ *
+ * Every price comes from the server: `price` is the one-off rate and `plan` the
+ * standing-order rate, which is null when the product has no separate plan rate.
+ */
+export const decorate = (product) => {
+  const copy = PRESENTATION[product.name] || {};
+  return {
+    id: product._id,
+    key: product._id, // screens key by product id
+    name: product.name,
+    short: copy.short || product.name,
+    unit: product.unit,
+    price: product.price,
+    plan: product.planPrice ?? null,
+    cat: categoryOf(product),
+    img: product.image,
+    // Copy falls back to what the API actually knows. No invented detail.
+    kicker: copy.kicker || '',
+    meta: copy.meta || product.unit || '',
+    desc: copy.desc || product.description || '',
+    sub: copy.sub ? `${product.unit} · ${copy.sub}` : product.unit,
+    tags: copy.tags || product.labels || [],
+    spec: copy.spec || [],
+  };
+};
 
 export const CATEGORIES = [
   ['all', 'All'],
@@ -107,9 +132,6 @@ export const CATEGORIES = [
   ['curd', 'Curd'],
   ['paneer', 'Paneer'],
 ];
-
-/** Suggested add-ons on the plan and home screens. */
-export const SUGGESTED = ['ghee', 'pan', 'lassi'];
 
 export const DELIVERY_SLOTS = [
   {
@@ -124,10 +146,15 @@ export const DELIVERY_SLOTS = [
   },
 ];
 
+/**
+ * The three rhythms. `days` is the weekday list sent to the API as `weekdays`
+ * (0 = Sunday), and `perMonth` mirrors the server's deliveriesPerMonth so the
+ * monthly figure the customer sees matches the one that gets stored.
+ */
 export const RHYTHMS = [
   { key: 'daily', label: 'Every day', long: 'Every day', days: [0, 1, 2, 3, 4, 5, 6], perMonth: 30 },
-  { key: 'alt', label: 'Alternate', long: 'Alternate days', days: [0, 2, 4, 6], perMonth: 15 },
-  { key: 'custom', label: 'Pick days', long: 'Mon, Tue, Wed, Fri', days: [0, 1, 2, 4], perMonth: 17 },
+  { key: 'alternate', label: 'Alternate', long: 'Alternate days', days: null, perMonth: 15 },
+  { key: 'custom', label: 'Pick days', long: 'Chosen days', days: [1, 2, 3, 5], perMonth: 17 },
 ];
 
 /**
@@ -150,10 +177,4 @@ export const FALLBACK_AREAS = [
 export const FARM_HERO = '/img/hero/home1.png';
 export const FARM_THUMB = '/img/process/process2.png';
 
-export const rupees = (n) => Math.round(n).toLocaleString('en-IN');
-
-/** Price of one unit, at plan or one-off rate. */
-export const priceOf = (key, onPlan = true) => {
-  const p = PRODUCTS[key];
-  return onPlan && p.plan ? p.plan : p.price;
-};
+export const rupees = (n) => Math.round(n || 0).toLocaleString('en-IN');

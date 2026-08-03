@@ -1,20 +1,22 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, StepBar, ActionBar, Stepper } from '../ui';
-import { PRODUCTS, SUGGESTED, rupees } from '../catalogue';
+import { rupees } from '../catalogue';
 import { useDaily } from '../DailyContext';
-
-const MILKS = ['cow', 'buf'];
-
-/** The milk currently on the plan — the crate holds at most one. */
-const milkOn = (crate) => MILKS.find((key) => crate[key] > 0);
 
 export default function PlanMilk() {
   const navigate = useNavigate();
-  const { crate, bumpCrate, addToPlan, ensurePlanMilk, planDaily, flash } = useDaily();
-  const onPlan = milkOn(crate);
-  const picked = onPlan ?? 'cow';
-  const qty = crate[picked] ?? 1;
+  const {
+    crate, bumpCrate, addToPlan, ensurePlanMilk, planDaily, flash,
+    milks, suggested, productOf,
+  } = useDaily();
+
+  /* The milks are whichever plan-priced milks the catalogue offers — the crate
+     holds at most one of them. */
+  const onPlan = milks.find((p) => crate[p.id] > 0);
+  const picked = onPlan?.id ?? milks[0]?.id ?? null;
+  const qty = picked ? (crate[picked] ?? 1) : 0;
+  const pickedProduct = picked ? productOf(picked) : null;
 
   /* Seed the default milk so the running total matches the stepper rather than
      reading ₹0 against a quantity of 1. */
@@ -22,7 +24,7 @@ export default function PlanMilk() {
 
   /* Picking a milk swaps it in at the quantity the other one was carrying. */
   const pick = (key) => {
-    if (key === picked) return;
+    if (key === picked || !picked) return;
     const carried = crate[picked] ?? 1;
     bumpCrate(picked, -carried);
     bumpCrate(key, carried);
@@ -35,8 +37,8 @@ export default function PlanMilk() {
       <div className="mq-body" style={{ paddingTop: 22 }}>
         <h2>Which milk, how much?</h2>
 
-        {MILKS.map((key) => {
-          const p = PRODUCTS[key];
+        {milks.map((p) => {
+          const key = p.id;
           const on = key === picked;
           return (
             <div
@@ -78,8 +80,8 @@ export default function PlanMilk() {
         <div className="mq-col" style={{ gap: 10, marginTop: 4 }}>
           <span className="mq-label">Families usually add</span>
           <div className="mq-row" style={{ gap: 12 }}>
-            {SUGGESTED.map((key) => {
-              const p = PRODUCTS[key];
+            {suggested.map((p) => {
+              const key = p.id;
               const added = crate[key] > 0;
               return (
                 <div key={key} className="mq-card" style={{ flex: 1, borderRadius: 24, padding: 12, display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -106,7 +108,7 @@ export default function PlanMilk() {
       <ActionBar
         summary={{
           title: `₹${rupees(planDaily)} a day`,
-          note: `${qty} L ${PRODUCTS[picked].name.toLowerCase()}`,
+          note: pickedProduct ? `${qty} L ${pickedProduct.name.toLowerCase()}` : 'Choose a milk',
         }}
       >
         <button type="button" className="mq-btn mq-btn-md" onClick={() => navigate('/app/start/rhythm')}>

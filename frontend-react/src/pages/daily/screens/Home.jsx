@@ -1,14 +1,15 @@
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Screen, TabBar, Icon, Stepper } from '../ui';
-import { PRODUCTS, SUGGESTED, rupees, priceOf } from '../catalogue';
+import { rupees } from '../catalogue';
 import { fmtDay } from '../dates';
-import { useDaily, itemRows } from '../DailyContext';
+import { useDaily } from '../DailyContext';
 
 export default function Home() {
   const navigate = useNavigate();
   const {
     crate, bumpCrate, tomorrow, tomorrowSkipped, toggleSkipTomorrow,
     tomorrowTotal, wallet, addToCart, rhythmDef, slotDef, planActive, areaName,
+    itemRows, priceOf, suggested,
   } = useDaily();
 
   // Nothing to come home to until a plan exists — start at the beginning.
@@ -121,8 +122,8 @@ export default function Home() {
 
       <div style={{ padding: '0 20px' }}>
         <div className="mq-rail-x">
-          {SUGGESTED.map((key) => {
-            const p = PRODUCTS[key];
+          {suggested.map((p) => {
+            const key = p.id;
             return (
               <div key={key} className="mq-tile mq-tile-sm">
                 <Link to={`/app/product/${key}`}>

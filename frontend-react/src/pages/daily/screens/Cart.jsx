@@ -1,17 +1,17 @@
 import { useNavigate } from 'react-router-dom';
 import { Screen, TopBar, ActionBar, Stepper } from '../ui';
-import { PRODUCTS, rupees, priceOf } from '../catalogue';
-import { useDaily, itemRows } from '../DailyContext';
-
-/** The one add-on we nudge for, whichever is not already in the crate or cart. */
-const NUDGES = ['pan', 'lassi', 'ghee'];
+import { rupees } from '../catalogue';
+import { useDaily } from '../DailyContext';
 
 export default function Cart() {
   const navigate = useNavigate();
-  const { crate, cart, bumpCart, addToCart, tomorrowTotal, wallet, slotDef, upiDue } = useDaily();
+  const {
+    crate, cart, bumpCart, addToCart, tomorrowTotal, wallet, slotDef, upiDue,
+    itemRows, priceOf, suggested,
+  } = useDaily();
 
-  const nudgeKey = NUDGES.find((k) => !crate[k] && !cart[k]);
-  const nudge = nudgeKey ? PRODUCTS[nudgeKey] : null;
+  /** Nudge for the first add-on that is not already in the crate or the cart. */
+  const nudge = suggested.find((p) => !crate[p.id] && !cart[p.id]) ?? null;
   const empty = itemRows(crate).length === 0 && itemRows(cart).length === 0;
 
   return (

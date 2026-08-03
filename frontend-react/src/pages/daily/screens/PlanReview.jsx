@@ -1,19 +1,34 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, StepBar, ActionBar, Icon } from '../ui';
-import { rupees, priceOf } from '../catalogue';
+import { rupees } from '../catalogue';
 import { fmtDay } from '../dates';
-import { useDaily, itemRows } from '../DailyContext';
+import { useDaily } from '../DailyContext';
 
 export default function PlanReview() {
   const navigate = useNavigate();
   const {
     crate, rhythmDef, slotDef, tomorrow, planDaily, planMonthly,
-    savingsMonthly, savingsPercent, startPlan,
+    savingsMonthly, savingsPercent, startPlan, itemRows, priceOf, wallet,
   } = useDaily();
 
-  const confirm = () => {
-    startPlan();
-    navigate('/app/start/done');
+  /* Confirming creates the subscription on the account, so it can fail — a
+     dropped connection, an address that is no longer serviceable. Only move on
+     once the server has actually accepted it. */
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const confirm = async () => {
+    setSaving(true);
+    setError('');
+    try {
+      await startPlan();
+      navigate('/app/start/done');
+    } catch (err) {
+      setError(err.response?.data?.message || 'We could not start your plan just now.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -56,8 +71,8 @@ export default function PlanReview() {
             You save ₹{rupees(savingsMonthly)} a month
           </span>
           <span style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--mq-sage-200)' }}>
-            {savingsPercent}% off the one-off price, and the wallet auto-tops-up so a low balance never
-            stops a delivery.
+            {savingsPercent}% off the one-off price. Each morning's crate comes out of your wallet —
+            we pause the plan rather than deliver on credit if it runs low.
           </span>
         </div>
 
@@ -66,17 +81,33 @@ export default function PlanReview() {
           <div className="mq-card mq-card-flat mq-card-pad" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Icon name="wallet" color="#201e1d" />
             <span style={{ flex: 1, fontSize: 15, fontWeight: 700 }}>Milquu wallet</span>
-            <span className="mq-sub">Recharge ₹1,000</span>
+            <span className="mq-sub">₹{rupees(wallet)}</span>
           </div>
+          {planDaily > 0 && wallet < planDaily && (
+            <span style={{ fontSize: 13, color: 'var(--mq-clay-700, #8a5a3b)' }}>
+              Top up before tomorrow morning — there isn’t enough for the first crate yet.
+            </span>
+          )}
         </div>
       </div>
 
       <div className="mq-fill" />
 
       <ActionBar>
-        <button type="button" className="mq-btn mq-btn-block" onClick={confirm}>
-          Start tomorrow morning · ₹{rupees(planDaily)}/day
-        </button>
+        <div className="mq-col" style={{ flex: 1, gap: 8 }}>
+          {error && (
+            <span role="alert" style={{ fontSize: 13, color: 'var(--mq-clay-700, #a4423a)' }}>{error}</span>
+          )}
+          <button
+            type="button"
+            className="mq-btn mq-btn-block"
+            onClick={confirm}
+            disabled={saving}
+            style={saving ? { opacity: 0.6, cursor: 'progress' } : undefined}
+          >
+            {saving ? 'Starting your plan…' : `Start tomorrow morning · ₹${rupees(planDaily)}/day`}
+          </button>
+        </div>
       </ActionBar>
     </Screen>
   );

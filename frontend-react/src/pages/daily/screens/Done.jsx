@@ -1,14 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { Screen, Icon } from '../ui';
-import { PRODUCTS } from '../catalogue';
 import { useDaily } from '../DailyContext';
-
-const MILKS = ['cow', 'buf'];
 
 export default function Done() {
   const navigate = useNavigate();
-  const { crate, rhythmDef, slotDef, areaName } = useDaily();
-  const milkKey = MILKS.find((k) => crate[k] > 0) ?? 'cow';
+  const { crate, rhythmDef, slotDef, areaName, itemRows } = useDaily();
+  // The milk the plan was built around, straight off the confirmed crate.
+  const milk = itemRows(crate).find((row) => row.cat === 'milk') ?? null;
   const startsAt = slotDef.label.split(' – ')[0].replace(':00', '');
 
   return (
@@ -36,7 +34,7 @@ export default function Done() {
           </h2>
 
           <p style={{ fontSize: 16, lineHeight: 1.55, color: 'var(--mq-sage-200)' }}>
-            {crate[milkKey]} L of {PRODUCTS[milkKey].name.toLowerCase()}, {rhythmDef.long.toLowerCase()}
+            {milk ? `${milk.qty} L of ${milk.name.toLowerCase()}, ` : ''}{rhythmDef.long.toLowerCase()}
             {areaName ? `, delivered in ${areaName}` : ''}, left where you asked us to leave it.
           </p>
 

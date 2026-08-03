@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, TabBar, Stepper, ListRow } from '../ui';
 import { addDays, dayKey, fmtShort, fromKey } from '../dates';
-import { useDaily, itemRows } from '../DailyContext';
+import { useDaily } from '../DailyContext';
 
 const DOW = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
@@ -10,15 +10,19 @@ export default function Plan() {
   const navigate = useNavigate();
   const {
     crate, bumpCrate, today, rhythmDef, slotDef, isSkipped, toggleSkip, planActive, planStartedOn,
+    itemRows, inRhythm,
   } = useDaily();
 
-  /* The seven mornings after today, each on or off. */
+  /* The seven mornings after today, each on or off. Whether a morning is in
+     the rhythm is answered by the context, which mirrors the server's rule —
+     alternate days count from the plan's start date and cannot be derived
+     from a fixed weekday list. */
   const week = useMemo(() => Array.from({ length: 7 }, (_, i) => {
     const date = addDays(today, i + 1);
     const key = dayKey(date);
-    const inRhythm = rhythmDef.days.includes((date.getDay() + 6) % 7);
-    return { date, key, on: inRhythm && !isSkipped(key), inRhythm };
-  }), [today, rhythmDef, isSkipped]);
+    const scheduled = inRhythm(date);
+    return { date, key, on: scheduled && !isSkipped(key), inRhythm: scheduled };
+  }), [today, inRhythm, isSkipped]);
 
   const offCount = week.filter((d) => !d.on).length;
 

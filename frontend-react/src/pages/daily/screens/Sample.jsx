@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import { Screen, TopBar, ActionBar } from '../ui';
-import { PRODUCTS } from '../catalogue';
 import { useDaily } from '../DailyContext';
 import { fmtDay } from '../dates';
 
@@ -12,7 +11,11 @@ const STEPS = [
 
 export default function Sample() {
   const navigate = useNavigate();
-  const { tomorrow, slotDef } = useDaily();
+  const { tomorrow, slotDef, milks } = useDaily();
+
+  /* The sample is a bottle of cow milk; use the real product's photograph if
+     the catalogue has arrived, and simply omit it if it has not. */
+  const bottle = milks[0];
 
   return (
     <Screen>
@@ -22,7 +25,7 @@ export default function Sample() {
         <h2 style={{ fontSize: 34 }}>One bottle, on us</h2>
 
         <div className="mq-card mq-card-md" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', gap: 16 }}>
-          <img src={PRODUCTS.cow.img} alt="" style={{ width: 66, height: 92, objectFit: 'contain' }} />
+          {bottle && <img src={bottle.img} alt="" style={{ width: 66, height: 92, objectFit: 'contain' }} />}
           <div className="mq-col" style={{ flex: 1, gap: 4 }}>
             <span className="mq-num" style={{ fontSize: 20, lineHeight: 1.1 }}>500 ml desi cow milk</span>
             <span style={{ fontSize: 14, color: 'var(--mq-neutral-700)' }}>
