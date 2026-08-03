@@ -5,6 +5,7 @@ import WalletTransaction from '../models/WalletTransaction.js';
 import WithdrawalRequest from '../models/WithdrawalRequest.js';
 import generateToken from '../utils/generateToken.js';
 import { isServiceableArea } from '../config/serviceAreas.js';
+import { normalisePhone, isValidPhone, looksLikeEmail } from '../utils/phone.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 
@@ -51,17 +52,34 @@ export const registerUser = async (req, res) => {
   try {
     const { name, email, password, phone, address } = req.body;
 
-    const userExists = await User.findOne({ email });
+    // The phone number is the customer's identifier. Email is optional, so it
+    // only has to be unique when one was actually supplied.
+    const normalisedPhone = normalisePhone(phone);
+    const normalisedEmail = String(email || '').trim().toLowerCase();
 
-    if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+    const phoneTaken = await User.findOne({ phone: normalisedPhone });
+    if (phoneTaken) {
+      return res.status(400).json({
+        message: 'An account with that phone number already exists',
+        errors: [{ path: 'phone', message: 'That phone number is already registered' }]
+      });
+    }
+
+    if (normalisedEmail) {
+      const emailTaken = await User.findOne({ email: normalisedEmail });
+      if (emailTaken) {
+        return res.status(400).json({
+          message: 'An account with that email already exists',
+          errors: [{ path: 'email', message: 'That email is already registered' }]
+        });
+      }
     }
 
     const user = await User.create({
       name,
-      email,
+      email: normalisedEmail || undefined,
       password,
-      phone,
+      phone: normalisedPhone,
       address,
       role: 'user'
     });
@@ -81,8 +99,16 @@ export const registerUser = async (req, res) => {
 
 export const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const { identifier, email, phone, password } = req.body;
+
+    // Customers sign in with a phone number; admin, manager and delivery-office
+    // accounts still use an email. Older clients send `email` for both, so the
+    // identifier is whichever field arrived and the shape decides the lookup.
+    const supplied = String(identifier || phone || email || '').trim();
+
+    const user = looksLikeEmail(supplied)
+      ? await User.findOne({ email: supplied.toLowerCase() })
+      : await User.findOne({ phone: normalisePhone(supplied) });
 
     if (user && (await user.matchPassword(password))) {
       res.json({
@@ -90,7 +116,9 @@ export const loginUser = async (req, res) => {
         token: generateToken(user._id, user.role)
       });
     } else {
-      res.status(401).json({ message: 'Invalid email or password' });
+      // Deliberately not saying which half was wrong — that would confirm
+      // whether a phone number has an account.
+      res.status(401).json({ message: 'Invalid phone number or password' });
     }
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -123,7 +151,17 @@ export const updateUserProfile = async (req, res) => {
     const { name, phone, deliveryAddress } = req.body;
 
     if (typeof name === 'string' && name.trim()) user.name = name.trim();
-    if (typeof phone === 'string') user.phone = phone.trim();
+    if (typeof phone === 'string' && phone.trim()) {
+      // The phone number is the sign-in identifier, so it cannot be replaced
+      // with something that could never be typed back in.
+      if (!isValidPhone(phone)) {
+        return res.status(400).json({
+          message: 'Enter a valid 10-digit mobile number',
+          errors: [{ path: 'phone', message: 'Enter a valid 10-digit mobile number' }]
+        });
+      }
+      user.phone = normalisePhone(phone);
+    }
 
     if (deliveryAddress) {
       const { line1, line2, note, label, area } = deliveryAddress;
@@ -152,7 +190,8 @@ export const updateUserProfile = async (req, res) => {
     const saved = await user.save();
     res.json(publicUser(saved));
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    // A phone number already on another account arrives here as a duplicate key
+    return sendWriteError(res, error);
   }
 };
 

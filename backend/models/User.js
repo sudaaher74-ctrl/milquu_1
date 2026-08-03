@@ -1,10 +1,19 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import { normalisePhone } from '../utils/phone.js';
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true, unique: true, index: true },
-  phone: { type: String, index: true },
+  // Customers sign up with a phone number, so email is optional. Both are
+  // sparse-unique: a document without the field does not collide with another
+  // one that also lacks it, which is what lets phone-only and email-only
+  // accounts (admin, manager, staff) coexist in this collection.
+  email: { type: String, unique: true, sparse: true, index: true },
+  // The customer's sign-in identifier, stored normalised to 10 digits.
+  // Not `required` at the schema level: existing records predate it and would
+  // fail to save on an unrelated write (a wallet credit) if it were. New
+  // signups are required to supply one by registerSchema.
+  phone: { type: String, unique: true, sparse: true, index: true },
   // Legacy single-line address, kept so existing records and the storefront
   // checkout keep working. New writes also populate deliveryAddress below.
   address: { type: String },
@@ -25,6 +34,23 @@ const userSchema = new mongoose.Schema({
   walletBalance: { type: Number, default: 0 }
 }, {
   timestamps: true
+});
+
+/**
+ * Normalise the two identifiers before every write. A blank string must become
+ * `undefined` rather than '' — a sparse unique index treats '' as a real value,
+ * so two accounts saved without an email would collide on it.
+ */
+userSchema.pre('save', function (next) {
+  if (this.isModified('phone')) {
+    const phone = normalisePhone(this.phone);
+    this.phone = phone || undefined;
+  }
+  if (this.isModified('email')) {
+    const email = String(this.email || '').trim().toLowerCase();
+    this.email = email || undefined;
+  }
+  next();
 });
 
 // Method to compare entered password with hashed password in database

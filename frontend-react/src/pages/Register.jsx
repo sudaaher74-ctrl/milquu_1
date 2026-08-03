@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, User, Phone, MapPin, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, Phone, MapPin } from 'lucide-react';
+import api from '../utils/api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -34,19 +35,12 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const res = await fetch('https://milquu-backend.onrender.com/api/users/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Registration failed');
+      const { data } = await api.post('/api/users/register', formData);
 
       login(data);
       navigate('/account');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Registration failed');
     } finally {
       setLoading(false);
     }
@@ -104,7 +98,9 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Email address</label>
+              <label className="block text-sm font-medium text-gray-700">
+                Email address <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-gray-400" />
@@ -112,7 +108,6 @@ const Register = () => {
                 <input
                   type="email"
                   name="email"
-                  required
                   value={formData.email}
                   onChange={handleChange}
                   className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
@@ -131,6 +126,9 @@ const Register = () => {
                   type="tel"
                   name="phone"
                   required
+                  pattern="(\+?91|0)?[6-9][0-9]{9}"
+                  title="Enter a 10-digit mobile number"
+                  autoComplete="username"
                   value={formData.phone}
                   onChange={handleChange}
                   className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
@@ -171,7 +169,8 @@ const Register = () => {
                   onChange={handleChange}
                   className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
                   placeholder="••••••••"
-                  minLength="6"
+                  autoComplete="new-password"
+                  minLength="8"
                 />
               </div>
             </div>

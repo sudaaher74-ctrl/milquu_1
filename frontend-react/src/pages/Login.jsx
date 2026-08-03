@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, LogIn, ArrowRight } from 'lucide-react';
+import { Phone, Lock, LogIn, ArrowRight } from 'lucide-react';
+import api from '../utils/api';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
+  // Customers sign in with their phone number; staff accounts still use an
+  // email, and the server accepts either through the same field.
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,20 +22,13 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const res = await fetch('https://milquu-backend.onrender.com/api/users/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Login failed');
+      const { data } = await api.post('/api/users/login', { identifier, password });
 
       login(data);
       // Return the customer to wherever they were headed (the app, usually).
       navigate(location.state?.from || '/account', { replace: true });
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -70,18 +66,20 @@ const Login = () => {
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Email address</label>
+              <label className="block text-sm font-medium text-gray-700">Phone number</label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Phone className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
+                  inputMode="tel"
+                  autoComplete="username"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
-                  placeholder="you@example.com"
+                  placeholder="98200 98200"
                 />
               </div>
             </div>
