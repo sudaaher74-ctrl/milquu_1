@@ -1,6 +1,5 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { DailyProvider, useDaily } from './DailyContext';
-import { useAuth } from '../../context/AuthContext';
 import { Toast } from './ui';
 import './daily.css';
 
@@ -25,18 +24,15 @@ function Loading() {
 }
 
 /**
- * Every customer has their own account, so the app is signed-in only — the crate,
- * wallet and orders are all read from the account behind the token. Where the
- * customer was headed is passed along so login can return them to it.
+ * The app is what a phone visitor gets, signed in or not.
+ *
+ * Browsing — the welcome screen, the free sample, the shop, a product — needs
+ * no account. Anything that touches a real account does: saving an address,
+ * confirming a plan, the wallet, orders. Those screens wrap themselves in
+ * <RequireAccount> rather than the whole app being walled off, so a first-time
+ * visitor can see what they are signing up for.
  */
 export default function DailyApp() {
-  const { user } = useAuth();
-  const location = useLocation();
-
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location.pathname + location.search }} replace />;
-  }
-
   return (
     <div className="mq-app">
       <DailyProvider>

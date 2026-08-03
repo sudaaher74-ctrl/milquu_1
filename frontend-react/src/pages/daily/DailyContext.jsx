@@ -34,18 +34,47 @@ export const SAVINGS_PERCENT = 12;
    on the same phone never see each other's draft, and it is cleared the moment
    the plan is created. */
 
-const draftKey = (userId) => `milquu.app.draft.${userId}`;
+/* A visitor with no account gets one shared 'guest' draft. It is what stops a
+   cart built before signing in from vanishing at the login screen — signing in
+   unmounts the app, so in-memory state does not survive the trip. */
+const GUEST = 'guest';
+const draftKey = (userId) => `milquu.app.draft.${userId ?? GUEST}`;
 
 const EMPTY_DRAFT = { crate: {}, cart: {}, rhythm: 'daily', slot: 'early' };
 
-const loadDraft = (userId) => {
-  if (!userId || typeof localStorage === 'undefined') return EMPTY_DRAFT;
+const readDraft = (key) => {
+  if (typeof localStorage === 'undefined') return null;
   try {
-    const saved = JSON.parse(localStorage.getItem(draftKey(userId)));
-    return saved && typeof saved === 'object' ? { ...EMPTY_DRAFT, ...saved } : EMPTY_DRAFT;
+    const saved = JSON.parse(localStorage.getItem(key));
+    return saved && typeof saved === 'object' ? { ...EMPTY_DRAFT, ...saved } : null;
   } catch {
-    return EMPTY_DRAFT;
+    return null;
   }
+};
+
+const isEmptyDraft = (draft) =>
+  !draft || (!Object.keys(draft.crate || {}).length && !Object.keys(draft.cart || {}).length);
+
+/**
+ * The draft for whoever is here now. On first sign-in the guest draft is
+ * adopted, so the crate someone built before signing in follows them into
+ * their account — but only when their own draft is empty, so it can never
+ * overwrite work already saved against the account.
+ */
+const loadDraft = (userId) => {
+  const own = readDraft(draftKey(userId));
+  if (!userId) return own ?? EMPTY_DRAFT;
+  if (!isEmptyDraft(own)) return own;
+
+  const guest = readDraft(draftKey(null));
+  if (isEmptyDraft(guest)) return own ?? EMPTY_DRAFT;
+
+  try {
+    localStorage.removeItem(draftKey(null));
+  } catch {
+    /* private mode — the adopted copy is already in hand */
+  }
+  return guest;
 };
 
 const BLANK_ADDRESS = { line1: '', line2: '', note: '', label: 'Home', area: '' };
@@ -77,8 +106,9 @@ export function DailyProvider({ children }) {
   const patch = (fields) => setDraft((d) => ({ ...d, ...fields }));
 
   useEffect(() => {
-    if (!userId) return;
     try {
+      // Persisted for a guest too, so a cart survives the trip to the login
+      // screen and back.
       localStorage.setItem(draftKey(userId), JSON.stringify(draft));
     } catch {
       /* private mode or a full quota — the session still works in memory */
@@ -94,19 +124,39 @@ export function DailyProvider({ children }) {
   const [orders, setOrders] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [areas, setAreas] = useState(FALLBACK_AREAS);
-  const [loading, setLoading] = useState(Boolean(userId));
+  // The catalogue is fetched whether or not anyone is signed in, so the app
+  // always has something to load before its first paint.
+  const [loading, setLoading] = useState(true);
 
   const address = user?.deliveryAddress
     ? { ...BLANK_ADDRESS, ...user.deliveryAddress }
     : BLANK_ADDRESS;
 
   const refresh = async () => {
-    if (!userId) return;
-    const [walletRes, ordersRes, subsRes, productsRes] = await Promise.allSettled([
+    // The catalogue is public: a signed-out visitor browsing the shop needs it,
+    // and it is the same list for everyone.
+    const productsRes = await api.get('/api/products').catch(() => null);
+    if (productsRes) {
+      // Prices, names and units are the server's. The app only adds copy.
+      const list = (productsRes.data ?? []).map(decorate);
+      setProductList(list);
+      setProducts(Object.fromEntries(list.map((p) => [p.id, p])));
+    }
+
+    // Everything below belongs to an account. With no one signed in there is
+    // nothing to fetch, and the previous account's data must not linger.
+    if (!userId) {
+      setWallet(0);
+      setLedger([]);
+      setOrders([]);
+      setSubscriptions([]);
+      return;
+    }
+
+    const [walletRes, ordersRes, subsRes] = await Promise.allSettled([
       api.get('/api/users/wallet'),
       api.get('/api/users/orders'),
       api.get('/api/users/subscriptions'),
-      api.get('/api/products'),
     ]);
     if (walletRes.status === 'fulfilled') {
       setWallet(walletRes.value.data.walletBalance ?? 0);
@@ -114,16 +164,10 @@ export function DailyProvider({ children }) {
     }
     if (ordersRes.status === 'fulfilled') setOrders(ordersRes.value.data ?? []);
     if (subsRes.status === 'fulfilled') setSubscriptions(subsRes.value.data ?? []);
-    if (productsRes.status === 'fulfilled') {
-      // Prices, names and units are the server's. The app only adds copy.
-      const list = (productsRes.value.data ?? []).map(decorate);
-      setProductList(list);
-      setProducts(Object.fromEntries(list.map((p) => [p.id, p])));
-    }
   };
 
-  /* DailyApp only mounts this provider for a signed-in customer, so there is
-     always an account to load. Switching account re-runs the fetch. */
+  /* Runs once for a visitor with no account, and again when they sign in or
+     switch account. */
   useEffect(() => {
     let live = true;
     (async () => {

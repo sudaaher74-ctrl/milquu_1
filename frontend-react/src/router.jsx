@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import AppLayout from './AppLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import MobileHomeGate from './components/layout/MobileHomeGate';
+import RequireAccount from './pages/daily/RequireAccount';
 
 // Lazy load all pages to improve mobile load speed significantly
 const Home = lazy(() => import('./pages/Home'));
@@ -136,24 +137,28 @@ export const router = createBrowserRouter([
         path: "app",
         element: <DailyApp />,
         children: [
+          // Browsing needs no account. Home sends a visitor with no plan on to
+          // /app/start, which is the welcome screen, so a signed-out phone
+          // visitor lands there rather than on a login form.
           { index: true, element: <AppHome /> },
           { path: "shop", element: <AppShop /> },
           { path: "product/:key", element: <AppProduct /> },
           { path: "cart", element: <AppCart /> },
-          { path: "checkout", element: <AppCheckout /> },
-          { path: "track", element: <AppTrack /> },
-          { path: "plan", element: <AppPlan /> },
-          { path: "plan/pause", element: <AppPause /> },
-          { path: "wallet", element: <AppWallet /> },
-          { path: "account", element: <AppAccount /> },
-
           { path: "start", element: <AppWelcome /> },
           { path: "start/sample", element: <AppSample /> },
-          { path: "start/address", element: <AppAddress /> },
           { path: "start/milk", element: <AppPlanMilk /> },
           { path: "start/rhythm", element: <AppPlanRhythm /> },
-          { path: "start/review", element: <AppPlanReview /> },
-          { path: "start/done", element: <AppDone /> },
+
+          // Everything past this point reads or writes a real account.
+          { path: "checkout", element: <RequireAccount><AppCheckout /></RequireAccount> },
+          { path: "track", element: <RequireAccount><AppTrack /></RequireAccount> },
+          { path: "plan", element: <RequireAccount><AppPlan /></RequireAccount> },
+          { path: "plan/pause", element: <RequireAccount><AppPause /></RequireAccount> },
+          { path: "wallet", element: <RequireAccount><AppWallet /></RequireAccount> },
+          { path: "account", element: <RequireAccount><AppAccount /></RequireAccount> },
+          { path: "start/address", element: <RequireAccount><AppAddress /></RequireAccount> },
+          { path: "start/review", element: <RequireAccount><AppPlanReview /></RequireAccount> },
+          { path: "start/done", element: <RequireAccount><AppDone /></RequireAccount> },
 
           { path: "*", element: <Navigate to="/app" replace /> }
         ]
