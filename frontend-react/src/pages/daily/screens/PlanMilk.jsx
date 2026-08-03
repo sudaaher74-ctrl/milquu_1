@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, StepBar, ActionBar, Stepper } from '../ui';
 import { PRODUCTS, SUGGESTED, rupees } from '../catalogue';
@@ -10,9 +11,14 @@ const milkOn = (crate) => MILKS.find((key) => crate[key] > 0);
 
 export default function PlanMilk() {
   const navigate = useNavigate();
-  const { crate, bumpCrate, addToPlan, planDaily, flash } = useDaily();
-  const picked = milkOn(crate) ?? 'cow';
+  const { crate, bumpCrate, addToPlan, ensurePlanMilk, planDaily, flash } = useDaily();
+  const onPlan = milkOn(crate);
+  const picked = onPlan ?? 'cow';
   const qty = crate[picked] ?? 1;
+
+  /* Seed the default milk so the running total matches the stepper rather than
+     reading ₹0 against a quantity of 1. */
+  useEffect(ensurePlanMilk, [ensurePlanMilk]);
 
   /* Picking a milk swaps it in at the quantity the other one was carrying. */
   const pick = (key) => {

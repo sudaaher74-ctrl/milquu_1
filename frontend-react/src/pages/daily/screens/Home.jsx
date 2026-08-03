@@ -1,6 +1,6 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Screen, TabBar, Icon, Stepper } from '../ui';
-import { PRODUCTS, SUGGESTED, SERVICE_AREA, BATCH, FARM_THUMB, rupees, priceOf } from '../catalogue';
+import { PRODUCTS, SUGGESTED, SERVICE_AREA, rupees, priceOf } from '../catalogue';
 import { fmtDay } from '../dates';
 import { useDaily, itemRows } from '../DailyContext';
 
@@ -8,8 +8,13 @@ export default function Home() {
   const navigate = useNavigate();
   const {
     crate, bumpCrate, tomorrow, tomorrowSkipped, toggleSkipTomorrow,
-    tomorrowTotal, wallet, addToCart, rhythmDef, slotDef,
+    tomorrowTotal, wallet, addToCart, rhythmDef, slotDef, planActive, address,
   } = useDaily();
+
+  // Nothing to come home to until a plan exists — start at the beginning.
+  if (!planActive) return <Navigate to="/app/start" replace />;
+
+  const rows = itemRows(crate);
 
   return (
     <Screen>
@@ -17,7 +22,7 @@ export default function Home() {
         <div className="mq-col" style={{ gap: 2 }}>
           <span className="mq-kicker">Deliver to</span>
           <Link to="/app/account" style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 16, fontWeight: 700 }}>
-            {SERVICE_AREA}, Panvel
+            {address.flat || SERVICE_AREA}
             <Icon name="down" size={14} />
           </Link>
         </div>
@@ -57,42 +62,53 @@ export default function Home() {
             {slotDef.label}
           </div>
 
-          <div className="mq-col" style={{ padding: '14px 20px 0' }}>
-            {itemRows(crate).map((row) => (
-              <div key={row.key} className="mq-item" style={{ padding: '10px 0' }}>
-                <img src={row.img} alt="" className="mq-item-thumb" />
-                <div className="mq-item-body">
-                  <span className="mq-item-name">
-                    {row.short} · {row.cat === 'milk' ? `${row.qty} L` : row.unit}
-                  </span>
-                  <span className="mq-item-meta">
-                    {row.cat === 'milk' ? 'Glass bottle' : row.kicker} · {rhythmDef.long.toLowerCase()}
-                  </span>
-                </div>
-                <Stepper
-                  value={row.qty}
-                  min={1}
-                  onDec={() => bumpCrate(row.key, -1)}
-                  onInc={() => bumpCrate(row.key, 1)}
-                  label={row.name}
-                />
+          {rows.length === 0 ? (
+            <div className="mq-col" style={{ gap: 10, padding: '14px 20px 18px', alignItems: 'flex-start' }}>
+              <span className="mq-sub">Your crate is empty — nothing is scheduled for tomorrow.</span>
+              <button type="button" className="mq-btn-soft" onClick={() => navigate('/app/shop')}>
+                Add something
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="mq-col" style={{ padding: '14px 20px 0' }}>
+                {rows.map((row) => (
+                  <div key={row.key} className="mq-item" style={{ padding: '10px 0' }}>
+                    <img src={row.img} alt="" className="mq-item-thumb" />
+                    <div className="mq-item-body">
+                      <span className="mq-item-name">
+                        {row.short} · {row.cat === 'milk' ? `${row.qty} L` : row.unit}
+                      </span>
+                      <span className="mq-item-meta">
+                        {row.cat === 'milk' ? 'Glass bottle' : row.kicker} · {rhythmDef.long.toLowerCase()}
+                      </span>
+                    </div>
+                    <Stepper
+                      value={row.qty}
+                      min={1}
+                      onDec={() => bumpCrate(row.key, -1)}
+                      onInc={() => bumpCrate(row.key, 1)}
+                      label={row.name}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px 18px' }}>
-            {/* Two lines rather than one: at 375px the single line wraps mid-phrase. */}
-            <span className="mq-col" style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ fontSize: 15, fontWeight: 700 }}>₹{rupees(tomorrowTotal)}</span>
-              <span style={{ fontSize: 13, color: 'var(--mq-neutral-600)' }}>from wallet</span>
-            </span>
-            <button type="button" className="mq-btn-outline mq-btn-md" onClick={toggleSkipTomorrow}>
-              Skip
-            </button>
-            <button type="button" className="mq-btn" style={{ fontSize: 14, padding: '11px 18px' }} onClick={() => navigate('/app/plan')}>
-              Edit crate
-            </button>
-          </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px 18px' }}>
+                {/* Two lines rather than one: at 375px the single line wraps mid-phrase. */}
+                <span className="mq-col" style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: 15, fontWeight: 700 }}>₹{rupees(tomorrowTotal)}</span>
+                  <span style={{ fontSize: 13, color: 'var(--mq-neutral-600)' }}>from wallet</span>
+                </span>
+                <button type="button" className="mq-btn-outline mq-btn-md" onClick={toggleSkipTomorrow}>
+                  Skip
+                </button>
+                <button type="button" className="mq-btn" style={{ fontSize: 14, padding: '11px 18px' }} onClick={() => navigate('/app/plan')}>
+                  Edit crate
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -120,22 +136,6 @@ export default function Home() {
           })}
         </div>
       </div>
-
-      <button
-        type="button"
-        className="mq-note"
-        style={{ margin: '24px 20px 0', border: 0, cursor: 'pointer', textAlign: 'left', width: 'calc(100% - 40px)' }}
-        onClick={() => navigate('/app/track')}
-      >
-        <span style={{ width: 44, height: 44, flex: 'none', borderRadius: 999, overflow: 'hidden' }}>
-          <img src={FARM_THUMB} alt="" className="mq-photo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        </span>
-        <span className="mq-col" style={{ flex: 1, gap: 2 }}>
-          <span style={{ fontSize: 14, fontWeight: 700 }}>Milked {BATCH.milkedAt}, batch #{BATCH.no}</span>
-          <span style={{ fontSize: 13, color: 'var(--mq-sage-800)' }}>Fat {BATCH.fat} · lab report attached</span>
-        </span>
-        <Icon name="next" size={18} color="#3d472b" />
-      </button>
 
       <div className="mq-fill" style={{ minHeight: 28 }} />
       <TabBar />

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Screen, Icon } from '../ui';
 import { PRODUCTS } from '../catalogue';
-import { useDaily, RIDER } from '../DailyContext';
+import { useDaily } from '../DailyContext';
 
 const MILKS = ['cow', 'buf'];
 
@@ -36,8 +36,8 @@ export default function Done() {
           </h2>
 
           <p style={{ fontSize: 16, lineHeight: 1.55, color: 'var(--mq-sage-200)' }}>
-            {crate[milkKey]} L of {PRODUCTS[milkKey].name.toLowerCase()}, {rhythmDef.long.toLowerCase()}.
-            {' '}{RIDER.name.split(' ')[0]} delivers your street and will leave it in the milk box.
+            {crate[milkKey]} L of {PRODUCTS[milkKey].name.toLowerCase()}, {rhythmDef.long.toLowerCase()},
+            {' '}left where you asked us to leave it.
           </p>
 
           <div

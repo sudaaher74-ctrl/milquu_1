@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Screen, TopBar, ActionBar, Icon } from '../ui';
+import { Screen, TopBar, ActionBar } from '../ui';
 import { PRODUCTS } from '../catalogue';
 import { useDaily } from '../DailyContext';
 import { fmtDay } from '../dates';
@@ -52,10 +52,6 @@ export default function Sample() {
           ))}
         </ol>
 
-        <div className="mq-note">
-          <Icon name="star" color="#3d472b" />
-          <span style={{ flex: 1 }}><strong>4.8</strong> from 1,240 families in Panvel</span>
-        </div>
       </div>
 
       <div className="mq-fill" />

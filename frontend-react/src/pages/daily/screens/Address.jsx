@@ -21,7 +21,7 @@ export default function Address() {
   const save = () => {
     const next = {};
     if (!draft.flat.trim()) next.flat = 'We need a flat or house number.';
-    if (!draft.street.trim()) next.street = 'A street or landmark helps Ravi find you.';
+    if (!draft.street.trim()) next.street = 'A street or landmark helps us find you.';
     setErrors(next);
     if (Object.keys(next).length) return;
     setAddress(draft);

@@ -18,8 +18,8 @@ export default function Checkout() {
         ? `Covers ₹${rupees(Math.min(wallet, tomorrowTotal))} · ₹${rupees(upiDue)} by UPI`
         : 'Covers the whole crate',
     },
-    { key: 'upi', icon: 'mobile', title: 'UPI · ravi@okhdfc', note: 'One tap in your UPI app' },
-    { key: 'cash', icon: 'cash', title: 'Cash to the delivery boy', note: 'Please keep change ready' },
+    { key: 'upi', icon: 'mobile', title: 'UPI', note: 'One tap in your UPI app' },
+    { key: 'cash', icon: 'cash', title: 'Cash on delivery', note: 'Please keep change ready' },
   ];
 
   const pay = () => {

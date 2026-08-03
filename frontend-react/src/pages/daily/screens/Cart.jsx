@@ -69,7 +69,7 @@ export default function Cart() {
           <div className="mq-note" style={{ borderRadius: 28, padding: '16px 18px', gap: 14 }}>
             <img src={nudge.img} alt="" style={{ width: 44, height: 60, objectFit: 'contain' }} />
             <div className="mq-col" style={{ flex: 1, gap: 2 }}>
-              <span style={{ fontSize: 14, fontWeight: 700 }}>{nudge.name} for Wednesday?</span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>Add {nudge.name.toLowerCase()}?</span>
               <span style={{ fontSize: 13, color: 'var(--mq-sage-800)' }}>
                 {nudge.kicker}, ₹{rupees(nudge.price)} for {nudge.unit}
               </span>

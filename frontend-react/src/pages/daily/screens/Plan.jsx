@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, TabBar, Stepper, ListRow } from '../ui';
-import { addDays, dayKey } from '../dates';
+import { addDays, dayKey, fmtShort, fromKey } from '../dates';
 import { useDaily, itemRows } from '../DailyContext';
 
 const DOW = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
@@ -9,7 +9,7 @@ const DOW = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 export default function Plan() {
   const navigate = useNavigate();
   const {
-    crate, bumpCrate, today, rhythmDef, slotDef, isSkipped, toggleSkip, planActive,
+    crate, bumpCrate, today, rhythmDef, slotDef, isSkipped, toggleSkip, planActive, planStartedOn,
   } = useDaily();
 
   /* The seven mornings after today, each on or off. */
@@ -26,7 +26,9 @@ export default function Plan() {
     <Screen>
       <div className="mq-between" style={{ padding: 'calc(40px + env(safe-area-inset-top)) 22px 0', alignItems: 'flex-start' }}>
         <div className="mq-col" style={{ gap: 4 }}>
-          <span className="mq-kicker">Active since 12 March</span>
+          <span className="mq-kicker">
+            {planStartedOn ? `Active since ${fmtShort(fromKey(planStartedOn))}` : 'Your plan'}
+          </span>
           <h2 style={{ fontSize: 32 }}>My plan</h2>
         </div>
         <span className="mq-pill" style={{ padding: '8px 13px' }}>{planActive ? 'Running' : 'Paused'}</span>

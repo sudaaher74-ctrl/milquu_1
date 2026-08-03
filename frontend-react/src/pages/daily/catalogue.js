@@ -18,7 +18,7 @@ export const PRODUCTS = {
     desc: 'Milked before dawn, chilled within the hour, bottled in glass and driven straight to Karanjade. Nothing added, nothing taken out — the cream still rises.',
     sub: '1 L glass bottle · Gir and Sahiwal cows',
     tags: ['4.1% fat', 'No preservatives', 'Returnable glass'],
-    lab: [['Fat', '4.1%'], ['SNF', '8.6%'], ['Adulterants', 'None detected']],
+    spec: [['Fat', '4.1%'], ['SNF', '8.6%']],
   },
   buf: {
     key: 'buf',
@@ -34,7 +34,7 @@ export const PRODUCTS = {
     desc: 'Thick and full-cream, the milk families set their curd with. Same morning batch, same glass bottle.',
     sub: '1 L glass bottle · Murrah buffalo',
     tags: ['6.5% fat', 'No preservatives', 'Returnable glass'],
-    lab: [['Fat', '6.5%'], ['SNF', '9.2%'], ['Adulterants', 'None detected']],
+    spec: [['Fat', '6.5%'], ['SNF', '9.2%']],
   },
   ghee: {
     key: 'ghee',
@@ -49,7 +49,7 @@ export const PRODUCTS = {
     desc: 'Hand-churned the old way from cultured A2 curd, not cream. Grainy, golden and deeply aromatic.',
     sub: '250 g jar · bilona churned',
     tags: ['A2 milk', 'Hand churned', 'Glass jar'],
-    lab: [['Moisture', '0.2%'], ['Free fatty acid', '0.9%'], ['Adulterants', 'None detected']],
+    spec: [['Moisture', '0.2%'], ['Free fatty acid', '0.9%']],
   },
   dahi: {
     key: 'dahi',
@@ -64,7 +64,7 @@ export const PRODUCTS = {
     desc: 'Set overnight in the same clay-cool room the milk comes from. Thick enough to hold a spoon.',
     sub: '400 g tub · naturally set',
     tags: ['Live cultures', 'No thickeners', 'Set overnight'],
-    lab: [['Fat', '4.0%'], ['pH', '4.4'], ['Adulterants', 'None detected']],
+    spec: [['Fat', '4.0%'], ['pH', '4.4']],
   },
   pan: {
     key: 'pan',
@@ -79,7 +79,7 @@ export const PRODUCTS = {
     desc: 'Curdled with lemon at five in the morning and pressed by seven. Soft enough to eat raw.',
     sub: '200 g block · made this morning',
     tags: ['High protein', 'No vinegar', 'Made daily'],
-    lab: [['Fat', '22%'], ['Protein', '18%'], ['Adulterants', 'None detected']],
+    spec: [['Fat', '22%'], ['Protein', '18%']],
   },
   lassi: {
     key: 'lassi',
@@ -94,7 +94,7 @@ export const PRODUCTS = {
     desc: 'Yesterday’s dahi churned with a little sugar and cardamom. Cold, thin and drinkable.',
     sub: '200 ml bottle · lightly sweetened',
     tags: ['Live cultures', 'No stabilisers', 'Churned daily'],
-    lab: [['Fat', '3.2%'], ['Sugar', '7 g'], ['Adulterants', 'None detected']],
+    spec: [['Fat', '3.2%'], ['Sugar', '7 g']],
   },
 };
 
@@ -115,8 +115,7 @@ export const DELIVERY_SLOTS = [
   {
     key: 'early',
     label: '6:00 – 7:30 am',
-    note: 'Most families · bottle waiting before chai',
-    badge: 'On time 98%',
+    note: 'Bottle waiting before chai',
   },
   {
     key: 'late',
@@ -131,11 +130,7 @@ export const RHYTHMS = [
   { key: 'custom', label: 'Pick days', long: 'Mon, Tue, Wed, Fri', days: [0, 1, 2, 4], perMonth: 17 },
 ];
 
-/** The standing order a new plan starts from. */
-export const STANDING_ORDER = { cow: 2, dahi: 1 };
-
 export const SERVICE_AREA = 'Karanjade';
-export const BATCH = { no: '204', milkedAt: '5:20 am', fat: '4.1%' };
 
 /** Farm photography, reused from the storefront. */
 export const FARM_HERO = '/img/hero/home1.png';

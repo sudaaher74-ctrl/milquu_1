@@ -1,10 +1,10 @@
 import { Screen, TabBar, Icon } from '../ui';
 import { rupees } from '../catalogue';
-import { addDays, fmtDay } from '../dates';
-import { useDaily, LEDGER } from '../DailyContext';
+import { addDays, fmtDay, fromKey } from '../dates';
+import { useDaily } from '../DailyContext';
 
 export default function Wallet() {
-  const { wallet, topUp, runwayDays, today } = useDaily();
+  const { wallet, topUp, runwayDays, today, ledger, planActive, planDaily } = useDaily();
   const runsOut = addDays(today, runwayDays);
 
   return (
@@ -18,23 +18,17 @@ export default function Wallet() {
           padding: 'calc(38px + env(safe-area-inset-top)) 24px 26px',
         }}
       >
-        <div className="mq-between">
-          <span className="mq-label" style={{ color: 'var(--mq-sage-200)' }}>Milquu wallet</span>
-          <span
-            className="mq-pill"
-            style={{ background: 'var(--mq-sage-700)', color: 'var(--mq-sage-100)', padding: '7px 12px' }}
-          >
-            Auto top-up on
-          </span>
-        </div>
+        <span className="mq-label" style={{ color: 'var(--mq-sage-200)' }}>Milquu wallet</span>
 
         <span className="mq-num" style={{ fontSize: 44, lineHeight: 1, color: 'var(--mq-sage-100)' }}>
           ₹{rupees(wallet)}
         </span>
         <span style={{ fontSize: 14, color: 'var(--mq-sage-200)' }}>
-          {runwayDays > 0
-            ? `About ${runwayDays} more ${runwayDays === 1 ? 'morning' : 'mornings'} at your current plan.`
-            : 'Not enough for tomorrow’s crate — top up to keep the round going.'}
+          {!planActive || planDaily === 0
+            ? 'Top up once and your mornings are paid for automatically.'
+            : runwayDays > 0
+              ? `About ${runwayDays} more ${runwayDays === 1 ? 'morning' : 'mornings'} at your current plan.`
+              : 'Not enough for tomorrow’s crate — top up to keep the round going.'}
         </span>
 
         <div className="mq-row" style={{ marginTop: 2 }}>
@@ -48,30 +42,40 @@ export default function Wallet() {
       </div>
 
       <div className="mq-body" style={{ paddingTop: 24, gap: 14 }}>
-        <div className="mq-note">
-          <Icon name="alert" color="#3d472b" />
-          <span style={{ flex: 1 }}>
-            Balance runs out {fmtDay(runsOut)}. Auto top-up will add ₹1,000 the night before.
-          </span>
-        </div>
+        {planActive && planDaily > 0 && runwayDays <= 3 && (
+          <div className="mq-note">
+            <Icon name="alert" color="#3d472b" />
+            <span style={{ flex: 1 }}>
+              {runwayDays > 0
+                ? `At this rate the balance runs out around ${fmtDay(runsOut)}.`
+                : 'There isn’t enough for tomorrow’s crate yet.'}
+            </span>
+          </div>
+        )}
 
         <span className="mq-label">Recent</span>
-        <div className="mq-col">
-          {LEDGER.map(([title, note, amount]) => (
-            <div key={title} className="mq-item">
-              <div className="mq-item-body">
-                <span className="mq-item-name">{title}</span>
-                <span className="mq-item-meta">{note}</span>
+        {ledger.length === 0 ? (
+          <span className="mq-sub">
+            Nothing yet. Top-ups and the mornings you pay for will be listed here.
+          </span>
+        ) : (
+          <div className="mq-col">
+            {ledger.map((entry) => (
+              <div key={entry.id} className="mq-item">
+                <div className="mq-item-body">
+                  <span className="mq-item-name">{entry.title}</span>
+                  <span className="mq-item-meta">{fmtDay(fromKey(entry.at))} · {entry.note}</span>
+                </div>
+                <span
+                  className="mq-item-price"
+                  style={{ color: entry.amount > 0 ? 'var(--mq-sage-800)' : undefined }}
+                >
+                  {entry.amount > 0 ? '+' : '−'}₹{rupees(Math.abs(entry.amount))}
+                </span>
               </div>
-              <span
-                className="mq-item-price"
-                style={{ color: amount > 0 ? 'var(--mq-sage-800)' : undefined }}
-              >
-                {amount > 0 ? '+' : '−'}₹{rupees(Math.abs(amount))}
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mq-fill" style={{ minHeight: 28 }} />

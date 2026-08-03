@@ -1,19 +1,12 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Screen, ActionBar, Icon } from '../ui';
-import { PRODUCTS, BATCH, rupees } from '../catalogue';
+import { PRODUCTS, rupees } from '../catalogue';
 import { useDaily } from '../DailyContext';
-
-const REVIEW = {
-  score: '4.8',
-  count: '312 reviews',
-  quote: 'Tastes like the milk we got in the village. My son finally drinks it without sugar.',
-  by: 'Sneha K. · New Panvel · 2 days ago',
-};
 
 export default function Product() {
   const { key } = useParams();
   const navigate = useNavigate();
-  const { addToCart, flash } = useDaily();
+  const { addToCart } = useDaily();
   const p = PRODUCTS[key];
 
   if (!p) return <Navigate to="/app/shop" replace />;
@@ -37,9 +30,6 @@ export default function Product() {
           >
             <Icon name="back" size={15} color="#201e1d" />
           </button>
-          <span className="mq-pill mq-pill-white" style={{ padding: '8px 14px' }}>
-            Batch #{BATCH.no} · milked {BATCH.milkedAt}
-          </span>
         </div>
         <img
           src={p.img}
@@ -67,29 +57,15 @@ export default function Product() {
         <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--mq-neutral-800)' }}>{p.desc}</p>
 
         <div className="mq-card mq-card-pad mq-col" style={{ gap: 12 }}>
-          <span className="mq-label">Today’s lab report</span>
-          {p.lab.map(([label, value]) => (
+          <span className="mq-label">Typical composition</span>
+          {p.spec.map(([label, value]) => (
             <div key={label} className="mq-line">
               <span style={{ color: 'var(--mq-neutral-700)' }}>{label}</span>
-              <span className="mq-strong" style={{ color: value.includes('None') ? 'var(--mq-sage-800)' : undefined }}>
-                {value}
-              </span>
+              <span className="mq-strong">{value}</span>
             </div>
           ))}
-          <button type="button" className="mq-link" style={{ textAlign: 'left' }} onClick={() => flash('The full report opens in your email')}>
-            See the full report
-          </button>
         </div>
 
-        <div className="mq-card mq-card-pad mq-col" style={{ gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className="mq-num" style={{ fontSize: 18 }}>{REVIEW.score}</span>
-            <Icon name="star" size={15} color="#3d472b" fill="#3d472b" />
-            <span className="mq-sub">{REVIEW.count}</span>
-          </div>
-          <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--mq-neutral-800)' }}>“{REVIEW.quote}”</p>
-          <span className="mq-sub">{REVIEW.by}</span>
-        </div>
       </div>
 
       <div className="mq-fill" />

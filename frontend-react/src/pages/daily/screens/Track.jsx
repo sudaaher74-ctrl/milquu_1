@@ -1,92 +1,77 @@
 import { useNavigate } from 'react-router-dom';
 import { Screen, TopBar, ActionBar, Icon } from '../ui';
-import { useDaily, RIDER, TRACK_STEPS } from '../DailyContext';
+import { rupees } from '../catalogue';
+import { fmtDay, fromKey } from '../dates';
+import { useDaily, itemRows } from '../DailyContext';
 
+/**
+ * Live tracking — the rider, the ETA, the stop count — comes from the delivery
+ * API on the morning of the round. Until then this screen states only what the
+ * order itself knows, rather than inventing a position.
+ */
 export default function Track() {
   const navigate = useNavigate();
-  const { flash } = useDaily();
+  const { nextOrder, orders, slotDef } = useDaily();
+  const order = nextOrder ?? orders[0] ?? null;
 
   return (
     <Screen>
-      <TopBar title="This morning’s delivery" to="/app" />
+      <TopBar title="Your delivery" to="/app" />
 
-      <div className="mq-body" style={{ gap: 18 }}>
-        <div className="mq-col" style={{ gap: 4 }}>
-          <span className="mq-kicker mq-kicker-sage">4 stops away</span>
-          <h2 style={{ fontSize: 32 }}>At your door by<br />6:38 am</h2>
-        </div>
-
-        <div className="mq-card mq-card-pad" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div
-            className="mq-num"
-            style={{
-              width: 52, height: 52, flex: 'none', borderRadius: 999, background: 'var(--mq-sage-200)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 19, color: 'var(--mq-sage-800)',
-            }}
-          >
-            {RIDER.initials}
-          </div>
-          <div className="mq-col" style={{ flex: 1, gap: 2 }}>
-            <span style={{ fontSize: 16, fontWeight: 700 }}>{RIDER.name}</span>
-            <span className="mq-sub">{RIDER.note}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => flash(`Calling ${RIDER.name.split(' ')[0]}…`)}
-            aria-label={`Call ${RIDER.name}`}
-            style={{
-              width: 44, height: 44, border: 0, borderRadius: 999, background: 'var(--mq-sage-200)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-            }}
-          >
-            <Icon name="phone" size={19} color="#3d472b" />
+      {!order ? (
+        <div className="mq-body" style={{ gap: 14 }}>
+          <h2>Nothing out for delivery</h2>
+          <p style={{ fontSize: 15, lineHeight: 1.55, color: 'var(--mq-neutral-700)' }}>
+            Once a crate is scheduled you’ll be able to follow it here on the morning it arrives.
+          </p>
+          <button type="button" className="mq-btn-soft" style={{ alignSelf: 'flex-start' }} onClick={() => navigate('/app/shop')}>
+            Browse the shop
           </button>
         </div>
+      ) : (
+        <div className="mq-body" style={{ gap: 18 }}>
+          <div className="mq-col" style={{ gap: 4 }}>
+            <span className="mq-kicker mq-kicker-sage">Scheduled</span>
+            <h2 style={{ fontSize: 32 }}>{fmtDay(fromKey(order.on))}<br />{slotDef.label}</h2>
+          </div>
 
-        <div className="mq-card mq-card-pad">
-          {TRACK_STEPS.map(([title, note, state], i) => {
-            const last = i === TRACK_STEPS.length - 1;
-            const done = state !== 'todo';
-            return (
-              <div key={title} className="mq-track">
-                <div className="mq-track-rail">
-                  <span
-                    className={`mq-track-dot${state === 'now' ? ' mq-track-dot-now' : ''}${done ? '' : ' mq-track-dot-todo'}`}
-                  />
-                  {!last && <span className={`mq-track-line${state === 'now' ? ' mq-track-line-todo' : ''}`} />}
-                </div>
-                <div className="mq-track-body">
-                  <span style={{ fontSize: 15, fontWeight: 700, color: done ? undefined : 'var(--mq-neutral-600)' }}>
-                    {title}
+          <div className="mq-card mq-card-list">
+            {itemRows(order.items).map((row) => (
+              <div key={row.key} className="mq-item">
+                <img src={row.img} alt="" className="mq-item-thumb" style={{ width: 36, height: 50 }} />
+                <div className="mq-item-body">
+                  <span className="mq-item-name">
+                    {row.short} {row.unit}{row.qty > 1 ? ` × ${row.qty}` : ''}
                   </span>
-                  <span className="mq-sub">{note}</span>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+            <div className="mq-line" style={{ padding: '14px 0', borderTop: '1px solid var(--mq-divider)' }}>
+              <span style={{ color: 'var(--mq-neutral-700)' }}>Paid</span>
+              <span className="mq-strong">₹{rupees(order.total)}</span>
+            </div>
+          </div>
 
-        <div className="mq-note">
-          <Icon name="bag" color="#3d472b" />
-          <span style={{ flex: 1 }}>
-            Leave yesterday’s empty bottle outside — {RIDER.name.split(' ')[0]} picks it up on this round.
-          </span>
+          <div className="mq-note">
+            <Icon name="clock" color="#3d472b" />
+            <span style={{ flex: 1 }}>
+              Live tracking and your rider’s details appear here on the morning of the delivery.
+            </span>
+          </div>
+
+          <div className="mq-note">
+            <Icon name="bag" color="#3d472b" />
+            <span style={{ flex: 1 }}>
+              Leave any empty bottles outside — they’re collected on the same round.
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mq-fill" />
 
       <ActionBar>
-        <button
-          type="button"
-          className="mq-btn-outline"
-          style={{ flex: 1, padding: '14px 0' }}
-          onClick={() => flash('Your note reaches the rider before the round')}
-        >
-          Add a note
-        </button>
-        <button type="button" className="mq-btn mq-btn-md" style={{ flex: 1, padding: '14px 0' }} onClick={() => navigate('/app')}>
+        <button type="button" className="mq-btn mq-btn-block" onClick={() => navigate('/app')}>
           Done
         </button>
       </ActionBar>
