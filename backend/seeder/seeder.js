@@ -21,7 +21,9 @@ const categoryData = {
       { 
         name: 'A2 Cow Milk', 
         description: 'Rich in A2 protein, easily digestible and highly nutritious.',
-        price: 95, 
+        price: 95,
+        // Milk is cheaper on a standing order than bought one-off.
+        planPrice: 85,
         unit: '1 Litre', 
         image: '/img/products/A2milk.png',
         labels: ['Farm Fresh', 'A2 Protein'],
@@ -30,7 +32,8 @@ const categoryData = {
       { 
         name: 'Premium Buffalo Milk', 
         description: 'Thick, creamy, and perfect for making rich curds and ghee.',
-        price: 105, 
+        price: 105,
+        planPrice: 94,
         unit: '1 Litre', 
         image: '/img/products/buffalomilk.png',
         labels: ['High Fat', 'Creamy'],
@@ -39,7 +42,8 @@ const categoryData = {
       { 
         name: 'Pure Cow Milk', 
         description: 'Light, healthy, and packed with essential vitamins for daily use.',
-        price: 85, 
+        price: 85,
+        planPrice: 76,
         unit: '1 Litre', 
         image: '/img/products/cowmilk.png',
         labels: ['Organic', 'Daily Health'],
