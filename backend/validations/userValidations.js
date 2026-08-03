@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isValidPhone } from '../utils/phone.js';
 
 /**
  * One password rule for the whole app. The model used to require 12 characters
@@ -15,11 +16,16 @@ export const passwordSchema = z
   .refine((v) => /[A-Za-z]/.test(v), 'Password must contain a letter')
   .refine((v) => /[0-9]/.test(v), 'Password must contain a number');
 
-/** Indian mobile number, with or without a +91 / 0 prefix. */
+/**
+ * Indian mobile number. Validated against the *normalised* value, not the raw
+ * string, so the spacing and prefixes people actually type — "+91 98200 98200",
+ * "098200 98200", "98200-98200" — are accepted rather than rejected on
+ * punctuation.
+ */
 export const phoneSchema = z
   .string()
   .trim()
-  .regex(/^(?:\+?91|0)?[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number');
+  .refine(isValidPhone, 'Enter a valid 10-digit mobile number');
 
 export const registerSchema = z.object({
   body: z.object({

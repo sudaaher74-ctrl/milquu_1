@@ -41,7 +41,7 @@ const userSchema = new mongoose.Schema({
  * `undefined` rather than '' — a sparse unique index treats '' as a real value,
  * so two accounts saved without an email would collide on it.
  */
-userSchema.pre('save', function (next) {
+userSchema.pre('save', function () {
   if (this.isModified('phone')) {
     const phone = normalisePhone(this.phone);
     this.phone = phone || undefined;
@@ -50,7 +50,6 @@ userSchema.pre('save', function (next) {
     const email = String(this.email || '').trim().toLowerCase();
     this.email = email || undefined;
   }
-  next();
 });
 
 // Method to compare entered password with hashed password in database
@@ -58,14 +57,15 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Middleware to hash password before saving to database
-userSchema.pre('save', async function (next) {
-  // Only hash the password if it has been modified (or is new). This must
-  // return — without it every later save (a wallet credit, an address change)
-  // fell through and re-hashed the stored hash, locking the customer out.
-  if (!this.isModified('password')) {
-    return next();
-  }
+// Middleware to hash password before saving to database.
+//
+// Takes no `next`: Mongoose 9 does not pass one to a hook that returns a
+// promise, so calling it threw "next is not a function" on every save where
+// the password was unchanged — a wallet credit, an address change. Returning
+// early is also what stops the stored hash being hashed a second time, which
+// would lock the customer out of their account.
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);

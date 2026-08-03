@@ -156,7 +156,7 @@ const processSubscription = async (sub, deliveryDate, today) => {
   const debited = await User.findByIdAndUpdate(
     user._id,
     { $inc: { walletBalance: -toRupees(costPaise) } },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   await WalletTransaction.create({

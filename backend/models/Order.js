@@ -83,8 +83,10 @@ orderSchema.index({ createdAt: -1 });
 orderSchema.index({ scheduledDeliveryDate: 1, isDelivered: 1 });
 orderSchema.index({ user: 1, createdAt: -1 });
 
-// Pre-save hook to calculate COGS using FIFO
-orderSchema.pre('save', async function(next) {
+// Pre-save hook to calculate COGS using FIFO.
+// Takes no `next`: Mongoose 9 does not pass one to a hook that returns a
+// promise, and calling it threw on every single order save.
+orderSchema.pre('save', async function() {
   if (this.isNew) {
     try {
       let orderTotalCogs = 0;
@@ -142,7 +144,6 @@ orderSchema.pre('save', async function(next) {
       console.error('Error calculating COGS in Order pre-save hook:', err);
     }
   }
-  next();
 });
 
 const Order = mongoose.model('Order', orderSchema);
