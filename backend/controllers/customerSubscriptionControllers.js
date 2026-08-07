@@ -159,6 +159,22 @@ export const updateMySubscription = async (req, res) => {
       subscription.items.map((i) => ({ product: i.product, quantity: i.quantity })),
       { rhythm: rhythmNow, weekdays: subscription.weekdays || [], milkOnly: true }
     );
+
+    // Only a heavier crate needs re-checking — a customer trimming their plan
+    // to fit a low wallet, or one who was already short before this edit,
+    // must still be able to save that change.
+    const dailyPaise = toPaise(priced.dailyTotal);
+    if (dailyPaise > toPaise(subscription.dailyTotal || 0)) {
+      const user = await User.findById(req.user._id).select('walletBalance');
+      const balancePaise = toPaise(user.walletBalance || 0);
+      if (balancePaise < dailyPaise) {
+        return res.status(402).json({
+          message: 'Add funds to your wallet to cover the bigger crate',
+          shortfall: toRupees(dailyPaise - balancePaise)
+        });
+      }
+    }
+
     subscription.items = priced.items;
     subscription.totalAmount = priced.dailyTotal;
     subscription.dailyTotal = priced.dailyTotal;

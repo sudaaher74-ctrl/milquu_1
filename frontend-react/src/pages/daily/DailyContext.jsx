@@ -301,7 +301,11 @@ export function DailyProvider({ children }) {
       flash('A plan needs at least one item');
       return;
     }
-    await savePlan({ items });
+    try {
+      await savePlan({ items });
+    } catch (err) {
+      flash(err.response?.data?.message || 'Could not update your plan');
+    }
   };
 
   const bumpCart = (id, delta) =>

@@ -24,6 +24,7 @@ import logger from '../utils/logger.js';
 import { istStartOfDay, istTomorrow, istDateKey } from '../utils/ist.js';
 import { isDeliveryDay } from '../utils/rhythm.js';
 import { toPaise, toRupees, sumItemsPaise } from '../utils/money.js';
+import { sendEmail } from '../utils/email.js';
 
 /** Cost of one delivery, in integer paise, from the stored item prices. */
 const dailyCostPaise = (sub) => {
@@ -121,6 +122,14 @@ const processSubscription = async (sub, deliveryDate, today) => {
     logger.info(
       `[engine] auto-paused subscription ${sub._id}: balance ${toRupees(balancePaise)} < cost ${toRupees(costPaise)}`
     );
+    if (user.email) {
+      await sendEmail({
+        to: user.email,
+        subject: 'Your Milquu plan has been paused',
+        text: `Hi ${user.name}, your wallet balance (₹${toRupees(balancePaise)}) wasn't enough to cover tomorrow's crate (₹${toRupees(costPaise)}), so your plan is paused rather than delivered on credit. Recharge your wallet and it'll pick back up the next morning.`,
+        html: `<p>Hi ${user.name},</p><p>Your wallet balance (₹${toRupees(balancePaise)}) wasn't enough to cover tomorrow's crate (₹${toRupees(costPaise)}), so your plan is paused rather than delivered on credit.</p><p>Recharge your wallet and it'll pick back up the next morning.</p>`
+      });
+    }
     return 'auto-paused';
   }
 
@@ -171,13 +180,24 @@ const processSubscription = async (sub, deliveryDate, today) => {
   claim.order = order._id;
   await claim.save();
 
-  // Low-balance warning. Unchanged behaviour: the engine only logs a simulated
-  // SMS, which is out of scope to make real.
+  // Low-balance warning. Email is the only channel wired up — SMS/WhatsApp
+  // would need a paid provider this project doesn't have. Email is optional
+  // at signup, so this is a best-effort nudge, not the primary safety net;
+  // the in-app banner and the auto-pause above are what actually protect
+  // against delivering on credit.
   const remainingPaise = toPaise(debited.walletBalance);
   if (remainingPaise < costPaise * 3) {
     logger.info(
-      `[SIMULATED SMS to ${user.phone}]: Hi ${user.name}, your MilQuu wallet is low (₹${toRupees(remainingPaise)}). Please recharge to avoid a pause.`
+      `[low balance] ${user.phone} at ₹${toRupees(remainingPaise)} after tonight's charge`
     );
+    if (user.email) {
+      await sendEmail({
+        to: user.email,
+        subject: 'Your Milquu wallet is running low',
+        text: `Hi ${user.name}, your Milquu wallet balance is ₹${toRupees(remainingPaise)} after tonight's delivery — that's less than three more mornings at your current plan. Recharge soon to avoid a pause.`,
+        html: `<p>Hi ${user.name},</p><p>Your Milquu wallet balance is <strong>₹${toRupees(remainingPaise)}</strong> after tonight's delivery — that's less than three more mornings at your current plan.</p><p>Recharge soon to avoid a pause.</p>`
+      });
+    }
   }
 
   return 'ordered';
