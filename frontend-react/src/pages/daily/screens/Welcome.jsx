@@ -38,6 +38,16 @@ export default function Welcome() {
         <button type="button" className="mq-btn-outline" onClick={() => navigate('/app/start/sample')}>
           Try a free 500 ml bottle
         </button>
+        <button
+          type="button"
+          onClick={() => navigate('/app/shop')}
+          style={{
+            border: 0, background: 'transparent', cursor: 'pointer', font: 'inherit',
+            fontSize: 14, fontWeight: 700, color: 'var(--mq-neutral-700)', padding: '6px 0',
+          }}
+        >
+          Skip — just let me browse
+        </button>
       </div>
     </Screen>
   );
