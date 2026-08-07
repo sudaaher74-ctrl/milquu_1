@@ -12,8 +12,10 @@ export default function Home() {
     itemRows, priceOf, suggested, runwayDays, planDaily,
   } = useDaily();
 
-  // Nothing to come home to until a plan exists — start at the beginning.
-  if (!planActive) return <Navigate to="/app/start" replace />;
+  // Nothing to come home to until a plan exists — browse the shop instead of
+  // being funnelled through onboarding. Starting a plan is still one tap away
+  // from any product, just never forced as the landing screen.
+  if (!planActive) return <Navigate to="/app/shop" replace />;
   // A plan without a serviceable address can't be delivered.
   if (!areaName) return <Navigate to="/app/start/address" replace />;
 
