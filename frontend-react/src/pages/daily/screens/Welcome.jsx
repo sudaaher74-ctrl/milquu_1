@@ -1,11 +1,29 @@
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Screen } from '../ui';
 import { FARM_HERO } from '../catalogue';
 import { useDaily } from '../DailyContext';
 
+const SEEN_KEY = 'milquu.app.welcomeSeen';
+
 export default function Welcome() {
   const navigate = useNavigate();
   const { areaName } = useDaily();
+
+  // Shown once per device — after that, a bookmark, a back button or a shared
+  // link lands straight in the shop instead of repeating the pitch.
+  const [alreadySeen] = useState(
+    () => typeof localStorage !== 'undefined' && localStorage.getItem(SEEN_KEY) === '1'
+  );
+
+  useEffect(() => {
+    if (!alreadySeen && typeof localStorage !== 'undefined') {
+      localStorage.setItem(SEEN_KEY, '1');
+    }
+  }, [alreadySeen]);
+
+  if (alreadySeen) return <Navigate to="/app/shop" replace />;
+
   return (
     <Screen>
       <div style={{ height: 326, flex: 'none', overflow: 'hidden', borderRadius: '0 0 48px 48px' }}>
