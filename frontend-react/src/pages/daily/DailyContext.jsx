@@ -350,6 +350,12 @@ export function DailyProvider({ children }) {
     setSubscriptions((subs) => subs.map((s) => (s._id === data._id ? data : s)));
   };
 
+  const cancelPlan = async () => {
+    if (!plan) return;
+    const { data } = await api.post(`/api/users/subscriptions/${plan._id}/cancel`);
+    setSubscriptions((subs) => subs.map((s) => (s._id === data._id ? data : s)));
+  };
+
   const setRhythm = async (value) => {
     if (!plan) { patch({ rhythm: value }); return; }
     const def = RHYTHMS.find((r) => r.key === value);
@@ -434,6 +440,7 @@ export function DailyProvider({ children }) {
     toggleSkipTomorrow,
     tomorrowSkipped,
     pauseRange,
+    cancelPlan,
 
     crate,
     crateTotal,

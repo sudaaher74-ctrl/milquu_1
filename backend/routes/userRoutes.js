@@ -16,7 +16,8 @@ import {
   createMySubscription,
   updateMySubscription,
   skipMySubscriptionDate,
-  pauseMySubscription
+  pauseMySubscription,
+  cancelMySubscription
 } from '../controllers/customerSubscriptionControllers.js';
 import { createMyOrder } from '../controllers/customerOrderControllers.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -44,6 +45,7 @@ router.post('/subscriptions', protect, validateRequest(createSubscriptionSchema)
 router.put('/subscriptions/:id', protect, validateRequest(updateSubscriptionSchema), updateMySubscription);
 router.post('/subscriptions/:id/skip', protect, validateRequest(skipSchema), skipMySubscriptionDate);
 router.post('/subscriptions/:id/pause', protect, validateRequest(pauseSchema), pauseMySubscription);
+router.post('/subscriptions/:id/cancel', protect, cancelMySubscription);
 router.put('/subscriptions/:id/status', protect, updateSubscriptionStatus);
 router.get('/orders', protect, getMyOrders);
 router.post('/orders', protect, validateRequest(createOrderSchema), createMyOrder);

@@ -97,6 +97,7 @@ export default function Plan() {
         <div className="mq-col" style={{ gap: 10 }}>
           <ListRow icon="pause" label="Pause for a trip" chevron onClick={() => navigate('/app/plan/pause')} />
           <ListRow icon="clock" label="Change my slot" value={slotDef.label} onClick={() => navigate('/app/start/rhythm')} />
+          <ListRow icon="alert" label="Cancel plan" chevron onClick={() => navigate('/app/plan/cancel')} />
         </div>
       </div>
 

@@ -89,6 +89,7 @@ const AppCheckout = lazy(() => import('./pages/daily/screens/Checkout'));
 const AppTrack = lazy(() => import('./pages/daily/screens/Track'));
 const AppPlan = lazy(() => import('./pages/daily/screens/Plan'));
 const AppPause = lazy(() => import('./pages/daily/screens/Pause'));
+const AppCancelPlan = lazy(() => import('./pages/daily/screens/CancelPlan'));
 const AppWallet = lazy(() => import('./pages/daily/screens/Wallet'));
 const AppAccount = lazy(() => import('./pages/daily/screens/Account'));
 const AppLogin = lazy(() => import('./pages/daily/screens/Login'));
@@ -158,6 +159,7 @@ export const router = createBrowserRouter([
           { path: "track", element: <RequireAccount><AppTrack /></RequireAccount> },
           { path: "plan", element: <RequireAccount><AppPlan /></RequireAccount> },
           { path: "plan/pause", element: <RequireAccount><AppPause /></RequireAccount> },
+          { path: "plan/cancel", element: <RequireAccount><AppCancelPlan /></RequireAccount> },
           { path: "wallet", element: <RequireAccount><AppWallet /></RequireAccount> },
           { path: "account", element: <RequireAccount><AppAccount /></RequireAccount> },
           { path: "start/address", element: <RequireAccount><AppAddress /></RequireAccount> },

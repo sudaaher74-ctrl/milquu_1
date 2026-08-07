@@ -242,3 +242,30 @@ export const pauseMySubscription = async (req, res) => {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
+
+// @route  POST /api/users/subscriptions/:id/cancel
+// @desc   End a plan for good. Unlike a pause, this does not resume on its own.
+// @access Private
+export const cancelMySubscription = async (req, res) => {
+  try {
+    const subscription = await findOwned(req.params.id, req.user._id);
+    if (!subscription) return res.status(404).json({ message: 'Subscription not found' });
+
+    if (subscription.status === 'Cancelled') {
+      return res.json(subscription);
+    }
+
+    // Tomorrow's crate may already be locked in with the dairy (the same
+    // cut-off that blocks editing it) — cancelling still goes through so
+    // nothing further gets charged, it just cannot claw back a crate that has
+    // already left for tonight's round.
+    subscription.status = 'Cancelled';
+    subscription.pauseStartDate = undefined;
+    subscription.pauseEndDate = undefined;
+
+    const saved = await subscription.save();
+    res.json(saved);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
