@@ -27,7 +27,6 @@
     "mongoose": "^9.6.3",
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
-    "multer-storage-cloudinary": "^4.0.0",
     "node-cron": "^4.2.1",
     "nodemailer": "^9.0.3",
     "razorpay": "^2.9.6",
@@ -42,10 +41,5 @@
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2",
     "vitest": "^4.1.9"
-  },
-  "overrides": {
-    "multer-storage-cloudinary": {
-      "cloudinary": "$cloudinary"
-    }
   }
 }

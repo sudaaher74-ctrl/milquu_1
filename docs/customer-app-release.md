@@ -103,8 +103,6 @@ customers on one browser seeing only their own data.
 
 ## Known issues, not addressed here
 
-- `npm install` in `backend/` needs `--legacy-peer-deps`: `multer-storage-cloudinary`
-  peer-depends on cloudinary v1 while the repo has v2. Pre-existing.
 - `frontend-react` does not lint clean — 300 pre-existing problems at the time
   of this branch. This work adds none and fixes a few in the files it touches.
 - The engine still only logs a simulated SMS. Out of scope per the brief.
