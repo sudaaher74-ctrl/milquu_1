@@ -63,7 +63,7 @@ describe('Checkout and Subscriptions Server-side calculations', () => {
     // The plan rate is what a subscription pays; 50 is the one-off rate.
     Product.find.mockReturnValue({
       select: vi.fn().mockResolvedValue([
-        { _id: 'prod1', name: 'Pure Cow Milk', price: 50, planPrice: 44, image: '/i.webp', unit: '1 L' }
+        { _id: 'prod1', name: 'Pure Cow Milk', price: 50, planPrice: 44, image: '/i.webp', unit: '1 L', category: 'milk' }
       ])
     });
     const payload = {
