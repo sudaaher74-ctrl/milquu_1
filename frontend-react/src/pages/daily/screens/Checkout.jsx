@@ -29,7 +29,7 @@ export default function Checkout() {
     setError('');
     setBusy(true);
     try {
-      const result = await rechargeWallet({ amount: Math.max(short, 100), user });
+      const result = await rechargeWallet({ amount: short, user });
       // null means the customer closed the sheet — nothing was charged.
       if (result) await refresh();
     } catch (err) {
@@ -135,7 +135,7 @@ export default function Checkout() {
             style={busy ? { opacity: 0.6, cursor: 'progress' } : undefined}
           >
             <Icon name="wallet" size={16} color="#fff" />
-            {busy ? 'Opening…' : `Add ₹${rupees(Math.max(short, 100))}`}
+            {busy ? 'Opening…' : `Add ₹${rupees(short)}`}
           </button>
         ) : (
           <button

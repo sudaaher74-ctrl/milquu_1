@@ -9,7 +9,7 @@ export default function Home() {
   const {
     crate, bumpCrate, tomorrow, tomorrowSkipped, toggleSkipTomorrow,
     tomorrowTotal, wallet, addToCart, rhythmDef, slotDef, planActive, areaName,
-    itemRows, priceOf, suggested,
+    itemRows, priceOf, suggested, runwayDays, planDaily,
   } = useDaily();
 
   // Nothing to come home to until a plan exists — start at the beginning.
@@ -34,6 +34,23 @@ export default function Home() {
           ₹{rupees(wallet)}
         </button>
       </div>
+
+      {planDaily > 0 && runwayDays <= 3 && (
+        <button
+          type="button"
+          className="mq-note"
+          style={{ margin: '20px 20px 0', width: 'calc(100% - 40px)', textAlign: 'left', border: 0, cursor: 'pointer', font: 'inherit', color: 'inherit' }}
+          onClick={() => navigate('/app/wallet')}
+        >
+          <Icon name="alert" color="#3d472b" />
+          <span style={{ flex: 1, fontWeight: 700 }}>
+            {runwayDays > 0
+              ? `Only ${runwayDays} more ${runwayDays === 1 ? 'morning' : 'mornings'} left on your wallet — top up to keep the milk coming.`
+              : 'Wallet balance too low for tomorrow’s crate — top up now or the plan pauses.'}
+          </span>
+          <Icon name="next" size={16} color="#3d472b" />
+        </button>
+      )}
 
       {tomorrowSkipped ? (
         <div className="mq-dark mq-col" style={{ margin: '20px 20px 0', gap: 11, padding: 20 }}>

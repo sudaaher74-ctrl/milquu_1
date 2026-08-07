@@ -30,7 +30,7 @@ export default function PlanReview() {
     setError('');
     setSaving(true);
     try {
-      const result = await rechargeWallet({ amount: Math.max(short, 100), user });
+      const result = await rechargeWallet({ amount: short, user });
       if (result) await refresh();
     } catch (err) {
       setError(err.message);
@@ -127,7 +127,7 @@ export default function PlanReview() {
               disabled={saving}
               style={saving ? { opacity: 0.6, cursor: 'progress' } : undefined}
             >
-              {saving ? 'Opening…' : `Add ₹${rupees(Math.max(short, 100))} to start`}
+              {saving ? 'Opening…' : `Add ₹${rupees(short)} to start`}
             </button>
           ) : (
             <button
