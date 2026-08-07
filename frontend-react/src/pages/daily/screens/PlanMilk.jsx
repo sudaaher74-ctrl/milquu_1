@@ -1,14 +1,13 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, StepBar, ActionBar, Stepper } from '../ui';
-import { rupees } from '../catalogue';
 import { useDaily } from '../DailyContext';
 
 export default function PlanMilk() {
   const navigate = useNavigate();
   const {
-    crate, bumpCrate, addToPlan, ensurePlanMilk, planDaily, flash,
-    milks, suggested, productOf,
+    crate, bumpCrate, ensurePlanMilk, planDaily,
+    milks, productOf,
   } = useDaily();
 
   /* The milks are whichever plan-priced milks the catalogue offers — the crate
@@ -76,31 +75,6 @@ export default function PlanMilk() {
             </div>
           );
         })}
-
-        <div className="mq-col" style={{ gap: 10, marginTop: 4 }}>
-          <span className="mq-label">Families usually add</span>
-          <div className="mq-row" style={{ gap: 12 }}>
-            {suggested.map((p) => {
-              const key = p.id;
-              const added = crate[key] > 0;
-              return (
-                <div key={key} className="mq-card" style={{ flex: 1, borderRadius: 24, padding: 12, display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <img src={p.img} alt="" style={{ width: '100%', height: 64, objectFit: 'contain' }} />
-                  <span style={{ fontSize: 13, fontWeight: 700 }}>{p.name} {p.unit}</span>
-                  <span style={{ fontSize: 12, color: 'var(--mq-neutral-600)' }}>₹{rupees(p.price)} · {p.meta.split(' · ')[1] ?? p.meta}</span>
-                  <button
-                    type="button"
-                    className="mq-btn-soft"
-                    style={{ padding: '7px 0', fontSize: 12 }}
-                    onClick={() => (added ? flash(`${p.name} is already on your plan`) : addToPlan(key))}
-                  >
-                    {added ? 'Added' : '+ Add'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       <div className="mq-fill" />

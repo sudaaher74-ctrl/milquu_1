@@ -45,42 +45,27 @@ export default function Plan() {
               <img src={row.img} alt="" className="mq-item-thumb" style={{ width: 36, height: 50 }} />
               <div className="mq-item-body">
                 <span className="mq-item-name">{row.short} {row.unit}</span>
-                <span className="mq-item-meta">
-                  {row.cat === 'milk' ? `${rhythmDef.long} · ${slotDef.label}` : row.meta}
-                </span>
+                <span className="mq-item-meta">{rhythmDef.long} · {slotDef.label}</span>
               </div>
               <Stepper
                 value={row.qty}
-                min={0}
+                min={1}
                 onDec={() => bumpCrate(row.key, -1)}
                 onInc={() => bumpCrate(row.key, 1)}
                 label={row.name}
               />
             </div>
           ))}
+        </div>
 
-          <button
-            type="button"
+        <div className="mq-col" style={{ gap: 10 }}>
+          <ListRow
+            icon="bag"
+            label="Ghee, paneer, lassi and more"
+            value="One-off, from the shop"
+            chevron
             onClick={() => navigate('/app/shop')}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '15px 0',
-              border: 0, background: 'transparent', cursor: 'pointer', font: 'inherit',
-              borderTop: itemRows(crate).length ? '1px solid var(--mq-divider)' : 0,
-            }}
-          >
-            <span
-              style={{
-                width: 36, height: 36, borderRadius: 999, background: 'var(--mq-sage-200)',
-                color: 'var(--mq-sage-800)', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: 18, fontWeight: 700,
-              }}
-            >
-              +
-            </span>
-            <span style={{ flex: 1, textAlign: 'left', fontSize: 15, fontWeight: 700, color: 'var(--mq-sage-800)' }}>
-              Add ghee, paneer or lassi
-            </span>
-          </button>
+          />
         </div>
 
         <div className="mq-col" style={{ gap: 10 }}>

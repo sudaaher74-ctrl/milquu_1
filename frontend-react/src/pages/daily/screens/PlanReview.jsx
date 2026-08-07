@@ -4,19 +4,40 @@ import { Screen, StepBar, ActionBar, Icon } from '../ui';
 import { rupees } from '../catalogue';
 import { fmtDay } from '../dates';
 import { useDaily } from '../DailyContext';
+import { rechargeWallet } from '../../../utils/razorpay';
 
 export default function PlanReview() {
   const navigate = useNavigate();
   const {
     crate, rhythmDef, slotDef, tomorrow, planDaily, planMonthly,
     savingsMonthly, savingsPercent, startPlan, itemRows, priceOf, wallet,
+    refresh, user,
   } = useDaily();
+
+  /* The plan is charged nightly out of the wallet — starting it without
+     enough for even the first crate would just mean a silent pause from day
+     one, so the server refuses and this mirrors that here rather than
+     letting the customer hit the error. */
+  const short = Math.max(0, planDaily - wallet);
 
   /* Confirming creates the subscription on the account, so it can fail — a
      dropped connection, an address that is no longer serviceable. Only move on
      once the server has actually accepted it. */
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const topUp = async () => {
+    setError('');
+    setSaving(true);
+    try {
+      const result = await rechargeWallet({ amount: Math.max(short, 100), user });
+      if (result) await refresh();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const confirm = async () => {
     setSaving(true);
@@ -83,9 +104,9 @@ export default function PlanReview() {
             <span style={{ flex: 1, fontSize: 15, fontWeight: 700 }}>Milquu wallet</span>
             <span className="mq-sub">₹{rupees(wallet)}</span>
           </div>
-          {planDaily > 0 && wallet < planDaily && (
+          {short > 0 && (
             <span style={{ fontSize: 13, color: 'var(--mq-clay-700, #8a5a3b)' }}>
-              Top up before tomorrow morning — there isn’t enough for the first crate yet.
+              Add ₹{rupees(short)} to cover tomorrow's first crate before starting.
             </span>
           )}
         </div>
@@ -98,15 +119,27 @@ export default function PlanReview() {
           {error && (
             <span role="alert" style={{ fontSize: 13, color: 'var(--mq-clay-700, #a4423a)' }}>{error}</span>
           )}
-          <button
-            type="button"
-            className="mq-btn mq-btn-block"
-            onClick={confirm}
-            disabled={saving}
-            style={saving ? { opacity: 0.6, cursor: 'progress' } : undefined}
-          >
-            {saving ? 'Starting your plan…' : `Start tomorrow morning · ₹${rupees(planDaily)}/day`}
-          </button>
+          {short > 0 ? (
+            <button
+              type="button"
+              className="mq-btn mq-btn-block"
+              onClick={topUp}
+              disabled={saving}
+              style={saving ? { opacity: 0.6, cursor: 'progress' } : undefined}
+            >
+              {saving ? 'Opening…' : `Add ₹${rupees(Math.max(short, 100))} to start`}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="mq-btn mq-btn-block"
+              onClick={confirm}
+              disabled={saving}
+              style={saving ? { opacity: 0.6, cursor: 'progress' } : undefined}
+            >
+              {saving ? 'Starting your plan…' : `Start tomorrow morning · ₹${rupees(planDaily)}/day`}
+            </button>
+          )}
         </div>
       </ActionBar>
     </Screen>

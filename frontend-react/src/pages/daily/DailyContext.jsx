@@ -312,11 +312,6 @@ export function DailyProvider({ children }) {
     flash(`${products[id]?.name ?? 'Item'} added to tomorrow`);
   };
 
-  const addToPlan = async (id) => {
-    await bumpCrate(id, 1);
-    flash(`${products[id]?.name ?? 'Item'} added to your plan`);
-  };
-
   /**
    * A plan needs a milk on it. Written as a set rather than an increment so
    * calling it twice — as StrictMode does — still leaves exactly one litre.
@@ -443,7 +438,6 @@ export function DailyProvider({ children }) {
     crate,
     crateTotal,
     bumpCrate,
-    addToPlan,
     ensurePlanMilk,
 
     cart,

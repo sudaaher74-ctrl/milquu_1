@@ -29,7 +29,7 @@ router.post('/', apiLimiter, async (req, res) => {
     // unvalidated monthlyTotal used to be stored verbatim and then divided by
     // 30 to decide what to charge the wallet each day.
     const rhythm = normaliseRhythm(frequency);
-    const priced = await priceCrate(items, { rhythm, weekdays: [] });
+    const priced = await priceCrate(items, { rhythm, weekdays: [], milkOnly: true });
 
     const subscription = new Subscription({
       subscriptionId: 'SUB-' + Date.now() + Math.floor(Math.random() * 1000),

@@ -34,15 +34,26 @@ export class PricingError extends Error {
  * delivery, and the cost of a typical month at the given rhythm. Throws a
  * PricingError naming the offending item if a product id is unknown.
  */
-export const priceCrate = async (items, { rhythm = 'daily', weekdays = [], onPlan = true } = {}) => {
+export const priceCrate = async (items, { rhythm = 'daily', weekdays = [], onPlan = true, milkOnly = false } = {}) => {
   const ids = items.map((i) => i.product);
-  const products = await Product.find({ _id: { $in: ids } }).select('name price planPrice image unit');
+  const products = await Product.find({ _id: { $in: ids } }).select('name price planPrice image unit category');
   const byId = new Map(products.map((p) => [String(p._id), p]));
+
+  // Standing-order plans are cow or buffalo milk only — ghee, paneer, dahi and
+  // lassi are one-off purchases (priceBasket), never a recurring line. This is
+  // a business rule, not a data limitation: those products do carry a
+  // planPrice for other reasons, so the check has to be explicit here.
+  if (milkOnly && !items.some((i) => byId.get(String(i.product))?.category === 'milk')) {
+    throw new PricingError('A plan needs at least one milk item', 'items');
+  }
 
   const priced = items.map((item) => {
     const product = byId.get(String(item.product));
     if (!product) {
       throw new PricingError('One of the items in your crate is no longer available', 'items');
+    }
+    if (milkOnly && product.category !== 'milk') {
+      throw new PricingError(`${product.name} can't be added to a standing plan — try a one-off order instead`, 'items');
     }
     return {
       product: product._id,

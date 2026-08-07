@@ -8,6 +8,7 @@ import User from '../models/User.js';
 import { isServiceableArea, areaName } from '../config/serviceAreas.js';
 import { istStartOfDay, istTomorrow, isLockedForChanges, CUTOFF_HOUR_IST } from '../utils/ist.js';
 import { normaliseRhythm, legacyFrequency, priceCrate, PricingError } from '../services/subscriptionPricing.js';
+import { toPaise, toRupees } from '../utils/money.js';
 
 const CUTOFF_MESSAGE =
   `Tomorrow's crate is already with the dairy. Changes are open again until ${CUTOFF_HOUR_IST > 12 ? CUTOFF_HOUR_IST - 12 : CUTOFF_HOUR_IST} pm tomorrow.`;
@@ -67,7 +68,20 @@ export const createMySubscription = async (req, res) => {
     const rhythm = normaliseRhythm(frequency);
     const days = rhythm === 'custom' ? weekdays : undefined;
 
-    const priced = await priceCrate(items, { rhythm, weekdays: days || [] });
+    const priced = await priceCrate(items, { rhythm, weekdays: days || [], milkOnly: true });
+
+    // The plan itself is charged nightly, out of the wallet — but a customer
+    // with nothing in it yet would just have every delivery silently paused
+    // from day one. Require the first crate to already be covered, so
+    // starting a plan means the milk is actually coming tomorrow.
+    const dailyPaise = toPaise(priced.dailyTotal);
+    const balancePaise = toPaise(user.walletBalance || 0);
+    if (balancePaise < dailyPaise) {
+      return res.status(402).json({
+        message: 'Add funds to your wallet to start this plan',
+        shortfall: toRupees(dailyPaise - balancePaise)
+      });
+    }
 
     // A plan starts tomorrow by default. A start date of today would promise a
     // delivery on a round that has already left.
@@ -143,7 +157,7 @@ export const updateMySubscription = async (req, res) => {
     const rhythmNow = normaliseRhythm(subscription.frequency);
     const priced = await priceCrate(
       subscription.items.map((i) => ({ product: i.product, quantity: i.quantity })),
-      { rhythm: rhythmNow, weekdays: subscription.weekdays || [] }
+      { rhythm: rhythmNow, weekdays: subscription.weekdays || [], milkOnly: true }
     );
     subscription.items = priced.items;
     subscription.totalAmount = priced.dailyTotal;
