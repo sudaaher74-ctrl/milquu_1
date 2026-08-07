@@ -44,7 +44,7 @@ export default function Account() {
 
       <div className="mq-body" style={{ paddingTop: 22 }}>
         {!user && (
-          <button type="button" className="mq-btn mq-btn-block" onClick={() => navigate('/login')}>
+          <button type="button" className="mq-btn mq-btn-block" onClick={() => navigate('/app/login')}>
             Sign in
           </button>
         )}

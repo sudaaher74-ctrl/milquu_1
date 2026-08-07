@@ -64,23 +64,46 @@ app.use(express.json({ limit: '100kb' }));
 // Sanitize data against NoSQL query injection
 app.use(sanitizeInput);
 
-// Enable CORS — restrict to known origins
+// Enable CORS — restrict to known origins.
+//
+// A trailing slash in CORS_ORIGIN (easy to paste by accident) would silently
+// never match a real Origin header, which never has one — so it's stripped
+// on both sides before comparing.
+const stripTrailingSlash = (value) => value.trim().replace(/\/+$/, '');
+
 const allowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',')
-  .map((o) => o.trim())
+  .map(stripTrailingSlash)
   .filter(Boolean);
 if (process.env.NODE_ENV !== 'production') {
   allowedOrigins.push('http://localhost:5173', 'http://localhost:3000');
 }
+
+// Vercel mints a unique preview URL per deploy/branch
+// (milquufresh-<hash>-<team>.vercel.app), so it can't be listed in
+// CORS_ORIGIN by exact value — it's matched by pattern instead.
+const VERCEL_PREVIEW_ORIGIN = /^https:\/\/milquufresh-[a-z0-9-]+\.vercel\.app$/;
+
+const isAllowedOrigin = (origin) =>
+  allowedOrigins.includes(stripTrailingSlash(origin)) || VERCEL_PREVIEW_ORIGIN.test(origin);
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no Origin header (mobile apps, curl, server-to-server)
-      if (!origin || allowedOrigins.includes(origin)) {
+      // No Origin header at all — a mobile app, curl, Postman, or a
+      // server-to-server call. There's no browser enforcing same-origin
+      // policy for these, so there's nothing to restrict.
+      if (!origin || isAllowedOrigin(origin)) {
         return callback(null, true);
       }
-      return callback(new Error('Not allowed by CORS'));
+      logger.warn(`Blocked CORS request from origin: ${origin}`);
+      // Tagged with a status so errorHandler returns a clean 403 instead of
+      // the generic 500 it would otherwise fall back to — a rejected origin
+      // is working as designed, not a server fault.
+      return callback(Object.assign(new Error('Not allowed by CORS'), { status: 403 }));
     },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 

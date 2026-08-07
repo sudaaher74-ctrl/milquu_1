@@ -89,6 +89,8 @@ export default function AppLayout() {
         navigate('/delivery/login');
       } else if (location.pathname.startsWith('/admin')) {
         navigate('/admin/login');
+      } else if (location.pathname.startsWith('/app')) {
+        navigate('/app/login', { state: { from: location.pathname + location.search } });
       } else {
         navigate('/login');
       }

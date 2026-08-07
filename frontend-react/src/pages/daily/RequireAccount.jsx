@@ -20,7 +20,7 @@ export default function RequireAccount({ children }) {
   const location = useLocation();
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location.pathname + location.search }} replace />;
+    return <Navigate to="/app/login" state={{ from: location.pathname + location.search }} replace />;
   }
   return children;
 }

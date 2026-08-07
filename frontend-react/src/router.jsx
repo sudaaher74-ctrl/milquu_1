@@ -91,6 +91,8 @@ const AppPlan = lazy(() => import('./pages/daily/screens/Plan'));
 const AppPause = lazy(() => import('./pages/daily/screens/Pause'));
 const AppWallet = lazy(() => import('./pages/daily/screens/Wallet'));
 const AppAccount = lazy(() => import('./pages/daily/screens/Account'));
+const AppLogin = lazy(() => import('./pages/daily/screens/Login'));
+const AppRegister = lazy(() => import('./pages/daily/screens/Register'));
 
 // Delivery Pages
 const DeliveryLayout = lazy(() => import('./pages/delivery/DeliveryLayout'));
@@ -148,6 +150,8 @@ export const router = createBrowserRouter([
           { path: "start/sample", element: <AppSample /> },
           { path: "start/milk", element: <AppPlanMilk /> },
           { path: "start/rhythm", element: <AppPlanRhythm /> },
+          { path: "login", element: <AppLogin /> },
+          { path: "join", element: <AppRegister /> },
 
           // Everything past this point reads or writes a real account.
           { path: "checkout", element: <RequireAccount><AppCheckout /></RequireAccount> },

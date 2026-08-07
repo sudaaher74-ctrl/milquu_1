@@ -22,7 +22,7 @@ services:
       # the Vercel deployment (project "milquufresh"), not the Render static
       # site below — add a custom domain here too if you attach one in Vercel.
       - key: CORS_ORIGIN
-        value: https://milquufresh.vercel.app
+        value: https://milquufresh.vercel.app,https://milquufresh.in,https://www.milquufresh.in
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET
