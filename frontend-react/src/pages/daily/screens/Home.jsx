@@ -18,6 +18,10 @@ export default function Home() {
   if (!areaName) return <Navigate to="/app/start/address" replace />;
 
   const rows = itemRows(crate);
+  // What the nightly engine will actually see: it debits the wallet before
+  // building tomorrow's order and auto-pauses rather than deliver on credit,
+  // so a wallet short of the total means this crate will not arrive as shown.
+  const atRisk = !tomorrowSkipped && tomorrowTotal > 0 && wallet < tomorrowTotal;
 
   return (
     <Screen>
@@ -75,7 +79,9 @@ export default function Home() {
       ) : (
         <div className="mq-card mq-card-md" style={{ margin: '20px 20px 0', overflow: 'hidden' }}>
           <div className="mq-between" style={{ padding: '18px 20px 0' }}>
-            <span className="mq-label mq-kicker-sage">Arriving tomorrow</span>
+            <span className="mq-label mq-kicker-sage">
+              {atRisk ? 'At risk — not paid for yet' : 'Arriving tomorrow'}
+            </span>
             <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--mq-neutral-600)' }}>{fmtDay(tomorrow)}</span>
           </div>
           <div className="mq-num" style={{ padding: '6px 20px 0', fontSize: 26, lineHeight: 1.1 }}>
@@ -117,15 +123,27 @@ export default function Home() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px 18px' }}>
                 {/* Two lines rather than one: at 375px the single line wraps mid-phrase. */}
                 <span className="mq-col" style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ fontSize: 15, fontWeight: 700 }}>₹{rupees(tomorrowTotal)}</span>
-                  <span style={{ fontSize: 13, color: 'var(--mq-neutral-600)' }}>from wallet</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: atRisk ? 'var(--mq-clay-700, #a4423a)' : undefined }}>
+                    ₹{rupees(tomorrowTotal)}
+                  </span>
+                  <span style={{ fontSize: 13, color: 'var(--mq-neutral-600)' }}>
+                    {atRisk ? `wallet only covers ₹${rupees(wallet)}` : 'from wallet'}
+                  </span>
                 </span>
-                <button type="button" className="mq-btn-outline mq-btn-md" onClick={toggleSkipTomorrow}>
-                  Skip
-                </button>
-                <button type="button" className="mq-btn" style={{ fontSize: 14, padding: '11px 18px' }} onClick={() => navigate('/app/plan')}>
-                  Edit crate
-                </button>
+                {atRisk ? (
+                  <button type="button" className="mq-btn" style={{ fontSize: 14, padding: '11px 18px' }} onClick={() => navigate('/app/wallet')}>
+                    Top up
+                  </button>
+                ) : (
+                  <>
+                    <button type="button" className="mq-btn-outline mq-btn-md" onClick={toggleSkipTomorrow}>
+                      Skip
+                    </button>
+                    <button type="button" className="mq-btn" style={{ fontSize: 14, padding: '11px 18px' }} onClick={() => navigate('/app/plan')}>
+                      Edit crate
+                    </button>
+                  </>
+                )}
               </div>
             </>
           )}
