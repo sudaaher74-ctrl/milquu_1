@@ -5,27 +5,27 @@
    sage tuning of the system: green is the action colour, the page is a washed
    green-white, and every surface that carries content is plain white. */
 .mq-app {
-  --mq-page: #f6f9f3;
-  --mq-surface: #ffffff;
-  --mq-tint: #eef2e8;
-  --mq-rail: #dbe1d3;
+  --mq-page: #e4ead5;
+  --mq-surface: #fdfbf5;
+  --mq-tint: #dae3c9;
+  --mq-rail: #c2cbb1;
   --mq-text: #201e1d;
-  --mq-divider: rgba(32, 30, 29, 0.16);
+  --mq-divider: rgba(32, 30, 29, 0.22);
 
-  --mq-neutral-400: #c0b6a5;
-  --mq-neutral-500: #a19786;
-  --mq-neutral-600: #82796a;
-  --mq-neutral-700: #645c50;
-  --mq-neutral-800: #474238;
+  --mq-neutral-400: #ab9f89;
+  --mq-neutral-500: #8f8270;
+  --mq-neutral-600: #726657;
+  --mq-neutral-700: #544c41;
+  --mq-neutral-800: #3a352c;
 
-  --mq-sage-100: #f0fae1;
-  --mq-sage-200: #e1eecc;
-  --mq-sage-300: #ccdbb2;
-  --mq-sage-400: #aebf92;
-  --mq-sage-600: #728157;
-  --mq-sage-700: #56633f;
-  --mq-sage-800: #3d472b;
-  --mq-sage-900: #272e1b;
+  --mq-sage-100: #e2efc2;
+  --mq-sage-200: #cde09f;
+  --mq-sage-300: #b5cd85;
+  --mq-sage-400: #98b268;
+  --mq-sage-600: #5c6c3d;
+  --mq-sage-700: #444f2e;
+  --mq-sage-800: #2f3820;
+  --mq-sage-900: #1b2012;
 
   --mq-heading: 'Caprasimo', Georgia, serif;
   --mq-body: 'Figtree', system-ui, sans-serif;

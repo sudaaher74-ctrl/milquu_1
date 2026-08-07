@@ -1,5 +1,6 @@
 import express from 'express';
 import FreeSample from '../models/FreeSample.js';
+import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -46,8 +47,8 @@ router.post('/submit', async (req, res) => {
 
 // @route   GET /api/free-sample/admin/all
 // @desc    Get all free sample requests (Admin)
-// @access  Private (Needs admin auth in real app, simplified here)
-router.get('/admin/all', async (req, res) => {
+// @access  Private/Admin
+router.get('/admin/all', protect, admin, async (req, res) => {
   try {
     const samples = await FreeSample.find({}).sort({ createdAt: -1 });
     res.status(200).json(samples);
@@ -59,8 +60,8 @@ router.get('/admin/all', async (req, res) => {
 
 // @route   PUT /api/free-sample/admin/:id/status
 // @desc    Update status of a free sample request
-// @access  Private
-router.put('/admin/:id/status', async (req, res) => {
+// @access  Private/Admin
+router.put('/admin/:id/status', protect, admin, async (req, res) => {
   try {
     const { status } = req.body;
     
