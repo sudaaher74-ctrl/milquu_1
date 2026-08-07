@@ -1,7 +1,7 @@
 services:
   # Backend API Service
   - type: web
-    name: milquu-api
+    name: milquu-backend
     env: node
     buildCommand: cd backend && npm install
     startCommand: cd backend && npm start
@@ -18,9 +18,11 @@ services:
         sync: false
       - key: SENTRY_DSN
         sync: false
-      # Comma-separated list of allowed browser origins (update if you use a custom domain)
+      # Comma-separated list of allowed browser origins. The real frontend is
+      # the Vercel deployment (project "milquufresh"), not the Render static
+      # site below — add a custom domain here too if you attach one in Vercel.
       - key: CORS_ORIGIN
-        value: https://milquu-frontend.onrender.com
+        value: https://milquufresh.vercel.app
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET
@@ -51,6 +53,11 @@ services:
         sync: false
 
   # Frontend Static Site
+  #
+  # Not the live frontend — production traffic is served from Vercel (project
+  # "milquufresh"), which is what CORS_ORIGIN above is set for. This definition
+  # is kept in case Render is ever used instead of Vercel; update VITE_API_URL
+  # and redeploy this service before relying on it.
   - type: web
     name: milquu-frontend
     env: static
@@ -60,7 +67,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: VITE_API_URL
-        value: https://milquu-api.onrender.com
+        value: https://milquu-backend.onrender.com
     routes:
       # Redirect all 404s to index.html for React Router
       - type: rewrite
