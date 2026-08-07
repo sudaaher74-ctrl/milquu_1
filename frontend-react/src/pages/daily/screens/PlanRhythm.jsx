@@ -1,16 +1,23 @@
 import { useNavigate } from 'react-router-dom';
-import { Screen, StepBar, ActionBar, Icon } from '../ui';
+import { Screen, StepBar, TopBar, ActionBar, Icon } from '../ui';
 import { RHYTHMS, DELIVERY_SLOTS } from '../catalogue';
 import { WEEKDAY_INITIALS } from '../dates';
 import { useDaily } from '../DailyContext';
 
 export default function PlanRhythm() {
   const navigate = useNavigate();
-  const { rhythm, setRhythm, rhythmDef, slot, setSlot, slotDef } = useDaily();
+  const { rhythm, setRhythm, rhythmDef, slot, setSlot, slotDef, planActive } = useDaily();
 
+  // Editing an existing plan saves each change immediately (setRhythm/setSlot
+  // PUT straight to the server) — there is no draft left to confirm, so this
+  // screen is the whole flow rather than step 2 of signing up.
   return (
     <Screen>
-      <StepBar step={2} to="/app/start/milk" />
+      {planActive ? (
+        <TopBar title="Rhythm and slot" to="/app/plan" />
+      ) : (
+        <StepBar step={2} to="/app/start/milk" />
+      )}
 
       <div className="mq-body" style={{ paddingTop: 22, gap: 20 }}>
         <h2>How often, and when?</h2>
@@ -84,9 +91,15 @@ export default function PlanRhythm() {
       <div className="mq-fill" />
 
       <ActionBar summary={{ title: rhythmDef.long, note: slotDef.label }}>
-        <button type="button" className="mq-btn mq-btn-md" onClick={() => navigate('/app/start/review')}>
-          Review
-        </button>
+        {planActive ? (
+          <button type="button" className="mq-btn mq-btn-md" onClick={() => navigate('/app/plan')}>
+            Done
+          </button>
+        ) : (
+          <button type="button" className="mq-btn mq-btn-md" onClick={() => navigate('/app/start/review')}>
+            Review
+          </button>
+        )}
       </ActionBar>
     </Screen>
   );

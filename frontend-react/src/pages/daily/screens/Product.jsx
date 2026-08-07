@@ -7,11 +7,13 @@ export default function Product() {
   // `key` is the real Product._id — the same id the orders API is given.
   const { key } = useParams();
   const navigate = useNavigate();
-  const { addToCart, productOf, loading } = useDaily();
+  const { addToCart, productOf } = useDaily();
   const p = productOf(key);
 
-  // Don't bounce the customer out while the catalogue is still arriving.
-  if (!p) return loading ? null : <Navigate to="/app/shop" replace />;
+  // DailyApp holds this route behind its own loading screen until the
+  // catalogue has arrived, so reaching here with no match means the id is
+  // genuinely wrong — not that the catalogue hasn't loaded yet.
+  if (!p) return <Navigate to="/app/shop" replace />;
 
   return (
     <Screen>

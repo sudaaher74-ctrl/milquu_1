@@ -98,7 +98,7 @@ export default function Shop() {
             </span>
             <div className="mq-row" style={{ gap: 8, marginTop: 2 }}>
               <button type="button" className="mq-btn-outline mq-btn-sm" style={{ flex: 1, padding: '9px 0' }} onClick={() => addToCart(p.key)}>
-                Add
+                + Add
               </button>
               {p.plan && (
                 <button type="button" className="mq-btn mq-btn-sm" style={{ flex: 1, padding: '9px 0' }} onClick={() => navigate('/app/start/milk')}>

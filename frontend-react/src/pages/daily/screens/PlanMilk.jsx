@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, StepBar, ActionBar, Stepper } from '../ui';
+import { rupees } from '../catalogue';
 import { useDaily } from '../DailyContext';
 
 export default function PlanMilk() {

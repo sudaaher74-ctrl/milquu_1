@@ -93,6 +93,7 @@ export default function Account() {
             icon="pin"
             label="Delivery address"
             value={areaName ? `${address.label} · ${areaName}` : 'Not set'}
+            chevron
             onClick={() => navigate('/app/start/address')}
           />
           <ListRow
