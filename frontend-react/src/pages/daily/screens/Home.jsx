@@ -12,12 +12,34 @@ export default function Home() {
     itemRows, priceOf, suggested, runwayDays, planDaily,
   } = useDaily();
 
-  // Nothing to come home to until a plan exists — browse the shop instead of
-  // being funnelled through onboarding. Starting a plan is still one tap away
-  // from any product, just never forced as the landing screen.
-  if (!planActive) return <Navigate to="/app/shop" replace />;
   // A plan without a serviceable address can't be delivered.
-  if (!areaName) return <Navigate to="/app/start/address" replace />;
+  if (planActive && !areaName) return <Navigate to="/app/start/address" replace />;
+
+  // Nothing to come home to until a plan exists. This used to redirect to the
+  // shop, but redirecting away from the tab you just tapped makes the Home
+  // button in the TabBar look dead when you're anywhere else in the app — so
+  // it renders its own empty state instead. Starting a plan is still one tap
+  // away from any product, just never forced as the landing screen.
+  if (!planActive) {
+    return (
+      <Screen>
+        <div className="mq-col" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, padding: '0 26px', textAlign: 'center' }}>
+          <Icon name="home" size={40} color="var(--mq-sage-600)" />
+          <h3>No active plan yet</h3>
+          <p className="mq-sub">Start a daily milk plan and this is where you'll see tomorrow's crate.</p>
+          <div className="mq-col" style={{ gap: 12, width: '100%', marginTop: 8 }}>
+            <button type="button" className="mq-btn" onClick={() => navigate('/app/start/address')}>
+              Start a plan
+            </button>
+            <button type="button" className="mq-btn-outline" onClick={() => navigate('/app/shop')}>
+              Browse shop
+            </button>
+          </div>
+        </div>
+        <TabBar />
+      </Screen>
+    );
+  }
 
   const rows = itemRows(crate);
   // What the nightly engine will actually see: it debits the wallet before
