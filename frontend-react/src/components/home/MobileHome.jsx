@@ -102,35 +102,34 @@ const MobileHome = () => {
   ];
 
   const features = [
-    { title: 'Tested & Certified', icon: <ShieldCheck className="w-5 h-5 text-green-500" /> },
-    { title: 'Freshly Sourced Daily', icon: <Leaf className="w-5 h-5 text-green-500" /> },
-    { title: 'No Preservatives', icon: <FlaskConical className="w-5 h-5 text-green-500" /> },
-    { title: 'Fast Delivery', icon: <Truck className="w-5 h-5 text-green-500" /> },
+    { title: 'Tested & Certified', icon: <ShieldCheck className="w-5 h-5 text-milquu-green" /> },
+    { title: 'Freshly Sourced Daily', icon: <Leaf className="w-5 h-5 text-milquu-green" /> },
+    { title: 'No Preservatives', icon: <FlaskConical className="w-5 h-5 text-milquu-green" /> },
+    { title: 'Fast Delivery', icon: <Truck className="w-5 h-5 text-milquu-green" /> },
   ];
 
-  // Primary Blue: #1E3A8A, Fresh Green: #22C55E, Background: #FFF8F0 or #F9FAFB
   const userName = user?.name ? user.name.split(' ')[0] : '';
 
   return (
-    <div className="bg-[#fafafc] min-h-screen pb-28 font-poppins w-full max-w-[100vw] overflow-x-hidden md:hidden">
+    <div className="bg-milquu-gray min-h-screen pb-28 font-poppins w-full max-w-[100vw] overflow-x-hidden md:hidden">
       
       {/* HEADER */}
       <div className="px-5 pt-6 pb-2">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-[22px] font-bold text-[#111827] leading-tight">
+            <h1 className="text-[22px] font-bold text-milquu-dark leading-tight">
               Good Morning{userName ? `, ${userName}` : ''} <span className="inline-block origin-bottom-right hover:animate-waving-hand">👋</span>
             </h1>
             <p className="text-[13px] text-gray-500 mt-1 font-medium">Fresh dairy delivered daily</p>
           </div>
           <div className="flex items-center space-x-3 mt-1">
             <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100">
-              <Bell className="text-[#1E3A8A] w-5 h-5" />
+              <Bell className="text-[#0D47A1] w-5 h-5" />
             </div>
             <div className="relative w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100" onClick={() => navigate('/cart')}>
-              <ShoppingCart className="text-[#1E3A8A] w-5 h-5" />
+              <ShoppingCart className="text-[#0D47A1] w-5 h-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#22C55E] border-2 border-white text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+                <span className="absolute -top-1 -right-1 bg-[#D4AF37] border-2 border-white text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
                   {cartCount}
                 </span>
               )}
@@ -209,20 +208,20 @@ const MobileHome = () => {
 
       {/* SUBSCRIPTION PROMOTION CARD */}
       <div className="px-5 mt-6">
-        <div className="relative w-full rounded-3xl overflow-hidden shadow-sm bg-gradient-to-r from-[#eef8eb] to-[#f5fdf2] border border-green-50 p-5 flex items-center">
+        <div className="relative w-full rounded-3xl overflow-hidden shadow-sm bg-gradient-to-r from-[#FBF3E0] to-[#FEFAF0] border border-[#F3E4B0] p-5 flex items-center">
           <div className="absolute top-0 right-0 w-32 h-full opacity-60">
             {/* Background elements to represent farm/bottles */}
             <div className="absolute bottom-0 right-0 w-24 h-24 bg-green-100/50 rounded-full blur-xl"></div>
           </div>
           
           <div className="relative z-10 w-full">
-            <div className="absolute top-0 right-0 bg-[#1E3A8A] text-white text-[11px] font-bold px-3 py-1.5 rounded-bl-xl rounded-tr-xl">
+            <div className="absolute top-0 right-0 bg-[#0D47A1] text-white text-[11px] font-bold px-3 py-1.5 rounded-bl-xl rounded-tr-xl">
               Save 15%
             </div>
-            <h3 className="text-[18px] font-bold text-[#111827] mb-1">Never run out of milk</h3>
-            <p className="text-[13px] font-bold text-[#22C55E] mb-1">Save 15% every month</p>
+            <h3 className="text-[18px] font-bold text-milquu-dark mb-1">Never run out of milk</h3>
+            <p className="text-[13px] font-bold text-[#D4AF37] mb-1">Save 15% every month</p>
             <p className="text-[11px] text-gray-500 font-medium mb-3">Flexible delivery • Pause anytime</p>
-            <button className="bg-[#22C55E] text-white text-[12px] font-bold px-4 py-2 rounded-full w-fit flex items-center shadow-md">
+            <button className="bg-[#D4AF37] text-white text-[12px] font-bold px-4 py-2 rounded-full w-fit flex items-center shadow-md">
               Start Subscription <span className="ml-1">→</span>
             </button>
           </div>
@@ -232,8 +231,8 @@ const MobileHome = () => {
       {/* BEST SELLERS */}
       <div className="pl-5 mt-8">
         <div className="flex justify-between items-center mb-4 pr-5">
-          <h3 className="font-bold text-[#111827] text-[18px]">Best Sellers</h3>
-          <span onClick={() => navigate('/products')} className="text-[#1E3A8A] text-[13px] font-bold flex items-center cursor-pointer">
+          <h3 className="font-bold text-milquu-dark text-[18px]">Best Sellers</h3>
+          <span onClick={() => navigate('/products')} className="text-[#0D47A1] text-[13px] font-bold flex items-center cursor-pointer">
             View all <span className="ml-0.5 text-[16px]">›</span>
           </span>
         </div>
@@ -247,7 +246,7 @@ const MobileHome = () => {
               const isOutOfStock = Number.isNaN(stockLevel) ? true : stockLevel <= 0;
               return (
               <div key={product._id || product.id} className="w-[280px] flex-shrink-0 bg-white rounded-[20px] p-3 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 flex flex-row items-center relative group">
-                <Link to={`/product/${getProductSlug(product.name || '')}`} className="w-[100px] h-[100px] flex justify-center items-center bg-[#F9FAFB] rounded-[14px] p-2 flex-shrink-0">
+                <Link to={`/product/${getProductSlug(product.name || '')}`} className="w-[100px] h-[100px] flex justify-center items-center bg-milquu-gray rounded-[14px] p-2 flex-shrink-0">
                   <img
                     src={product.image}
                     alt={product.name}
@@ -257,13 +256,13 @@ const MobileHome = () => {
 
                 <div className="flex flex-col ml-3 flex-grow h-full justify-between py-1">
                   <div>
-                    <h4 className="text-[14px] font-bold text-[#111827] leading-tight line-clamp-1">{product.name}</h4>
+                    <h4 className="text-[14px] font-bold text-milquu-dark leading-tight line-clamp-1">{product.name}</h4>
                     <span className="text-[11px] text-gray-500 font-medium mt-0.5 block">{isOutOfStock ? 'Out of stock' : (product.name || '').toLowerCase().includes('milk') ? '100% Pure A2 Milk' : 'Made from Bilona Method'}</span>
                   </div>
 
                   <div className="flex justify-between items-end mt-2">
                     <div className="flex flex-col">
-                      <span className="text-[16px] font-bold text-[#111827]">
+                      <span className="text-[16px] font-bold text-milquu-dark">
                         ₹{(product.name || '').toLowerCase().includes('milk') ? Math.ceil(product.price / 2) : product.price}
                       </span>
                       <div className="flex items-center mt-0.5 space-x-0.5">
@@ -278,7 +277,7 @@ const MobileHome = () => {
                     <button
                       onClick={(e) => !isOutOfStock && handleAddToCart(product, e)}
                       disabled={isOutOfStock}
-                      className={`px-3 py-1.5 rounded-full border flex items-center justify-center font-bold text-[12px] transition-colors ${isOutOfStock ? 'border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed' : 'border-[#22C55E] text-[#22C55E] bg-green-50/30 hover:bg-[#22C55E] hover:text-white'}`}
+                      className={`px-3 py-1.5 rounded-full border flex items-center justify-center font-bold text-[12px] transition-colors ${isOutOfStock ? 'border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed' : 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10 hover:bg-[#D4AF37] hover:text-white'}`}
                     >
                       {isOutOfStock ? 'Sold out' : <><Plus className="w-3.5 h-3.5 mr-0.5" /> Add</>}
                     </button>
@@ -294,8 +293,8 @@ const MobileHome = () => {
       {/* TODAY'S FRESH PICKS */}
       <div className="pl-5 mt-4 mb-8">
         <div className="flex justify-between items-center mb-4 pr-5">
-          <h3 className="font-bold text-[#111827] text-[18px]">Today's Fresh Picks</h3>
-          <span onClick={() => navigate('/products')} className="text-[#1E3A8A] text-[13px] font-bold flex items-center cursor-pointer">
+          <h3 className="font-bold text-milquu-dark text-[18px]">Today's Fresh Picks</h3>
+          <span onClick={() => navigate('/products')} className="text-[#0D47A1] text-[13px] font-bold flex items-center cursor-pointer">
             View all <span className="ml-0.5 text-[16px]">›</span>
           </span>
         </div>
@@ -310,8 +309,8 @@ const MobileHome = () => {
                   <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain drop-shadow-sm" />
                 </div>
                 <div className="flex flex-col ml-2 justify-center">
-                  <h4 className="text-[12px] font-bold text-[#111827] leading-tight line-clamp-2">{product.name}</h4>
-                  <span className="text-[13px] font-bold text-[#1E3A8A] mt-1">₹{product.price}</span>
+                  <h4 className="text-[12px] font-bold text-milquu-dark leading-tight line-clamp-2">{product.name}</h4>
+                  <span className="text-[13px] font-bold text-[#0D47A1] mt-1">₹{product.price}</span>
                 </div>
               </div>
             ))}
@@ -323,9 +322,9 @@ const MobileHome = () => {
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[24px] shadow-[0_-4px_20px_rgba(0,0,0,0.05)] px-6 py-3 pb-safe border-t border-gray-100">
         <div className="flex justify-between items-center max-w-md mx-auto">
           <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/')}>
-            <Home className="w-6 h-6 text-[#1E3A8A]" />
-            <span className="text-[10px] font-bold text-[#1E3A8A] mt-1">Home</span>
-            <div className="w-1 h-1 bg-[#1E3A8A] rounded-full mt-0.5"></div>
+            <Home className="w-6 h-6 text-[#0D47A1]" />
+            <span className="text-[10px] font-bold text-[#0D47A1] mt-1">Home</span>
+            <div className="w-1 h-1 bg-[#0D47A1] rounded-full mt-0.5"></div>
           </div>
           <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/products')}>
             <Store className="w-6 h-6 text-gray-400" />

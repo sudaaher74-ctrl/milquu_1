@@ -64,7 +64,7 @@ export function TopBar({ title, to, right, solid = false }) {
         onClick={() => (to ? navigate(to) : navigate(-1))}
         aria-label="Go back"
       >
-        <Icon name="back" size={15} color="#201e1d" />
+        <Icon name="back" size={15} color="#1f2937" />
       </button>
       {title && <span className="mq-top-title">{title}</span>}
       {right && <div style={{ marginLeft: 'auto' }}>{right}</div>}
@@ -78,7 +78,7 @@ export function StepBar({ step, to }) {
   return (
     <div className="mq-top">
       <button type="button" className="mq-back" onClick={() => navigate(to)} aria-label="Go back">
-        <Icon name="back" size={15} color="#201e1d" />
+        <Icon name="back" size={15} color="#1f2937" />
       </button>
       <div className="mq-steps" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={3}>
         {[1, 2, 3].map((n) => <span key={n} className={n <= step ? 'on' : undefined} />)}
@@ -150,7 +150,7 @@ export function Stepper({ value, onDec, onInc, min = 0, max = 6, label }) {
 export function Note({ icon, children }) {
   return (
     <div className="mq-note">
-      {icon && <Icon name={icon} color="#3d472b" />}
+      {icon && <Icon name={icon} color="#6b5313" />}
       <span style={{ flex: 1 }}>{children}</span>
     </div>
   );
@@ -170,7 +170,7 @@ export function ListRow({ icon, label, value, chevron, onClick }) {
         font: 'inherit', color: 'inherit',
       }}
     >
-      {icon && <Icon name={icon} color="#201e1d" />}
+      {icon && <Icon name={icon} color="#1f2937" />}
       <span style={{ flex: 1, fontSize: 15, fontWeight: 700 }}>{label}</span>
       {value && <span className="mq-sub">{value}</span>}
       {chevron && <Icon name="next" size={17} color="#82796a" />}

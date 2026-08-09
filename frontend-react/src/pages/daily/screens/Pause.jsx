@@ -96,7 +96,7 @@ export default function Pause() {
                 aria-label="Next month"
                 style={{ width: 30, height: 30, borderRadius: 999, border: '1px solid var(--mq-divider)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
-                <Icon name="next" size={12} color="#201e1d" />
+                <Icon name="next" size={12} color="#1f2937" />
               </button>
             </div>
           </div>

@@ -5,12 +5,16 @@
    sage tuning of the system: green is the action colour, the page is a washed
    green-white, and every surface that carries content is plain white. */
 .mq-app {
-  --mq-page: #e4ead5;
-  --mq-surface: #fdfbf5;
-  --mq-tint: #dae3c9;
-  --mq-rail: #c2cbb1;
-  --mq-text: #201e1d;
-  --mq-divider: rgba(32, 30, 29, 0.22);
+  /* Same brand as the website's Tailwind theme (src/index.css: milquu-gold
+     #D4AF37, milquu-dark #1F2937) — a gold ramp standing in for the sage
+     green this app used to run on its own, so the two surfaces read as one
+     brand instead of two. */
+  --mq-page: #fbf6e9;
+  --mq-surface: #fdfbf7;
+  --mq-tint: #f3e7c9;
+  --mq-rail: #e6d6a8;
+  --mq-text: #1f2937;
+  --mq-divider: rgba(31, 41, 55, 0.18);
 
   --mq-neutral-400: #ab9f89;
   --mq-neutral-500: #8f8270;
@@ -18,14 +22,14 @@
   --mq-neutral-700: #544c41;
   --mq-neutral-800: #3a352c;
 
-  --mq-sage-100: #e2efc2;
-  --mq-sage-200: #cde09f;
-  --mq-sage-300: #b5cd85;
-  --mq-sage-400: #98b268;
-  --mq-sage-600: #5c6c3d;
-  --mq-sage-700: #444f2e;
-  --mq-sage-800: #2f3820;
-  --mq-sage-900: #1b2012;
+  --mq-sage-100: #faf0d6;
+  --mq-sage-200: #f0dfa3;
+  --mq-sage-300: #e2c670;
+  --mq-sage-400: #d4af37;
+  --mq-sage-600: #a9861f;
+  --mq-sage-700: #8c6d1a;
+  --mq-sage-800: #6b5313;
+  --mq-sage-900: #453609;
 
 
   --mq-heading: 'Caprasimo', Georgia, serif;

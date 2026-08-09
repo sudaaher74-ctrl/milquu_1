@@ -70,13 +70,13 @@ export default function Home() {
           style={{ margin: '20px 20px 0', width: 'calc(100% - 40px)', textAlign: 'left', border: 0, cursor: 'pointer', font: 'inherit', color: 'inherit' }}
           onClick={() => navigate('/app/wallet')}
         >
-          <Icon name="alert" color="#3d472b" />
+          <Icon name="alert" color="#6b5313" />
           <span style={{ flex: 1, fontWeight: 700 }}>
             {runwayDays > 0
               ? `Only ${runwayDays} more ${runwayDays === 1 ? 'morning' : 'mornings'} left on your wallet — top up to keep the milk coming.`
               : 'Wallet balance too low for tomorrow’s crate — top up now or the plan pauses.'}
           </span>
-          <Icon name="next" size={16} color="#3d472b" />
+          <Icon name="next" size={16} color="#6b5313" />
         </button>
       )}
 

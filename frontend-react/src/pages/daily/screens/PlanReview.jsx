@@ -100,7 +100,7 @@ export default function PlanReview() {
         <div className="mq-col" style={{ gap: 8 }}>
           <span className="mq-label">Pay from</span>
           <div className="mq-card mq-card-flat mq-card-pad" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <Icon name="wallet" color="#201e1d" />
+            <Icon name="wallet" color="#1f2937" />
             <span style={{ flex: 1, fontSize: 15, fontWeight: 700 }}>Milquu wallet</span>
             <span className="mq-sub">₹{rupees(wallet)}</span>
           </div>

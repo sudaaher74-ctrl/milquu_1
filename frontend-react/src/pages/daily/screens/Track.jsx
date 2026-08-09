@@ -74,7 +74,7 @@ export default function Track() {
               const done = i <= stageIndex;
               return (
                 <div key={stage.key} className="mq-row" style={{ gap: 12, alignItems: 'flex-start', opacity: done ? 1 : 0.45 }}>
-                  <Icon name={done ? 'check' : 'clock'} size={16} color={done ? '#56633f' : '#82796a'} />
+                  <Icon name={done ? 'check' : 'clock'} size={16} color={done ? '#a9861f' : '#82796a'} />
                   <div className="mq-col" style={{ flex: 1, gap: 2 }}>
                     <span style={{ fontSize: 14, fontWeight: 700 }}>{stage.label}</span>
                     <span className="mq-item-meta">{stage.note}</span>
@@ -86,7 +86,7 @@ export default function Track() {
 
           {failed && order.failedReason && (
             <div className="mq-note">
-              <Icon name="alert" color="#3d472b" />
+              <Icon name="alert" color="#6b5313" />
               <span style={{ flex: 1 }}>{order.failedReason}</span>
             </div>
           )}
@@ -94,7 +94,7 @@ export default function Track() {
           {/* Only shown when a rider has actually been assigned. */}
           {order.deliveryStaff && status === 'Out For Delivery' && (
             <div className="mq-note">
-              <Icon name="clock" color="#3d472b" />
+              <Icon name="clock" color="#6b5313" />
               <span style={{ flex: 1 }}>
                 Someone is on the round now. They arrive within your {slotDef.label} window.
               </span>
@@ -102,7 +102,7 @@ export default function Track() {
           )}
 
           <div className="mq-note">
-            <Icon name="bag" color="#3d472b" />
+            <Icon name="bag" color="#6b5313" />
             <span style={{ flex: 1 }}>
               Leave any empty bottles outside — they’re collected on the same round.
             </span>

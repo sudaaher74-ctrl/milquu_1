@@ -110,7 +110,7 @@ export default function Wallet() {
       <div className="mq-body" style={{ paddingTop: 24, gap: 14 }}>
         {planActive && planDaily > 0 && runwayDays <= 3 && (
           <div className="mq-note">
-            <Icon name="alert" color="#3d472b" />
+            <Icon name="alert" color="#6b5313" />
             <span style={{ flex: 1 }}>
               {runwayDays > 0
                 ? `At this rate the balance runs out around ${fmtDay(runsOut)}.`

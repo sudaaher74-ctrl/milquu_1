@@ -35,7 +35,7 @@ export default function Product() {
             onClick={() => navigate('/app/shop')}
             aria-label="Back to shop"
           >
-            <Icon name="back" size={15} color="#201e1d" />
+            <Icon name="back" size={15} color="#1f2937" />
           </button>
         </div>
         <img

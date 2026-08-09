@@ -81,7 +81,7 @@ export default function PlanRhythm() {
         </div>
 
         <div className="mq-note">
-          <Icon name="clock" color="#3d472b" />
+          <Icon name="clock" color="#6b5313" />
           <span style={{ flex: 1 }}>
             Change tomorrow’s crate until 9 pm tonight. Skip any day, any time.
           </span>

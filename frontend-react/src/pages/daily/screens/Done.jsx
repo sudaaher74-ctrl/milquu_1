@@ -26,7 +26,7 @@ export default function Done() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}
           >
-            <Icon name="check" size={34} color="#56633f" />
+            <Icon name="check" size={34} color="#a9861f" />
           </div>
 
           <h2 style={{ fontSize: 38, color: 'var(--mq-sage-100)' }}>

@@ -71,7 +71,7 @@ export default function Address() {
 
         {draft.area && (
           <div className="mq-note">
-            <Icon name="pin" color="#3d472b" />
+            <Icon name="pin" color="#6b5313" />
             <span style={{ flex: 1, fontWeight: 700 }}>
               We deliver in {areas.find((a) => a.slug === draft.area)?.name} — {slotDef.label}
             </span>

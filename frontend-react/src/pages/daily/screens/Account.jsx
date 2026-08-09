@@ -30,7 +30,7 @@ export default function Account() {
             fontSize: 22, color: 'var(--mq-sage-800)',
           }}
         >
-          {user?.name ? initialsOf(user.name) : <Icon name="user" size={26} color="#3d472b" />}
+          {user?.name ? initialsOf(user.name) : <Icon name="user" size={26} color="#6b5313" />}
         </div>
         <div className="mq-col" style={{ flex: 1, gap: 2 }}>
           <span className="mq-num" style={{ fontSize: 24, lineHeight: 1.1 }}>
