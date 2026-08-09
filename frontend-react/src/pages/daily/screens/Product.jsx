@@ -15,6 +15,9 @@ export default function Product() {
   // genuinely wrong — not that the catalogue hasn't loaded yet.
   if (!p) return <Navigate to="/app/shop" replace />;
 
+  const stockLevel = parseInt(p.stock, 10);
+  const isOutOfStock = Number.isNaN(stockLevel) ? true : stockLevel <= 0;
+
   return (
     <Screen>
       <div
@@ -75,23 +78,31 @@ export default function Product() {
       <div className="mq-fill" />
 
       <ActionBar>
-        <button
-          type="button"
-          className="mq-btn-outline"
-          style={{ flex: 1, padding: '15px 0' }}
-          onClick={() => { addToCart(p.key); navigate('/app/cart'); }}
-        >
-          Add once · ₹{rupees(p.price)}
-        </button>
-        {p.plan && (
-          <button
-            type="button"
-            className="mq-btn mq-btn-md"
-            style={{ flex: 1.2, padding: '15px 0' }}
-            onClick={() => navigate('/app/start/milk')}
-          >
-            Every day · ₹{rupees(p.plan)}
+        {isOutOfStock ? (
+          <button type="button" className="mq-btn-outline" style={{ flex: 1, padding: '15px 0' }} disabled>
+            Out of stock
           </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="mq-btn-outline"
+              style={{ flex: 1, padding: '15px 0' }}
+              onClick={() => { addToCart(p.key); navigate('/app/cart'); }}
+            >
+              Add once · ₹{rupees(p.price)}
+            </button>
+            {p.plan && (
+              <button
+                type="button"
+                className="mq-btn mq-btn-md"
+                style={{ flex: 1.2, padding: '15px 0' }}
+                onClick={() => navigate('/app/start/milk')}
+              >
+                Every day · ₹{rupees(p.plan)}
+              </button>
+            )}
+          </>
         )}
       </ActionBar>
     </Screen>

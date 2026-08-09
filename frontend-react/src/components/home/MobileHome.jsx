@@ -242,22 +242,25 @@ const MobileHome = () => {
           <div className="text-center py-6 text-gray-500 text-sm">Loading best sellers...</div>
         ) : (
           <div className="flex overflow-x-auto hide-scrollbar space-x-4 pb-4 pr-5">
-            {bestSellers.map((product) => (
+            {bestSellers.map((product) => {
+              const stockLevel = parseInt(product.stock, 10);
+              const isOutOfStock = Number.isNaN(stockLevel) ? true : stockLevel <= 0;
+              return (
               <div key={product._id || product.id} className="w-[280px] flex-shrink-0 bg-white rounded-[20px] p-3 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 flex flex-row items-center relative group">
                 <Link to={`/product/${getProductSlug(product.name || '')}`} className="w-[100px] h-[100px] flex justify-center items-center bg-[#F9FAFB] rounded-[14px] p-2 flex-shrink-0">
-                  <img 
-                    src={product.image} 
-                    alt={product.name} 
-                    className="max-w-full max-h-full object-contain drop-shadow-sm"
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className={`max-w-full max-h-full object-contain drop-shadow-sm ${isOutOfStock ? 'opacity-50' : ''}`}
                   />
                 </Link>
-                
+
                 <div className="flex flex-col ml-3 flex-grow h-full justify-between py-1">
                   <div>
                     <h4 className="text-[14px] font-bold text-[#111827] leading-tight line-clamp-1">{product.name}</h4>
-                    <span className="text-[11px] text-gray-500 font-medium mt-0.5 block">{(product.name || '').toLowerCase().includes('milk') ? '100% Pure A2 Milk' : 'Made from Bilona Method'}</span>
+                    <span className="text-[11px] text-gray-500 font-medium mt-0.5 block">{isOutOfStock ? 'Out of stock' : (product.name || '').toLowerCase().includes('milk') ? '100% Pure A2 Milk' : 'Made from Bilona Method'}</span>
                   </div>
-                  
+
                   <div className="flex justify-between items-end mt-2">
                     <div className="flex flex-col">
                       <span className="text-[16px] font-bold text-[#111827]">
@@ -272,16 +275,18 @@ const MobileHome = () => {
                         <span className="text-[10px] text-gray-400 font-medium ml-1">(4.8)</span>
                       </div>
                     </div>
-                    <button 
-                      onClick={(e) => handleAddToCart(product, e)}
-                      className="px-3 py-1.5 rounded-full border border-[#22C55E] text-[#22C55E] flex items-center justify-center font-bold text-[12px] bg-green-50/30 hover:bg-[#22C55E] hover:text-white transition-colors"
+                    <button
+                      onClick={(e) => !isOutOfStock && handleAddToCart(product, e)}
+                      disabled={isOutOfStock}
+                      className={`px-3 py-1.5 rounded-full border flex items-center justify-center font-bold text-[12px] transition-colors ${isOutOfStock ? 'border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed' : 'border-[#22C55E] text-[#22C55E] bg-green-50/30 hover:bg-[#22C55E] hover:text-white'}`}
                     >
-                      <Plus className="w-3.5 h-3.5 mr-0.5" /> Add
+                      {isOutOfStock ? 'Sold out' : <><Plus className="w-3.5 h-3.5 mr-0.5" /> Add</>}
                     </button>
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

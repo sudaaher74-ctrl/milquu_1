@@ -81,33 +81,45 @@ export default function Shop() {
       </div>
 
       <div className="mq-grid" style={{ padding: '18px 20px 0' }}>
-        {shown.map((p) => (
-          <div key={p.key} className="mq-tile">
-            <button
-              type="button"
-              onClick={() => navigate(`/app/product/${p.key}`)}
-              style={{ border: 0, background: 'transparent', padding: 0, cursor: 'pointer', textAlign: 'left' }}
-            >
-              <img src={p.img} alt={p.name} />
-              <span className="mq-label mq-kicker-sage" style={{ display: 'block', marginTop: 6 }}>{p.kicker}</span>
-              <span className="mq-tile-name" style={{ display: 'block', marginTop: 6 }}>{p.name} {p.unit}</span>
-            </button>
-            <span className="mq-tile-price">
-              ₹{rupees(p.price)}
-              {p.plan && <span className="mq-tile-plan"> · ₹{rupees(p.plan)} on plan</span>}
-            </span>
-            <div className="mq-row" style={{ gap: 8, marginTop: 2 }}>
-              <button type="button" className="mq-btn-outline mq-btn-sm" style={{ flex: 1, padding: '9px 0' }} onClick={() => addToCart(p.key)}>
-                + Add
+        {shown.map((p) => {
+          const stockLevel = parseInt(p.stock, 10);
+          const isOutOfStock = Number.isNaN(stockLevel) ? true : stockLevel <= 0;
+          return (
+            <div key={p.key} className="mq-tile">
+              <button
+                type="button"
+                onClick={() => navigate(`/app/product/${p.key}`)}
+                style={{ border: 0, background: 'transparent', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+              >
+                <img src={p.img} alt={p.name} style={isOutOfStock ? { opacity: 0.5 } : undefined} />
+                <span className="mq-label mq-kicker-sage" style={{ display: 'block', marginTop: 6 }}>
+                  {isOutOfStock ? 'Out of stock' : p.kicker}
+                </span>
+                <span className="mq-tile-name" style={{ display: 'block', marginTop: 6 }}>{p.name} {p.unit}</span>
               </button>
-              {p.plan && (
-                <button type="button" className="mq-btn mq-btn-sm" style={{ flex: 1, padding: '9px 0' }} onClick={() => navigate('/app/start/milk')}>
-                  Plan
+              <span className="mq-tile-price">
+                ₹{rupees(p.price)}
+                {p.plan && <span className="mq-tile-plan"> · ₹{rupees(p.plan)} on plan</span>}
+              </span>
+              <div className="mq-row" style={{ gap: 8, marginTop: 2 }}>
+                <button
+                  type="button"
+                  className="mq-btn-outline mq-btn-sm"
+                  style={{ flex: 1, padding: '9px 0' }}
+                  onClick={() => addToCart(p.key)}
+                  disabled={isOutOfStock}
+                >
+                  {isOutOfStock ? 'Sold out' : '+ Add'}
                 </button>
-              )}
+                {p.plan && !isOutOfStock && (
+                  <button type="button" className="mq-btn mq-btn-sm" style={{ flex: 1, padding: '9px 0' }} onClick={() => navigate('/app/start/milk')}>
+                    Plan
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {shown.length === 0 && (

@@ -113,6 +113,7 @@ export const decorate = (product) => {
     unit: product.unit,
     price: product.price,
     plan: product.planPrice ?? null,
+    stock: product.stock,
     cat: categoryOf(product),
     img: product.image,
     // Copy falls back to what the API actually knows. No invented detail.

@@ -371,6 +371,20 @@
   font-size: 14px;
 }
 
+.mq-app .mq-btn:disabled,
+.mq-app .mq-btn-outline:disabled,
+.mq-app .mq-btn-soft:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  background: var(--mq-neutral-400);
+  color: var(--mq-neutral-600);
+}
+
+.mq-btn-outline:disabled:hover,
+.mq-btn:disabled:hover {
+  background: var(--mq-neutral-400);
+}
+
 /* Pale sage "+ Add", used on every product tile. */
 .mq-app .mq-btn-soft {
   border: 0;
