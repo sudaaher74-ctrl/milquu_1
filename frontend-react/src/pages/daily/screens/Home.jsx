@@ -82,13 +82,13 @@ export default function Home() {
 
       {tomorrowSkipped ? (
         <div className="mq-dark mq-col" style={{ margin: '20px 20px 0', gap: 11, padding: 20 }}>
-          <span className="mq-label" style={{ color: 'var(--mq-sage-200)' }}>
+          <span className="mq-label" style={{ color: 'var(--mq-green-200)' }}>
             Tomorrow · {fmtDay(tomorrow)}
           </span>
-          <span className="mq-num" style={{ fontSize: 24, lineHeight: 1.1, color: 'var(--mq-sage-100)' }}>
+          <span className="mq-num" style={{ fontSize: 24, lineHeight: 1.1, color: 'var(--mq-green-100)' }}>
             Skipped. Nothing to pay.
           </span>
-          <span style={{ fontSize: 14, color: 'var(--mq-sage-200)' }}>
+          <span style={{ fontSize: 14, color: 'var(--mq-green-200)' }}>
             Your plan picks up again the next morning at {slotDef.label.split(' – ')[0]}.
           </span>
           <div className="mq-row" style={{ marginTop: 2 }}>

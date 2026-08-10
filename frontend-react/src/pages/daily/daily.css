@@ -6,22 +6,23 @@
    green-white, and every surface that carries content is plain white. */
 .mq-app {
   /* Same brand as the website's Tailwind theme (src/index.css: milquu-gold
-     #D4AF37, milquu-dark #1F2937) — a gold ramp standing in for the sage
-     green this app used to run on its own, so the two surfaces read as one
-     brand instead of two. */
-  --mq-page: #fbf6e9;
-  --mq-surface: #fdfbf7;
-  --mq-tint: #f3e7c9;
-  --mq-rail: #e6d6a8;
+     #D4AF37, milquu-blue #0D47A1, milquu-green #2E7D32, milquu-dark #1F2937)
+     — a white page with the site's full accent set layered on top, instead
+     of one single hue standing in for the whole app. */
+  --mq-page: #ffffff;
+  --mq-surface: #ffffff;
+  --mq-tint: #f3f4f6;
+  --mq-rail: #e5e7eb;
   --mq-text: #1f2937;
-  --mq-divider: rgba(31, 41, 55, 0.18);
+  --mq-divider: rgba(31, 41, 55, 0.14);
 
-  --mq-neutral-400: #ab9f89;
-  --mq-neutral-500: #8f8270;
-  --mq-neutral-600: #726657;
-  --mq-neutral-700: #544c41;
-  --mq-neutral-800: #3a352c;
+  --mq-neutral-400: #9ca3af;
+  --mq-neutral-500: #6b7280;
+  --mq-neutral-600: #4b5563;
+  --mq-neutral-700: #374151;
+  --mq-neutral-800: #1f2937;
 
+  /* Gold — primary action colour (buttons, active states, prices). */
   --mq-sage-100: #faf0d6;
   --mq-sage-200: #f0dfa3;
   --mq-sage-300: #e2c670;
@@ -30,6 +31,20 @@
   --mq-sage-700: #8c6d1a;
   --mq-sage-800: #6b5313;
   --mq-sage-900: #453609;
+
+  /* Blue — links, the active tab, informational accents. */
+  --mq-blue-100: #dbe7f6;
+  --mq-blue-200: #b3cceb;
+  --mq-blue-600: #0d47a1;
+  --mq-blue-700: #0a3980;
+  --mq-blue-900: #062350;
+
+  /* Green — success, trust badges, positive/confirmation states. */
+  --mq-green-100: #dcefdd;
+  --mq-green-200: #b3dcb6;
+  --mq-green-600: #2e7d32;
+  --mq-green-700: #256428;
+  --mq-green-900: #143a17;
 
 
   --mq-heading: 'Caprasimo', Georgia, serif;
@@ -209,7 +224,7 @@
 }
 
 .mq-steps span.on {
-  background: var(--mq-sage-700);
+  background: var(--mq-blue-600);
 }
 
 /* ── type ────────────────────────────────────────────────────────────────── */
@@ -278,17 +293,17 @@
   border: 1px solid var(--mq-divider);
 }
 
-/* Sage advisory strip — the design's one recurring "read this" element. */
+/* Blue advisory strip — the design's one recurring "read this" element. */
 .mq-note {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--mq-sage-200);
+  background: var(--mq-blue-100);
   border-radius: 24px;
   padding: 14px 16px;
   font-size: 14px;
   line-height: 1.45;
-  color: var(--mq-sage-900);
+  color: var(--mq-blue-900);
 }
 
 .mq-note-col {
@@ -302,14 +317,14 @@
 }
 
 .mq-dark {
-  background: var(--mq-sage-800);
-  color: var(--mq-sage-100);
+  background: var(--mq-green-700);
+  color: var(--mq-green-100);
   border-radius: 28px;
   padding: 18px 20px;
 }
 
 .mq-dark .mq-sub {
-  color: var(--mq-sage-200);
+  color: var(--mq-green-200);
 }
 
 .mq-photo {
@@ -563,7 +578,7 @@
 }
 
 .mq-pick-on {
-  border-color: var(--mq-sage-700);
+  border-color: var(--mq-blue-600);
   box-shadow: var(--mq-shadow-sm);
 }
 
@@ -572,7 +587,7 @@
   height: 20px;
   flex: none;
   border-radius: 999px;
-  background: var(--mq-sage-700);
+  background: var(--mq-blue-600);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -91,7 +91,7 @@ export default function PlanReview() {
           <span className="mq-num" style={{ fontSize: 20, lineHeight: 1.15 }}>
             You save ₹{rupees(savingsMonthly)} a month
           </span>
-          <span style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--mq-sage-200)' }}>
+          <span style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--mq-green-200)' }}>
             {savingsPercent}% off the one-off price. Each morning's crate comes out of your wallet —
             we pause the plan rather than deliver on credit if it runs low.
           </span>
