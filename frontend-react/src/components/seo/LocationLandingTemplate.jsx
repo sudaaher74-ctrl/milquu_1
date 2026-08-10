@@ -124,8 +124,8 @@ const LocationLandingTemplate = ({
             <div className="w-16 h-16 bg-green-50 text-green-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-green-100 transition-all shadow-sm">
               <ShieldCheck size={28} />
             </div>
-            <h3 className="font-bold text-gray-900 text-lg">100% Pure</h3>
-            <p className="text-sm text-gray-500">No Preservatives</p>
+            <h3 className="font-bold text-gray-900 text-lg">Trusted Sourcing</h3>
+            <p className="text-sm text-gray-500">Quality-Checked</p>
           </motion.div>
           <motion.div variants={itemVariants} className="flex flex-col items-center group">
             <div className="w-16 h-16 bg-yellow-50 text-yellow-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-yellow-100 transition-all shadow-sm">
@@ -138,8 +138,8 @@ const LocationLandingTemplate = ({
             <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-purple-100 transition-all shadow-sm">
               <CheckCircle2 size={28} />
             </div>
-            <h3 className="font-bold text-gray-900 text-lg">A2 Certified</h3>
-            <p className="text-sm text-gray-500">Desi Gir Cows</p>
+            <h3 className="font-bold text-gray-900 text-lg">A2 Milk Available</h3>
+            <p className="text-sm text-gray-500">From Trusted Partners</p>
           </motion.div>
         </motion.div>
       </section>
@@ -180,7 +180,7 @@ const LocationLandingTemplate = ({
             {[
               { title: "A2 Fresh Cow Milk", img: "a2-cow-milk.png", link: "farm-fresh-cow-milk", desc: "Pure, natural A2 milk sourced from trusted partners. Delivered fresh every morning." },
               { title: "Premium Buffalo Milk", img: "buffalo-milk.png", link: "pure-buffalo-milk", desc: "Thick, creamy buffalo milk perfect for making tea, coffee, curd, and homemade sweets." },
-              { title: "Bilona A2 Cow Ghee", img: "desi-ghee.png", link: "desi-cow-ghee", desc: "Traditional bilona churned A2 ghee with rich aroma, golden texture, and immense health benefits." }
+              { title: "Bilona A2 Cow Ghee", img: "desi-ghee.png", link: "desi-cow-ghee", desc: "Traditional bilona-churned A2 ghee with rich aroma and golden texture, sourced from trusted partners." }
             ].map((product, i) => (
               <motion.div key={i} variants={itemVariants} className="bg-white/80 backdrop-blur-xl p-6 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-2 transition-all duration-300 group">
                 <div className="h-56 bg-gradient-to-br from-gray-50 to-white rounded-[24px] mb-6 flex items-center justify-center overflow-hidden relative border border-gray-100">
@@ -242,7 +242,7 @@ const LocationLandingTemplate = ({
           className="max-w-3xl mx-auto relative z-10"
         >
           <h2 className="text-4xl md:text-5xl font-bold font-serif text-milquu-blue mb-6">Ready for Fresh Milk in {locationName}?</h2>
-          <p className="text-gray-700 text-xl md:text-2xl mb-10 font-light">Join hundreds of families in {locationName} who start their day with MilQuu Fresh. Setup your daily subscription today.</p>
+          <p className="text-gray-700 text-xl md:text-2xl mb-10 font-light">Start your day with MilQuu Fresh in {locationName}. Set up your daily subscription today.</p>
           <Link to="/subscribe" className="bg-milquu-blue text-white px-10 py-5 rounded-full font-bold text-xl hover:bg-blue-800 transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 inline-block">
             Setup Daily Delivery
           </Link>

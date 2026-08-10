@@ -29,17 +29,17 @@ const SEOGenerator = () => {
     
     if (!location || !product || !keyword) return;
 
-    const title = `${keyword} in ${location} | Farm Fresh ${product} | MilQuu`;
-    const description = `Looking for ${keyword} in ${location}? MilQuu Fresh delivers pure, unadulterated ${product} directly to your doorstep every morning.`;
-    
+    const title = `${keyword} in ${location} | MilQuu Fresh`;
+    const description = `Looking for ${keyword} in ${location}? MilQuu Fresh delivers ${product}, sourced from trusted partners, directly to your doorstep every morning.`;
+
     const content = `
-<h2>Premium ${keyword} in ${location}</h2>
+<h2>${keyword} in ${location}</h2>
 <p>
-  Finding reliable and pure <strong>${product} in ${location}</strong> has never been easier. At MilQuu Fresh, we are committed to delivering 100% natural and unadulterated dairy products directly to your doorstep. Our <strong>${keyword}</strong> ensures that your family starts their day with the finest quality dairy available in the region.
+  Finding reliable <strong>${product} in ${location}</strong> has never been easier. At MilQuu Fresh, we work with trusted processing partners to bring ${product} to your doorstep. Our <strong>${keyword}</strong> means your family starts the day with quality dairy from the region.
 </p>
 <h3>Why Choose Us for ${product}?</h3>
 <p>
-  Unlike commercial alternatives, our ${product} is sourced from ethical farms and delivered within hours of preparation. We maintain a strict cold chain to ensure maximum freshness. Residents of ${location} trust us for our zero-adulteration guarantee and hassle-free daily deliveries.
+  Our ${product} is sourced through trusted partners and delivered within hours. We work to maintain a cold chain to help preserve freshness. Residents of ${location} count on us for reliable, hassle-free daily deliveries.
 </p>
     `.trim();
 
@@ -49,8 +49,8 @@ const SEOGenerator = () => {
         answer: `Yes, our delivery network covers all major residential areas and societies across ${location}.`
       },
       {
-        question: `Is the ${product} fresh and pure?`,
-        answer: `Absolutely. We guarantee 100% purity with zero adulterants or preservatives. Our products are tested daily before dispatch.`
+        question: `Where is the ${product} sourced from?`,
+        answer: `We source ${product} through trusted processing partners and check orders before dispatch.`
       },
       {
         question: `How can I subscribe for daily ${keyword} in ${location}?`,

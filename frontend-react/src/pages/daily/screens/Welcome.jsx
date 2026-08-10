@@ -29,21 +29,20 @@ export default function Welcome() {
       <div style={{ height: 326, flex: 'none', overflow: 'hidden', borderRadius: '0 0 48px 48px' }}>
         <img
           src={FARM_HERO}
-          alt="The Milquu dairy at dawn"
+          alt="Fresh milk delivered at dawn"
           className="mq-photo"
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
       </div>
 
       <div className="mq-body" style={{ paddingTop: 32, gap: 14 }}>
-        <h2 style={{ fontSize: 40, lineHeight: 1.02 }}>Milk that was<br />grass this week</h2>
+        <h2 style={{ fontSize: 40, lineHeight: 1.02 }}>Fresh essentials,<br />delivered daily</h2>
         <p className="mq-lede">
-          Milked at 5 am{areaName ? `, at your door in ${areaName}` : ', at your door'} by 7:30.
-          Glass bottles, collected the next morning.
+          Trusted milk, delivered to your door{areaName ? ` in ${areaName}` : ''} every morning. Order today, delivered tomorrow.
         </p>
         <div className="mq-row" style={{ marginTop: 4 }}>
-          <span className="mq-pill">Lab tested daily</span>
-          <span className="mq-pill">No preservatives</span>
+          <span className="mq-pill">Trusted partners</span>
+          <span className="mq-pill">Doorstep delivery</span>
         </div>
       </div>
 

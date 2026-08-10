@@ -91,8 +91,8 @@ const BlogPost = () => {
           <div className="mt-12 p-10 bg-gradient-to-br from-blue-50/80 to-white/50 backdrop-blur-md border border-white/60 rounded-3xl text-center shadow-[0_8px_30px_rgb(0,0,0,0.03)] relative overflow-hidden">
             {/* Subtle orb inside the CTA */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-milquu-blue/10 rounded-full blur-2xl pointer-events-none"></div>
-            <h3 className="text-2xl font-bold font-serif text-gray-900 mb-4 relative z-10">Ready to switch to pure dairy?</h3>
-            <p className="text-gray-600 mb-6">Experience the health benefits of 100% natural, farm-fresh milk delivered daily to your home in Navi Mumbai.</p>
+            <h3 className="text-2xl font-bold font-serif text-gray-900 mb-4 relative z-10">Ready to switch to fresh milk delivery?</h3>
+            <p className="text-gray-600 mb-6">Milk sourced from trusted partners, delivered daily to your home in Navi Mumbai.</p>
             <Link to="/subscribe" className="bg-milquu-blue text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-milquu-blue/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-300 inline-block relative z-10">
               Start Subscription Today
             </Link>

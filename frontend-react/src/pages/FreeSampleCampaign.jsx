@@ -34,15 +34,20 @@ const FreeSampleCampaign = () => {
     promotional: true
   });
 
-  // Dummy stats
-  const [claimedSamples, setClaimedSamples] = useState(1247);
-  
+  const [claimedSamples, setClaimedSamples] = useState(null);
+
   useEffect(() => {
     // Check if they already claimed
     if (localStorage.getItem('freeSampleClaimed')) {
       navigate('/', { replace: true });
     }
   }, [navigate]);
+
+  useEffect(() => {
+    api.get('/api/free-sample/count')
+      .then(({ data }) => setClaimedSamples(data.count))
+      .catch(() => {}); // Stat is a nice-to-have — stay silent if it fails to load.
+  }, []);
 
   const handleInputChange = (e, section = null) => {
     const { name, value, type, checked } = e.target;
@@ -192,27 +197,27 @@ const FreeSampleCampaign = () => {
           
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <span className="inline-block py-1.5 px-4 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold tracking-widest mb-6 border border-blue-500/30 uppercase">
-              🎁 Limited Launch Offer
+              🎁 Try MilQuu Fresh
             </span>
             <h1 className="text-5xl xl:text-6xl font-serif font-bold leading-[1.1] mb-6">
-              Get Your <span className="text-milquu-gold italic">FREE</span> Farm Fresh Milk Sample
+              Your First Taste Is <span className="text-milquu-gold italic">On Us</span>
             </h1>
             <p className="text-lg text-gray-300 font-medium leading-relaxed mb-10 max-w-md">
-              Experience pure farm-fresh dairy delivered directly to your doorstep. No commitments, just pure goodness.
+              Experience MilQuu Fresh milk before committing to regular delivery — delivered directly to your doorstep, no commitments.
             </p>
           </motion.div>
 
           <div className="space-y-4 mb-12">
             {[
-              { icon: <ShieldCheck />, text: '100% Pure & Adulteration Free' },
-              { icon: <CheckCircle />, text: 'No Preservatives Added' },
+              { icon: <ShieldCheck />, text: 'Sourced From Trusted Partners' },
+              { icon: <CheckCircle />, text: 'Quality-Checked Before Delivery' },
               { icon: <Truck />, text: 'Fresh Daily Delivery by 7 AM' }
             ].map((item, idx) => (
-              <motion.div 
-                initial={{ opacity: 0, x: -20 }} 
-                animate={{ opacity: 1, x: 0 }} 
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 + (idx * 0.1) }}
-                key={idx} 
+                key={idx}
                 className="flex items-center space-x-3 text-gray-200"
               >
                 <div className="text-green-400">{item.icon}</div>
@@ -221,21 +226,16 @@ const FreeSampleCampaign = () => {
             ))}
           </div>
 
-          <div className="flex items-center space-x-4 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-md w-max">
-            <div className="flex -space-x-3">
-              {[1,2,3,4].map(i => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-milquu-dark bg-gray-200 overflow-hidden">
-                  <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="User" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
-            <div>
-              <div className="flex text-milquu-gold text-sm mb-0.5">
-                {[...Array(5)].map((_,i)=><Star key={i} className="w-4 h-4 fill-current" />)}
+          {claimedSamples !== null && claimedSamples > 0 && (
+            <div className="flex items-center space-x-3 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-md w-max">
+              <div className="text-milquu-gold">
+                <Star className="w-5 h-5 fill-current" />
               </div>
-              <p className="text-xs text-gray-300"><strong className="text-white">500+</strong> Families Trust Us</p>
+              <p className="text-xs text-gray-300">
+                <strong className="text-white">{claimedSamples}</strong> {claimedSamples === 1 ? 'person has' : 'people have'} tried MilQuu Fresh
+              </p>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -256,24 +256,15 @@ const FreeSampleCampaign = () => {
           </p>
         </div>
 
-        {/* Urgency Bar */}
-        <div className="max-w-2xl w-full mx-auto mb-8 bg-orange-50 border border-orange-100 rounded-2xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-orange-800 font-bold text-sm">Hurry! Limited slots left</p>
-            <p className="text-orange-600 text-xs mt-0.5">Only 150 Free Samples Remaining</p>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className="text-xs font-bold text-gray-500 mb-1">{claimedSamples} Claimed</span>
-            <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-              <motion.div 
-                initial={{ width: 0 }} 
-                animate={{ width: '85%' }} 
-                transition={{ duration: 1.5, delay: 0.5 }}
-                className="h-full bg-orange-500 rounded-full"
-              />
+        {claimedSamples !== null && claimedSamples > 0 && (
+          <div className="max-w-2xl w-full mx-auto mb-8 bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-milquu-blue font-bold text-sm">Join the families who've tried us</p>
+              <p className="text-gray-500 text-xs mt-0.5">A no-commitment way to see if MilQuu Fresh is right for you</p>
             </div>
+            <span className="text-sm font-bold text-milquu-blue whitespace-nowrap ml-4">{claimedSamples} Claimed</span>
           </div>
-        </div>
+        )}
 
         {/* FORM CONTAINER */}
         <div className="max-w-2xl w-full mx-auto bg-white rounded-[24px] shadow-xl shadow-gray-200/50 border border-gray-100 p-6 sm:p-8 relative overflow-hidden">

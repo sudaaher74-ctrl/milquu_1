@@ -18,8 +18,8 @@ export const blogPosts = [
       <h3>2. No Homogenization</h3>
       <p>Have you noticed that supermarket milk doesn't form a thick layer of cream (malai) when boiled? That's because it's homogenized. The fat molecules are mechanically crushed so they remain suspended. Farm fresh milk from MilQuu is un-homogenized, meaning it's easier to digest and you get that delicious, traditional cream on top.</p>
       
-      <h3>3. Zero Adulteration Risk</h3>
-      <p>The shorter the supply chain, the safer the food. By sourcing directly from our ethical farms and controlling the delivery logistics, we eliminate the risk of adulterants like water, urea, and synthetic thickeners that sometimes plague local loose milk vendors.</p>
+      <h3>3. Lower Adulteration Risk</h3>
+      <p>The shorter the supply chain, the safer the food. By working with trusted processing partners and managing delivery logistics ourselves, we reduce the risk of adulterants like water, urea, and synthetic thickeners that can affect loose milk sold through informal channels.</p>
     `,
     faqs: [
       { question: 'Is farm fresh milk safe to drink?', answer: 'Yes, but we strongly recommend boiling it before consumption, as it is delivered raw and unpasteurized to maintain maximum nutritional value.' },
@@ -46,7 +46,7 @@ export const blogPosts = [
       <p>A2 milk is produced by indigenous Indian breeds like the Gir and Sahiwal cows. It contains only the A2 beta-casein protein. Because it doesn't break down into BCM-7 during digestion, A2 milk is significantly easier on the stomach. Many people who believe they are lactose intolerant find that they can comfortably digest A2 milk—their issue was actually with the A1 protein!</p>
       
       <h3>Why Choose MilQuu Fresh A2 Milk?</h3>
-      <p>At MilQuu Fresh, we source our A2 milk exclusively from purebred Gir cows. Our milk is tested daily to ensure you are getting 100% genuine A2 milk, delivered fresh to your doorstep in Navi Mumbai.</p>
+      <p>At MilQuu Fresh, our A2 milk is sourced through trusted processing partners who work with Gir-breed herds, delivered fresh to your doorstep in Navi Mumbai.</p>
     `,
     faqs: [
       { question: 'Is A2 milk good for children?', answer: 'Absolutely. A2 milk closely resembles human mother\'s milk in its protein structure, making it highly nutritious and easy to digest for growing children.' }
@@ -64,7 +64,7 @@ export const blogPosts = [
     content: `
       <h2>The True Taste of Dairy</h2>
       <p>Think about the last time you had a truly fresh piece of paneer or a spoonful of homemade ghee. The taste is unmistakable. It's rich, fragrant, and deeply satisfying. That's the power of fresh dairy.</p>
-      <p>When dairy products are manufactured industrially, they are formulated for shelf life, not taste or nutrition. Preservatives are added to paneer to keep it firm for weeks, and ghee is extracted from stale cream. At MilQuu Fresh, we believe in doing things the traditional way. Our paneer is made fresh daily from pure buffalo milk, and our ghee is churned using the Vedic bilona method. Taste the difference today.</p>
+      <p>When dairy products are manufactured industrially, they are formulated for shelf life, not taste or nutrition. At MilQuu Fresh, we work with partners who do things the traditional way — our paneer is made fresh from buffalo milk, and our ghee is churned using the Vedic bilona method. Taste the difference today.</p>
     `,
     faqs: []
   },
@@ -79,7 +79,7 @@ export const blogPosts = [
     keywords: 'best milk delivery navi mumbai, daily milk subscription, reliable milk delivery',
     content: `
       <h2>The Challenge of Urban Dairy</h2>
-      <p>Navi Mumbai is a bustling city, and finding a reliable source of pure milk can feel like searching for a needle in a haystack. With MilQuu Fresh, we've solved that problem by offering a tech-enabled, farm-to-door delivery system that guarantees purity and convenience.</p>
+      <p>Navi Mumbai is a bustling city, and finding a reliable source of milk can feel like searching for a needle in a haystack. With MilQuu Fresh, we've addressed that with a tech-enabled delivery platform, sourcing from trusted partners for convenient doorstep delivery.</p>
       <h3>What to Look For</h3>
       <ol>
         <li><strong>Transparency:</strong> Does the brand test its milk? We perform 20+ tests daily.</li>
@@ -118,7 +118,7 @@ export const blogPosts = [
     keywords: 'how to test pure milk, milk adulteration, pure milk guide',
     content: `
       <h2>The Adulteration Epidemic</h2>
-      <p>Water, starch, urea, and even detergents—these are common adulterants found in loose milk. At MilQuu Fresh, we guarantee zero adulteration, but here is a simple test you can do at home to check the purity of your milk:</p>
+      <p>Water, starch, urea, and even detergents—these are common adulterants found in loose milk. Here's a simple test you can do at home to check the purity of your milk:</p>
       <p><strong>The Drop Test:</strong> Put a drop of milk on a polished, slanted surface. Pure milk flows slowly, leaving a white trail. Milk adulterated with water will flow rapidly without leaving a mark.</p>
       <p>Always choose a brand that is transparent about its testing processes.</p>
     `,

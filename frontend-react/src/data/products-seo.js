@@ -2,10 +2,10 @@ import { buildProductSchema, buildFAQSchema } from './schemas';
 
 export const productSEOData = {
   'farm-fresh-cow-milk': {
-    name: 'A2 Farm Fresh Cow Milk',
+    name: 'A2 Cow Milk',
     slug: 'farm-fresh-cow-milk',
-    title: 'A2 Farm Fresh Cow Milk Delivery | 100% Pure & Natural | MilQuu',
-    description: 'Buy pure A2 cow milk online in Navi Mumbai. Sourced from free-grazing Gir cows. Delivered farm-fresh to your home within 24 hours. No preservatives.',
+    title: 'A2 Cow Milk Delivery | MilQuu Fresh',
+    description: 'Buy A2 cow milk online in Navi Mumbai, sourced from trusted processing partners and delivered to your home within 24 hours.',
     keywords: 'A2 cow milk, fresh cow milk delivery, pure cow milk navi mumbai, buy A2 milk online',
     price: 85,
     image: '/img/products/A2milk.webp',
@@ -16,7 +16,7 @@ export const productSEOData = {
       { label: 'Calcium', value: '120 mg' },
       { label: 'Fat', value: '4.0 g' }
     ],
-    details: `Our flagship A2 Cow Milk is sourced from indigenous Indian cow breeds like the Gir cow. Known for its distinct golden hue and rich, creamy taste, this milk contains only the A2 beta-casein protein, making it extremely easy to digest. It is naturally rich in calcium, phosphorus, and essential vitamins. Our cows are free-grazing and fed a natural diet, ensuring that the milk you drink is completely free of synthetic hormones and antibiotics. Delivered chilled at 4°C to maintain ultimate freshness.`,
+    details: `Our A2 Cow Milk comes from indigenous Indian cow breeds like the Gir cow, sourced through trusted processing partners. Known for its distinct golden hue and rich, creamy taste, this milk contains only the A2 beta-casein protein, making it easy to digest. It's naturally rich in calcium, phosphorus, and essential vitamins, and delivered chilled at 4°C to maintain freshness.`,
     faqs: [
       {
         question: 'What is A2 milk and how is it different?',
@@ -55,7 +55,7 @@ export const productSEOData = {
       { label: 'Calcium', value: '169 mg' },
       { label: 'Fat', value: '6.5+ g' }
     ],
-    details: `Experience the richness of our Premium Buffalo Milk. Sourced from well-cared-for Murrah buffaloes, this milk boasts a naturally high fat content (6.5% and above), making it luxuriously thick and creamy. It is the perfect choice for making rich, kadak chai, setting thick dahi (curd), or preparing traditional Indian sweets at home. It undergoes the same rigorous quality testing and cold-chain delivery as our cow milk, guaranteeing absolute purity.`,
+    details: `Experience the richness of our Premium Buffalo Milk, sourced through trusted processing partners from Murrah buffaloes. This milk boasts a naturally high fat content (6.5% and above), making it thick and creamy — perfect for rich, kadak chai, setting thick dahi (curd), or preparing traditional Indian sweets at home.`,
     faqs: [
       {
         question: 'Is buffalo milk good for making paneer at home?',
@@ -83,7 +83,7 @@ export const productSEOData = {
     name: 'Bilona A2 Cow Ghee',
     slug: 'desi-cow-ghee',
     title: 'Pure Bilona A2 Cow Ghee | Traditional Churned | MilQuu',
-    description: 'Buy authentic Bilona A2 cow ghee. Made from curd using the traditional Vedic churning method. Rich aroma, granular texture, and immense health benefits.',
+    description: 'Buy authentic Bilona A2 cow ghee, made from curd using the traditional Vedic churning method. Rich aroma and granular texture.',
     keywords: 'bilona ghee, A2 cow ghee online, traditional churned ghee, pure desi ghee',
     price: 1800,
     image: '/img/products/A2ghee.webp',
@@ -94,7 +94,7 @@ export const productSEOData = {
       { label: 'Vitamin A', value: '850 mcg' },
       { label: 'Fat', value: '99.5 g' }
     ],
-    details: `Our Bilona A2 Cow Ghee is crafted using the ancient Vedic method. We do not extract ghee directly from cream. Instead, pure A2 cow milk is set into curd, which is then hand-churned (bilona) to separate the makkhan (butter). This butter is slowly heated over a wood fire to produce ghee with a distinct golden color, granular texture (danedar), and a rich, nutty aroma. It is packed with healthy fats, butyric acid, and vitamins A, D, E, and K.`,
+    details: `Our Bilona A2 Cow Ghee is made using the traditional Vedic method rather than extracted directly from cream: A2 cow milk is set into curd, then hand-churned (bilona) to separate the makkhan (butter), which is slowly heated to produce ghee with a distinct golden color, granular texture (danedar), and a rich, nutty aroma.`,
     faqs: [
       {
         question: 'Why is Bilona ghee more expensive than regular ghee?',
@@ -133,11 +133,11 @@ export const productSEOData = {
       { label: 'Calcium', value: '200 mg' },
       { label: 'Fat', value: '24 g' }
     ],
-    details: `Indulge in the melt-in-your-mouth goodness of our Fresh Malai Paneer. Made daily in small batches using our premium, high-fat buffalo milk, this paneer is incredibly soft, spongy, and rich in taste. We use only natural lemon juice to curdle the milk, strictly avoiding synthetic coagulants or firming agents. It is packed fresh and delivered to you within hours of preparation, elevating your homemade curries and snacks to a whole new level.`,
+    details: `Our Fresh Malai Paneer is made in small batches from high-fat buffalo milk, sourced through trusted processing partners, using natural lemon juice to curdle the milk rather than synthetic coagulants. It's packed fresh and delivered to you within hours of preparation.`,
     faqs: [
       {
         question: 'Does the paneer contain any preservatives?',
-        answer: 'No. Our paneer is completely chemical and preservative-free. Because of this, it has a short shelf life and must be consumed within 2 days when refrigerated.'
+        answer: 'No preservatives are added. Because of this, it has a short shelf life and must be consumed within 2 days when refrigerated.'
       },
       {
         question: 'Can I add paneer to my daily milk subscription?',
@@ -158,10 +158,10 @@ export const productSEOData = {
     }
   },
   'fresh-dahi': {
-    name: 'Fresh Farm Dahi',
+    name: 'Fresh Dahi',
     slug: 'fresh-dahi',
     title: 'Fresh Thick Dahi | Probiotic Curd | MilQuu',
-    description: 'Thick, naturally set farm-fresh curd with a smooth velvety texture. Contains natural probiotics.',
+    description: 'Thick, naturally set curd with a smooth velvety texture. Contains natural probiotics.',
     keywords: 'fresh dahi, buy curd online, probiotic curd',
     price: 60,
     image: '/img/products/Dahi.webp',
@@ -169,7 +169,7 @@ export const productSEOData = {
       { label: 'Energy', value: '98 kcal' },
       { label: 'Protein', value: '3.4 g' }
     ],
-    details: 'Our Fresh Dahi is set naturally without any synthetic coagulants. It boasts a thick, creamy texture that reminds you of traditional homemade curd.',
+    details: 'Our Fresh Dahi is set naturally, without synthetic coagulants, giving it a thick, creamy texture reminiscent of traditional homemade curd.',
     faqs: [],
     get schema() {
       return [
@@ -196,7 +196,7 @@ export const productSEOData = {
       { label: 'Energy', value: '110 kcal' },
       { label: 'Protein', value: '3.0 g' }
     ],
-    details: 'A beautifully balanced sweet lassi crafted from our pure farm dahi. Churned to perfection to give you that authentic taste of Punjab.',
+    details: 'A beautifully balanced sweet lassi crafted from our fresh dahi, churned to give you that authentic taste of Punjab.',
     faqs: [],
     get schema() {
       return [
@@ -214,7 +214,7 @@ export const productSEOData = {
   'cow-milk-pouch': {
     name: 'Cow Milk (Pouch)',
     slug: 'cow-milk-pouch',
-    title: 'Cow Milk Pouch Delivery | Farm Fresh | MilQuu',
+    title: 'Cow Milk Pouch Delivery | MilQuu Fresh',
     description: 'Fresh cow milk available in convenient pouch packaging. Daily morning delivery.',
     keywords: 'cow milk pouch, daily milk bag, buy milk pouch online',
     price: 58,

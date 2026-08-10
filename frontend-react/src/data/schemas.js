@@ -10,7 +10,7 @@ export const LocalBusinessSchema = {
   '@context': 'https://schema.org',
   '@type': ['LocalBusiness', 'FoodEstablishment'],
   name: 'MilQuu Fresh',
-  description: 'Premium farm-fresh dairy delivery service in Navi Mumbai. A2 cow milk, buffalo milk, paneer, ghee delivered daily to your doorstep.',
+  description: 'Fresh milk and vegetables delivered to your doorstep in Navi Mumbai, sourced through trusted processing and supply partners.',
   url: BASE_URL,
   telephone: PHONE,
   email: 'milquufresh@gmail.com',
@@ -53,13 +53,6 @@ export const LocalBusinessSchema = {
     'https://www.instagram.com/milquufresh',
     'https://www.facebook.com/milquufresh',
   ],
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: '4.9',
-    reviewCount: '128',
-    bestRating: '5',
-    worstRating: '1',
-  },
 };
 
 // ─── Organization Schema ─────────────────────────────────────────────────────
@@ -90,7 +83,9 @@ export const buildFAQSchema = (faqs) => ({
 });
 
 // ─── Product Schema Builder ──────────────────────────────────────────────────
-export const buildProductSchema = ({ name, description, image, price, sku, rating = 4.9, reviewCount = 56 }) => ({
+// `rating`/`reviewCount` are optional and only included when a real value is
+// passed in — no fabricated ratings shipped in structured data.
+export const buildProductSchema = ({ name, description, image, price, sku, rating, reviewCount }) => ({
   '@context': 'https://schema.org',
   '@type': 'Product',
   name,
@@ -106,12 +101,14 @@ export const buildProductSchema = ({ name, description, image, price, sku, ratin
     availability: 'https://schema.org/InStock',
     seller: { '@type': 'Organization', name: 'MilQuu Fresh' },
   },
-  aggregateRating: {
-    '@type': 'AggregateRating',
-    ratingValue: rating,
-    reviewCount,
-    bestRating: '5',
-  },
+  ...(rating != null && reviewCount != null ? {
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: rating,
+      reviewCount,
+      bestRating: '5',
+    },
+  } : {}),
 });
 
 // ─── Breadcrumb Schema Builder ───────────────────────────────────────────────
@@ -152,19 +149,19 @@ export const buildArticleSchema = ({ title, description, slug, datePublished, da
 export const commonFAQs = [
   {
     question: 'What areas does MilQuu Fresh deliver to?',
-    answer: 'MilQuu Fresh delivers fresh dairy products to Panvel, New Panvel, Karanjade, Kharghar, Belapur, and Nerul in Navi Mumbai.',
+    answer: 'MilQuu Fresh delivers fresh milk and other everyday essentials to Panvel, New Panvel, Karanjade, Kharghar, Belapur, and Nerul in Navi Mumbai.',
   },
   {
     question: 'What time is milk delivered?',
-    answer: 'We deliver fresh milk every morning between 5:00 AM and 8:00 AM so you have it ready for your morning tea, coffee, or breakfast.',
+    answer: 'We deliver fresh milk every morning between 6:00 AM and 9:00 AM so you have it ready for your morning tea, coffee, or breakfast.',
   },
   {
     question: 'How do I subscribe to daily milk delivery?',
     answer: 'Visit milquufresh.in/subscribe, choose your milk type and quantity, fill in your delivery address, and we will start delivery from the next morning.',
   },
   {
-    question: 'Is the milk A2 certified?',
-    answer: 'Yes. Our A2 cow milk comes from pure Gir breed cows raised on natural fodder. We do not mix A1 milk at any stage.',
+    question: 'Where does MilQuu Fresh get its milk?',
+    answer: 'MilQuu Fresh sources milk, including A2 cow milk, through trusted milk-processing partners. We focus on convenient ordering and reliable doorstep delivery of the products they supply.',
   },
   {
     question: 'Can I pause or cancel my subscription?',

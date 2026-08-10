@@ -29,10 +29,10 @@ const AboutUs = () => {
 
   return (
     <div className="bg-gradient-to-br from-[#FDFBF7] to-white min-h-screen pb-16 md:pb-0 relative overflow-hidden">
-      <SEOHead 
-        title="About MilQuu Fresh | Premium Dairy Brand in Navi Mumbai"
-        description="Learn about MilQuu Fresh's journey to becoming Navi Mumbai's most trusted premium dairy brand. Discover our commitment to pure, ethical, and farm-fresh milk."
-        keywords="about milquu fresh, premium dairy navi mumbai, pure milk brand, ethical dairy farming"
+      <SEOHead
+        title="About MilQuu Fresh | Fresh Essentials Delivered Daily"
+        description="MilQuu Fresh is building a convenient platform for ordering milk, vegetables and other everyday fresh essentials, delivered to your doorstep in Navi Mumbai."
+        keywords="about milquu fresh, fresh essentials delivery navi mumbai, milk and vegetable delivery"
         canonical="https://milquufresh.in/about-us"
         schema={schema}
       />
@@ -66,7 +66,7 @@ const AboutUs = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-xl md:text-3xl font-light opacity-90 max-w-3xl mx-auto leading-relaxed"
           >
-            Redefining dairy by bringing 100% natural, unadulterated milk from happy cows directly to your family.
+            Making everyday fresh essentials easier to get.
           </motion.p>
         </div>
       </section>
@@ -83,10 +83,10 @@ const AboutUs = () => {
           <h2 className="text-3xl md:text-4xl font-serif font-bold text-milquu-blue mb-6">Our Story</h2>
           <div className="prose prose-lg prose-blue max-w-none text-gray-700 leading-loose">
             <p className="text-lg md:text-xl">
-              MilQuu Fresh was born out of a simple yet profound realization: the milk we consume every day has lost its natural goodness. Between heavy processing, long supply chains, and rampant adulteration, the true essence of dairy was being compromised. 
+              MilQuu Fresh is building a convenient platform for ordering milk, vegetables and other everyday fresh essentials. We work with trusted suppliers and milk-processing partners and bring their products closer to customers through a simple digital ordering and doorstep delivery experience.
             </p>
             <p className="text-lg md:text-xl">
-              We set out on a mission to change that. Based in Navi Mumbai, we started by partnering with local ethical farms that prioritize animal welfare and natural grazing. By cutting out the middlemen and managing our own cold-chain logistics, we ensure that the milk reaches your home within hours of milking, retaining its full nutritional profile.
+              Our goal is simple: make everyday fresh shopping easier, more convenient and more reliable. Milk was where we started — we're building toward vegetables and more everyday essentials over time.
             </p>
           </div>
         </motion.div>
@@ -121,8 +121,8 @@ const AboutUs = () => {
                 <ShieldCheck size={32} />
               </div>
               <div>
-                <h3 className="font-bold text-2xl text-gray-900 mb-3 font-serif">Uncompromised Purity</h3>
-                <p className="text-gray-600 text-lg leading-relaxed">Zero adulteration. No water, no preservatives, no powder added. Just pure milk.</p>
+                <h3 className="font-bold text-2xl text-gray-900 mb-3 font-serif">Trusted Sourcing</h3>
+                <p className="text-gray-600 text-lg leading-relaxed">We work with trusted suppliers and processing partners for everything we deliver.</p>
               </div>
             </motion.div>
 
@@ -131,8 +131,8 @@ const AboutUs = () => {
                 <Heart size={32} />
               </div>
               <div>
-                <h3 className="font-bold text-2xl text-gray-900 mb-3 font-serif">Ethical Treatment</h3>
-                <p className="text-gray-600 text-lg leading-relaxed">Our cows and buffaloes are treated with love, fed natural fodder, and never given synthetic hormones.</p>
+                <h3 className="font-bold text-2xl text-gray-900 mb-3 font-serif">Convenient Delivery</h3>
+                <p className="text-gray-600 text-lg leading-relaxed">Get everyday fresh essentials delivered to your doorstep, on a schedule that works for you.</p>
               </div>
             </motion.div>
 
@@ -141,8 +141,8 @@ const AboutUs = () => {
                 <Leaf size={32} />
               </div>
               <div>
-                <h3 className="font-bold text-2xl text-gray-900 mb-3 font-serif">Farm Fresh Guarantee</h3>
-                <p className="text-gray-600 text-lg leading-relaxed">Delivered within 24 hours of milking, maintaining a strict cold chain to ensure maximum freshness.</p>
+                <h3 className="font-bold text-2xl text-gray-900 mb-3 font-serif">Easy Ordering</h3>
+                <p className="text-gray-600 text-lg leading-relaxed">Choose what you need and order in a few simple steps — one-off or on a standing plan.</p>
               </div>
             </motion.div>
 
@@ -151,27 +151,35 @@ const AboutUs = () => {
                 <Users size={32} />
               </div>
               <div>
-                <h3 className="font-bold text-2xl text-gray-900 mb-3 font-serif">Community First</h3>
-                <p className="text-gray-600 text-lg leading-relaxed">We support local farmers with fair pricing while providing urban families with reliable nutrition.</p>
+                <h3 className="font-bold text-2xl text-gray-900 mb-3 font-serif">One Convenient Platform</h3>
+                <p className="text-gray-600 text-lg leading-relaxed">Milk, vegetables and more everyday essentials in one place, growing over time.</p>
               </div>
             </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* EEAT Section */}
+      {/* Mission & Vision */}
       <section className="py-20 px-4 relative z-10">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="max-w-4xl mx-auto text-center"
+          className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 text-center md:text-left"
         >
-          <h2 className="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-6">Why E-E-A-T Matters to Us</h2>
-          <p className="text-xl text-gray-700 leading-relaxed max-w-3xl mx-auto">
-            We take our role in your daily nutrition seriously. Our commitment to <strong className="text-milquu-blue">Experience, Expertise, Authoritativeness, and Trustworthiness (E-E-A-T)</strong> is reflected in every drop of milk we deliver. From rigorous lab testing to transparent farm practices, we aim to be the dairy brand you can trust implicitly.
-          </p>
+          <div>
+            <h2 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 mb-4">Our Mission</h2>
+            <p className="text-lg text-gray-700 leading-relaxed">
+              To make fresh everyday essentials accessible through a simple, convenient doorstep delivery experience.
+            </p>
+          </div>
+          <div>
+            <h2 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 mb-4">Our Vision</h2>
+            <p className="text-lg text-gray-700 leading-relaxed">
+              To become a trusted everyday fresh-essentials platform for households — starting with milk and vegetables, and growing from there.
+            </p>
+          </div>
         </motion.div>
       </section>
 

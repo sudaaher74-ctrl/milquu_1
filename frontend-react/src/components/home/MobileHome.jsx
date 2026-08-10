@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, ShoppingCart, Search, Mic, ShieldCheck, Leaf, FlaskConical, Truck, Plus, Star, Home, ShoppingBag, CalendarCheck, Package, User, Wallet, Store, Carrot } from 'lucide-react';
+import { Bell, ShoppingCart, Search, Mic, ShieldCheck, Leaf, FlaskConical, Truck, Plus, Home, ShoppingBag, CalendarCheck, Package, User, Wallet, Store, Carrot } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -108,9 +108,9 @@ const MobileHome = () => {
   ];
 
   const features = [
-    { title: 'Tested & Certified', icon: <ShieldCheck className="w-5 h-5 text-milquu-green" /> },
+    { title: 'Trusted Sourcing', icon: <ShieldCheck className="w-5 h-5 text-milquu-green" /> },
     { title: 'Freshly Sourced Daily', icon: <Leaf className="w-5 h-5 text-milquu-green" /> },
-    { title: 'No Preservatives', icon: <FlaskConical className="w-5 h-5 text-milquu-green" /> },
+    { title: 'Quality-Checked', icon: <FlaskConical className="w-5 h-5 text-milquu-green" /> },
     { title: 'Fast Delivery', icon: <Truck className="w-5 h-5 text-milquu-green" /> },
   ];
 
@@ -267,7 +267,7 @@ const MobileHome = () => {
                 <div className="flex flex-col ml-3 flex-grow h-full justify-between py-1">
                   <div>
                     <h4 className="text-[14px] font-bold text-milquu-dark leading-tight line-clamp-1">{product.name}</h4>
-                    <span className="text-[11px] text-gray-500 font-medium mt-0.5 block">{isOutOfStock ? 'Out of stock' : (product.name || '').toLowerCase().includes('milk') ? '100% Pure A2 Milk' : 'Made from Bilona Method'}</span>
+                    <span className="text-[11px] text-gray-500 font-medium mt-0.5 block">{isOutOfStock ? 'Out of stock' : (product.name || '').toLowerCase().includes('milk') ? 'A2 Milk, Delivered Fresh' : 'Made from Bilona Method'}</span>
                   </div>
 
                   <div className="flex justify-between items-end mt-2">
@@ -275,14 +275,6 @@ const MobileHome = () => {
                       <span className="text-[16px] font-bold text-milquu-dark">
                         ₹{(product.name || '').toLowerCase().includes('milk') ? Math.ceil(product.price / 2) : product.price}
                       </span>
-                      <div className="flex items-center mt-0.5 space-x-0.5">
-                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                        <span className="text-[10px] text-gray-400 font-medium ml-1">(4.8)</span>
-                      </div>
                     </div>
                     <button
                       onClick={(e) => !isOutOfStock && handleAddToCart(product, e)}

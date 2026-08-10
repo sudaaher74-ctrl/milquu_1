@@ -9,20 +9,20 @@ import api from '../utils/api.js';
 // Product category metadata
 const categoryMeta = {
   'milk': {
-    title: 'Pure Farm Milk',
-    description: '100% organic, freshly milked and delivered within hours.',
+    title: 'Fresh Milk',
+    description: 'Quality-checked milk from trusted processing partners, delivered within hours.',
     bgLight: 'bg-milquu-green/5',
     blobColor: 'bg-milquu-green/20',
   },
   'vegetables': {
-    title: 'Farm Fresh Vegetables',
-    description: 'Seasonal, locally sourced vegetables delivered straight from the farm.',
+    title: 'Fresh Vegetables',
+    description: 'Seasonal vegetables from trusted suppliers, delivered conveniently to your door.',
     bgLight: 'bg-emerald-500/5',
     blobColor: 'bg-emerald-500/20',
   },
   'by-products': {
-    title: 'Authentic Dairy Delights',
-    description: 'Traditional dairy products crafted from pure farm-fresh milk.',
+    title: 'Dairy Delights',
+    description: 'Traditional dairy products made from quality-sourced milk.',
     bgLight: 'bg-milquu-gold/5',
     blobColor: 'bg-milquu-gold/20',
   }
@@ -226,7 +226,7 @@ const CategoryListing = () => {
           >
             <span className="text-milquu-gold font-bold tracking-widest text-sm uppercase mb-3 block">Store</span>
             <h1 className="text-4xl md:text-6xl font-serif font-bold text-gray-900 tracking-tight">
-              Premium <span className="text-transparent bg-clip-text bg-gradient-to-r from-milquu-blue to-indigo-600 italic">Dairy</span>
+              Fresh <span className="text-transparent bg-clip-text bg-gradient-to-r from-milquu-blue to-indigo-600 italic">Essentials</span>
             </h1>
           </motion.div>
         </div>

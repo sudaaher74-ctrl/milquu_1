@@ -58,24 +58,24 @@ const Hero = () => {
               className="inline-flex items-center py-1.5 px-4 rounded-full bg-green-100/80 backdrop-blur-sm border border-green-200/50 text-green-700 font-sans text-xs md:text-sm font-bold tracking-widest mb-4 lg:mb-6 mt-2 lg:mt-0 shadow-sm"
             >
               <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-              FRESH. PURE. DELIVERED DAILY.
+              FRESH. TRUSTED. DELIVERED DAILY.
             </motion.span>
-            
+
             <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-serif font-bold text-gray-900 leading-[1.1] mb-4 lg:mb-6 tracking-tight">
-              Premium Fresh Milk <br/>
+              Fresh Essentials. <br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-milquu-gold to-yellow-600 italic font-medium">Delivered Daily.</span>
             </h1>
-            
+
             <p className="text-base sm:text-lg text-gray-600 font-sans mb-8 lg:mb-10 max-w-xl leading-relaxed">
-              Quality-verified milk and dairy products sourced from trusted dairy partners and delivered fresh to your doorstep every day.
+              Fresh milk and vegetables sourced from trusted partners, delivered to your doorstep with the convenience your everyday routine deserves.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              <button 
-                onClick={() => navigate('/subscribe')}
+              <button
+                onClick={() => navigate('/products')}
                 className="w-full sm:w-auto px-8 py-4 bg-milquu-blue hover:bg-blue-900 text-white rounded-full font-sans font-bold transition-all duration-300 shadow-lg hover:shadow-2xl hover:-translate-y-1 flex items-center justify-center group text-base"
               >
-                Subscribe Now
+                Shop Fresh
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               <button 

@@ -45,6 +45,19 @@ router.post('/submit', async (req, res) => {
   }
 });
 
+// @route   GET /api/free-sample/count
+// @desc    Real count of free sample requests, for honest on-site social proof
+// @access  Public
+router.get('/count', async (req, res) => {
+  try {
+    const count = await FreeSample.countDocuments();
+    res.status(200).json({ count });
+  } catch (error) {
+    console.error('Error counting free samples:', error);
+    res.status(500).json({ message: 'Server error while counting samples.' });
+  }
+});
+
 // @route   GET /api/free-sample/admin/all
 // @desc    Get all free sample requests (Admin)
 // @access  Private/Admin

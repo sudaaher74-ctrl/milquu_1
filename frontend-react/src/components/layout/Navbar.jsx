@@ -28,6 +28,7 @@ const Navbar = () => {
   const navLinks = [
     { name: t('nav.home', 'Home'), href: '/' },
     { name: t('nav.products', 'Products'), href: '/products' },
+    { name: t('nav.vegetables', 'Vegetables'), href: '/products?category=vegetables' },
     { name: t('nav.aboutUs', 'About Us'), href: '/#about' },
     { name: t('nav.contact', 'Contact Us'), href: '/contact' },
     { name: t('nav.subscriptions', 'Subscriptions'), href: '/subscribe' },
