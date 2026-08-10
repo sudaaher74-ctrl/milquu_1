@@ -80,6 +80,9 @@ export default function AppLayout() {
   // The Milquu app carries its own shell, tab bar and design system.
   const isDailyApp = location.pathname === '/app' || location.pathname.startsWith('/app/');
   const hideLayout = isAdmin || isDelivery || isChatbot || isCampaign || isDailyApp;
+  // MobileHome (rendered by the Home page) carries its own bottom nav, so the
+  // global one would otherwise render on top of it at the same position.
+  const isHome = location.pathname === '/';
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -117,7 +120,7 @@ export default function AppLayout() {
         </ErrorBoundary>
       </div>
 
-      {!hideLayout && <MobileNav />}
+      {!hideLayout && !isHome && <MobileNav />}
       {!hideLayout && <FloatingCartIsland />}
       {!hideLayout && <FloatingWhatsApp />}
       {!hideLayout && <Footer />}
