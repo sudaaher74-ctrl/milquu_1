@@ -22,6 +22,7 @@ const AdminProducts = () => {
     stock: '',
     description: '',
     unit: '1 Litre',
+    planPrice: '',
   });
   const [imageFile, setImageFile] = useState(null);
 
@@ -36,6 +37,7 @@ const AdminProducts = () => {
         category: p.category,
         purchasePrice: p.purchasePrice || 0, 
         sellingPrice: p.price,
+        planPrice: p.planPrice ?? '',
         stock: p.stock || 0,
         image: p.image,
         status: (p.stock || 0) > 20 ? 'Active' : ((p.stock || 0) > 0 ? 'Low Stock' : 'Out of Stock')
@@ -65,7 +67,7 @@ const AdminProducts = () => {
 
   const openAddModal = () => {
     setEditingProductId(null);
-    setFormData({ name: '', category: 'milk', price: '', stock: '', description: '', unit: '1 Litre' });
+    setFormData({ name: '', category: 'milk', price: '', stock: '', description: '', unit: '1 Litre', planPrice: '' });
     setImageFile(null);
     setIsModalOpen(true);
   };
@@ -79,6 +81,7 @@ const AdminProducts = () => {
       stock: product.stock,
       description: product.description || '',
       unit: product.unit || '1 Litre',
+      planPrice: product.planPrice ?? '',
       image: product.image
     });
     setImageFile(null);
@@ -123,6 +126,7 @@ const AdminProducts = () => {
         ...formData,
         price: Number(formData.price),
         stock: Number(formData.stock),
+        planPrice: formData.planPrice === '' ? null : Number(formData.planPrice),
         image: imageUrl
       };
 
@@ -135,7 +139,7 @@ const AdminProducts = () => {
       }
       
       setIsModalOpen(false);
-      setFormData({ name: '', category: 'milk', price: '', stock: '', description: '', unit: '1 Litre' });
+      setFormData({ name: '', category: 'milk', price: '', stock: '', description: '', unit: '1 Litre', planPrice: '' });
       setImageFile(null);
       fetchProducts();
       
@@ -382,6 +386,11 @@ const AdminProducts = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Initial Stock</label>
                   <input required type="number" name="stock" value={formData.stock} onChange={handleInputChange} className="w-full border rounded-lg p-2" />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subscription Price (₹ per litre/unit, on a plan)</label>
+                <input type="number" name="planPrice" value={formData.planPrice} onChange={handleInputChange} placeholder="Leave blank if this product has no plan pricing" className="w-full border rounded-lg p-2" />
+                <p className="text-xs text-gray-500 mt-1">Required for a milk product to appear in the app's "Start a plan" flow.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>

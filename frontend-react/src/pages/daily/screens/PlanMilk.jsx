@@ -37,6 +37,12 @@ export default function PlanMilk() {
       <div className="mq-body" style={{ paddingTop: 22 }}>
         <h2>Which milk, how much?</h2>
 
+        {milks.length === 0 && (
+          <p className="mq-sub" style={{ padding: '18px 0' }}>
+            No milk is set up for a daily plan right now — please check back shortly.
+          </p>
+        )}
+
         {milks.map((p) => {
           const key = p.id;
           const on = key === picked;
