@@ -93,6 +93,7 @@ const categoryOf = (product) => {
   if (raw.includes('paneer')) return 'paneer';
   if (raw.includes('dahi') || raw.includes('curd') || raw.includes('lassi')) return 'curd';
   if (raw.includes('milk')) return 'milk';
+  if (raw.includes('vegetable') || raw.includes('veggie')) return 'vegetables';
   return 'other';
 };
 
@@ -132,6 +133,7 @@ export const CATEGORIES = [
   ['ghee', 'Ghee'],
   ['curd', 'Curd'],
   ['paneer', 'Paneer'],
+  ['vegetables', 'Vegetables'],
 ];
 
 export const DELIVERY_SLOTS = [

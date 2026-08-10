@@ -14,6 +14,12 @@ const categoryMeta = {
     bgLight: 'bg-milquu-green/5',
     blobColor: 'bg-milquu-green/20',
   },
+  'vegetables': {
+    title: 'Farm Fresh Vegetables',
+    description: 'Seasonal, locally sourced vegetables delivered straight from the farm.',
+    bgLight: 'bg-emerald-500/5',
+    blobColor: 'bg-emerald-500/20',
+  },
   'by-products': {
     title: 'Authentic Dairy Delights',
     description: 'Traditional dairy products crafted from pure farm-fresh milk.',
@@ -155,7 +161,11 @@ const CategoryListing = () => {
     if (n.includes('ghee')) return 'desi-cow-ghee';
     if (n.includes('dahi') || n.includes('curd')) return 'fresh-dahi';
     if (n.includes('lassi')) return 'sweet-lassi';
-    return 'farm-fresh-cow-milk';
+    if (n.includes('milk')) return 'farm-fresh-cow-milk';
+    // No dedicated SEO page for this product yet (e.g. a vegetable) — slugify
+    // its name rather than silently pointing at the cow-milk page. ProductPage
+    // redirects to /products when a slug has no matching entry.
+    return n.trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   };
 
   useEffect(() => {
@@ -163,16 +173,21 @@ const CategoryListing = () => {
       try {
         const { data } = await api.get('/api/products');
         
-        // Group by category
+        // Group by category — anything that isn't milk or vegetables falls
+        // back to "by-products" so existing dairy items (ghee, paneer, curd)
+        // don't need their own bucket.
         const grouped = {
           'milk': { ...categoryMeta['milk'], products: [] },
+          'vegetables': { ...categoryMeta['vegetables'], products: [] },
           'by-products': { ...categoryMeta['by-products'], products: [] }
         };
-        
+
         data.forEach(p => {
-          let cat = (p.category || '').toLowerCase().trim();
+          const cat = (p.category || '').toLowerCase().trim();
           if (cat === 'milk' || cat.includes('milk')) {
             grouped['milk'].products.push(p);
+          } else if (cat === 'vegetables' || cat.includes('vegetable') || cat.includes('veggie')) {
+            grouped['vegetables'].products.push(p);
           } else {
             grouped['by-products'].products.push(p);
           }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, ShoppingCart, Search, Mic, ShieldCheck, Leaf, FlaskConical, Truck, Plus, Star, Home, ShoppingBag, CalendarCheck, Package, User, Wallet, Store } from 'lucide-react';
+import { Bell, ShoppingCart, Search, Mic, ShieldCheck, Leaf, FlaskConical, Truck, Plus, Star, Home, ShoppingBag, CalendarCheck, Package, User, Wallet, Store, Carrot } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -70,7 +70,11 @@ const MobileHome = () => {
     if (n.includes('ghee')) return 'desi-cow-ghee';
     if (n.includes('dahi') || n.includes('curd')) return 'fresh-dahi';
     if (n.includes('lassi')) return 'sweet-lassi';
-    return 'farm-fresh-cow-milk';
+    if (n.includes('milk')) return 'farm-fresh-cow-milk';
+    // No dedicated SEO page for this product yet (e.g. a vegetable) — slugify
+    // its name rather than silently pointing at the cow-milk page. ProductPage
+    // redirects to /products when a slug has no matching entry.
+    return n.trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   };
 
   const handleAddToCart = (product, e) => {
@@ -99,6 +103,8 @@ const MobileHome = () => {
     { name: 'Paneer', image: '/img/products/panner.webp' },
     { name: 'Curd', image: '/img/products/Dahi.webp' },
     { name: 'Butter', image: '/img/categories/categoris1.webp' },
+    // No product photo yet — swap `icon` for an `image` path once one's uploaded.
+    { name: 'Vegetables', icon: Carrot, category: 'vegetables' },
   ];
 
   const features = [
@@ -177,9 +183,13 @@ const MobileHome = () => {
       <div className="px-5 mt-6">
         <div className="flex overflow-x-auto hide-scrollbar space-x-5 pb-2">
           {categories.map((cat, idx) => (
-            <div key={idx} className="flex flex-col items-center flex-shrink-0 cursor-pointer" onClick={() => navigate(`/product/${getProductSlug(cat.name)}`)}>
+            <div
+              key={idx}
+              className="flex flex-col items-center flex-shrink-0 cursor-pointer"
+              onClick={() => navigate(cat.category ? `/products?category=${cat.category}` : `/product/${getProductSlug(cat.name)}`)}
+            >
               <div className="w-[68px] h-[68px] rounded-full bg-white mb-2 shadow-[0_4px_12px_rgba(0,0,0,0.04)] border border-gray-50 flex items-center justify-center p-2">
-                  <img src={cat.image} alt={cat.name} className="w-full h-full object-contain drop-shadow-sm" />
+                {cat.icon ? <cat.icon size={32} strokeWidth={1.5} className="text-emerald-600" /> : <img src={cat.image} alt={cat.name} className="w-full h-full object-contain drop-shadow-sm" />}
               </div>
               <span className="text-[12px] font-bold text-gray-800 text-center">{cat.name}</span>
             </div>

@@ -370,6 +370,7 @@ const AdminProducts = () => {
                   <select name="category" value={formData.category} onChange={handleInputChange} className="w-full border rounded-lg p-2">
                     <option value="milk">Milk</option>
                     <option value="by-products">By-Products</option>
+                    <option value="vegetables">Vegetables</option>
                   </select>
                 </div>
                 <div>

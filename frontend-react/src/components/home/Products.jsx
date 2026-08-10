@@ -1,10 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { Carrot } from 'lucide-react';
 
 const categories = [
   { id: 'milk', image: '/img/categories/categoris1.webp', title: "Pure Milk" },
-  { id: 'by-products', image: '/img/categories/categorie2.webp', title: "Dairy Delights" }
+  { id: 'by-products', image: '/img/categories/categorie2.webp', title: "Dairy Delights" },
+  // No product photo yet — swap `icon` for an `image` path once one's uploaded.
+  { id: 'vegetables', icon: Carrot, title: "Farm Vegetables" },
 ];
 
 const Products = () => {
@@ -44,26 +47,32 @@ const Products = () => {
               transition={{ duration: 0.8, delay: index * 0.2, ease: "easeOut" }}
               className="w-full flex justify-center group"
             >
-              <Link to="/products" className="w-full max-w-[450px] lg:max-w-[550px] block outline-none relative">
-                
+              <Link to={`/products?category=${category.id}`} className="w-full max-w-[450px] lg:max-w-[550px] block outline-none relative">
+
                 {/* Premium Background Card */}
                 <div className="absolute inset-0 bg-gray-50/80 rounded-[3rem] border border-gray-100 shadow-sm group-hover:shadow-2xl group-hover:bg-blue-50/50 transition-all duration-500 -z-10 transform group-hover:-translate-y-2"></div>
 
                 <div className="flex flex-col items-center py-10 px-4">
-                  <motion.div 
-                    animate={{ 
-                      y: [0, 8, 0, -4, 0], 
+                  <motion.div
+                    animate={{
+                      y: [0, 8, 0, -4, 0],
                     }}
                     transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: index * 0.8 }}
                     className="w-full transform transition-transform duration-700 cursor-pointer origin-bottom group-hover:scale-110 mb-8"
                   >
                     <div className="relative">
                       <div className="absolute inset-0 bg-white/20 blur-3xl rounded-full"></div>
-                      <img 
-                        src={category.image} 
-                        alt={category.title} 
-                        className="w-full h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.15)] relative z-10" 
-                      />
+                      {category.icon ? (
+                        <div className="w-full aspect-square max-h-[220px] flex items-center justify-center relative z-10">
+                          <category.icon size={96} strokeWidth={1.25} className="text-emerald-600 drop-shadow-[0_20px_40px_rgba(0,0,0,0.1)]" />
+                        </div>
+                      ) : (
+                        <img
+                          src={category.image}
+                          alt={category.title}
+                          className="w-full h-auto object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.15)] relative z-10"
+                        />
+                      )}
                     </div>
                   </motion.div>
 
