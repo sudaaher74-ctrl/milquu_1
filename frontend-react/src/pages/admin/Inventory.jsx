@@ -125,15 +125,26 @@ const Inventory = () => {
     try {
       const product = inventoryData.find(p => p.id === addStockForm.productId);
       if (!product) return;
-      
+
       const newStock = product.stock + Number(addStockForm.quantity);
-      await api.put(`/api/products/${addStockForm.productId}`, { stock: newStock });
+      // The backend validates PUT /api/products/:id as a full replace (name,
+      // price, category and stock are all required) — sending stock alone
+      // fails validation, so the rest of the current product is included too.
+      await api.put(`/api/products/${addStockForm.productId}`, {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        category: product.category,
+        image: product.image,
+        stock: newStock
+      });
       alert('Stock added successfully!');
       setIsAddStockModalOpen(false);
       setAddStockForm({ productId: '', quantity: 0 });
       fetchInventory();
     } catch (error) {
-      alert("Failed to add stock");
+      console.error('Error adding stock', error);
+      alert(error.response?.data?.message || 'Failed to add stock');
     }
   };
 
