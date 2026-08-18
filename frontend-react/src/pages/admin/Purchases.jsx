@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../utils/api.js';
 import { motion } from 'framer-motion';
-import { 
-  ShoppingCart, Plus, Search, Filter, Download, 
-  TrendingUp, Truck, Package, IndianRupee, Factory
+import {
+  ShoppingCart, Plus, Search, Filter, Download,
+  TrendingUp, Truck, Package, IndianRupee, Factory, Edit2, Trash2
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
@@ -17,7 +17,8 @@ const Purchases = () => {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const [editingId, setEditingId] = useState(null);
+  const emptyFormData = {
     date: new Date().toISOString().split('T')[0],
     supplierName: '',
     category: 'Raw Milk',
@@ -26,41 +27,72 @@ const Purchases = () => {
     rate: '',
     sellingPrice: '',
     status: 'Pending'
-  });
+  };
+  const [formData, setFormData] = useState(emptyFormData);
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleAddPurchase = async (e) => {
+  const openAddModal = () => {
+    setEditingId(null);
+    setFormData(emptyFormData);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (purchase) => {
+    setEditingId(purchase._id);
+    const product = products.find((p) => p.name === purchase.productName);
+    setFormData({
+      date: new Date(purchase.date).toISOString().split('T')[0],
+      supplierName: purchase.supplierName,
+      category: purchase.category,
+      productName: purchase.productName,
+      quantity: purchase.quantity,
+      rate: purchase.rate,
+      sellingPrice: product ? product.price : '',
+      status: purchase.status
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this purchase order? This also reverses its effect on stock.')) return;
+    try {
+      await api.delete(`/api/erp/purchases/${id}`);
+      setPurchaseData(purchaseData.filter((p) => p._id !== id));
+    } catch (error) {
+      console.error('Error deleting purchase', error);
+      alert('Failed to delete purchase');
+    }
+  };
+
+  const handleSavePurchase = async (e) => {
     e.preventDefault();
     try {
       const quantity = Number(formData.quantity);
       const rate = Number(formData.rate);
       const totalCost = quantity * rate;
-      
-      const newPurchase = {
-        ...formData,
-        quantity,
-        rate,
-        totalCost,
-        poNumber: `PO-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
-      };
-      const { data } = await api.post('/api/erp/purchases', newPurchase);
-      setPurchaseData([data, ...purchaseData]);
+
+      if (editingId) {
+        const { data } = await api.put(`/api/erp/purchases/${editingId}`, { ...formData, quantity, rate, totalCost });
+        setPurchaseData(purchaseData.map((p) => (p._id === editingId ? data : p)));
+      } else {
+        const newPurchase = {
+          ...formData,
+          quantity,
+          rate,
+          totalCost,
+          poNumber: `PO-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
+        };
+        const { data } = await api.post('/api/erp/purchases', newPurchase);
+        setPurchaseData([data, ...purchaseData]);
+      }
       setIsModalOpen(false);
-      setFormData({
-        date: new Date().toISOString().split('T')[0],
-        supplierName: '',
-        category: 'Raw Milk',
-        productName: '',
-        quantity: '',
-        rate: '',
-        sellingPrice: '',
-        status: 'Pending'
-      });
+      setEditingId(null);
+      setFormData(emptyFormData);
     } catch (error) {
-      console.error("Error creating purchase", error);
+      console.error('Error saving purchase', error);
       alert('Failed to save purchase');
     }
   };
@@ -148,7 +180,7 @@ const Purchases = () => {
           <button className="bg-white border border-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center">
             <Download size={16} className="mr-2" /> Export
           </button>
-          <button onClick={() => setIsModalOpen(true)} className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
+          <button onClick={openAddModal} className="bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-md flex items-center">
             <Plus size={18} className="mr-2" /> New Purchase Order
           </button>
         </div>
@@ -235,6 +267,7 @@ const Purchases = () => {
                 <th className="px-6 py-4 text-right">Rate</th>
                 <th className="px-6 py-4 text-right">Total Cost</th>
                 <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -276,6 +309,14 @@ const Purchases = () => {
                       {purchase.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-right">
+                    <button onClick={() => openEditModal(purchase)} className="p-1.5 text-gray-400 hover:text-milquu-blue hover:bg-blue-50 rounded transition-colors mx-1">
+                      <Edit2 size={16} />
+                    </button>
+                    <button onClick={() => handleDelete(purchase._id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors mx-1">
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -286,10 +327,10 @@ const Purchases = () => {
       {/* Add Purchase Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm cursor-pointer" onClick={() => setIsModalOpen(false)}></div>
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm cursor-pointer" onClick={() => { setIsModalOpen(false); setEditingId(null); }}></div>
           <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 z-10">
-            <h2 className="text-xl font-bold text-milquu-dark mb-4">Add Purchase Order</h2>
-            <form onSubmit={handleAddPurchase} className="space-y-4">
+            <h2 className="text-xl font-bold text-milquu-dark mb-4">{editingId ? 'Edit Purchase Order' : 'Add Purchase Order'}</h2>
+            <form onSubmit={handleSavePurchase} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Date</label>
@@ -349,8 +390,8 @@ const Purchases = () => {
                 </select>
               </div>
               <div className="flex justify-end space-x-3 pt-4">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600">Cancel</button>
-                <button type="submit" className="px-6 py-2 bg-milquu-dark text-white rounded-lg hover:bg-gray-800">Save Purchase</button>
+                <button type="button" onClick={() => { setIsModalOpen(false); setEditingId(null); }} className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600">Cancel</button>
+                <button type="submit" className="px-6 py-2 bg-milquu-dark text-white rounded-lg hover:bg-gray-800">{editingId ? 'Update Purchase' : 'Save Purchase'}</button>
               </div>
             </form>
           </div>

@@ -28,7 +28,11 @@ const productSchema = new mongoose.Schema({
   stockBatches: [{
     qty: { type: Number, required: true },
     costPerUnit: { type: Number, required: true },
-    date: { type: Date, default: Date.now }
+    date: { type: Date, default: Date.now },
+    // Links a batch back to the Purchase that created it, so editing or
+    // deleting that purchase can reverse its exact effect on stock rather
+    // than guessing which batch to adjust.
+    purchaseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Purchase' }
   }]
 }, {
   timestamps: true

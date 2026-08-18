@@ -1,6 +1,6 @@
 import express from 'express';
 import {
-  getPurchases, createPurchase,
+  getPurchases, createPurchase, updatePurchase, deletePurchase,
   getExpenses, createExpense,
   getProcurements, createProcurement,
   getWastages, createWastage,
@@ -16,6 +16,7 @@ import { apiLimiter } from '../middleware/rateLimiters.js';
 const router = express.Router();
 
 router.route('/purchases').get(protect, admin, getPurchases).post(protect, admin, createPurchase);
+router.route('/purchases/:id').put(protect, admin, updatePurchase).delete(protect, admin, deletePurchase);
 router.route('/expenses').get(protect, admin, getExpenses).post(protect, admin, createExpense);
 router.route('/procurements').get(protect, admin, getProcurements).post(protect, admin, createProcurement);
 router.route('/wastages').get(protect, admin, getWastages).post(protect, admin, createWastage);

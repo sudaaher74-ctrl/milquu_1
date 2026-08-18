@@ -46,20 +46,120 @@ export const createPurchase = async (req, res) => {
       product.stockBatches.push({
         qty: qty,
         costPerUnit: rate,
-        date: purchaseData.date || Date.now()
+        date: purchaseData.date || Date.now(),
+        purchaseId: createdPurchase._id
       });
-      
+
       let newValue = 0;
       product.stockBatches.forEach(b => newValue += (b.qty * b.costPerUnit));
       product.currentStockValue = newValue;
       product.stockValue = newValue;
-      
+
       await product.save();
     }
 
     res.status(201).json(createdPurchase);
   } catch (error) {
     res.status(400).json({ message: 'Invalid purchase data', error: error.message });
+  }
+};
+
+/** Recompute a product's stock totals from its stockBatches after they change. */
+const recalcStockTotals = (product) => {
+  let qty = 0;
+  let value = 0;
+  product.stockBatches.forEach((b) => {
+    qty += b.qty;
+    value += b.qty * b.costPerUnit;
+  });
+  product.stock = qty;
+  product.currentStockQty = qty;
+  product.stockValue = value;
+  product.currentStockValue = value;
+};
+
+export const updatePurchase = async (req, res) => {
+  try {
+    const purchase = await Purchase.findById(req.params.id);
+    if (!purchase) {
+      return res.status(404).json({ message: 'Purchase not found' });
+    }
+
+    const { sellingPrice, ...purchaseData } = req.body;
+    const quantity = Number(purchaseData.quantity) || 0;
+    const rate = Number(purchaseData.rate) || 0;
+    const totalCost = quantity * rate;
+    const oldProductName = purchase.productName;
+    const newProductName = purchaseData.productName ?? oldProductName;
+
+    // Move the linked stock batch off the old product if this purchase now
+    // points at a different one, then apply the new batch to the current product.
+    if (oldProductName !== newProductName) {
+      const oldProduct = await Product.findOne({ name: oldProductName });
+      if (oldProduct) {
+        oldProduct.stockBatches = oldProduct.stockBatches.filter(
+          (b) => String(b.purchaseId) !== String(purchase._id)
+        );
+        recalcStockTotals(oldProduct);
+        await oldProduct.save();
+      }
+    }
+
+    const product = await Product.findOne({ name: newProductName });
+    if (product) {
+      const batch = product.stockBatches.find((b) => String(b.purchaseId) === String(purchase._id));
+      if (batch) {
+        batch.qty = quantity;
+        batch.costPerUnit = rate;
+        batch.date = purchaseData.date || batch.date;
+      } else {
+        product.stockBatches.push({
+          qty: quantity,
+          costPerUnit: rate,
+          date: purchaseData.date || Date.now(),
+          purchaseId: purchase._id
+        });
+      }
+      recalcStockTotals(product);
+      product.purchasePrice = rate;
+      if (sellingPrice !== undefined && sellingPrice !== '') {
+        const sp = Number(sellingPrice);
+        product.price = sp;
+        product.marginPercentage = rate > 0 ? ((sp - rate) / rate) * 100 : 100;
+      }
+      await product.save();
+    }
+
+    Object.assign(purchase, purchaseData, { quantity, rate, totalCost });
+    const updatedPurchase = await purchase.save();
+
+    res.json(updatedPurchase);
+  } catch (error) {
+    res.status(400).json({ message: 'Invalid purchase data', error: error.message });
+  }
+};
+
+export const deletePurchase = async (req, res) => {
+  try {
+    const purchase = await Purchase.findById(req.params.id);
+    if (!purchase) {
+      return res.status(404).json({ message: 'Purchase not found' });
+    }
+
+    const product = await Product.findOne({ name: purchase.productName });
+    if (product) {
+      product.stockBatches = product.stockBatches.filter(
+        (b) => String(b.purchaseId) !== String(purchase._id)
+      );
+      recalcStockTotals(product);
+      await product.save();
+    }
+
+    await purchase.deleteOne();
+
+    res.json({ message: 'Purchase deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error' });
   }
 };
 
