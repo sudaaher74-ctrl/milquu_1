@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Phone, Lock, LogIn, ArrowRight } from 'lucide-react';
 import api from '../utils/api';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
   // Customers sign in with their phone number; staff accounts still use an
@@ -29,6 +30,20 @@ const Login = () => {
       navigate(location.state?.from || '/account', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      const { data } = await api.post('/api/users/google-login', { token: credentialResponse.credential });
+      login(data);
+      navigate(location.state?.from || '/account', { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Google Login failed');
     } finally {
       setLoading(false);
     }
@@ -63,6 +78,26 @@ const Login = () => {
               {error}
             </motion.div>
           )}
+
+          <div className="mb-6 flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Login Failed')}
+              useOneTap
+              theme="outline"
+              size="large"
+              width="100%"
+            />
+          </div>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white/80 text-gray-500">Or continue with</span>
+            </div>
+          </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>

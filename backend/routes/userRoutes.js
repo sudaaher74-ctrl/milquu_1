@@ -10,7 +10,8 @@ import {
   getMyWallet,
   createRechargeOrder,
   rechargeWallet,
-  requestWithdrawal
+  requestWithdrawal,
+  googleLogin
 } from '../controllers/userControllers.js';
 import {
   createMySubscription,
@@ -35,6 +36,7 @@ const router = express.Router();
 
 router.post('/register', validateRequest(registerSchema), registerUser);
 router.post('/login', validateRequest(loginSchema), loginUser);
+router.post('/google-login', googleLogin);
 router.get('/profile', protect, getUserProfile);
 router.put('/profile', protect, updateUserProfile);
 

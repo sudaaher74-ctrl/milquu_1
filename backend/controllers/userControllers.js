@@ -8,6 +8,7 @@ import { isServiceableArea } from '../config/serviceAreas.js';
 import { normalisePhone, isValidPhone, looksLikeEmail } from '../utils/phone.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 
 /**
  * Turn a Mongoose write failure into an honest status code. A schema violation
@@ -461,5 +462,54 @@ export const rechargeWallet = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+export const googleLogin = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ message: 'Google token is required' });
+    }
+
+    // Verify token
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    
+    if (!payload || !payload.email) {
+      return res.status(400).json({ message: 'Invalid Google token' });
+    }
+
+    const { email, name } = payload;
+    const normalisedEmail = email.toLowerCase().trim();
+
+    // Check if user exists
+    let user = await User.findOne({ email: normalisedEmail });
+
+    if (!user) {
+      // Create highly secure random password for Google signup
+      const randomPassword = crypto.randomBytes(32).toString('hex');
+      
+      user = await User.create({
+        name: name || 'Google User',
+        email: normalisedEmail,
+        password: randomPassword,
+        role: 'user'
+      });
+    }
+
+    res.json({
+      ...publicUser(user),
+      token: generateToken(user._id, user.role)
+    });
+
+  } catch (error) {
+    console.error('Google login error:', error);
+    res.status(401).json({ message: 'Google authentication failed', error: error.message });
   }
 };

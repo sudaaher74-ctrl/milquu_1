@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Screen, TopBar, ActionBar } from '../ui';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../utils/api';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function AppLogin() {
   const navigate = useNavigate();
@@ -31,6 +32,20 @@ export default function AppLogin() {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setLoading(true);
+    try {
+      const { data } = await api.post('/api/users/google-login', { token: credentialResponse.credential });
+      login(data);
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Google Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Screen>
       <TopBar title="Sign in" to="/app" />
@@ -40,6 +55,23 @@ export default function AppLogin() {
         <p className="mq-lede">Sign in to manage your plan, wallet and deliveries.</p>
 
         {error && <span className="mq-err">{error}</span>}
+
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError('Google Login Failed')}
+            useOneTap
+            theme="outline"
+            size="large"
+            width="100%"
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', margin: '8px 0', fontSize: 14, color: 'var(--mq-neutral-700)' }}>
+          <div style={{ flex: 1, borderTop: '1px solid var(--mq-neutral-200)' }}></div>
+          <span style={{ padding: '0 12px' }}>Or continue with</span>
+          <div style={{ flex: 1, borderTop: '1px solid var(--mq-neutral-200)' }}></div>
+        </div>
 
         <div className="mq-field">
           <label className="mq-label" htmlFor="mq-login-phone">Phone number</label>

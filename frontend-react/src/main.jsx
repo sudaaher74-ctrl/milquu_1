@@ -9,6 +9,7 @@ import { AuthProvider } from './context/AuthContext.jsx'
 import * as Sentry from '@sentry/react'
 import './i18n'
 import { initGA } from './utils/analytics'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 
 initGA();
 
@@ -41,11 +42,13 @@ if ('serviceWorker' in navigator) {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <HelmetProvider>
-      <AuthProvider>
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+        <AuthProvider>
         <CartProvider>
           <RouterProvider router={router} />
         </CartProvider>
       </AuthProvider>
+      </GoogleOAuthProvider>
     </HelmetProvider>
   </StrictMode>,
 )

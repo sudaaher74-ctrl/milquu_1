@@ -140,17 +140,15 @@ export const router = createBrowserRouter([
         path: "app",
         element: <DailyApp />,
         children: [
-          // Browsing needs no account. Home sends a visitor with no plan on to
-          // /app/start, which is the welcome screen, so a signed-out phone
-          // visitor lands there rather than on a login form.
-          { index: true, element: <AppHome /> },
-          { path: "shop", element: <AppShop /> },
-          { path: "product/:key", element: <AppProduct /> },
-          { path: "cart", element: <AppCart /> },
-          { path: "start", element: <AppWelcome /> },
-          { path: "start/sample", element: <AppSample /> },
-          { path: "start/milk", element: <AppPlanMilk /> },
-          { path: "start/rhythm", element: <AppPlanRhythm /> },
+          // We now enforce login at the very start.
+          { index: true, element: <RequireAccount><AppHome /></RequireAccount> },
+          { path: "shop", element: <RequireAccount><AppShop /></RequireAccount> },
+          { path: "product/:key", element: <RequireAccount><AppProduct /></RequireAccount> },
+          { path: "cart", element: <RequireAccount><AppCart /></RequireAccount> },
+          { path: "start", element: <RequireAccount><AppWelcome /></RequireAccount> },
+          { path: "start/sample", element: <RequireAccount><AppSample /></RequireAccount> },
+          { path: "start/milk", element: <RequireAccount><AppPlanMilk /></RequireAccount> },
+          { path: "start/rhythm", element: <RequireAccount><AppPlanRhythm /></RequireAccount> },
           { path: "login", element: <AppLogin /> },
           { path: "join", element: <AppRegister /> },
 

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Hero from '../components/home/Hero';
 import About from '../components/home/About';
 import Products from '../components/home/Products';
@@ -15,14 +16,20 @@ const Home = () => {
   ];
 
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    
     // Redirect to campaign page if they haven't claimed or skipped it
     const hasClaimed = localStorage.getItem('freeSampleClaimed');
-    if (!hasClaimed) {
+    if (user && !hasClaimed) {
       navigate('/free-sample', { replace: true });
     }
-  }, [navigate]);
+  }, [navigate, user, loading]);
 
   return (
     <>
