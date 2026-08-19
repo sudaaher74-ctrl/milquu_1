@@ -7,33 +7,13 @@ import api from '../utils/api';
 import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
-  // Customers sign in with their phone number; staff accounts still use an
-  // email, and the server accepts either through the same field.
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
 
-    try {
-      const { data } = await api.post('/api/users/login', { identifier, password });
-
-      login(data);
-      // Return the customer to wherever they were headed (the app, usually).
-      navigate(location.state?.from || '/account', { replace: true });
-    } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setError('');
@@ -89,64 +69,6 @@ const Login = () => {
               width="100%"
             />
           </div>
-
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white/80 text-gray-500">Or continue with</span>
-            </div>
-          </div>
-
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Phone number</label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  inputMode="tel"
-                  autoComplete="username"
-                  required
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
-                  placeholder="98200 98200"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Password</label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-md shadow-milquu-blue/20 text-sm font-bold text-white bg-milquu-blue hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-milquu-blue disabled:opacity-70 disabled:transform-none"
-              >
-                {loading ? 'Signing in...' : 'Sign in'}
-                {!loading && <LogIn className="ml-2 h-4 w-4" />}
-              </button>
-            </div>
-          </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
