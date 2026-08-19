@@ -42,7 +42,7 @@ if ('serviceWorker' in navigator) {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <HelmetProvider>
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+      <GoogleOAuthProvider clientId="493263183371-900jeus48uso6k3fs997one5diooao35.apps.googleusercontent.com">
         <AuthProvider>
         <CartProvider>
           <RouterProvider router={router} />
