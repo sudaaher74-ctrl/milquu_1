@@ -41,7 +41,7 @@ const AdminLayout = () => {
     { name: 'Delivery Staff', path: '/admin/delivery-boys', icon: <Bike size={20} /> },
     { name: 'Revenue', path: '/admin/revenue', icon: <BarChart3 size={20} /> },
     { name: 'Inventory', path: '/admin/inventory', icon: <Boxes size={20} /> },
-    { name: 'Refunds', path: 'refunds', icon: <Banknote size={20} /> },
+    { name: 'Refunds', path: '/admin/refunds', icon: <Banknote size={20} /> },
     
     // New ERP Modules
     { name: 'Business Overview', path: '/admin/business-overview', icon: <Briefcase size={20} /> },

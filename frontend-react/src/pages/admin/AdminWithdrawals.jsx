@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { IndianRupee, Clock, CheckCircle2, XCircle, FileText, Search, RefreshCw } from 'lucide-react';
-
-const baseUrl = import.meta.env.MODE === 'development' ? 'http://localhost:5001' : 'https://milquu-backend.onrender.com';
+import api from '../../utils/api.js';
 
 const AdminWithdrawals = () => {
   const [requests, setRequests] = useState([]);
@@ -13,22 +12,11 @@ const AdminWithdrawals = () => {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const userInfoStr = localStorage.getItem('userInfo');
-      if (!userInfoStr) return;
-      const adminToken = JSON.parse(userInfoStr).token;
-
-      const res = await fetch(`${baseUrl}/api/admin/withdrawals`, {
-        headers: { 'Authorization': `Bearer ${adminToken}` }
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setRequests(data);
-      } else {
-        alert(data.message || 'Error fetching requests');
-      }
+      const { data } = await api.get('/api/admin/withdrawals');
+      setRequests(data);
     } catch (err) {
       console.error(err);
-      alert('Network error');
+      alert(err.response?.data?.message || 'Error fetching requests');
     } finally {
       setLoading(false);
     }
@@ -49,26 +37,12 @@ const AdminWithdrawals = () => {
 
     setProcessingId(id);
     try {
-      const adminToken = JSON.parse(localStorage.getItem('userInfo')).token;
-      const res = await fetch(`${baseUrl}/api/admin/withdrawals/${id}/status`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${adminToken}` 
-        },
-        body: JSON.stringify({ status, adminRemarks: remarks })
-      });
-      
-      const data = await res.json();
-      if (res.ok) {
-        alert(`Status updated to ${status}`);
-        fetchRequests();
-      } else {
-        alert(data.message || 'Error updating status');
-      }
+      await api.put(`/api/admin/withdrawals/${id}/status`, { status, adminRemarks: remarks });
+      alert(`Status updated to ${status}`);
+      fetchRequests();
     } catch (err) {
       console.error(err);
-      alert('Network error');
+      alert(err.response?.data?.message || 'Error updating status');
     } finally {
       setProcessingId(null);
     }

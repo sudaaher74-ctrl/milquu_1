@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Store, Truck, CreditCard, Users, Settings as SettingsIcon, Moon, Save, Shield, Activity, Search, ShieldCheck } from 'lucide-react';
+import api from '../../utils/api.js';
 
 const mockAuditLogs = [
   { id: 1, action: 'Updated pricing for Pure Desi Ghee', user: 'Admin User', role: 'Superadmin', time: '10 mins ago', ip: '192.168.1.45' },
