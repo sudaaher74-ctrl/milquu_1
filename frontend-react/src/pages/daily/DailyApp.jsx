@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { DailyProvider, useDaily } from './DailyContext';
 import { Toast } from './ui';
+import InstallPwaPrompt from '../../components/layout/InstallPwaPrompt';
 import './daily.css';
 
 /** The toast lives outside the routed screen so it survives navigation. */
@@ -10,6 +11,7 @@ function Shell() {
     <div className="mq-shell">
       {loading ? <Loading /> : <Outlet />}
       <Toast message={toast} />
+      <InstallPwaPrompt />
     </div>
   );
 }

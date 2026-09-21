@@ -6,6 +6,7 @@ import Footer from './components/layout/Footer';
 import FloatingWhatsApp from './components/layout/FloatingWhatsApp';
 import FloatingCartIsland from './components/layout/FloatingCartIsland';
 import MobileNav from './components/layout/MobileNav';
+import InstallPwaPrompt from './components/layout/InstallPwaPrompt';
 import { trackPageView } from './utils/analytics';
 
 // Loading Fallback Component
@@ -123,6 +124,7 @@ export default function AppLayout() {
       {!hideLayout && !isHome && <MobileNav />}
       {!hideLayout && <FloatingCartIsland />}
       {!hideLayout && <FloatingWhatsApp />}
+      <InstallPwaPrompt />
       {!hideLayout && <Footer />}
     </div>
   );

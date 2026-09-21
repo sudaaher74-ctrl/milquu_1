@@ -24,21 +24,37 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['brand-logo.jpg'],
+      includeAssets: ['brand-logo.jpg', 'pwa-192x192.png', 'pwa-512x512.png', 'robots.txt'],
       manifest: {
-        name: 'MilQuu Fresh',
+        id: '/',
+        name: 'MilQuu Fresh – Farm Fresh Dairy',
         short_name: 'MilQuu',
-        description: 'Premium dairy delivery in Navi Mumbai',
+        description: 'Fresh milk subscriptions and dairy delivered daily before 7 AM across Navi Mumbai.',
         theme_color: '#ffffff',
-        background_color: '#ffffff',
+        background_color: '#FDFBF7',
         display: 'standalone',
         orientation: 'portrait',
+        start_url: '/?source=pwa',
+        scope: '/',
+        categories: ['food', 'shopping', 'lifestyle'],
         icons: [
           {
-            src: 'brand-logo.jpg',
+            src: '/pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/jpeg',
-            purpose: 'any maskable'
+            type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
@@ -47,6 +63,62 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 10485760, // 10 MB
         navigateFallback: '/index.html',
         navigateFallbackAllowlist: [/^(?!\/__).*/],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'gstatic-fonts-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 120,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 Days
+              },
+            },
+          },
+          {
+            urlPattern: /\/api\/products/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-products-cache',
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24, // 24 hours fallback
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+        ],
       }
     })
   ],

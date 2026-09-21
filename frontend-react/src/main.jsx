@@ -30,14 +30,18 @@ if (import.meta.env.VITE_SENTRY_DSN) {
   });
 }
 
-// Unregister any stale service workers (e.g. from previous PWA setups) to prevent old assets from being served
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then((registrations) => {
-    for (let registration of registrations) {
-      registration.unregister();
-    }
-  });
-}
+import { registerSW } from 'virtual:pwa-register'
+
+// Register PWA service worker with auto-update and offline capability
+registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    console.log('[PWA] New version detected, updating cache in background...');
+  },
+  onOfflineReady() {
+    console.log('[PWA] MilQuu is ready for offline usage.');
+  },
+});
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
