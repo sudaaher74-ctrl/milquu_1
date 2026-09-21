@@ -339,18 +339,37 @@ const Cart = () => {
                   </div>
 
                   {/* Calculations */}
-                  <div className="bg-gray-50/50 p-4 rounded-2xl font-sans text-sm space-y-2">
+                  <div className="bg-gradient-to-br from-gray-50/80 to-white/90 p-5 rounded-2xl border border-gray-100 font-sans text-sm space-y-2.5 shadow-sm">
                     <div className="flex justify-between text-gray-600">
-                      <span>Subtotal</span>
-                      <span className="font-semibold">₹{subtotal}</span>
+                      <span>Items Subtotal</span>
+                      <span className="font-semibold text-milquu-dark">₹{subtotal}</span>
                     </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Delivery</span>
-                      <span className="font-semibold text-milquu-green">Free</span>
+                    <div className="flex justify-between text-gray-600 items-center">
+                      <span>Early Morning Doorstep Delivery</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-gray-400 line-through text-xs">₹30</span>
+                        <span className="font-bold text-xs uppercase px-1.5 py-0.5 rounded bg-green-100 text-green-700">FREE</span>
+                      </div>
                     </div>
+                    <div className="flex justify-between text-gray-600 items-center">
+                      <span>Insulated Fresh Pouch</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-gray-400 line-through text-xs">₹15</span>
+                        <span className="font-bold text-xs uppercase px-1.5 py-0.5 rounded bg-green-100 text-green-700">FREE</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-green-50/80 border border-green-100/80 rounded-xl p-2.5 flex items-center justify-between text-xs text-green-800 font-medium">
+                      <span>🎉 Purity Promise Savings</span>
+                      <span className="font-bold text-green-700">You save ₹45</span>
+                    </div>
+
                     <div className="border-t border-gray-200 pt-3 mt-3 flex justify-between items-center">
-                      <span className="text-base font-bold text-milquu-dark">Total</span>
-                      <span className="text-xl font-sans font-bold text-milquu-dark">₹{total}</span>
+                      <div>
+                        <span className="text-base font-bold text-milquu-dark">Total Amount</span>
+                        <p className="text-[11px] text-gray-400">Inclusive of all taxes & delivery</p>
+                      </div>
+                      <span className="text-2xl font-sans font-bold text-milquu-dark">₹{total}</span>
                     </div>
                   </div>
 

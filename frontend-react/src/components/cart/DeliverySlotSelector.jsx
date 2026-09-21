@@ -120,9 +120,15 @@ const DeliverySlotSelector = ({ value, onChange }) => {
 
   return (
     <div className="space-y-3">
-      <h4 className="font-serif font-bold text-milquu-dark text-sm mb-1 flex items-center gap-2">
-        🚚 Choose Delivery Slot
-      </h4>
+      <div className="flex items-center justify-between">
+        <h4 className="font-serif font-bold text-milquu-dark text-sm flex items-center gap-2">
+          🚚 Choose Delivery Slot
+        </h4>
+        <span className="text-[11px] font-bold text-milquu-green bg-green-50 border border-green-100 px-2 py-0.5 rounded-full">
+          Free Doorstep Delivery
+        </span>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {slots.map((slot) => {
           const isSelected = value === slot.id;
@@ -130,31 +136,40 @@ const DeliverySlotSelector = ({ value, onChange }) => {
             <motion.button
               key={slot.id}
               type="button"
-              whileTap={{ scale: 0.97 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => slot.available && onChange(slot.id, slot.deliveryDate, slot.time)}
-              className={`relative text-left p-4 rounded-2xl border-2 transition-all duration-200 ${
+              className={`relative text-left p-4 rounded-2xl border-2 transition-all duration-300 ${
                 !slot.available
                   ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50'
                   : isSelected
-                  ? 'border-milquu-green bg-milquu-green/5 shadow-md shadow-milquu-green/10'
-                  : 'border-gray-200 bg-gray-50/50 hover:border-milquu-gold/50 hover:bg-milquu-gold/5 cursor-pointer'
+                  ? 'border-milquu-green bg-gradient-to-br from-green-50/80 to-emerald-50/40 shadow-md shadow-green-900/5 ring-2 ring-milquu-green/20'
+                  : 'border-gray-200/80 bg-white/70 hover:border-milquu-gold/60 hover:bg-milquu-gold/5 cursor-pointer shadow-sm'
               }`}
             >
               {isSelected && (
-                <span className="absolute top-3 right-3 w-5 h-5 bg-milquu-green rounded-full flex items-center justify-center text-white text-xs">✓</span>
+                <span className="absolute top-3 right-3 w-6 h-6 bg-milquu-green rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                  ✓
+                </span>
               )}
-              <div className="text-2xl mb-2">{slot.icon}</div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">{slot.icon}</span>
+                {slot.id === 'Morning' && (
+                  <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    Most Popular
+                  </span>
+                )}
+              </div>
               <p className="font-bold text-sm text-milquu-dark">{slot.title}</p>
-              <p className="text-xs font-semibold text-milquu-green mt-1">{slot.time}</p>
+              <p className="text-xs font-bold text-milquu-green mt-0.5">{slot.time}</p>
 
               {slot.available ? (
                 <>
                   <p className="text-[11px] text-gray-500 mt-2">
                     📅 <span className="font-bold text-milquu-dark">{slot.dateLabel}:</span> {formatDate(slot.deliveryDate)}
                   </p>
-                  <p className="text-[10px] text-gray-400 mt-1">{slot.cutoffText}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{slot.cutoffText}</p>
                   {slot.countdown && (
-                    <div className="mt-2 inline-block bg-orange-50 border border-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    <div className="mt-2 inline-block bg-orange-50 border border-orange-100 text-orange-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
                       ⏰ {slot.countdown}
                     </div>
                   )}
@@ -165,6 +180,13 @@ const DeliverySlotSelector = ({ value, onChange }) => {
             </motion.button>
           );
         })}
+      </div>
+
+      <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+        <span className="text-base">🚪</span>
+        <span>
+          <strong className="text-gray-700">Silent Morning Delivery:</strong> Placed safely at your doorstep before 7:00 AM without ringing doorbells.
+        </span>
       </div>
     </div>
   );

@@ -19,14 +19,9 @@ const Home = () => {
   const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (!loading && !user) {
-      navigate('/login', { replace: true });
-      return;
-    }
-    
-    // Redirect to campaign page if they haven't claimed or skipped it
+    // Redirect signed-in users to campaign page if they haven't claimed or skipped it
     const hasClaimed = localStorage.getItem('freeSampleClaimed');
-    if (user && !hasClaimed) {
+    if (!loading && user && !hasClaimed) {
       navigate('/free-sample', { replace: true });
     }
   }, [navigate, user, loading]);

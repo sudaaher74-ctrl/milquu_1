@@ -36,7 +36,7 @@ const About = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           
-          {/* Left: Premium Farm Image */}
+          {/* Left: Premium Farm Image with Quality Badge */}
           <motion.div 
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -44,7 +44,25 @@ const About = () => {
             transition={{ duration: 0.8 }}
             className="relative w-full"
           >
-            <img src="/img/hero/home2.webp" alt="Premium Dairy Quality" className="w-full h-auto object-contain drop-shadow-xl" />
+            <div className="relative rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/60 group">
+              <img 
+                src="/img/custom/hero_milk_bottle.jpg" 
+                alt="Farm Fresh Pure Milk Quality" 
+                className="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+              
+              {/* Floating Glass Guarantee Badge */}
+              <div className="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-xl p-4 rounded-2xl border border-white/80 shadow-lg flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-lg flex-shrink-0">
+                  ✓
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-milquu-dark uppercase tracking-wider">Purity Guaranteed</p>
+                  <p className="text-xs text-gray-500 font-medium">Tested across 26+ safety parameters before delivery</p>
+                </div>
+              </div>
+            </div>
           </motion.div>
 
           {/* Right: Description & Stats */}

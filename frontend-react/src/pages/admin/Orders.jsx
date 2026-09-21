@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../utils/api.js';
-import { Search, Filter, ChevronLeft, ChevronRight, Download, X, MapPin, Phone, User, Package, Calendar, Truck, CheckCircle } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, Download, X, MapPin, Phone, User, Package, Calendar, Truck, CheckCircle, Navigation } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ExportButton from '../../components/admin/ExportButton';
 
@@ -349,6 +349,18 @@ const Orders = () => {
                         'No address provided.'
                       )}
                     </p>
+                    {selectedOrder.shippingAddress?.address && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                          `${selectedOrder.shippingAddress.address}, ${selectedOrder.shippingAddress.city || ''} ${selectedOrder.shippingAddress.postalCode || ''}`
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center text-xs font-bold text-milquu-blue hover:text-blue-700 mt-3 gap-1.5 bg-white border border-blue-200 px-3 py-1.5 rounded-lg shadow-sm hover:shadow transition-all"
+                      >
+                        <Navigation size={13} /> Open in Google Maps
+                      </a>
+                    )}
                   </div>
                 </div>
 

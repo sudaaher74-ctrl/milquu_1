@@ -531,24 +531,60 @@ const MyAccount = () => {
                         </div>
                       </div>
 
-                      {/* Recharge Form */}
-                      <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm mb-8 flex flex-col md:flex-row justify-between items-center gap-6">
-                        <div>
-                          <h4 className="text-lg font-bold text-gray-800">Add Money</h4>
-                          <p className="text-sm text-gray-500">Recharge instantly via Razorpay</p>
+                      {/* Recharge Form with Quick Preset Chips */}
+                      <div className="bg-gradient-to-br from-white to-gray-50/70 border border-gray-100 p-6 rounded-3xl shadow-sm mb-8">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-lg font-bold text-gray-800">Add Money to Wallet</h4>
+                              <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-milquu-blue px-2 py-0.5 rounded-full border border-blue-100">
+                                ⚡ Instant Razorpay
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">Keep your balance topped up for hassle-free daily milk deliveries.</p>
+                          </div>
                         </div>
-                        <form onSubmit={handleRecharge} className="flex gap-3 w-full md:w-auto">
-                          <input 
-                            type="number" 
-                            required 
-                            min="100" 
-                            placeholder="Amount (₹)" 
-                            value={rechargeAmount}
-                            onChange={(e) => setRechargeAmount(e.target.value)}
-                            className="px-4 py-2 rounded-xl text-gray-800 outline-none w-full md:w-32 focus:ring-2 focus:ring-blue-100 border border-gray-200"
-                          />
-                          <button type="submit" className="bg-milquu-blue text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-sm whitespace-nowrap">
-                            Recharge
+
+                        {/* Quick Preset Amount Chips */}
+                        <div className="flex flex-wrap items-center gap-2 mb-4">
+                          <span className="text-xs font-semibold text-gray-400 mr-1">Quick Top-Up:</span>
+                          {[500, 1000, 2000].map((preset) => (
+                            <button
+                              key={preset}
+                              type="button"
+                              onClick={() => setRechargeAmount(String(preset))}
+                              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                                rechargeAmount === String(preset)
+                                  ? 'bg-milquu-blue text-white shadow-md shadow-blue-500/20'
+                                  : 'bg-white border border-gray-200 text-gray-700 hover:border-milquu-blue hover:text-milquu-blue'
+                              }`}
+                            >
+                              + ₹{preset}
+                              {preset === 1000 && <span className="ml-1 text-[9px] opacity-80 font-normal">(Popular)</span>}
+                            </button>
+                          ))}
+                        </div>
+
+                        <form onSubmit={handleRecharge} className="flex flex-col sm:flex-row gap-3">
+                          <div className="relative flex-grow max-w-sm">
+                            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 font-bold">
+                              ₹
+                            </span>
+                            <input 
+                              type="number" 
+                              required 
+                              min="100" 
+                              placeholder="Enter custom amount" 
+                              value={rechargeAmount}
+                              onChange={(e) => setRechargeAmount(e.target.value)}
+                              className="pl-8 pr-4 py-3 rounded-xl text-gray-800 outline-none w-full focus:ring-2 focus:ring-milquu-blue/30 border border-gray-200 bg-white font-semibold text-sm shadow-sm"
+                            />
+                          </div>
+                          <button 
+                            type="submit" 
+                            className="bg-milquu-blue text-white px-7 py-3 rounded-xl font-bold hover:bg-blue-700 active:scale-98 transition-all shadow-md shadow-blue-600/20 whitespace-nowrap text-sm"
+                          >
+                            Recharge Now
                           </button>
                         </form>
                       </div>
