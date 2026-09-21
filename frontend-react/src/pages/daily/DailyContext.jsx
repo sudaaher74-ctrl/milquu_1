@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { RHYTHMS, DELIVERY_SLOTS, FALLBACK_AREAS, decorate } from './catalogue';
+import { RHYTHMS, DELIVERY_SLOTS, FALLBACK_AREAS, decorate, DEFAULT_POPULAR_PRODUCTS } from './catalogue';
 import { addDays, dayKey, startOfDay, fromKey } from './dates';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
@@ -117,8 +117,10 @@ export function DailyProvider({ children }) {
 
   /* ── account data, from the API ────────────────────────────────────────── */
 
-  const [products, setProducts] = useState({});
-  const [productList, setProductList] = useState([]);
+  const [products, setProducts] = useState(() =>
+    Object.fromEntries(DEFAULT_POPULAR_PRODUCTS.map((p) => [p.id, p]))
+  );
+  const [productList, setProductList] = useState(DEFAULT_POPULAR_PRODUCTS);
   const [wallet, setWallet] = useState(0);
   const [ledger, setLedger] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -126,7 +128,7 @@ export function DailyProvider({ children }) {
   const [areas, setAreas] = useState(FALLBACK_AREAS);
   // The catalogue is fetched whether or not anyone is signed in, so the app
   // always has something to load before its first paint.
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const address = user?.deliveryAddress
     ? { ...BLANK_ADDRESS, ...user.deliveryAddress }
@@ -136,11 +138,14 @@ export function DailyProvider({ children }) {
     // The catalogue is public: a signed-out visitor browsing the shop needs it,
     // and it is the same list for everyone.
     const productsRes = await api.get('/api/products').catch(() => null);
-    if (productsRes) {
+    if (productsRes && productsRes.data?.length) {
       // Prices, names and units are the server's. The app only adds copy.
       const list = (productsRes.data ?? []).map(decorate);
       setProductList(list);
       setProducts(Object.fromEntries(list.map((p) => [p.id, p])));
+    } else {
+      setProductList(DEFAULT_POPULAR_PRODUCTS);
+      setProducts(Object.fromEntries(DEFAULT_POPULAR_PRODUCTS.map((p) => [p.id, p])));
     }
 
     // Everything below belongs to an account. With no one signed in there is

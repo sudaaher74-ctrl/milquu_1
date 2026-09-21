@@ -46,10 +46,13 @@
   --mq-green-700: #256428;
   --mq-green-900: #143a17;
 
-
-  --mq-heading: 'Caprasimo', Georgia, serif;
-  --mq-body: 'Figtree', system-ui, sans-serif;
-
+  --mq-heading: 'Playfair Display', Georgia, serif;
+  --mq-body: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mq-script: 'Caveat', cursive;
+  --mq-gold: #8c6b1b;
+  --mq-gold-hover: #735613;
+  --mq-gold-soft: #faf5eb;
+  --mq-gold-border: #ecdcb9;
   --mq-shadow-sm: 0 1px 2px rgba(46, 43, 37, 0.14);
   --mq-shadow-md: 0 3px 10px rgba(46, 43, 37, 0.16);
   --mq-shadow-lg: 0 12px 32px rgba(46, 43, 37, 0.22);
@@ -1053,4 +1056,585 @@ textarea.mq-input {
   .mq-app * {
     transition: none !important;
   }
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════
+   MOBILE APP REDESIGN — 1:1 PIXEL PERFECT STYLES
+   ═════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Top Header Bar ──────────────────────────────────────────────────────── */
+.mq-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: #ffffff;
+  border-bottom: 1px solid #f1ece4;
+  padding: calc(10px + env(safe-area-inset-top)) 18px 10px;
+}
+
+.mq-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mq-location-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.mq-location-chip:hover {
+  background: #fcfbfa;
+  border-color: #cbd5e1;
+}
+
+.mq-location-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1e293b;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mq-icon-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.mq-icon-btn:hover {
+  background: #f8fafc;
+}
+
+.mq-bell-dot {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #ef4444;
+  border: 2px solid #ffffff;
+}
+
+.mq-cart-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 999px;
+  background: #785a15;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1.5px solid #ffffff;
+}
+
+/* ── Typography & Tags ───────────────────────────────────────────────────── */
+.mq-script-text {
+  font-family: var(--mq-script);
+  font-size: 20px;
+  line-height: 1.1;
+  color: #334155;
+}
+
+.mq-pill-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #faeed4;
+  color: #785a15;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.mq-btn-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #856214;
+  color: #ffffff !important;
+  border-radius: 999px;
+  padding: 11px 22px;
+  font-size: 14.5px;
+  font-weight: 600;
+  border: 0;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(133, 98, 20, 0.25);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.mq-btn-gold:hover {
+  background: #6e500e;
+  transform: translateY(-1px);
+}
+
+.mq-btn-gold:active {
+  transform: translateY(0);
+}
+
+.mq-btn-outline-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  color: #856214 !important;
+  border: 1.5px solid #856214;
+  border-radius: 999px;
+  padding: 9px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.mq-btn-outline-gold:hover {
+  background: #faf5eb;
+}
+
+.mq-btn-soldout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #cbd5e1;
+  color: #64748b;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 0;
+  cursor: not-allowed;
+}
+
+.mq-btn-add-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: #ffffff;
+  color: #856214;
+  border: 1.5px solid #856214;
+  border-radius: 999px;
+  padding: 7px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mq-btn-add-gold:hover {
+  background: #856214;
+  color: #ffffff;
+}
+
+/* ── Hero Banners ────────────────────────────────────────────────────────── */
+.mq-home-hero {
+  position: relative;
+  border-radius: 26px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #fbf7ee 0%, #eef5e9 100%);
+  border: 1px solid #ede8df;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.mq-stamp-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-radius: 999px;
+  border: 1.5px dashed #a1824a;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(4px);
+  padding: 6px;
+  font-family: var(--mq-script);
+  line-height: 1.05;
+  color: #6b5313;
+}
+
+/* ── Category Squircles ──────────────────────────────────────────────────── */
+.mq-cat-scroll {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 0;
+}
+
+.mq-cat-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.mq-cat-item {
+  flex: 0 0 auto;
+  width: 63px;
+  height: 74px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.mq-cat-item-active {
+  background: #faf4e6;
+  border-color: #ecdcb9;
+  color: #785a15;
+}
+
+.mq-cat-item-active svg {
+  stroke: #785a15;
+}
+
+/* ── Promo Card (More than just milk) ────────────────────────────────────── */
+.mq-promo-card {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #eef7ed 0%, #e6f3e4 100%);
+  border: 1px solid #d9e9d6;
+  padding: 16px;
+}
+
+/* ── Why choose MilQuu ───────────────────────────────────────────────────── */
+.mq-why-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mq-why-card {
+  background: #ffffff;
+  border: 1px solid #f1ece1;
+  border-radius: 20px;
+  padding: 18px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 9px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.mq-why-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #faf5eb;
+  border: 1px solid #f0e6d2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mq-why-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.25;
+}
+
+/* ── Products Grid ───────────────────────────────────────────────────────── */
+.mq-product-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.mq-product-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #f1ece4;
+  border-radius: 20px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mq-product-fav {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.mq-stock-pill {
+  display: inline-block;
+  align-self: flex-start;
+  background: #fee2e2;
+  color: #ef4444;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+/* ── Plans Carousel / Grid ───────────────────────────────────────────────── */
+.mq-plan-scroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 4px;
+}
+
+.mq-plan-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.mq-plan-card {
+  flex: 0 0 240px;
+  background: #ffffff;
+  border: 1.5px solid #ece6dc;
+  border-radius: 22px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+}
+
+.mq-plan-card-popular {
+  border-color: #856214;
+}
+
+.mq-popular-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: #785a15;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 20px 0 16px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── Delivery Timing Cards ───────────────────────────────────────────────── */
+.mq-delivery-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.mq-delivery-card {
+  background: #ffffff;
+  border: 1px solid #f1ece1;
+  border-radius: 20px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Trust Badges Row ────────────────────────────────────────────────────── */
+.mq-trust-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.mq-trust-chip {
+  background: #ffffff;
+  border: 1px solid #f1ece1;
+  border-radius: 999px;
+  padding: 8px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+/* ── You / Profile Tab ───────────────────────────────────────────────────── */
+.mq-profile-card {
+  background: #ffffff;
+  border: 1px solid #f1ece1;
+  border-radius: 24px;
+  padding: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.mq-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.mq-stat-box {
+  background: #ffffff;
+  border: 1px solid #f1ece1;
+  border-radius: 16px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+
+.mq-list-card {
+  background: #ffffff;
+  border: 1px solid #f1ece1;
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+.mq-list-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border: 0;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  border-bottom: 1px solid #f9f7f2;
+  transition: background 0.15s ease;
+}
+
+.mq-list-row:last-child {
+  border-bottom: 0;
+}
+
+.mq-list-row:hover {
+  background: #fbf9f4;
+}
+
+.mq-row-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: #faf6ed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mq-row-icon-danger {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.mq-row-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.mq-row-title {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.mq-row-subtitle {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.mq-row-value {
+  font-size: 13px;
+  color: #64748b;
+  margin-right: 4px;
+}
+
+/* ── Bottom Nav TabBar ───────────────────────────────────────────────────── */
+.mq-tabbar {
+  background: #ffffff;
+  border-top: 1px solid #ece7dd;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.mq-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: #4b5563;
+  text-decoration: none;
+  font-size: 11.5px;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.mq-tab-on {
+  color: #856214 !important;
+  font-weight: 700;
+}
+
+.mq-tab-on svg {
+  stroke: #856214 !important;
 }

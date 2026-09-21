@@ -1,138 +1,377 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Screen, TabBar, Icon } from '../ui';
-import { CATEGORIES, rupees } from '../catalogue';
+import { useState, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Screen, TabBar, MobileHeader, Icon } from '../ui';
+import { CATEGORIES, DEFAULT_POPULAR_PRODUCTS, rupees } from '../catalogue';
 import { useDaily } from '../DailyContext';
 
 export default function Shop() {
   const navigate = useNavigate();
-  const { addToCart, cartCount, productList } = useDaily();
-  const [cat, setCat] = useState('all');
-  const [query, setQuery] = useState('');
+  const [params] = useSearchParams();
+  const initialCat = params.get('cat') || 'all';
 
-  const shown = useMemo(() => {
+  const { addToCart, cartCount, flash } = useDaily();
+  const [cat, setCat] = useState(initialCat);
+  const [query, setQuery] = useState('');
+  const [wishlist, setWishlist] = useState({});
+
+  const toggleWishlist = (id, e) => {
+    e.stopPropagation();
+    setWishlist((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+    flash(!wishlist[id] ? 'Saved to your favourites' : 'Removed from favourites');
+  };
+
+  const filteredProducts = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return productList.filter((p) => {
+    return DEFAULT_POPULAR_PRODUCTS.filter((p) => {
       if (cat !== 'all' && p.cat !== cat) return false;
       if (!q) return true;
-      return `${p.name} ${p.kicker} ${p.meta}`.toLowerCase().includes(q);
+      return `${p.name} ${p.unit}`.toLowerCase().includes(q);
     });
-  }, [cat, query, productList]);
+  }, [cat, query]);
 
   return (
     <Screen>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 'calc(38px + env(safe-area-inset-top)) 20px 0' }}>
+      {/* Top Header with Cart icon and count */}
+      <MobileHeader rightIcon="cart" cartCount={cartCount > 0 ? cartCount : 1} />
+
+      {/* Main Content */}
+      <div style={{ padding: '14px 18px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        
+        {/* ── Search Input ──────────────────────────────────────────── */}
         <div
-          className="mq-card"
-          style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, borderRadius: 999, padding: '12px 16px' }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 999,
+            padding: '10px 16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          }}
         >
-          <Icon name="search" size={17} color="#82796a" />
+          <Icon name="search" size={17} color="#94a3b8" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search milk, ghee, curd"
+            placeholder="Search milk, ghee, curd, paneer..."
             aria-label="Search products"
             style={{
-              flex: 1, minWidth: 0, border: 0, outline: 'none', background: 'transparent',
-              font: 'inherit', fontSize: 15, color: 'var(--mq-text)',
+              flex: 1,
+              minWidth: 0,
+              border: 0,
+              outline: 'none',
+              background: 'transparent',
+              fontFamily: 'inherit',
+              fontSize: 13.5,
+              color: '#1e293b',
             }}
           />
         </div>
-        <button
-          type="button"
-          onClick={() => navigate('/app/cart')}
-          aria-label={`Cart, ${cartCount} items`}
+
+        {/* ── Category Chips Filter ──────────────────────────────────── */}
+        <div className="mq-cat-scroll">
+          {CATEGORIES.map(([key, label]) => {
+            const isActive = cat === key;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setCat(key)}
+                className={`mq-cat-item ${isActive ? 'mq-cat-item-active' : ''}`}
+              >
+                <Icon
+                  name={`cat-${key}`}
+                  size={24}
+                  color={isActive ? '#785a15' : '#475569'}
+                  strokeWidth={1.8}
+                />
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Shop Hero Banner ──────────────────────────────────────── */}
+        <div
           style={{
-            position: 'relative', width: 46, height: 46, flex: 'none', border: 0, borderRadius: 999,
-            background: 'var(--mq-sage-700)', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', boxShadow: 'var(--mq-shadow-sm)', cursor: 'pointer',
+            position: 'relative',
+            borderRadius: 22,
+            overflow: 'hidden',
+            background: 'linear-gradient(135deg, #fbf7ee 0%, #eef5e9 100%)',
+            border: '1px solid #ede8df',
+            padding: '18px 16px',
+            minHeight: 140,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 3px 10px rgba(0,0,0,0.03)',
           }}
         >
-          <Icon name="bag" size={20} color="#ffffff" />
-          {cartCount > 0 && (
-            <span
+          {/* Right Background Image Blend */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: '55%',
+              backgroundImage: 'url(/img/custom/hero_milk_bottle.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center right',
+              pointerEvents: 'none',
+              maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
+              WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 100%)',
+            }}
+          />
+
+          {/* Left Text & CTA */}
+          <div style={{ position: 'relative', zIndex: 2, maxWidth: '60%' }}>
+            <h2
               style={{
-                position: 'absolute', top: -2, right: -2, minWidth: 20, height: 20, borderRadius: 999,
-                background: 'var(--mq-sage-100)', color: 'var(--mq-sage-900)', fontSize: 11,
-                fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: '0 5px',
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 21,
+                fontWeight: 800,
+                color: '#132819',
+                lineHeight: 1.15,
+                margin: 0,
               }}
             >
-              {cartCount}
-            </span>
-          )}
-        </button>
-      </div>
-
-      <div style={{ padding: '0 20px' }}>
-        <div className="mq-rail-x" style={{ gap: 9, paddingTop: 18 }}>
-          {CATEGORIES.map(([key, label]) => (
+              Freshness<br />delivered daily
+            </h2>
+            <p style={{ fontSize: 12, color: '#475569', marginTop: 4, marginBottom: 12 }}>
+              Pure dairy. Better living.
+            </p>
             <button
-              key={key}
               type="button"
-              className={`mq-chip${cat === key ? ' mq-chip-on' : ''}`}
-              onClick={() => setCat(key)}
-              aria-pressed={cat === key}
+              className="mq-btn-gold"
+              style={{ padding: '8px 16px', fontSize: 12.5 }}
+              onClick={() => {
+                const el = document.getElementById('popular-products');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
             >
-              {label}
+              <span>Explore products</span>
+              <span>→</span>
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      <div className="mq-grid" style={{ padding: '18px 20px 0' }}>
-        {shown.map((p) => {
-          const stockLevel = parseInt(p.stock, 10);
-          const isOutOfStock = Number.isNaN(stockLevel) ? true : stockLevel <= 0;
-          return (
-            <div key={p.key} className="mq-tile">
+          {/* Right Script Annotation */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 14,
+              right: 14,
+              zIndex: 3,
+              textAlign: 'right',
+              pointerEvents: 'none',
+            }}
+          >
+            <span className="mq-script-text" style={{ fontSize: 16, color: '#27382b' }}>
+              Straight<br />from trusted<br />sources ♡
+            </span>
+          </div>
+        </div>
+
+        {/* ── Popular Products Grid ─────────────────────────────────── */}
+        <div id="popular-products">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <h3
+              style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 20,
+                fontWeight: 800,
+                color: '#132819',
+                margin: 0,
+              }}
+            >
+              Popular Products
+            </h3>
+            <button
+              type="button"
+              onClick={() => setCat('all')}
+              style={{
+                background: 'transparent',
+                border: 0,
+                color: '#856214',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <span>See all</span>
+              <span>→</span>
+            </button>
+          </div>
+
+          <div className="mq-product-grid">
+            {filteredProducts.map((p) => {
+              const isFav = wishlist[p.id];
+              return (
+                <div key={p.id} className="mq-product-card">
+                  {/* Favorite Heart Button */}
+                  <button
+                    type="button"
+                    className="mq-product-fav"
+                    onClick={(e) => toggleWishlist(p.id, e)}
+                    aria-label="Add to favourites"
+                  >
+                    <Icon
+                      name="heart"
+                      size={17}
+                      color={isFav ? '#ef4444' : '#64748b'}
+                      fill={isFav ? '#ef4444' : 'none'}
+                      strokeWidth={1.8}
+                    />
+                  </button>
+
+                  {/* Product Image */}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: 110,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: 8,
+                    }}
+                  >
+                    <img
+                      src={p.img}
+                      alt={p.name}
+                      style={{
+                        maxHeight: 105,
+                        maxWidth: '90%',
+                        objectFit: 'contain',
+                        opacity: p.isOutOfStock ? 0.8 : 1,
+                      }}
+                    />
+                  </div>
+
+                  {/* Title */}
+                  <h4
+                    style={{
+                      fontFamily: "'Playfair Display', Georgia, serif",
+                      fontSize: 13.5,
+                      fontWeight: 700,
+                      color: '#1e293b',
+                      lineHeight: 1.25,
+                      minHeight: 34,
+                      margin: 0,
+                    }}
+                  >
+                    {p.name} {p.unit}
+                  </h4>
+
+                  {/* Price */}
+                  <span
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: '#1e293b',
+                      marginTop: 4,
+                      marginBottom: 6,
+                    }}
+                  >
+                    ₹{rupees(p.price)}
+                  </span>
+
+                  {/* Action / Stock state */}
+                  {p.isOutOfStock ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <span className="mq-stock-pill">OUT OF STOCK</span>
+                      <button type="button" disabled className="mq-btn-soldout">
+                        Sold out
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: 'auto' }}>
+                      <button
+                        type="button"
+                        className="mq-btn-add-gold"
+                        style={{ width: '100%' }}
+                        onClick={() => {
+                          addToCart(p.id);
+                          flash(`Added ${p.name} to cart`);
+                        }}
+                      >
+                        <Icon name="cart" size={14} color="#856214" strokeWidth={2} />
+                        <span>Add</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Bottom Promo Banner (Vegetables) ──────────────────────── */}
+        <div
+          style={{
+            position: 'relative',
+            borderRadius: 22,
+            overflow: 'hidden',
+            background: 'linear-gradient(135deg, #f7f9f4 0%, #ecf4e8 100%)',
+            border: '1px solid #dce8d6',
+            display: 'flex',
+            alignItems: 'center',
+            minHeight: 125,
+          }}
+        >
+          {/* Left Vegetables Image */}
+          <div
+            style={{
+              width: '38%',
+              height: '100%',
+              minHeight: 125,
+              backgroundImage: 'url(/img/custom/veggies_crate.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              flexShrink: 0,
+            }}
+          />
+
+          {/* Right Text & CTA */}
+          <div style={{ flex: 1, padding: '14px 14px 14px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <h4
+              style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontSize: 15.5,
+                fontWeight: 800,
+                color: '#132819',
+                lineHeight: 1.2,
+                margin: 0,
+              }}
+            >
+              Farm fresh vegetables too, at your doorstep.
+            </h4>
+            <p style={{ fontSize: 11.5, color: '#475569', margin: 0 }}>
+              Fresh. Local. Healthy.
+            </p>
+            <div style={{ marginTop: 4 }}>
               <button
                 type="button"
-                onClick={() => navigate(`/app/product/${p.key}`)}
-                style={{ border: 0, background: 'transparent', padding: 0, cursor: 'pointer', textAlign: 'left' }}
+                className="mq-btn-outline-gold"
+                style={{ padding: '6px 14px', fontSize: 12 }}
+                onClick={() => setCat('vegetables')}
               >
-                <img src={p.img} alt={p.name} style={isOutOfStock ? { opacity: 0.5 } : undefined} />
-                <span className="mq-label mq-kicker-sage" style={{ display: 'block', marginTop: 6 }}>
-                  {isOutOfStock ? 'Out of stock' : p.kicker}
-                </span>
-                <span className="mq-tile-name" style={{ display: 'block', marginTop: 6 }}>{p.name} {p.unit}</span>
+                <span>Explore vegetables</span>
+                <span style={{ fontSize: 13 }}>→</span>
               </button>
-              <span className="mq-tile-price">
-                ₹{rupees(p.price)}
-                {p.plan && <span className="mq-tile-plan"> · ₹{rupees(p.plan)} on plan</span>}
-              </span>
-              <div className="mq-row" style={{ gap: 8, marginTop: 2 }}>
-                <button
-                  type="button"
-                  className="mq-btn-outline mq-btn-sm"
-                  style={{ flex: 1, padding: '9px 0' }}
-                  onClick={() => addToCart(p.key)}
-                  disabled={isOutOfStock}
-                >
-                  {isOutOfStock ? 'Sold out' : '+ Add'}
-                </button>
-                {p.plan && !isOutOfStock && (
-                  <button type="button" className="mq-btn mq-btn-sm" style={{ flex: 1, padding: '9px 0' }} onClick={() => navigate('/app/start/milk')}>
-                    Plan
-                  </button>
-                )}
-              </div>
             </div>
-          );
-        })}
+          </div>
+        </div>
+
       </div>
 
-      {shown.length === 0 && (
-        <p className="mq-sub" style={{ padding: '28px 20px', textAlign: 'center' }}>
-          {productList.length === 0
-            /* An honest empty state: the shop is loaded from the API, so if
-               nothing came back we say so rather than blaming the search. */
-            ? 'We couldn’t load the shop just now. Pull down to try again.'
-            : `Nothing matches “${query}”. Try milk, ghee or curd.`}
-        </p>
-      )}
-
-      <div className="mq-fill" style={{ minHeight: 24 }} />
+      <div style={{ height: 16 }} />
       <TabBar />
     </Screen>
   );
