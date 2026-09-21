@@ -206,7 +206,13 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute allowedRole="delivery"><DeliveryLayout /></ProtectedRoute>,
         children: [
           { index: true, element: <DeliveryDashboard /> },
-          { path: "map", element: <div className="p-8 text-center text-gray-500">Live Map View (Coming Soon)</div> }
+          { path: "map", element: (
+            <div className="flex flex-col items-center justify-center p-12 text-center min-h-[60vh]">
+              <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mb-4 text-4xl">🗺️</div>
+              <h2 className="text-xl font-bold text-gray-700 mb-2">Live Map View</h2>
+              <p className="text-gray-500 text-sm max-w-xs">Real-time delivery tracking will appear here. Your deliveries are managed from the Dashboard tab.</p>
+            </div>
+          ) }
         ]
       },
 

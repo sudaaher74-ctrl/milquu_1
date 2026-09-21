@@ -77,9 +77,9 @@ export const markOrderDelivered = async (req, res) => {
       order.isPaid = true;
       order.paidAt = Date.now();
     } else if (order.paymentMethod === 'Wallet' && !order.isPaid && order.user) {
-      // Auto deduct from Wallet Phase 2
+      // Auto deduct from Wallet — only if sufficient balance exists
       const user = await User.findById(order.user);
-      if (user) {
+      if (user && user.walletBalance >= order.totalPrice) {
         user.walletBalance -= order.totalPrice;
         await user.save();
         
@@ -94,6 +94,10 @@ export const markOrderDelivered = async (req, res) => {
         order.paymentStatus = 'PAID';
         order.isPaid = true;
         order.paidAt = Date.now();
+      } else {
+        // Insufficient wallet balance — flag order for collection
+        order.paymentStatus = 'PENDING';
+        order.deliveryNotes = (order.deliveryNotes || '') + ' [Wallet balance insufficient at delivery time]';
       }
     }
 

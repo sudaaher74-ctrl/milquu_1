@@ -15,6 +15,9 @@ const Login = () => {
 
 
 
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+
   const handleGoogleSuccess = async (credentialResponse) => {
     setError('');
     setLoading(true);
@@ -24,6 +27,21 @@ const Login = () => {
       navigate(location.state?.from || '/account', { replace: true });
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Google Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePhoneSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const { data } = await api.post('/api/users/login', { phone, password });
+      login(data);
+      navigate(location.state?.from || '/account', { replace: true });
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -69,6 +87,72 @@ const Login = () => {
               width="100%"
             />
           </div>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white/80 px-2 text-gray-400 font-medium">Or sign in with phone</span>
+            </div>
+          </div>
+
+          <form onSubmit={handlePhoneSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="tel"
+                  required
+                  pattern="(\+?91|0)?[6-9][0-9]{9}"
+                  title="Enter a 10-digit mobile number"
+                  autoComplete="username"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
+                  placeholder="9876543210"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Password</label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="focus:ring-2 focus:ring-milquu-gold focus:border-transparent block w-full pl-10 sm:text-sm border-gray-200 rounded-xl py-3 bg-white/50 backdrop-blur-sm transition-all duration-300 outline-none"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-md shadow-milquu-blue/20 text-sm font-bold text-white bg-milquu-blue hover:bg-blue-700 hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-milquu-blue disabled:opacity-70 disabled:transform-none"
+              >
+                {loading ? (
+                  'Signing in...'
+                ) : (
+                  <>
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Sign In
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">

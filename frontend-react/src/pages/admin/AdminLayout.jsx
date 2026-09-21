@@ -19,6 +19,20 @@ const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const synth = window.speechSynthesis;
+
+  // Read admin name and role from adminToken in localStorage
+  const adminInfo = (() => {
+    try {
+      const raw = localStorage.getItem('adminToken');
+      if (!raw) return { name: 'Admin', role: 'Admin' };
+      if (raw.startsWith('{')) {
+        const parsed = JSON.parse(raw);
+        return { name: parsed.name || 'Admin', role: parsed.role || 'Admin' };
+      }
+      const payload = JSON.parse(atob(raw.split('.')[1]));
+      return { name: payload.name || 'Admin', role: payload.role || 'Admin' };
+    } catch { return { name: 'Admin', role: 'Admin' }; }
+  })();
   
   // Setup Speech Recognition
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -206,10 +220,12 @@ const AdminLayout = () => {
 
             {/* Profile */}
             <div className="flex items-center space-x-3 pl-2 sm:pl-4 border-l border-gray-200">
-              <img src="https://i.pravatar.cc/150?img=11" alt="Admin" className="w-9 h-9 rounded-full object-cover ring-2 ring-gray-100" />
+              <div className="w-9 h-9 rounded-full bg-milquu-blue/10 ring-2 ring-gray-100 flex items-center justify-center text-milquu-blue font-bold text-sm">
+                {adminInfo.name.charAt(0).toUpperCase()}
+              </div>
               <div className="hidden lg:block">
-                <p className="text-sm font-bold text-milquu-dark leading-tight">Admin User</p>
-                <p className="text-xs text-gray-500">Superadmin</p>
+                <p className="text-sm font-bold text-milquu-dark leading-tight">{adminInfo.name}</p>
+                <p className="text-xs text-gray-500 capitalize">{adminInfo.role}</p>
               </div>
             </div>
           </div>

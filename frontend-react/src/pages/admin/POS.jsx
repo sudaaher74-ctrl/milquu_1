@@ -1,18 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Barcode, Search, Plus, Minus, Trash2, Printer, 
   CreditCard, Banknote, Smartphone, Store, Calculator
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Mock Product Database
-const posProducts = [];
+import api from '../../utils/api';
 
 const POS = () => {
+  const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
   const [discount, setDiscount] = useState(0);
+
+  useEffect(() => {
+    api.get('/api/products').then(({ data }) => {
+      setProducts(data.map(p => ({
+        id: p._id,
+        name: p.name,
+        price: p.price,
+        barcode: p.barcode || p._id,
+        image: p.image,
+        category: p.category || 'Dairy',
+      })));
+    }).catch(console.error);
+  }, []);
 
   // Stats
   const dailySales = 0;
@@ -22,12 +34,12 @@ const POS = () => {
 
   const handleBarcodeSubmit = (e) => {
     e.preventDefault();
-    const product = posProducts.find(p => p.barcode === barcodeInput);
+    const product = products.find(p => p.barcode === barcodeInput);
     if (product) {
       addToCart(product);
       setBarcodeInput('');
     } else {
-      alert("Product not found!");
+      alert('Product not found!');
     }
   };
 
@@ -62,7 +74,7 @@ const POS = () => {
   };
 
   const { subtotal, tax, total } = calculateTotals();
-  const filteredProducts = posProducts.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="max-w-[1600px] mx-auto pb-4 font-sans h-[calc(100vh-100px)] flex flex-col">

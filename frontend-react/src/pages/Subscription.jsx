@@ -118,23 +118,17 @@ const Subscription = () => {
       const priceNum = selectedUnit === '500 ml' ? Math.ceil(selectedProdDetails.basePrice / 2) : selectedProdDetails.basePrice;
       const total = priceNum * 30; // 30 days upfront
 
-      // Create order on backend
-      const baseUrl = import.meta.env.MODE === 'development' ? 'http://localhost:5001' : 'https://milquu-backend.onrender.com';
-      const orderRes = await fetch(`${baseUrl}/api/payment/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: total })
-      });
-      const orderData = await orderRes.json();
+      // Create Razorpay order on backend
+      const { data: orderData } = await api.post('/api/payment/orders', { amount: total });
 
       if (!orderData || !orderData.id) {
         alert('Failed to initialize payment. Please try again.');
         return;
       }
 
-      // Fetch Razorpay Key dynamically instead of using dummy key
-      const keyRes = await fetch(`${baseUrl}/api/payment/key`);
-      const { key } = await keyRes.json();
+      // Fetch Razorpay key dynamically
+      const { data: keyData } = await api.get('/api/payment/key');
+      const key = keyData.key;
 
       const options = {
         key: key, 

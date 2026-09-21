@@ -2,12 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Store, Truck, CreditCard, Users, Settings as SettingsIcon, Moon, Save, Shield, Activity, Search, ShieldCheck } from 'lucide-react';
 import api from '../../utils/api.js';
 
-const mockAuditLogs = [
-  { id: 1, action: 'Updated pricing for Pure Desi Ghee', user: 'Admin User', role: 'Superadmin', time: '10 mins ago', ip: '192.168.1.45' },
-  { id: 2, action: 'Assigned route Kamothe to Amit Kumar', user: 'Logistics Mgr', role: 'Manager', time: '2 hours ago', ip: '192.168.1.12' },
-  { id: 3, action: 'Deleted Customer ID #8849', user: 'Admin User', role: 'Superadmin', time: 'Yesterday', ip: '192.168.1.45' },
-  { id: 4, action: 'Generated Monthly Revenue Report', user: 'Finance Admin', role: 'Admin', time: '2 days ago', ip: '10.0.0.8' },
-];
+// TODO: Replace with real audit log data from /api/admin/audit-logs
+const mockAuditLogs = [];
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('Business Details');

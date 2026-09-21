@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2, ArrowLeft, CheckCircle, ArrowRight, ShoppingCart, Lock } from 'lucide-react';
 import DeliverySlotSelector from '../components/cart/DeliverySlotSelector';
+import api from '../utils/api';
 
 const Cart = () => {
   const { cartItems, updateQuantity, removeFromCart, clearCart, addToCart } = useCart();
@@ -15,12 +16,9 @@ const Cart = () => {
   const [allProducts, setAllProducts] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null); // { id, deliveryDate, window }
 
-  const baseUrl = import.meta.env.MODE === 'development' ? 'http://localhost:5001' : 'https://milquu-backend.onrender.com';
-
   useEffect(() => {
-    fetch(`${baseUrl}/api/products`)
-      .then(res => res.json())
-      .then(data => setAllProducts(data))
+    api.get('/api/products')
+      .then(({ data }) => setAllProducts(data))
       .catch(err => console.error(err));
   }, []);
 
@@ -78,25 +76,20 @@ const Cart = () => {
       }
 
       try {
-        // Create order on backend
-        const orderRes = await fetch(`${baseUrl}/api/payment/orders`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: total })
-        });
-        const orderData = await orderRes.json();
+        // Create Razorpay order on backend
+        const { data: orderData } = await api.post('/api/payment/orders', { amount: total });
 
         if (!orderData || !orderData.id) {
           alert('Failed to initialize payment. Please try again.');
           return;
         }
 
-        // Fetch Razorpay Key
-        const keyRes = await fetch(`${baseUrl}/api/payment/key`);
-        const { key } = await keyRes.json();
+        // Fetch Razorpay key dynamically
+        const { data: keyData } = await api.get('/api/payment/key');
+        const key = keyData.key;
 
         const options = {
-          key: key, // Use dynamically fetched key
+          key,
           amount: orderData.amount,
           currency: orderData.currency,
           name: "Milquu Fresh",
@@ -104,17 +97,11 @@ const Cart = () => {
           order_id: orderData.id,
           handler: async function (response) {
             try {
-              // Verify payment on backend
-              const verifyRes = await fetch(`${baseUrl}/api/payment/verify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature
-                })
+              const { data: verifyData } = await api.post('/api/payment/verify', {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
               });
-              const verifyData = await verifyRes.json();
               if (verifyData.success) {
                 await saveOrder(response.razorpay_payment_id, 'ONLINE', 'PAID', {
                   razorpayOrderId: response.razorpay_order_id,
@@ -135,16 +122,16 @@ const Cart = () => {
             method: paymentMethod !== 'COD' && paymentMethod !== 'ONLINE' ? 'upi' : undefined
           },
           theme: {
-            color: paymentMethod === 'PHONEPE' ? "#5f259f" : paymentMethod === 'GPAY' ? "#1a73e8" : paymentMethod === 'CRED' ? "#000000" : "#D3AC67" 
+            color: paymentMethod === 'PHONEPE' ? "#5f259f" : paymentMethod === 'GPAY' ? "#1a73e8" : paymentMethod === 'CRED' ? "#000000" : "#D3AC67"
           }
         };
 
         const paymentObject = new window.Razorpay(options);
-        paymentObject.on('payment.failed', function (response){
+        paymentObject.on('payment.failed', function (response) {
           alert("Payment Failed: " + response.error.description);
         });
         paymentObject.open();
-        
+
       } catch (error) {
         console.error(error);
         alert('Error connecting to payment gateway.');
@@ -166,7 +153,7 @@ const Cart = () => {
           name: item.name,
           qty: item.quantity,
           image: item.image,
-          price: typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.-]+/g,"")) : item.price
+          price: typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.-]+/g, '')) : item.price
         })),
         shippingAddress: {
           address: formData.address,
@@ -192,21 +179,13 @@ const Cart = () => {
         scheduledDeliveryWindow: selectedSlot?.window || '4:00 AM – 7:00 AM',
       };
 
-      const res = await fetch(`${baseUrl}/api/erp/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData)
-      });
-
-      if (res.ok) {
-        setStep(3); // Success page
-        clearCart();
-      } else {
-        alert("Failed to submit order to our system. Please contact support.");
-      }
+      // POST to the authenticated customer order endpoint (not the admin ERP route)
+      await api.post('/api/users/orders', orderData);
+      setStep(3); // Success page
+      clearCart();
     } catch (err) {
       console.error(err);
-      alert("An error occurred while submitting order.");
+      alert(err.response?.data?.message || 'An error occurred while submitting order.');
     }
   };
 

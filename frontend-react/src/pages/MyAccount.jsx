@@ -3,10 +3,9 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, User, Package, Calendar, Settings, Play, Pause, XCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import api from '../utils/api';
 
 const MyAccount = () => {
-  const baseUrl = import.meta.env.MODE === 'development' ? 'http://localhost:5001' : 'https://milquu-backend.onrender.com';
-
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('profile');
@@ -45,14 +44,7 @@ const MyAccount = () => {
   const fetchSubscriptions = async () => {
     setLoadingSubs(true);
     try {
-      const userInfoStr = localStorage.getItem('userInfo');
-      if (!userInfoStr || userInfoStr === 'undefined') return;
-      const userToken = JSON.parse(userInfoStr).token;
-      
-      const res = await fetch(`${baseUrl}/api/users/subscriptions`, {
-        headers: { 'Authorization': `Bearer ${userToken}` }
-      });
-      const data = await res.json();
+      const { data } = await api.get('/api/users/subscriptions');
       setSubscriptions(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
@@ -64,18 +56,7 @@ const MyAccount = () => {
   const fetchOrders = async () => {
     setLoadingOrders(true);
     try {
-      const userInfoStr = localStorage.getItem('userInfo');
-      if (!userInfoStr || userInfoStr === 'undefined') {
-        setLoadingOrders(false);
-        return;
-      }
-      const userToken = JSON.parse(userInfoStr).token;
-
-      const res = await fetch(`${baseUrl}/api/users/orders`, {
-        headers: { 'Authorization': `Bearer ${userToken}` }
-      });
-      const data = await res.json();
-      // Guard: only set if data is actually an array
+      const { data } = await api.get('/api/users/orders');
       setOrders(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('fetchOrders error:', err);
@@ -88,14 +69,7 @@ const MyAccount = () => {
   const fetchWallet = async () => {
     setLoadingWallet(true);
     try {
-      const userInfoStr = localStorage.getItem('userInfo');
-      if (!userInfoStr || userInfoStr === 'undefined') return;
-      const userToken = JSON.parse(userInfoStr).token;
-      
-      const res = await fetch(`${baseUrl}/api/users/wallet`, {
-        headers: { 'Authorization': `Bearer ${userToken}` }
-      });
-      const data = await res.json();
+      const { data } = await api.get('/api/users/wallet');
       setWallet(data);
     } catch (err) {
       console.error(err);
@@ -120,7 +94,6 @@ const MyAccount = () => {
       const userInfoStr = localStorage.getItem('userInfo');
       if (!userInfoStr) return;
       const userObj = JSON.parse(userInfoStr);
-      const userToken = userObj.token;
 
       // 1. Load Razorpay Script
       const resLoad = await loadRazorpayScript();
@@ -129,32 +102,22 @@ const MyAccount = () => {
         return;
       }
 
-      // 2. Create Order on Backend
-      const orderRes = await fetch(`${baseUrl}/api/users/wallet/create-recharge-order`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userToken}` 
-        },
-        body: JSON.stringify({ amount: rechargeAmount })
-      });
-      
+      // 2. Create Razorpay Order on Backend
       let orderData;
       try {
-        orderData = await orderRes.json();
-        console.log("Recharge API Response", orderData);
+        const { data } = await api.post('/api/users/wallet/create-recharge-order', { amount: rechargeAmount });
+        orderData = data;
       } catch (parseErr) {
         alert('Server is still deploying or returned an invalid response. Please try again in 2 minutes.');
         return;
       }
 
-      if (!orderRes.ok || !orderData.id) {
-        alert(`Server Error: ${orderData.message || ''} - ${orderData.error || 'Could not create Razorpay Order.'}`);
+      if (!orderData.id) {
+        alert(`Server Error: ${orderData.message || 'Could not create Razorpay Order.'}`);
         return;
       }
 
       // 3. Open Razorpay Checkout
-      console.log("Opening Razorpay Checkout", { id: orderData.id, amount: orderData.amount });
       const options = {
         key: orderData.key_id || 'rzp_test_mock',
         amount: orderData.amount,
@@ -163,34 +126,20 @@ const MyAccount = () => {
         description: 'Wallet Recharge',
         order_id: orderData.id,
         handler: async function (response) {
-          console.log("Payment Success", response);
           // 4. Verify Payment on Backend
           try {
-            const verifyRes = await fetch(`${baseUrl}/api/users/wallet/recharge`, {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${userToken}` 
-              },
-              body: JSON.stringify({
-                amount: rechargeAmount,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature
-              })
+            await api.post('/api/users/wallet/recharge', {
+              amount: rechargeAmount,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
             });
-            
-            if (verifyRes.ok) {
-              setRechargeAmount('');
-              fetchWallet();
-              alert('Wallet Recharged Successfully via Razorpay!');
-            } else {
-              const errData = await verifyRes.json();
-              alert(`Payment Verification Failed: ${errData.message}`);
-            }
+            setRechargeAmount('');
+            fetchWallet();
+            alert('Wallet Recharged Successfully via Razorpay!');
           } catch (err) {
             console.error('Verification Error', err);
-            alert('Error verifying payment.');
+            alert(err.response?.data?.message || 'Error verifying payment.');
           }
         },
         prefill: {
@@ -199,7 +148,7 @@ const MyAccount = () => {
           contact: userObj.phone || '9999999999'
         },
         theme: {
-          color: '#3B82F6' // Milquu Blue
+          color: '#3B82F6'
         }
       };
 
@@ -218,23 +167,14 @@ const MyAccount = () => {
       alert(`You can only withdraw up to ₹${wallet.withdrawableBalance}`);
       return;
     }
-    
-    // Auto-pause warning for < 3 days balance
-    // We assume 1 day is already reserved, so if remaining walletBalance < 3 * reservedBalance loosely...
-    // The requirement states: If withdrawal causes wallet to fall below 3 days delivery requirement, show warning.
-    // Let's implement a simple warning if amount > withdrawableBalance - (wallet.reservedBalance * 2).
     if (wallet.reservedBalance > 0 && (wallet.walletBalance - withdrawData.amount) < (wallet.reservedBalance * 3)) {
-      if (!window.confirm("Warning: Your wallet balance may not be sufficient for upcoming deliveries. Are you sure you want to withdraw?")) {
+      if (!window.confirm('Warning: Your wallet balance may not be sufficient for upcoming deliveries. Are you sure you want to withdraw?')) {
         return;
       }
     }
 
     setLoadingWithdraw(true);
     try {
-      const userInfoStr = localStorage.getItem('userInfo');
-      if (!userInfoStr) return;
-      const userToken = JSON.parse(userInfoStr).token;
-
       const payload = {
         amount: withdrawData.amount,
         refundMethod: withdrawData.method,
@@ -245,28 +185,14 @@ const MyAccount = () => {
           accountName: withdrawData.name
         } : undefined
       };
-
-      const res = await fetch(`${baseUrl}/api/users/wallet/withdraw`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userToken}` 
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      const data = await res.json();
-      if (res.ok) {
-        alert('Withdrawal request submitted successfully!');
-        setShowWithdrawModal(false);
-        setWithdrawData({ amount: '', method: 'UPI', upiId: '', accNo: '', ifsc: '', name: '' });
-        fetchWallet();
-      } else {
-        alert(data.message || 'Error submitting request');
-      }
+      await api.post('/api/users/wallet/withdraw', payload);
+      alert('Withdrawal request submitted successfully!');
+      setShowWithdrawModal(false);
+      setWithdrawData({ amount: '', method: 'UPI', upiId: '', accNo: '', ifsc: '', name: '' });
+      fetchWallet();
     } catch (err) {
       console.error(err);
-      alert('Network error');
+      alert(err.response?.data?.message || 'Network error');
     } finally {
       setLoadingWithdraw(false);
     }
@@ -274,25 +200,11 @@ const MyAccount = () => {
 
   const handleUpdateStatus = async (id, newStatus, pauseStartDate = null, pauseEndDate = null) => {
     try {
-      const userInfoStr = localStorage.getItem('userInfo');
-      if (!userInfoStr || userInfoStr === 'undefined') return;
-      const userToken = JSON.parse(userInfoStr).token;
-      
       const payload = { status: newStatus };
       if (pauseStartDate) payload.pauseStartDate = pauseStartDate;
       if (pauseEndDate) payload.pauseEndDate = pauseEndDate;
-
-      const res = await fetch(`${baseUrl}/api/users/subscriptions/${id}/status`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userToken}` 
-        },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        fetchSubscriptions();
-      }
+      await api.put(`/api/users/subscriptions/${id}/status`, payload);
+      fetchSubscriptions();
     } catch (err) {
       console.error(err);
     }
