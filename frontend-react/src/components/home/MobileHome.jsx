@@ -82,17 +82,16 @@ const MobileHome = () => {
     e.stopPropagation();
     
     const productName = product.name || '';
-    const isMilk = productName.toLowerCase().includes('milk');
-    const selectedUnit = '500 ml'; // default for mobile quick add
-    const currentPrice = isMilk ? Math.ceil(product.price / 2) : product.price;
+    const selectedUnit = product.unit || '1 Litre';
+    const currentPrice = product.price;
 
     const productToAdd = {
       ...product,
-      _id: isMilk ? `${product._id}-500ml` : product._id,
-      id: isMilk ? `${product.id || product._id}-500ml` : (product.id || product._id),
+      _id: product._id || product.id,
+      id: product.id || product._id,
       price: currentPrice,
-      unit: isMilk ? selectedUnit : product.unit,
-      name: isMilk ? `${productName} (500 ml)` : productName
+      unit: selectedUnit,
+      name: productName
     };
     addToCart(productToAdd);
   };
@@ -226,12 +225,15 @@ const MobileHome = () => {
           
           <div className="relative z-10 w-full">
             <div className="absolute top-0 right-0 bg-[#0D47A1] text-white text-[11px] font-bold px-3 py-1.5 rounded-bl-xl rounded-tr-xl">
-              Save 15%
+              Save 12%
             </div>
             <h3 className="text-[18px] font-bold text-milquu-dark mb-1">Never run out of milk</h3>
-            <p className="text-[13px] font-bold text-[#D4AF37] mb-1">Save 15% every month</p>
+            <p className="text-[13px] font-bold text-[#D4AF37] mb-1">Save 12% every month</p>
             <p className="text-[11px] text-gray-500 font-medium mb-3">Flexible delivery • Pause anytime</p>
-            <button className="bg-[#D4AF37] text-white text-[12px] font-bold px-4 py-2 rounded-full w-fit flex items-center shadow-md">
+            <button 
+              onClick={() => navigate('/subscription')}
+              className="bg-[#D4AF37] text-white text-[12px] font-bold px-4 py-2 rounded-full w-fit flex items-center shadow-md hover:opacity-90 cursor-pointer"
+            >
               Start Subscription <span className="ml-1">→</span>
             </button>
           </div>
@@ -273,7 +275,8 @@ const MobileHome = () => {
                   <div className="flex justify-between items-end mt-2">
                     <div className="flex flex-col">
                       <span className="text-[16px] font-bold text-milquu-dark">
-                        ₹{(product.name || '').toLowerCase().includes('milk') ? Math.ceil(product.price / 2) : product.price}
+                        ₹{product.price}
+                        <span className="text-[11px] font-normal text-gray-500 ml-1">/ {product.unit || '1 Litre'}</span>
                       </span>
                     </div>
                     <button
@@ -305,17 +308,26 @@ const MobileHome = () => {
           <div className="text-center py-4 text-gray-500 text-sm">Loading picks...</div>
         ) : (
           <div className="flex overflow-x-auto hide-scrollbar space-x-4 pb-4 pr-5">
-            {freshPicks.map((product) => (
-              <div key={product._id || product.id} className="w-[180px] flex-shrink-0 bg-white rounded-[16px] p-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-row items-center">
-                <div className="w-[50px] h-[50px] flex justify-center items-center flex-shrink-0 p-1">
-                  <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain drop-shadow-sm" />
+            {freshPicks.map((product) => {
+              const stockLevel = parseInt(product.stock, 10);
+              const isOutOfStock = Number.isNaN(stockLevel) ? true : stockLevel <= 0;
+              return (
+                <div key={product._id || product.id} className="w-[190px] flex-shrink-0 bg-white rounded-[16px] p-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-row items-center relative">
+                  <div className="w-[50px] h-[50px] flex justify-center items-center flex-shrink-0 p-1">
+                    <img src={product.image} alt={product.name} className={`max-w-full max-h-full object-contain drop-shadow-sm ${isOutOfStock ? 'opacity-50' : ''}`} />
+                  </div>
+                  <div className="flex flex-col ml-2 justify-center flex-grow min-w-0">
+                    <h4 className="text-[12px] font-bold text-milquu-dark leading-tight line-clamp-1">{product.name}</h4>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[13px] font-bold text-[#0D47A1]">₹{product.price}</span>
+                      {isOutOfStock && (
+                        <span className="text-[9px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">Sold out</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex flex-col ml-2 justify-center">
-                  <h4 className="text-[12px] font-bold text-milquu-dark leading-tight line-clamp-2">{product.name}</h4>
-                  <span className="text-[13px] font-bold text-[#0D47A1] mt-1">₹{product.price}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

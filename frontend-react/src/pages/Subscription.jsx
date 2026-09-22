@@ -3,12 +3,12 @@ import api from '../utils/api.js';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, CalendarDays, Milk, Clock } from 'lucide-react';
 
-const products = [
-  { id: 'a2', name: 'A2 Cow Milk', basePrice: 95, image: '/img/products/A2milk.webp' },
-  { id: 'buffalo', name: 'Premium Buffalo Milk', basePrice: 105, image: '/img/products/buffalomilk.webp' },
-  { id: 'cow', name: 'Pure Cow Milk', basePrice: 85, image: '/img/products/cowmilk.webp' },
+const DEFAULT_PRODUCTS = [
+  { id: 'a2', name: 'A2 Cow Milk', basePrice: 90, image: '/img/products/A2milk.webp' },
+  { id: 'buffalo', name: 'Premium Buffalo Milk', basePrice: 75, image: '/img/products/buffalomilk.webp' },
+  { id: 'cow', name: 'Pure Cow Milk', basePrice: 62, image: '/img/products/cowmilk.webp' },
   { id: 'cow-pouch', name: 'Cow Milk (Pouch)', basePrice: 58, image: '/img/products/cowmilkplasticbag.png' },
-  { id: 'buffalo-pouch', name: 'Buffalo Milk (Pouch)', basePrice: 75, image: '/img/products/buffalomilkplasticbag.png' },
+  { id: 'buffalo-pouch', name: 'Buffalo Milk (Pouch)', basePrice: 72, image: '/img/products/buffalomilkplasticbag.png' },
 ];
 
 const frequencies = [
@@ -20,8 +20,10 @@ const frequencies = [
 // timeSlots removed as delivery is only in the morning
 
 const Subscription = () => {
+  const [products, setProducts] = useState(DEFAULT_PRODUCTS);
   const [selectedProduct, setSelectedProduct] = useState('a2');
   const [selectedUnit, setSelectedUnit] = useState('1 Litre');
+  const [quantity, setQuantity] = useState(1);
   const [selectedFreq, setSelectedFreq] = useState('daily');
   const [stockMap, setStockMap] = useState({});
   const [selectedTime, setSelectedTime] = useState('morning');
@@ -51,16 +53,17 @@ const Subscription = () => {
     try {
       const selectedProdDetails = products.find(p => p.id === selectedProduct);
       const priceNum = selectedUnit === '500 ml' ? Math.ceil(selectedProdDetails.basePrice / 2) : selectedProdDetails.basePrice;
+      const totalAmount = priceNum * quantity * 30; // Estimating 30 days upfront
       
       let orderData = {
         name: formData.name,
         phone: formData.phone,
         deliveryAddress: `${formData.address}, ${formData.city}, ${formData.pincode}`,
         frequency: selectedFreq === 'daily' ? 'Daily' : selectedFreq === 'alt' ? 'Alternate Days' : 'Weekly',
-        totalAmount: priceNum * 30, // Estimating 30 days
+        totalAmount: totalAmount,
         items: [{
           name: `${selectedProdDetails.name} (${selectedUnit})`,
-          quantity: 1,
+          quantity: quantity,
           price: priceNum
         }],
         paymentMethod: method,
@@ -116,7 +119,7 @@ const Subscription = () => {
     try {
       const selectedProdDetails = products.find(p => p.id === selectedProduct);
       const priceNum = selectedUnit === '500 ml' ? Math.ceil(selectedProdDetails.basePrice / 2) : selectedProdDetails.basePrice;
-      const total = priceNum * 30; // 30 days upfront
+      const total = priceNum * quantity * 30; // 30 days upfront with quantity
 
       // Create Razorpay order on backend
       const { data: orderData } = await api.post('/api/payment/orders', { amount: total });
@@ -181,20 +184,31 @@ const Subscription = () => {
   };
 
   useEffect(() => {
-    const fetchStock = async () => {
+    const fetchStockAndPrices = async () => {
       try {
         const { data } = await api.get('/api/products');
-        const map = {};
-        data.forEach(p => {
-          const stockVal = parseInt(p.stock, 10);
-          map[p.name] = isNaN(stockVal) ? 0 : stockVal;
-        });
-        setStockMap(map);
+        if (data && data.length) {
+          const map = {};
+          data.forEach(p => {
+            const stockVal = parseInt(p.stock, 10);
+            map[p.name] = isNaN(stockVal) ? 0 : stockVal;
+          });
+          setStockMap(map);
+
+          // Dynamically synchronize basePrice from live database
+          setProducts(prev => prev.map(item => {
+            const serverProd = data.find(p => p.name.trim().toLowerCase() === item.name.trim().toLowerCase());
+            if (serverProd && serverProd.price) {
+              return { ...item, basePrice: serverProd.planPrice || serverProd.price };
+            }
+            return item;
+          }));
+        }
       } catch (err) {
-        console.error("Error fetching stock data", err);
+        console.error("Error fetching product data", err);
       }
     };
-    fetchStock();
+    fetchStockAndPrices();
     window.scrollTo(0, 0);
   }, []);
 
@@ -310,6 +324,71 @@ const Subscription = () => {
                   </button>
                 </div>
               </div>
+
+              {/* Quantity (QTY) Selector */}
+              <div className="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#FAF8F5] p-5 sm:p-6 rounded-3xl border border-[#EDE7DC]">
+                <div className="text-center sm:text-left">
+                  <span className="text-base font-bold text-milquu-dark block">
+                    Daily Milk Quantity (QTY)
+                  </span>
+                  <span className="text-xs text-gray-500 font-medium">
+                    Select how many {selectedUnit === '500 ml' ? '500ml packs' : 'litres'} you need every morning
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(prev => Math.max(1, prev - 1))}
+                    disabled={quantity <= 1}
+                    className="w-11 h-11 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-xl font-bold text-gray-700 hover:bg-gray-50 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                    aria-label="Decrease quantity"
+                  >
+                    −
+                  </button>
+                  <div className="w-20 text-center bg-white py-1.5 px-3 rounded-2xl border border-gray-200 shadow-inner">
+                    <span className="text-xl font-bold text-milquu-dark font-sans block">{quantity}</span>
+                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider block">
+                      {selectedUnit === '500 ml' ? (quantity === 1 ? 'Pouch' : 'Pouches') : (quantity === 1 ? 'Litre' : 'Litres')}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity(prev => Math.min(10, prev + 1))}
+                    disabled={quantity >= 10}
+                    className="w-11 h-11 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-xl font-bold text-gray-700 hover:bg-gray-50 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              {/* Price & Monthly Summary Preview */}
+              {(() => {
+                const selectedProd = products.find(p => p.id === selectedProduct);
+                const unitRate = selectedUnit === '500 ml' ? Math.ceil((selectedProd?.basePrice || 62) / 2) : (selectedProd?.basePrice || 62);
+                const dailyTotal = unitRate * quantity;
+                const monthlyTotal = dailyTotal * 30;
+                return (
+                  <div className="mt-4 bg-gradient-to-r from-[#FBF7EE] to-[#F7F2E7] border border-[#ECDDBF] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+                    <div>
+                      <span className="text-[11px] font-bold text-[#856214] uppercase tracking-wider block">
+                        Estimated Subscription Plan
+                      </span>
+                      <p className="text-sm font-medium text-gray-700 mt-0.5">
+                        ₹{unitRate} × {quantity} {selectedUnit === '500 ml' ? 'pkt' : 'L'} = <strong className="text-milquu-dark font-bold">₹{dailyTotal} / morning</strong>
+                      </p>
+                    </div>
+                    <div className="sm:text-right">
+                      <span className="text-2xl font-bold text-[#856214] font-sans block">
+                        ₹{monthlyTotal.toLocaleString()}
+                      </span>
+                      <span className="text-[11px] text-gray-500 font-medium">approx. 30 days upfront</span>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Step 2: Frequency Selection */}

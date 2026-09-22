@@ -7,7 +7,7 @@ export const productSEOData = {
     title: 'A2 Cow Milk Delivery | MilQuu Fresh',
     description: 'Buy A2 cow milk online in Navi Mumbai, sourced from trusted processing partners and delivered to your home within 24 hours.',
     keywords: 'A2 cow milk, fresh cow milk delivery, pure cow milk navi mumbai, buy A2 milk online',
-    price: 85,
+    price: 90,
     image: '/img/products/A2milk.webp',
     nutrition: [
       { label: 'Energy', value: '62 kcal' },
@@ -46,7 +46,7 @@ export const productSEOData = {
     title: 'Premium Buffalo Milk Delivery | Thick & Creamy | MilQuu',
     description: 'Order thick, creamy buffalo milk online. Perfect for tea, coffee, curd, and homemade sweets. Delivered fresh every morning across Navi Mumbai.',
     keywords: 'buffalo milk delivery, thick milk for tea, pure buffalo milk navi mumbai',
-    price: 90,
+    price: 75,
     image: '/img/products/buffalomilk.webp',
     nutrition: [
       { label: 'Energy', value: '97 kcal' },
@@ -85,7 +85,7 @@ export const productSEOData = {
     title: 'Pure Bilona A2 Cow Ghee | Traditional Churned | MilQuu',
     description: 'Buy authentic Bilona A2 cow ghee, made from curd using the traditional Vedic churning method. Rich aroma and granular texture.',
     keywords: 'bilona ghee, A2 cow ghee online, traditional churned ghee, pure desi ghee',
-    price: 1800,
+    price: 850,
     image: '/img/products/A2ghee.webp',
     nutrition: [
       { label: 'Energy', value: '897 kcal' },
@@ -124,7 +124,7 @@ export const productSEOData = {
     title: 'Fresh Malai Paneer Delivery | Soft & Spongy | MilQuu',
     description: 'Order incredibly soft and fresh malai paneer. Made daily from pure buffalo milk without any synthetic coagulants. Delivered fresh to your home.',
     keywords: 'fresh paneer delivery, malai paneer online, soft paneer navi mumbai',
-    price: 120,
+    price: 90,
     image: '/img/products/panner.webp',
     nutrition: [
       { label: 'Energy', value: '296 kcal' },
@@ -190,7 +190,7 @@ export const productSEOData = {
     title: 'Traditional Sweet Lassi | Refreshing Drink | MilQuu',
     description: 'Traditional churned yogurt drink, refreshing and lightly sweetened.',
     keywords: 'sweet lassi, traditional lassi, buy lassi online',
-    price: 40,
+    price: 25,
     image: '/img/products/lassi.webp',
     nutrition: [
       { label: 'Energy', value: '110 kcal' },

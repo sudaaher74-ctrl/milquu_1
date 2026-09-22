@@ -108,10 +108,10 @@ export default defineConfig({
             handler: 'NetworkFirst',
             options: {
               cacheName: 'api-products-cache',
-              networkTimeoutSeconds: 5,
+              networkTimeoutSeconds: 2,
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours fallback
+                maxAgeSeconds: 60 * 5, // 5 minutes fallback so stock changes reflect quickly
               },
               cacheableResponse: {
                 statuses: [0, 200],

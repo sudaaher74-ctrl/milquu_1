@@ -221,7 +221,7 @@ export function DailyProvider({ children }) {
       .filter((id) => products[id])
       .map((id) => ({ ...products[id], qty: items[id] }));
 
-  const milks = productList.filter((p) => p.cat === 'milk' && p.plan);
+  const milks = productList.filter((p) => p.cat === 'milk' && (p.plan || p.price));
   /** Add-ons offered next to the plan: everything that is not milk. */
   const suggested = productList.filter((p) => p.cat !== 'milk').slice(0, 3);
 
@@ -317,6 +317,13 @@ export function DailyProvider({ children }) {
     setDraft((d) => ({ ...d, cart: bumped(d.cart, id, delta) }));
 
   const addToCart = (id) => {
+    const p = products[id];
+    const stockLevel = parseInt(p?.stock, 10);
+    const isOutOfStock = p ? (Boolean(p.isOutOfStock) || Number.isNaN(stockLevel) || stockLevel <= 0) : false;
+    if (isOutOfStock) {
+      flash(`${p?.name || 'Item'} is currently out of stock`);
+      return;
+    }
     bumpCart(id, 1);
     flash(`${products[id]?.name ?? 'Item'} added to tomorrow`);
   };

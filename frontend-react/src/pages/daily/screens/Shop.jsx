@@ -9,7 +9,7 @@ export default function Shop() {
   const [params] = useSearchParams();
   const initialCat = params.get('cat') || 'all';
 
-  const { addToCart, cartCount, flash } = useDaily();
+  const { addToCart, cartCount, flash, productList } = useDaily();
   const [cat, setCat] = useState(initialCat);
   const [query, setQuery] = useState('');
   const [wishlist, setWishlist] = useState({});
@@ -23,14 +23,16 @@ export default function Shop() {
     flash(!wishlist[id] ? 'Saved to your favourites' : 'Removed from favourites');
   };
 
+  const sourceProducts = (productList && productList.length > 0) ? productList : DEFAULT_POPULAR_PRODUCTS;
+
   const filteredProducts = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return DEFAULT_POPULAR_PRODUCTS.filter((p) => {
+    return sourceProducts.filter((p) => {
       if (cat !== 'all' && p.cat !== cat) return false;
       if (!q) return true;
-      return `${p.name} ${p.unit}`.toLowerCase().includes(q);
+      return `${p.name} ${p.unit || ''}`.toLowerCase().includes(q);
     });
-  }, [cat, query]);
+  }, [sourceProducts, cat, query]);
 
   return (
     <Screen>
@@ -213,6 +215,8 @@ export default function Shop() {
           <div className="mq-product-grid">
             {filteredProducts.map((p) => {
               const isFav = wishlist[p.id];
+              const stockLevel = parseInt(p.stock, 10);
+              const isOutOfStock = Boolean(p.isOutOfStock) || Number.isNaN(stockLevel) || stockLevel <= 0;
               return (
                 <div key={p.id} className="mq-product-card">
                   {/* Favorite Heart Button */}
@@ -249,7 +253,7 @@ export default function Shop() {
                         maxHeight: 105,
                         maxWidth: '90%',
                         objectFit: 'contain',
-                        opacity: p.isOutOfStock ? 0.8 : 1,
+                        opacity: isOutOfStock ? 0.75 : 1,
                       }}
                     />
                   </div>
@@ -266,7 +270,7 @@ export default function Shop() {
                       margin: 0,
                     }}
                   >
-                    {p.name} {p.unit}
+                    {p.name} {p.unit && !p.name.toLowerCase().includes(p.unit.toLowerCase()) ? p.unit : ''}
                   </h4>
 
                   {/* Price */}
@@ -283,10 +287,10 @@ export default function Shop() {
                   </span>
 
                   {/* Action / Stock state */}
-                  {p.isOutOfStock ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {isOutOfStock ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 'auto' }}>
                       <span className="mq-stock-pill">OUT OF STOCK</span>
-                      <button type="button" disabled className="mq-btn-soldout">
+                      <button type="button" disabled className="mq-btn-soldout" style={{ width: '100%' }}>
                         Sold out
                       </button>
                     </div>
@@ -296,9 +300,9 @@ export default function Shop() {
                         type="button"
                         className="mq-btn-add-gold"
                         style={{ width: '100%' }}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           addToCart(p.id);
-                          flash(`Added ${p.name} to cart`);
                         }}
                       >
                         <Icon name="cart" size={14} color="#856214" strokeWidth={2} />

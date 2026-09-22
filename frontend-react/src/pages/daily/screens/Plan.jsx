@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, TabBar, MobileHeader, Icon } from '../ui';
 import { DEFAULT_MILK_PLANS, rupees } from '../catalogue';
@@ -6,13 +6,53 @@ import { useDaily } from '../DailyContext';
 
 export default function Plan() {
   const navigate = useNavigate();
-  const { flash, patch } = useDaily();
+  const { flash, patch, bumpCrate, milks, crate } = useDaily();
   const [selectedPlanId, setSelectedPlanId] = useState('cow-milk-plan');
+  const [planQuantities, setPlanQuantities] = useState({});
+
+  const plans = useMemo(() => {
+    if (!milks || milks.length === 0) return DEFAULT_MILK_PLANS;
+    return milks.map((m, idx) => {
+      const matched = DEFAULT_MILK_PLANS.find(
+        (dp) => dp.productId === m.id || m.name.toLowerCase().includes(dp.name.toLowerCase().replace(' plan', ''))
+      );
+      return {
+        id: matched?.id || m.id,
+        productId: m.id,
+        name: matched?.name || `${m.short || m.name} Plan`,
+        subtitle: matched?.subtitle || m.kicker || 'Fresh & nutritious',
+        price: m.plan || m.price,
+        unit: m.unit || 'Litre',
+        popular: matched ? matched.popular : idx === 0,
+        features: matched?.features || [
+          'Daily delivery',
+          'Choose quantity',
+          'Pause anytime',
+          'No delivery charges',
+        ],
+      };
+    });
+  }, [milks]);
 
   const handleSelectPlan = (plan) => {
     setSelectedPlanId(plan.id);
     patch({ selectedPlan: plan.id });
-    flash(`Selected ${plan.name}`);
+
+    // Bind this milk to the draft crate with chosen quantity
+    const targetProductId = plan.productId || plan.id;
+    const targetQty = planQuantities[plan.id] || 1;
+    if (milks && milks.length > 0) {
+      milks.forEach((m) => {
+        if (crate[m.id] && m.id !== targetProductId) {
+          bumpCrate(m.id, -crate[m.id]);
+        }
+      });
+      bumpCrate(targetProductId, targetQty - (crate[targetProductId] || 0));
+    } else {
+      bumpCrate(targetProductId, targetQty);
+    }
+
+    flash(`Selected ${plan.name} (${targetQty} L/day)`);
     navigate('/app/start/rhythm');
   };
 
@@ -147,7 +187,7 @@ export default function Plan() {
           </p>
 
           <div className="mq-plan-scroll">
-            {DEFAULT_MILK_PLANS.map((plan) => {
+            {plans.map((plan) => {
               const isSelected = selectedPlanId === plan.id;
               const isPopular = plan.popular;
 
@@ -222,6 +262,79 @@ export default function Plan() {
                     ))}
                   </div>
 
+                  {/* Daily Quantity Selector */}
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: '#f8fafc',
+                      padding: '7px 12px',
+                      borderRadius: 14,
+                      marginBottom: 14,
+                      border: '1px solid #e2e8f0',
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#334155' }}>Daily Qty</span>
+                      <span style={{ fontSize: 10, color: '#64748b' }}>₹{rupees(plan.price * (planQuantities[plan.id] || 1))}/day</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPlanQuantities(prev => ({ ...prev, [plan.id]: Math.max(1, (prev[plan.id] || 1) - 1) }));
+                        }}
+                        disabled={(planQuantities[plan.id] || 1) <= 1}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 999,
+                          border: '1px solid #cbd5e1',
+                          background: '#fff',
+                          fontWeight: 'bold',
+                          fontSize: 15,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: (planQuantities[plan.id] || 1) <= 1 ? 'not-allowed' : 'pointer',
+                          opacity: (planQuantities[plan.id] || 1) <= 1 ? 0.4 : 1,
+                        }}
+                      >
+                        −
+                      </button>
+                      <span style={{ fontSize: 14, fontWeight: 800, minWidth: 26, textAlign: 'center', color: '#1e293b' }}>
+                        {planQuantities[plan.id] || 1} L
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPlanQuantities(prev => ({ ...prev, [plan.id]: Math.min(10, (prev[plan.id] || 1) + 1) }));
+                        }}
+                        disabled={(planQuantities[plan.id] || 1) >= 10}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 999,
+                          border: '1px solid #cbd5e1',
+                          background: '#fff',
+                          fontWeight: 'bold',
+                          fontSize: 15,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: (planQuantities[plan.id] || 1) >= 10 ? 'not-allowed' : 'pointer',
+                          opacity: (planQuantities[plan.id] || 1) >= 10 ? 0.4 : 1,
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
                   {/* CTA Button */}
                   <div style={{ marginTop: 'auto' }}>
                     {isPopular ? (
@@ -231,7 +344,7 @@ export default function Plan() {
                         style={{ width: '100%', padding: '9px 0', fontSize: 13.5 }}
                         onClick={() => handleSelectPlan(plan)}
                       >
-                        <span>Select plan</span>
+                        <span>Select plan ({planQuantities[plan.id] || 1} L)</span>
                         <span>→</span>
                       </button>
                     ) : (
@@ -241,7 +354,7 @@ export default function Plan() {
                         style={{ width: '100%', padding: '8px 0', fontSize: 13.5 }}
                         onClick={() => handleSelectPlan(plan)}
                       >
-                        <span>Select plan</span>
+                        <span>Select plan ({planQuantities[plan.id] || 1} L)</span>
                         <span>→</span>
                       </button>
                     )}
