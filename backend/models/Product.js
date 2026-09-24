@@ -2,15 +2,15 @@ import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String, default: '' },
   price: { type: Number, required: true },
   // The standing-order rate. Milk is cheaper on a plan than bought one-off, so
   // subscriptions price from here and one-off orders price from `price`.
   // Products without a separate plan rate leave this null and fall back to
   // `price` — see planPriceOf() below, which is the only place that decides.
   planPrice: { type: Number, default: null },
-  unit: { type: String, required: true },
-  image: { type: String, required: true },
+  unit: { type: String, default: '1 Litre' },
+  image: { type: String, default: '' },
   category: { type: String, required: true }, // e.g., 'milk', 'by-products'
   labels: [{ type: String }], // e.g., ['Farm Fresh', 'A2 Protein']
   

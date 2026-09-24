@@ -1,11 +1,14 @@
 export const validateRequest = (schema) => {
   return (req, res, next) => {
     try {
-      schema.parse({
+      const parsed = schema.parse({
         body: req.body,
         query: req.query,
         params: req.params,
       });
+      if (parsed?.body !== undefined) {
+        req.body = parsed.body;
+      }
       next();
     } catch (err) {
       // Zod v4 exposes the failures as `issues`; `errors` no longer exists, and

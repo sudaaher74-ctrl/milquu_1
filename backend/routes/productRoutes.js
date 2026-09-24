@@ -2,7 +2,7 @@ import express from 'express';
 import Product from '../models/Product.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import { validateRequest } from '../middleware/validateRequest.js';
-import { productSchema } from '../validations/productValidations.js';
+import { productSchema, updateProductSchema } from '../validations/productValidations.js';
 
 const router = express.Router();
 
@@ -86,9 +86,9 @@ router.get('/:id', async (req, res) => {
 // @route   PUT /api/products/:id
 // @desc    Update a product
 // @access  Private/Admin
-router.put('/:id', protect, admin, validateRequest(productSchema), async (req, res) => {
+router.put('/:id', protect, admin, validateRequest(updateProductSchema), async (req, res) => {
   try {
-    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const product = await Product.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
     if (product) {
       res.json(product);
     } else {

@@ -38,7 +38,10 @@ const AdminProducts = () => {
         purchasePrice: p.purchasePrice || 0, 
         sellingPrice: p.price,
         planPrice: p.planPrice ?? '',
-        stock: p.stock || 0,
+        stock: p.stock ?? 0,
+        description: p.description || '',
+        unit: p.unit || '1 Litre',
+        labels: p.labels || [],
         image: p.image,
         status: (p.stock || 0) > 20 ? 'Active' : ((p.stock || 0) > 0 ? 'Low Stock' : 'Out of Stock')
       }));
@@ -123,10 +126,13 @@ const AdminProducts = () => {
       }
 
       const productPayload = {
-        ...formData,
+        name: formData.name.trim(),
+        category: formData.category,
         price: Number(formData.price),
         stock: Number(formData.stock),
-        planPrice: formData.planPrice === '' ? null : Number(formData.planPrice),
+        unit: formData.unit || '1 Litre',
+        description: formData.description || '',
+        planPrice: formData.planPrice === '' || formData.planPrice === null ? null : Number(formData.planPrice),
         image: imageUrl
       };
 
@@ -145,7 +151,10 @@ const AdminProducts = () => {
       
     } catch (error) {
       console.error('Submit error:', error);
-      alert('Failed to add product: ' + error.message);
+      const serverMessage = error.response?.data?.message || 
+        error.response?.data?.errors?.map(e => e.message).join(', ') || 
+        error.message;
+      alert(`${editingProductId ? 'Failed to update product' : 'Failed to add product'}: ${serverMessage}`);
     } finally {
       setIsUploading(false);
     }
@@ -381,16 +390,16 @@ const AdminProducts = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
-                  <input required type="number" name="price" value={formData.price} onChange={handleInputChange} className="w-full border rounded-lg p-2" />
+                  <input required type="number" step="any" min="0" name="price" value={formData.price} onChange={handleInputChange} className="w-full border rounded-lg p-2" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Initial Stock</label>
-                  <input required type="number" name="stock" value={formData.stock} onChange={handleInputChange} className="w-full border rounded-lg p-2" />
+                  <input required type="number" step="any" min="0" name="stock" value={formData.stock} onChange={handleInputChange} className="w-full border rounded-lg p-2" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Subscription Price (₹ per litre/unit, on a plan)</label>
-                <input type="number" name="planPrice" value={formData.planPrice} onChange={handleInputChange} placeholder="Leave blank if this product has no plan pricing" className="w-full border rounded-lg p-2" />
+                <input type="number" step="any" min="0" name="planPrice" value={formData.planPrice} onChange={handleInputChange} placeholder="Leave blank if this product has no plan pricing" className="w-full border rounded-lg p-2" />
                 <p className="text-xs text-gray-500 mt-1">Required for a milk product to appear in the app's "Start a plan" flow.</p>
               </div>
               <div>
