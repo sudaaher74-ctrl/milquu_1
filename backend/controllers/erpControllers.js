@@ -257,7 +257,17 @@ export const createOrder = async (req, res) => {
         }
       }
       orderData.orderItems = secureItems;
-      orderData.totalPrice = calculatedTotalPrice; // Override client total
+      const discount = Number(orderData.discount) || 0;
+      orderData.totalPrice = Math.max(0, calculatedTotalPrice - discount);
+    }
+
+    if (orderData.orderSource === 'POS') {
+      orderData.isPaid = true;
+      orderData.paidAt = new Date();
+      orderData.paymentStatus = 'PAID';
+      orderData.deliveryStatus = 'Delivered';
+      orderData.isDelivered = true;
+      orderData.deliveredAt = new Date();
     }
 
     // Auto-assign delivery boy based on shipping area

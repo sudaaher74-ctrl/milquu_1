@@ -321,3 +321,34 @@ export const triggerSubscriptionEngine = async (req, res) => {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
+
+export const createCustomer = async (req, res) => {
+  try {
+    const { name, phone, email, address } = req.body;
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ message: 'Customer name is required' });
+    }
+
+    if (phone) {
+      const existing = await User.findOne({ phone: phone.trim() });
+      if (existing) {
+        return res.status(400).json({ message: 'A customer with this phone number already exists' });
+      }
+    }
+
+    const customer = new User({
+      name: name.trim(),
+      phone: phone?.trim() || undefined,
+      email: email?.trim() || undefined,
+      address: address?.trim() || '',
+      password: 'poscustomer123',
+      role: 'user'
+    });
+
+    await customer.save();
+    res.status(201).json(customer);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+

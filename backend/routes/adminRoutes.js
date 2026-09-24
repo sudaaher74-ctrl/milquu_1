@@ -7,7 +7,8 @@ import {
   getRevenueAnalytics, 
   getEmployees, 
   createWalletTransaction,
-  triggerSubscriptionEngine
+  triggerSubscriptionEngine,
+  createCustomer
 } from '../controllers/adminControllers.js';
 import { getWithdrawalRequests, updateWithdrawalStatus } from '../controllers/adminWithdrawalControllers.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
@@ -18,6 +19,7 @@ router.post('/login', loginAdmin);
 router.get('/overview', protect, admin, getOverview);
 router.get('/orders', protect, admin, getOrders);
 router.get('/customers', protect, admin, getCustomers);
+router.post('/customers', protect, admin, createCustomer);
 router.get('/revenue-analytics', protect, admin, getRevenueAnalytics);
 router.get('/employees', protect, admin, getEmployees);
 router.post('/wallets/transaction', protect, admin, createWalletTransaction);
