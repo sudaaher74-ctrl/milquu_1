@@ -151,17 +151,17 @@ const Settings = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Default Product GST (%)</label>
-                      <select className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-milquu-blue transition-all text-sm">
-                        <option value="0">0% (Exempted)</option>
-                        <option value="5" selected>5% (Standard Dairy)</option>
+                      <select defaultValue="0" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:bg-white focus:border-milquu-blue transition-all text-sm">
+                        <option value="0">0% (Exempted - Fresh Milk & Dairy)</option>
+                        <option value="5">5%</option>
                         <option value="12">12%</option>
                         <option value="18">18%</option>
                       </select>
                     </div>
                     <div className="flex items-end">
                       <label className="flex items-center space-x-3 cursor-pointer">
-                        <input type="checkbox" defaultChecked className="w-5 h-5 rounded border-gray-300 text-milquu-blue focus:ring-milquu-blue" />
-                        <span className="text-sm font-semibold text-gray-700">Prices Include Tax (Inclusive GST)</span>
+                        <input type="checkbox" defaultChecked={false} className="w-5 h-5 rounded border-gray-300 text-milquu-blue focus:ring-milquu-blue" />
+                        <span className="text-sm font-semibold text-gray-700">Prices Include Tax (0% GST)</span>
                       </label>
                     </div>
                   </div>
