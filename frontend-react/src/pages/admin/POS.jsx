@@ -68,12 +68,11 @@ const POS = () => {
 
   const calculateTotals = () => {
     const subtotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
-    const tax = subtotal * 0.05; // 5% GST
-    const total = subtotal + tax - discount;
-    return { subtotal, tax, total };
+    const total = Math.max(0, subtotal - discount);
+    return { subtotal, total };
   };
 
-  const { subtotal, tax, total } = calculateTotals();
+  const { subtotal, total } = calculateTotals();
   const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
@@ -220,10 +219,6 @@ const POS = () => {
                   onChange={(e) => setDiscount(Number(e.target.value))}
                   className="w-20 text-right text-sm border-b border-gray-200 focus:outline-none focus:border-milquu-blue font-bold text-red-500"
                 />
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">GST (5%)</span>
-                <span className="font-bold text-gray-800">₹{tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-xl pt-2 border-t border-gray-100 mt-2">
                 <span className="font-bold text-milquu-dark">Total</span>

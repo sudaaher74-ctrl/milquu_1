@@ -6,8 +6,8 @@ import { ArrowRight, CheckCircle2, CalendarDays, Milk, Clock } from 'lucide-reac
 const DEFAULT_PRODUCTS = [
   { id: 'a2', name: 'A2 Cow Milk', basePrice: 90, image: '/img/products/A2milk.webp' },
   { id: 'buffalo', name: 'Premium Buffalo Milk', basePrice: 75, image: '/img/products/buffalomilk.webp' },
-  { id: 'cow', name: 'Pure Cow Milk', basePrice: 62, image: '/img/products/cowmilk.webp' },
-  { id: 'cow-pouch', name: 'Cow Milk (Pouch)', basePrice: 58, image: '/img/products/cowmilkplasticbag.png' },
+  { id: 'cow', name: 'Pure Cow Milk', basePrice: 64, image: '/img/products/cowmilk.webp' },
+  { id: 'cow-pouch', name: 'Cow Milk (Pouch)', basePrice: 64, image: '/img/products/cowmilkplasticbag.png' },
   { id: 'buffalo-pouch', name: 'Buffalo Milk (Pouch)', basePrice: 72, image: '/img/products/buffalomilkplasticbag.png' },
 ];
 
@@ -367,7 +367,7 @@ const Subscription = () => {
               {/* Price & Monthly Summary Preview */}
               {(() => {
                 const selectedProd = products.find(p => p.id === selectedProduct);
-                const unitRate = selectedUnit === '500 ml' ? Math.ceil((selectedProd?.basePrice || 62) / 2) : (selectedProd?.basePrice || 62);
+                const unitRate = selectedUnit === '500 ml' ? Math.ceil((selectedProd?.basePrice || 64) / 2) : (selectedProd?.basePrice || 64);
                 const dailyTotal = unitRate * quantity;
                 const monthlyTotal = dailyTotal * 30;
                 return (
