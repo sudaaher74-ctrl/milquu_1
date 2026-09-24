@@ -1,27 +1,50 @@
 import ReactGA from 'react-ga4';
 
+const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-9S1HY0WW38';
+
 export const initGA = () => {
-  const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
-  if (measurementId) {
-    ReactGA.initialize(measurementId);
-    console.log('Google Analytics initialized.');
-  } else {
-    console.warn('GA Measurement ID not found. Analytics will not track.');
+  if (GA_MEASUREMENT_ID) {
+    try {
+      ReactGA.initialize(GA_MEASUREMENT_ID);
+      console.log('Google Analytics initialized.');
+    } catch (err) {
+      console.warn('ReactGA init skipped:', err);
+    }
   }
 };
 
 export const trackPageView = (path) => {
-  if (import.meta.env.VITE_GA_MEASUREMENT_ID) {
-    ReactGA.send({ hitType: 'pageview', page: path });
+  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+    window.gtag('config', GA_MEASUREMENT_ID, {
+      page_path: path,
+    });
+  }
+  if (GA_MEASUREMENT_ID) {
+    try {
+      ReactGA.send({ hitType: 'pageview', page: path });
+    } catch (e) {
+      // ignore
+    }
   }
 };
 
 export const trackEvent = (category, action, label = '') => {
-  if (import.meta.env.VITE_GA_MEASUREMENT_ID) {
-    ReactGA.event({
-      category,
-      action,
-      label,
+  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+    window.gtag('event', action, {
+      event_category: category,
+      event_label: label,
     });
   }
+  if (GA_MEASUREMENT_ID) {
+    try {
+      ReactGA.event({
+        category,
+        action,
+        label,
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
 };
+
