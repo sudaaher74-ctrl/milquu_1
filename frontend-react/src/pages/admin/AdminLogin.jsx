@@ -1,18 +1,30 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../utils/api.js';
-import { Mail, Lock, LogIn, ShieldAlert } from 'lucide-react';
+import { Mail, Lock, LogIn, ShieldAlert, Eye, EyeOff, Sparkles, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+const DEFAULT_ADMIN_EMAIL = 'milquufresh@gmail.com';
+const DEFAULT_ADMIN_PASSWORD = 'milquu@2026';
+
 const AdminLogin = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(DEFAULT_ADMIN_EMAIL);
+  const [password, setPassword] = useState(DEFAULT_ADMIN_PASSWORD);
+  const [showPassword, setShowPassword] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = location.state?.from?.pathname || '/admin';
+
+  const handleFillCredentials = () => {
+    setEmail(DEFAULT_ADMIN_EMAIL);
+    setPassword(DEFAULT_ADMIN_PASSWORD);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -21,7 +33,7 @@ const AdminLogin = () => {
 
     try {
       const { data } = await api.post('/api/admin/login', {
-        email,
+        email: email.trim(),
         password
       });
 
@@ -72,7 +84,7 @@ const AdminLogin = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-milquu-green/30 focus:border-milquu-green outline-none transition-all"
-                placeholder="admin@milquu.com"
+                placeholder={DEFAULT_ADMIN_EMAIL}
               />
             </div>
           </div>
@@ -82,13 +94,21 @@ const AdminLogin = () => {
             <div className="relative">
               <Lock size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input 
-                type="password" 
+                type={showPassword ? 'text' : 'password'} 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 py-3.5 text-sm focus:ring-2 focus:ring-milquu-green/30 focus:border-milquu-green outline-none transition-all"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-11 py-3.5 text-sm focus:ring-2 focus:ring-milquu-green/30 focus:border-milquu-green outline-none transition-all"
                 placeholder="••••••••"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
@@ -106,6 +126,38 @@ const AdminLogin = () => {
             )}
           </button>
         </form>
+
+        {/* Quick Fill Admin Credentials Card */}
+        <div className="mt-6 pt-5 border-t border-gray-100">
+          <div className="bg-emerald-50/70 border border-emerald-100 rounded-2xl p-3.5 flex items-center justify-between">
+            <div className="min-w-0 pr-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
+                <Sparkles size={14} className="text-emerald-600 flex-shrink-0" />
+                <span>Admin Login Credentials</span>
+              </div>
+              <p className="text-[11px] text-emerald-700/90 font-mono mt-0.5 truncate">
+                {DEFAULT_ADMIN_EMAIL}
+              </p>
+              <p className="text-[11px] text-emerald-700/80 font-mono">
+                Password: <span className="font-semibold">{DEFAULT_ADMIN_PASSWORD}</span>
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleFillCredentials}
+              className="flex-shrink-0 px-3 py-1.5 bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-600 hover:text-white hover:border-emerald-600 text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center gap-1"
+            >
+              {copied ? (
+                <>
+                  <Check size={13} className="text-emerald-600" />
+                  <span>Filled!</span>
+                </>
+              ) : (
+                <span>Auto-Fill</span>
+              )}
+            </button>
+          </div>
+        </div>
       </motion.div>
     </div>
   );
