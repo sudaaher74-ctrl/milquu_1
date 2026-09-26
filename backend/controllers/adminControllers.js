@@ -324,7 +324,7 @@ export const triggerSubscriptionEngine = async (req, res) => {
 
 export const createCustomer = async (req, res) => {
   try {
-    const { name, phone, email, address } = req.body;
+    const { name, phone, email, address, billingCycle, isCreditCustomer, creditLimit, creditNotes } = req.body;
     if (!name || typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ message: 'Customer name is required' });
     }
@@ -336,17 +336,54 @@ export const createCustomer = async (req, res) => {
       }
     }
 
+    const hasCredit = Boolean(isCreditCustomer) || (billingCycle && billingCycle !== 'none');
+
     const customer = new User({
       name: name.trim(),
       phone: phone?.trim() || undefined,
       email: email?.trim() || undefined,
       address: address?.trim() || '',
       password: 'poscustomer123',
-      role: 'user'
+      role: 'user',
+      billingCycle: billingCycle || (hasCredit ? '15 Days' : 'none'),
+      isCreditCustomer: hasCredit,
+      creditLimit: Number(creditLimit) || 0,
+      creditNotes: creditNotes?.trim() || ''
     });
 
     await customer.save();
     res.status(201).json(customer);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const updateCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, phone, email, address, billingCycle, isCreditCustomer, creditLimit, creditNotes } = req.body;
+
+    const customer = await User.findById(id);
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    if (name) customer.name = name.trim();
+    if (phone !== undefined) customer.phone = phone?.trim() || undefined;
+    if (email !== undefined) customer.email = email?.trim() || undefined;
+    if (address !== undefined) customer.address = address?.trim() || '';
+    if (billingCycle !== undefined) {
+      customer.billingCycle = billingCycle;
+      if (billingCycle && billingCycle !== 'none') {
+        customer.isCreditCustomer = true;
+      }
+    }
+    if (isCreditCustomer !== undefined) customer.isCreditCustomer = Boolean(isCreditCustomer);
+    if (creditLimit !== undefined) customer.creditLimit = Number(creditLimit) || 0;
+    if (creditNotes !== undefined) customer.creditNotes = creditNotes?.trim() || '';
+
+    await customer.save();
+    res.json(customer);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

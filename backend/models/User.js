@@ -31,7 +31,16 @@ const userSchema = new mongoose.Schema({
   // Kept in step with PASSWORD_MIN in validations/userValidations.js — when the
   // two disagreed, a valid-looking password failed here as an unhandled 500.
   password: { type: String, required: true, minlength: 8 },
-  walletBalance: { type: Number, default: 0 }
+  walletBalance: { type: Number, default: 0 },
+  // Shop POS Credit & Billing System (Khata)
+  billingCycle: { 
+    type: String, 
+    enum: ['none', '10 Days', '15 Days', '30 Days', 'Custom'], 
+    default: 'none' 
+  },
+  isCreditCustomer: { type: Boolean, default: false },
+  creditLimit: { type: Number, default: 0 },
+  creditNotes: { type: String }
 }, {
   timestamps: true
 });

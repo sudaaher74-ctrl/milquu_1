@@ -6,12 +6,21 @@ import {
   LayoutDashboard, ShoppingBag, Users, LogOut, ArrowLeft, 
   Package, CalendarDays, Truck, BarChart3, Boxes, 
   Bell, Settings, Search, Plus, Menu, X, ChevronDown, Bike,
-  Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart, MessageCircle, Wand2, Mic, Volume2, Loader2, Sparkles, Banknote, Gift
+  Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart, MessageCircle, Wand2, Mic, Volume2, Loader2, Sparkles, Banknote, Gift,
+  PanelLeft, PanelLeftClose
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AdminLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem('adminSidebarOpen');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
@@ -77,6 +86,22 @@ const AdminLayout = () => {
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
 
+  const toggleSidebar = () => {
+    if (window.innerWidth < 1024) {
+      setMobileMenuOpen(prev => !prev);
+    } else {
+      setSidebarOpen(prev => {
+        const next = !prev;
+        try {
+          localStorage.setItem('adminSidebarOpen', String(next));
+        } catch (e) {
+          console.error(e);
+        }
+        return next;
+      });
+    }
+  };
+
   useEffect(() => {
     if (localStorage.getItem('enterpriseDarkMode') === 'true') {
       document.documentElement.classList.add('dark-dashboard');
@@ -111,14 +136,32 @@ const AdminLayout = () => {
       </AnimatePresence>
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white/80 backdrop-blur-2xl border-r border-white/60 shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 flex flex-col ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="h-20 flex items-center justify-between px-6 border-b border-gray-100">
+      <aside className={`fixed inset-y-0 left-0 z-50 bg-white/85 backdrop-blur-2xl border-r border-white/60 shadow-lg transform transition-all duration-300 ease-in-out lg:relative flex flex-col ${
+        mobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'
+      } ${
+        sidebarOpen 
+          ? 'lg:w-72 lg:opacity-100' 
+          : 'lg:w-0 lg:p-0 lg:overflow-hidden lg:border-r-0 lg:opacity-0 pointer-events-none lg:pointer-events-auto'
+      }`}>
+        <div className="h-20 flex items-center justify-between px-6 border-b border-gray-100 shrink-0 whitespace-nowrap overflow-hidden">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-milquu-green to-milquu-blue rounded-xl flex items-center justify-center text-white font-serif font-bold text-xl shadow-md">M</div>
+            <div className="w-10 h-10 bg-gradient-to-br from-milquu-green to-milquu-blue rounded-xl flex items-center justify-center text-white font-serif font-bold text-xl shadow-md shrink-0">M</div>
             <span className="text-xl font-serif font-bold text-milquu-dark tracking-tight">MilQuu Fresh</span>
           </div>
+          {/* Mobile close */}
           <button onClick={toggleMobileMenu} className="lg:hidden text-gray-500 hover:text-milquu-dark transition-colors">
             <X size={24} />
+          </button>
+          {/* Desktop collapse button */}
+          <button 
+            onClick={() => {
+              setSidebarOpen(false);
+              try { localStorage.setItem('adminSidebarOpen', 'false'); } catch (e) {}
+            }} 
+            className="hidden lg:flex p-1.5 rounded-lg text-gray-400 hover:text-milquu-dark hover:bg-gray-100 transition-colors"
+            title="Hide Sidebar"
+          >
+            <PanelLeftClose size={20} />
           </button>
         </div>
         
@@ -146,7 +189,7 @@ const AdminLayout = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+        <div className="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0 whitespace-nowrap overflow-hidden">
           <NavLink to="/" className="flex items-center space-x-3 px-3 py-3 text-sm text-gray-500 hover:bg-white hover:text-milquu-dark hover:shadow-sm rounded-xl transition-all">
             <ArrowLeft size={18} className="text-gray-400" />
             <span>Back to Store</span>
@@ -165,8 +208,16 @@ const AdminLayout = () => {
         <header className="h-20 bg-white/70 backdrop-blur-2xl border-b border-white/50 shadow-sm flex items-center justify-between px-4 sm:px-8 z-30 sticky top-0">
           
           <div className="flex items-center">
-            <button onClick={toggleMobileMenu} className="mr-4 lg:hidden text-gray-500 hover:text-milquu-dark transition-colors">
-              <Menu size={24} />
+            {/* Sidebar Toggle Button (Hide / Open on desktop, Drawer on mobile) */}
+            <button 
+              onClick={toggleSidebar} 
+              className="mr-3 p-2 text-gray-600 hover:text-milquu-blue hover:bg-white rounded-xl transition-all border border-gray-200/80 shadow-xs flex items-center gap-1.5 group cursor-pointer"
+              title={sidebarOpen ? "Hide Sidebar" : "Open Sidebar"}
+            >
+              <PanelLeft size={20} className={!sidebarOpen ? "text-milquu-blue" : "text-gray-500 group-hover:text-milquu-blue"} />
+              <span className="hidden sm:inline text-xs font-semibold text-gray-600 group-hover:text-milquu-blue">
+                {sidebarOpen ? 'Hide Menu' : 'Open Menu'}
+              </span>
             </button>
             
             {/* Search Bar */}

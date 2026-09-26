@@ -262,12 +262,49 @@ export const createOrder = async (req, res) => {
     }
 
     if (orderData.orderSource === 'POS') {
-      orderData.isPaid = true;
-      orderData.paidAt = new Date();
-      orderData.paymentStatus = 'PAID';
-      orderData.deliveryStatus = 'Delivered';
-      orderData.isDelivered = true;
-      orderData.deliveredAt = new Date();
+      if (orderData.paymentMethod === 'Credit') {
+        orderData.isPaid = false;
+        orderData.paidAt = undefined;
+        orderData.paymentStatus = 'PENDING';
+        orderData.deliveryStatus = 'Delivered';
+        orderData.isDelivered = true;
+        orderData.deliveredAt = new Date();
+
+        // Calculate billing cycle days (10, 15, 30 days)
+        let cycle = orderData.billingCycle;
+        if (!cycle && orderData.user) {
+          const userDoc = await User.findById(orderData.user);
+          if (userDoc && userDoc.billingCycle && userDoc.billingCycle !== 'none') {
+            cycle = userDoc.billingCycle;
+          }
+        }
+        if (!cycle) cycle = '15 Days';
+        orderData.billingCycle = cycle;
+
+        let days = 15;
+        if (cycle.includes('10')) days = 10;
+        else if (cycle.includes('30')) days = 30;
+        else if (cycle.includes('15')) days = 15;
+
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + days);
+        orderData.creditDueDate = dueDate;
+
+        // Auto-mark registered customer as credit customer
+        if (orderData.user) {
+          await User.findByIdAndUpdate(orderData.user, {
+            isCreditCustomer: true,
+            ...(cycle ? { billingCycle: cycle } : {})
+          });
+        }
+      } else {
+        orderData.isPaid = true;
+        orderData.paidAt = new Date();
+        orderData.paymentStatus = 'PAID';
+        orderData.deliveryStatus = 'Delivered';
+        orderData.isDelivered = true;
+        orderData.deliveredAt = new Date();
+      }
     }
 
     // Auto-assign delivery boy based on shipping area
@@ -622,6 +659,253 @@ export const updateStaffLocation = async (req, res) => {
     }
     
     res.json(staff);
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+// --- POS CREDIT CUSTOMERS & KHATA SYSTEM ---
+
+export const getCreditCustomers = async (req, res) => {
+  try {
+    // 1. Fetch all unpaid POS orders with real populated user details
+    const unpaidOrders = await Order.find({
+      orderSource: 'POS',
+      isPaid: false
+    })
+      .populate('user', 'name phone email address billingCycle isCreditCustomer creditLimit creditNotes')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // 2. Fetch all registered users marked as credit customers or with billing cycles
+    const registeredCreditUsers = await User.find({
+      $or: [
+        { isCreditCustomer: true },
+        { billingCycle: { $in: ['10 Days', '15 Days', '30 Days', 'Custom'] } }
+      ]
+    }).lean();
+
+    // Map by userId (or synthetic phone key if guest)
+    const customerMap = new Map();
+
+    // Initialize registered credit customers from real MongoDB User records
+    for (const u of registeredCreditUsers) {
+      customerMap.set(u._id.toString(), {
+        customerId: u._id.toString(),
+        userId: u._id.toString(),
+        name: u.name,
+        phone: u.phone || '',
+        email: u.email || '',
+        address: u.address || '',
+        billingCycle: u.billingCycle && u.billingCycle !== 'none' ? u.billingCycle : '15 Days',
+        creditLimit: u.creditLimit || 0,
+        creditNotes: u.creditNotes || '',
+        totalDue: 0,
+        unpaidCount: 0,
+        orders: [],
+        oldestOrderDate: null,
+        nextDueDate: null,
+        isOverdue: false,
+        status: 'Settled'
+      });
+    }
+
+    const now = new Date();
+
+    // Aggregate real unpaid orders from MongoDB
+    for (const o of unpaidOrders) {
+      const userObj = o.user && typeof o.user === 'object' && o.user._id ? o.user : null;
+      const userId = userObj ? userObj._id.toString() : (o.user ? o.user.toString() : null);
+      const key = userId || `guest_${o.phone || o.name || o._id.toString()}`;
+      
+      let entry = customerMap.get(key);
+      if (!entry) {
+        entry = {
+          customerId: key,
+          userId: userId,
+          name: userObj?.name || o.name || 'Walk-in Customer',
+          phone: userObj?.phone || o.phone || '',
+          email: userObj?.email || '',
+          address: userObj?.address || '',
+          billingCycle: userObj?.billingCycle && userObj.billingCycle !== 'none' ? userObj.billingCycle : (o.billingCycle || '15 Days'),
+          creditLimit: userObj?.creditLimit || 0,
+          creditNotes: userObj?.creditNotes || '',
+          totalDue: 0,
+          unpaidCount: 0,
+          orders: [],
+          oldestOrderDate: null,
+          nextDueDate: null,
+          isOverdue: false,
+          status: 'Active'
+        };
+        customerMap.set(key, entry);
+      }
+
+      const orderDue = o.creditDueDate ? new Date(o.creditDueDate) : null;
+      const isOrderOverdue = orderDue ? orderDue < now : false;
+
+      entry.totalDue += Number(o.totalPrice) || 0;
+      entry.unpaidCount += 1;
+      entry.orders.push({
+        _id: o._id,
+        orderId: o._id,
+        totalPrice: o.totalPrice,
+        createdAt: o.createdAt,
+        creditDueDate: o.creditDueDate,
+        billingCycle: o.billingCycle || entry.billingCycle,
+        isOverdue: isOrderOverdue,
+        items: (o.orderItems || []).map(i => ({ name: i.name, qty: i.qty, price: i.price }))
+      });
+
+      if (!entry.oldestOrderDate || new Date(o.createdAt) < new Date(entry.oldestOrderDate)) {
+        entry.oldestOrderDate = o.createdAt;
+      }
+      if (orderDue) {
+        if (!entry.nextDueDate || orderDue < new Date(entry.nextDueDate)) {
+          entry.nextDueDate = orderDue;
+        }
+      }
+      if (isOrderOverdue) {
+        entry.isOverdue = true;
+      }
+    }
+
+    const customers = Array.from(customerMap.values()).map(c => {
+      // Determine status
+      if (c.totalDue === 0) {
+        c.status = 'Settled';
+      } else if (c.isOverdue) {
+        c.status = 'Overdue';
+      } else if (c.nextDueDate) {
+        const diffDays = Math.ceil((new Date(c.nextDueDate) - now) / (1000 * 60 * 60 * 24));
+        if (diffDays <= 3) {
+          c.status = 'Due Soon';
+        } else {
+          c.status = 'Active';
+        }
+      } else {
+        c.status = 'Active';
+      }
+      return c;
+    });
+
+    // Summary calculations
+    const totalCreditOutstanding = customers.reduce((sum, c) => sum + c.totalDue, 0);
+    const customersWithDues = customers.filter(c => c.totalDue > 0);
+    const overdueCount = customers.filter(c => c.status === 'Overdue').length;
+    const dueSoonCount = customers.filter(c => c.status === 'Due Soon').length;
+
+    const cycleBreakdown = {
+      '10 Days': customers.filter(c => c.billingCycle === '10 Days').length,
+      '15 Days': customers.filter(c => c.billingCycle === '15 Days').length,
+      '30 Days': customers.filter(c => c.billingCycle === '30 Days').length
+    };
+
+    res.json({
+      summary: {
+        totalCreditOutstanding,
+        totalCreditCustomers: customers.length,
+        customersWithDuesCount: customersWithDues.length,
+        overdueCount,
+        dueSoonCount,
+        cycleBreakdown
+      },
+      customers: customers.sort((a, b) => b.totalDue - a.totalDue)
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+export const settleCreditCustomer = async (req, res) => {
+  try {
+    const { id } = req.params; // customerId (userId or guest key)
+    const { amount, paymentMethod = 'Cash', orderId } = req.body;
+
+    const settledMethod = paymentMethod || 'Cash';
+
+    // If a specific order is being settled
+    if (orderId) {
+      const order = await Order.findById(orderId);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      order.isPaid = true;
+      order.paidAt = new Date();
+      order.paymentStatus = 'PAID';
+      order.creditSettledAt = new Date();
+      order.creditSettledMethod = settledMethod;
+      await order.save();
+      return res.json({ message: 'Bill marked as paid', order });
+    }
+
+    // Otherwise bulk/lump sum settlement against oldest unpaid orders
+    let query = { orderSource: 'POS', isPaid: false };
+    if (id.startsWith('guest_')) {
+      const phoneOrName = id.replace('guest_', '');
+      query.$or = [{ phone: phoneOrName }, { name: phoneOrName }];
+    } else {
+      query.user = id;
+    }
+
+    const unpaidOrders = await Order.find(query).sort({ createdAt: 1 });
+    let remainingPayment = Number(amount) || Infinity;
+    const settledOrders = [];
+
+    for (const order of unpaidOrders) {
+      if (remainingPayment <= 0) break;
+      if (remainingPayment >= order.totalPrice) {
+        order.isPaid = true;
+        order.paidAt = new Date();
+        order.paymentStatus = 'PAID';
+        order.creditSettledAt = new Date();
+        order.creditSettledMethod = settledMethod;
+        await order.save();
+        remainingPayment -= order.totalPrice;
+        settledOrders.push(order._id);
+      } else {
+        // If remaining payment is very close to order price (within 1 rupee)
+        if (order.totalPrice - remainingPayment < 1) {
+          order.isPaid = true;
+          order.paidAt = new Date();
+          order.paymentStatus = 'PAID';
+          order.creditSettledAt = new Date();
+          order.creditSettledMethod = settledMethod;
+          await order.save();
+          settledOrders.push(order._id);
+        }
+        break;
+      }
+    }
+
+    res.json({
+      message: 'Settlement processed successfully',
+      settledOrdersCount: settledOrders.length,
+      settledOrders
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
+export const markPOSOrderPaid = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { paymentMethod = 'Cash' } = req.body;
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    order.isPaid = true;
+    order.paidAt = new Date();
+    order.paymentStatus = 'PAID';
+    order.creditSettledAt = new Date();
+    order.creditSettledMethod = paymentMethod;
+    await order.save();
+
+    res.json({ message: 'Order marked as paid successfully', order });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }

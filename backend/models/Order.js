@@ -70,7 +70,12 @@ const orderSchema = new mongoose.Schema({
     required: true, 
     enum: ['Website', 'App', 'POS'], 
     default: 'Website' 
-  }
+  },
+  // Shop POS Credit / Khata tracking
+  billingCycle: { type: String },
+  creditDueDate: { type: Date, index: true },
+  creditSettledAt: { type: Date },
+  creditSettledMethod: { type: String }
 }, {
   timestamps: true
 });

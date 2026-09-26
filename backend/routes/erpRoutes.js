@@ -8,7 +8,10 @@ import {
   getDashboardAnalytics,
   getDeliveryStaff, createDeliveryStaff, deleteDeliveryStaff,
   updateStaffLocation,
-  assignOrderToStaff
+  assignOrderToStaff,
+  getCreditCustomers,
+  settleCreditCustomer,
+  markPOSOrderPaid
 } from '../controllers/erpControllers.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 import { apiLimiter } from '../middleware/rateLimiters.js';
@@ -24,6 +27,11 @@ router.route('/wastages').get(protect, admin, getWastages).post(protect, admin, 
 // Orders
 router.route('/orders').get(protect, admin, getOrders).post(apiLimiter, createOrder); // Public route for checkout
 router.route('/orders/:id/assign').put(protect, admin, assignOrderToStaff);
+router.route('/orders/:id/pay').put(protect, admin, markPOSOrderPaid);
+
+// Credit Customers & Khata
+router.route('/credit-customers').get(protect, admin, getCreditCustomers);
+router.route('/credit-customers/:id/settle').post(protect, admin, settleCreditCustomer);
 
 router.route('/delivery-staff').get(protect, admin, getDeliveryStaff).post(protect, admin, createDeliveryStaff);
 router.route('/delivery-staff/:id').delete(protect, admin, deleteDeliveryStaff);
