@@ -27,7 +27,7 @@ services:
         sync: false
       - key: RAZORPAY_KEY_SECRET
         sync: false
-      # Google sign-in is refused until this is set (the OAuth client id).
+      # Google OAuth client id (defaults to the one the frontend ships with).
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: CLOUDINARY_CLOUD_NAME

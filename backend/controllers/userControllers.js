@@ -505,7 +505,12 @@ export const rechargeWallet = async (req, res) => {
   }
 };
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// The OAuth client id is public (the frontend ships it). Fall back to the same
+// one the frontend uses so sign-in keeps working where the env var is unset,
+// while tokens minted for any other app are still refused.
+const DEFAULT_GOOGLE_CLIENT_ID = '493263183371-900jeus48uso6k3fs997one5diooao35.apps.googleusercontent.com';
+const googleClientId = () => process.env.GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
+const client = new OAuth2Client(googleClientId());
 
 export const googleLogin = async (req, res) => {
   try {
@@ -513,16 +518,12 @@ export const googleLogin = async (req, res) => {
     if (!token) {
       return res.status(400).json({ message: 'Google token is required' });
     }
-    // Without a configured client id, verifyIdToken skips the audience check
-    // and would accept a token minted for any other app.
-    if (!process.env.GOOGLE_CLIENT_ID) {
-      return res.status(500).json({ message: 'Google sign-in is not configured' });
-    }
 
     // Verify token
     const ticket = await client.verifyIdToken({
       idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+      // Always checked: without an audience, a token for any app would pass.
+      audience: googleClientId(),
     });
     const payload = ticket.getPayload();
     
