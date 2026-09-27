@@ -14,6 +14,7 @@ import {
 import { exportToExcel } from '../../utils/exportUtils.js';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 
 const Purchases = () => {
   // Navigation & Filter Tabs
@@ -60,12 +61,14 @@ const Purchases = () => {
   // Modal 2: Printable Purchase Bill / Invoice
   const [selectedPurchaseForBill, setSelectedPurchaseForBill] = useState(null);
   const [showBillModal, setShowBillModal] = useState(false);
+  const [isGeneratingBillPdf, setIsGeneratingBillPdf] = useState(false);
 
   // Modal 3: Vendor Ledger Statement
   const [showLedgerModal, setShowLedgerModal] = useState(false);
   const [selectedVendorForLedger, setSelectedVendorForLedger] = useState(null);
   const [vendorLedgerData, setVendorLedgerData] = useState(null);
   const [loadingLedger, setLoadingLedger] = useState(false);
+  const [isGeneratingLedgerPdf, setIsGeneratingLedgerPdf] = useState(false);
 
   // Modal 4: Record Vendor Payment
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -258,111 +261,155 @@ const Purchases = () => {
     window.print();
   };
 
-  // Download Bill PDF
-  const handleDownloadBillPDF = (purchase) => {
-    if (!purchase) return;
+  // Helper to ensure colors and fonts render cleanly across all browsers in html2canvas
+  const captureElementToCanvas = async (element, options = {}) => {
+    if (document.fonts && document.fonts.ready) {
+      try {
+        await document.fonts.ready;
+      } catch (e) {
+        // Ignore font readiness errors
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    return await html2canvas(element, {
+      scale: 2.5, // 250-300 DPI high-definition resolution for crisp vector-like text
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      ...options,
+      onclone: (clonedDoc) => {
+        if (options.onclone) {
+          options.onclone(clonedDoc);
+        }
+        // Sanitize any modern CSS color functions (like oklch or color()) to standard rgba()
+        const clonedRoot = clonedDoc.getElementById(element.id);
+        if (clonedRoot) {
+          const scratchCanvas = document.createElement('canvas');
+          scratchCanvas.width = 1;
+          scratchCanvas.height = 1;
+          const ctx = scratchCanvas.getContext('2d');
+
+          const sanitizeColor = (val) => {
+            if (!val || typeof val !== 'string') return val;
+            if (val.includes('oklch') || val.includes('color(')) {
+              try {
+                ctx.clearRect(0, 0, 1, 1);
+                ctx.fillStyle = val;
+                ctx.fillRect(0, 0, 1, 1);
+                const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+                return `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
+              } catch {
+                return val;
+              }
+            }
+            return val;
+          };
+
+          const allElements = [clonedRoot, ...clonedRoot.querySelectorAll('*')];
+          allElements.forEach((el) => {
+            try {
+              const comp = window.getComputedStyle(el);
+              const colorProps = ['color', 'backgroundColor', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'];
+              colorProps.forEach((prop) => {
+                const val = comp[prop];
+                if (val && (val.includes('oklch') || val.includes('color('))) {
+                  el.style[prop] = sanitizeColor(val);
+                }
+              });
+            } catch {
+              // Ignore inaccessible styles
+            }
+          });
+        }
+      }
+    });
+  };
+
+  // Download Bill PDF - Matches the EXACT UI shown in the modal preview
+  const handleDownloadBillPDF = async (purchase) => {
+    const targetPurchase = purchase || selectedPurchaseForBill;
+    if (!targetPurchase) return;
+
     try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
+      setIsGeneratingBillPdf(true);
 
-      // Brand Header Banner
-      doc.setFillColor(30, 41, 59); // Milquu dark slate
-      doc.rect(0, 0, pageWidth, 28, 'F');
-
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(255, 255, 255);
-      doc.text('MilQuu Fresh', 14, 13);
-
-      doc.setFontSize(8.5);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(203, 213, 225);
-      doc.text('Pure Farm Fresh Milk & Premium Dairy Products', 14, 19);
-      doc.text('Panvel, Navi Mumbai | Tel: +91 87670 67884 | support@milquufresh.in', 14, 24);
-
-      // Title & Voucher Details
-      doc.setTextColor(15, 23, 42);
-      doc.setFontSize(13);
-      doc.setFont('helvetica', 'bold');
-      doc.text('PURCHASE INVOICE / VOUCHER', 14, 38);
-
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(71, 85, 105);
-      doc.text(`Voucher / PO No: ${purchase.poNumber || 'N/A'}`, 14, 45);
-      doc.text(`Issue Date: ${new Date(purchase.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`, 14, 51);
-      doc.text(`Payment Status: ${purchase.status?.toUpperCase() || 'PENDING'}`, 14, 57);
-
-      // Vendor Info Block
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(15, 23, 42);
-      doc.text('SUPPLIER / VENDOR DETAILS:', 115, 38);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(71, 85, 105);
-      doc.text(`Name: ${purchase.supplierName || 'N/A'}`, 115, 45);
-      doc.text(`Phone: ${purchase.supplierPhone || 'N/A'}`, 115, 51);
-      if (purchase.supplierAddress) {
-        doc.text(`Address: ${purchase.supplierAddress}`, 115, 57);
+      let printableElement = document.getElementById('purchase-bill-printable');
+      if (!printableElement) {
+        openBillModal(targetPurchase);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        printableElement = document.getElementById('purchase-bill-printable');
       }
 
-      // Line items table
-      const totalCost = Number(purchase.totalCost || 0);
-      const paidAmount = Number(purchase.paidAmount || (purchase.status === 'Paid' ? totalCost : 0));
-      const balanceAmount = Math.max(0, totalCost - paidAmount);
+      if (!printableElement) {
+        throw new Error('Printable voucher element not found in DOM.');
+      }
 
-      autoTable(doc, {
-        startY: 65,
-        head: [['#', 'Item / Material Description', 'Category', 'Quantity', 'Rate (INR)', 'Total Amount (INR)']],
-        body: [
-          [
-            '1',
-            purchase.productName || 'Material Supply',
-            purchase.category || 'Raw Milk',
-            `${purchase.quantity} ${purchase.unit || 'Litre'}`,
-            `₹${Number(purchase.rate || 0).toFixed(2)}`,
-            `₹${totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
-          ]
-        ],
-        theme: 'striped',
-        headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
-        bodyStyles: { fontSize: 9, textColor: [30, 41, 59] },
-        foot: [
-          ['', '', '', '', 'Total Purchase Cost:', `₹${totalCost.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
-          ['', '', '', '', 'Amount Paid:', `₹${paidAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`],
-          ['', '', '', '', 'Balance Due / Payable:', `₹${balanceAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`]
-        ],
-        footStyles: { fontStyle: 'bold', fillColor: [248, 250, 252], textColor: [15, 23, 42], fontSize: 9 }
+      const canvas = await captureElementToCanvas(printableElement, {
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.getElementById('purchase-bill-printable');
+          if (el) {
+            let parent = el.parentElement;
+            while (parent) {
+              parent.style.overflow = 'visible';
+              parent.style.maxHeight = 'none';
+              parent.style.height = 'auto';
+              parent = parent.parentElement;
+            }
+            el.style.overflow = 'visible';
+            el.style.maxHeight = 'none';
+            el.style.height = 'auto';
+            el.style.width = '760px';
+            el.style.padding = '36px';
+            el.style.margin = '0 auto';
+            el.style.backgroundColor = '#ffffff';
+          }
+        }
       });
 
-      // Notes and Payment Details
-      let endY = doc.lastAutoTable.finalY + 12;
-      doc.setFontSize(8.5);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      if (purchase.notes) {
-        doc.text(`Notes / Remarks: ${purchase.notes}`, 14, endY);
-        endY += 6;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const margin = 10;
+      const contentWidth = pageWidth - (margin * 2);
+      const totalPdfHeight = (canvas.height * contentWidth) / canvas.width;
+      const maxPageContentHeight = pageHeight - (margin * 2);
+
+      if (totalPdfHeight <= maxPageContentHeight) {
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, totalPdfHeight, '', 'FAST');
+      } else {
+        let currentY = 0;
+        const pagePixelHeight = (canvas.width * maxPageContentHeight) / contentWidth;
+
+        while (currentY < canvas.height) {
+          const sliceHeight = Math.min(pagePixelHeight, canvas.height - currentY);
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceHeight;
+          const ctx = pageCanvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          ctx.drawImage(canvas, 0, currentY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+
+          const sliceImgData = pageCanvas.toDataURL('image/png', 1.0);
+          const slicePdfHeight = (sliceHeight * contentWidth) / canvas.width;
+
+          if (currentY > 0) {
+            pdf.addPage();
+          }
+          pdf.addImage(sliceImgData, 'PNG', margin, margin, contentWidth, slicePdfHeight, '', 'FAST');
+          currentY += sliceHeight;
+        }
       }
-      doc.text(`Payment Mode: ${purchase.paymentMode || 'Cash'}`, 14, endY);
 
-      // Signatures
-      const sigY = Math.max(endY + 28, 140);
-      doc.setDrawColor(203, 213, 225);
-      doc.line(14, sigY, 70, sigY);
-      doc.text('Vendor / Supplier Signature', 14, sigY + 5);
-
-      doc.line(130, sigY, 190, sigY);
-      doc.text('Authorized Signatory (MilQuu Fresh)', 130, sigY + 5);
-
-      // Bottom footer
-      doc.setFontSize(7.5);
-      doc.setTextColor(148, 163, 184);
-      doc.text('This is a computer-generated voucher issued by MilQuu Fresh Dairy ERP.', 14, 285);
-
-      doc.save(`MilQuu_Purchase_Bill_${purchase.poNumber || 'Voucher'}.pdf`);
+      pdf.save(`MilQuu_Purchase_Bill_${targetPurchase.poNumber || 'Voucher'}.pdf`);
     } catch (err) {
-      console.error('Error generating PDF bill', err);
-      alert('Could not download PDF. Please try the Print option.');
+      console.error('Error generating PDF bill with html2canvas', err);
+      alert('Could not download PDF. Please try again or use the Print option.');
+    } finally {
+      setIsGeneratingBillPdf(false);
     }
   };
 
@@ -393,106 +440,84 @@ const Purchases = () => {
     window.open(url, '_blank');
   };
 
-  // Download Vendor Ledger PDF
-  const handleDownloadLedgerPDF = () => {
+  // Download Vendor Ledger PDF - Matches the on-screen Ledger statement UI
+  const handleDownloadLedgerPDF = async () => {
     if (!vendorLedgerData) return;
+
     try {
-      const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
+      setIsGeneratingLedgerPdf(true);
 
-      // Brand Header Banner
-      doc.setFillColor(30, 41, 59);
-      doc.rect(0, 0, pageWidth, 28, 'F');
-
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(255, 255, 255);
-      doc.text('MilQuu Fresh - Vendor Account Statement', 14, 13);
-
-      doc.setFontSize(8.5);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(203, 213, 225);
-      doc.text('Dairy Supply Ledger & Khata Account Statement', 14, 19);
-      doc.text('Panvel, Navi Mumbai | Tel: +91 87670 67884', 14, 24);
-
-      // Vendor Info & Summary
-      doc.setTextColor(15, 23, 42);
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Vendor: ${vendorLedgerData.vendor?.name || 'Supplier'}`, 14, 38);
-
-      doc.setFontSize(8.5);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(71, 85, 105);
-      doc.text(`Contact: ${vendorLedgerData.vendor?.phone || 'N/A'}`, 14, 44);
-      if (vendorLedgerData.vendor?.address) {
-        doc.text(`Address: ${vendorLedgerData.vendor?.address}`, 14, 49);
-      }
-      doc.text(`Statement Date: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`, 14, 54);
-
-      // Financial Summary Box on Right
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(15, 23, 42);
-      doc.text(`Total Purchases: INR ${Number(vendorLedgerData.summary?.totalBilled || 0).toLocaleString('en-IN')}`, 115, 38);
-      doc.text(`Total Paid: INR ${Number(vendorLedgerData.summary?.totalPaid || 0).toLocaleString('en-IN')}`, 115, 44);
-      
-      const bal = Number(vendorLedgerData.summary?.balanceDue || 0);
-      doc.setTextColor(bal > 0 ? 185 : 22, bal > 0 ? 28 : 101, bal > 0 ? 28 : 52);
-      doc.text(`Net Outstanding Balance: INR ${bal.toLocaleString('en-IN')}`, 115, 50);
-
-      let currentY = 60;
-
-      // Products Supplied Table
-      if (vendorLedgerData.productsBreakdown && vendorLedgerData.productsBreakdown.length > 0) {
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(30, 41, 59);
-        doc.text('Products & Materials Supplied Breakdown:', 14, currentY);
-
-        autoTable(doc, {
-          startY: currentY + 3,
-          head: [['Product Name', 'Category', 'Total Qty Supplied', 'Total Cost (INR)']],
-          body: vendorLedgerData.productsBreakdown.map((p) => [
-            p.name,
-            p.category || 'General',
-            `${p.quantity} ${p.unit || ''}`,
-            `₹${Number(p.totalCost).toLocaleString('en-IN')}`
-          ]),
-          theme: 'grid',
-          headStyles: { fillColor: [71, 85, 105], textColor: [255, 255, 255], fontSize: 8.5 },
-          bodyStyles: { fontSize: 8.5, textColor: [30, 41, 59] }
-        });
-        currentY = doc.lastAutoTable.finalY + 10;
+      const printableElement = document.getElementById('vendor-ledger-printable');
+      if (!printableElement) {
+        throw new Error('Ledger printable element not found in DOM.');
       }
 
-      // Chronological Ledger Table
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(30, 41, 59);
-      doc.text('Ledger Transactions (Bills & Payments):', 14, currentY);
-
-      autoTable(doc, {
-        startY: currentY + 3,
-        head: [['Date', 'Type', 'Ref #', 'Particulars / Details', 'Debit (Billed)', 'Credit (Paid)', 'Balance (INR)']],
-        body: vendorLedgerData.transactions.map((t) => [
-          new Date(t.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-          t.type,
-          t.refNo || '-',
-          t.productName || t.notes || '-',
-          t.debit > 0 ? `₹${Number(t.debit).toLocaleString('en-IN')}` : '-',
-          t.credit > 0 ? `₹${Number(t.credit).toLocaleString('en-IN')}` : '-',
-          `₹${Number(t.balance).toLocaleString('en-IN')}`
-        ]),
-        theme: 'striped',
-        headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontSize: 8.5 },
-        bodyStyles: { fontSize: 8, textColor: [30, 41, 59] }
+      const canvas = await captureElementToCanvas(printableElement, {
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.getElementById('vendor-ledger-printable');
+          if (el) {
+            let parent = el.parentElement;
+            while (parent) {
+              parent.style.overflow = 'visible';
+              parent.style.maxHeight = 'none';
+              parent.style.height = 'auto';
+              parent = parent.parentElement;
+            }
+            el.style.overflow = 'visible';
+            el.style.maxHeight = 'none';
+            el.style.height = 'auto';
+            el.style.width = '820px';
+            el.style.padding = '32px';
+            el.style.margin = '0 auto';
+            el.style.backgroundColor = '#ffffff';
+          }
+        }
       });
 
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const margin = 10;
+      const contentWidth = pageWidth - (margin * 2);
+      const totalPdfHeight = (canvas.height * contentWidth) / canvas.width;
+      const maxPageContentHeight = pageHeight - (margin * 2);
+
+      if (totalPdfHeight <= maxPageContentHeight) {
+        const imgData = canvas.toDataURL('image/png', 1.0);
+        pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, totalPdfHeight, '', 'FAST');
+      } else {
+        let currentY = 0;
+        const pagePixelHeight = (canvas.width * maxPageContentHeight) / contentWidth;
+
+        while (currentY < canvas.height) {
+          const sliceHeight = Math.min(pagePixelHeight, canvas.height - currentY);
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceHeight;
+          const ctx = pageCanvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+          ctx.drawImage(canvas, 0, currentY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+
+          const sliceImgData = pageCanvas.toDataURL('image/png', 1.0);
+          const slicePdfHeight = (sliceHeight * contentWidth) / canvas.width;
+
+          if (currentY > 0) {
+            pdf.addPage();
+          }
+          pdf.addImage(sliceImgData, 'PNG', margin, margin, contentWidth, slicePdfHeight, '', 'FAST');
+          currentY += sliceHeight;
+        }
+      }
+
       const safeName = (vendorLedgerData.vendor?.name || 'Vendor').replace(/[^a-zA-Z0-9]/g, '_');
-      doc.save(`MilQuu_Vendor_Statement_${safeName}.pdf`);
+      pdf.save(`MilQuu_Vendor_Statement_${safeName}.pdf`);
     } catch (err) {
       console.error('Error downloading vendor ledger PDF', err);
-      alert('Could not download PDF.');
+      alert('Could not download PDF. Please try again or use the Print button.');
+    } finally {
+      setIsGeneratingLedgerPdf(false);
     }
   };
 
@@ -1217,9 +1242,18 @@ const Purchases = () => {
                 </button>
                 <button
                   onClick={() => handleDownloadBillPDF(selectedPurchaseForBill)}
-                  className="px-3.5 py-1.5 bg-milquu-dark text-white rounded-lg text-xs font-bold hover:bg-gray-800 flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  disabled={isGeneratingBillPdf}
+                  className="px-3.5 py-1.5 bg-milquu-dark text-white rounded-lg text-xs font-bold hover:bg-gray-800 flex items-center gap-1.5 shadow-sm transition-all cursor-pointer disabled:opacity-60"
                 >
-                  <Download size={14} /> Download PDF
+                  {isGeneratingBillPdf ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" /> Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={14} /> Download PDF
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={() => handleShareBillWhatsApp(selectedPurchaseForBill)}
@@ -1373,9 +1407,18 @@ const Purchases = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleDownloadBillPDF(selectedPurchaseForBill)}
-                  className="px-4 py-2 bg-milquu-dark text-white rounded-xl text-xs font-bold hover:bg-gray-800 flex items-center gap-1.5 shadow-md cursor-pointer"
+                  disabled={isGeneratingBillPdf}
+                  className="px-4 py-2 bg-milquu-dark text-white rounded-xl text-xs font-bold hover:bg-gray-800 flex items-center gap-1.5 shadow-md cursor-pointer disabled:opacity-60"
                 >
-                  <Download size={14} /> Download PDF
+                  {isGeneratingBillPdf ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" /> Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={14} /> Download PDF
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={handlePrint}
@@ -1424,9 +1467,18 @@ const Purchases = () => {
                 </button>
                 <button
                   onClick={handleDownloadLedgerPDF}
-                  className="px-3 py-1.5 bg-milquu-dark text-white rounded-lg text-xs font-bold hover:bg-gray-800 flex items-center gap-1 shadow-sm transition-all cursor-pointer"
+                  disabled={isGeneratingLedgerPdf}
+                  className="px-3 py-1.5 bg-milquu-dark text-white rounded-lg text-xs font-bold hover:bg-gray-800 flex items-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-60"
                 >
-                  <Download size={13} /> PDF
+                  {isGeneratingLedgerPdf ? (
+                    <>
+                      <RefreshCw size={13} className="animate-spin" /> PDF...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={13} /> PDF
+                    </>
+                  )}
                 </button>
                 <button
                   onClick={handlePrint}
@@ -1458,6 +1510,23 @@ const Purchases = () => {
                 </div>
               ) : (
                 <>
+                  {/* Brand Header for Statement */}
+                  <div className="border-b-2 border-gray-800 pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
+                    <div>
+                      <h1 className="text-2xl font-serif font-black text-milquu-dark tracking-tight">MilQuu Fresh</h1>
+                      <p className="text-xs font-semibold text-gray-600 mt-0.5">Dairy Supply Ledger & Khata Account Statement</p>
+                      <p className="text-[11px] text-gray-500">Panvel, Navi Mumbai | Tel: +91 87670 67884 | support@milquufresh.in</p>
+                    </div>
+                    <div className="sm:text-right">
+                      <span className="inline-block bg-milquu-dark text-white text-[11px] font-bold px-3 py-1 rounded-md tracking-wider uppercase mb-1">
+                        Vendor Statement
+                      </span>
+                      <p className="text-xs text-gray-500">
+                        Date: <span className="font-semibold text-gray-900">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Vendor Details Banner */}
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6 gap-4">
                     <div>
