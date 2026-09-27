@@ -59,8 +59,10 @@ export const loginSchema = z.object({
 
 export const withdrawalSchema = z.object({
   body: z.object({
-    amount: z.number().positive('Amount must be greater than zero'),
-    refundMethod: z.enum(['UPI', 'Bank Transfer', 'Original Source']),
+    amount: z.coerce.number().positive('Amount must be greater than zero'),
+    // 'Bank Account' is what the model stores and the website sends; 'Bank
+    // Transfer' is accepted as an alias and normalised by the controller.
+    refundMethod: z.enum(['UPI', 'Bank Account', 'Bank Transfer']),
     upiId: z.string().optional(),
     bankDetails: z.object({
       accountName: z.string().optional(),
@@ -75,7 +77,7 @@ export const withdrawalSchema = z.object({
         message: 'UPI ID is required for UPI refunds'
       });
     }
-    if (data.refundMethod === 'Bank Transfer' && (!data.bankDetails?.accountNumber || !data.bankDetails?.ifscCode)) {
+    if (data.refundMethod !== 'UPI' && (!data.bankDetails?.accountNumber || !data.bankDetails?.ifscCode)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['bankDetails'],

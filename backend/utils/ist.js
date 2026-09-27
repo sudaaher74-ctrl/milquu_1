@@ -60,3 +60,25 @@ export const isLockedForChanges = (date, now = new Date()) => {
   if (target.getTime() === today.getTime()) return true; // today's round is already out
   return istHour(now) >= CUTOFF_HOUR_IST;
 };
+
+/** Midnight IST on the 1st of the IST month the given instant falls in. */
+export const istStartOfMonth = (date = new Date()) => {
+  const shifted = new Date(date.getTime() + IST_OFFSET_MS);
+  return new Date(Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), 1) - IST_OFFSET_MS);
+};
+
+/** Midnight IST on 1 January of `year` (a number), or of the given instant's IST year. */
+export const istStartOfYear = (yearOrDate = new Date()) => {
+  const year = typeof yearOrDate === 'number'
+    ? yearOrDate
+    : new Date(yearOrDate.getTime() + IST_OFFSET_MS).getUTCFullYear();
+  return new Date(Date.UTC(year, 0, 1) - IST_OFFSET_MS);
+};
+
+/** The IST calendar month (0–11) and year of an instant. */
+export const istMonthYear = (date = new Date()) => {
+  const shifted = new Date(date.getTime() + IST_OFFSET_MS);
+  return { month: shifted.getUTCMonth(), year: shifted.getUTCFullYear() };
+};
+
+export const IST_TIMEZONE = 'Asia/Kolkata';

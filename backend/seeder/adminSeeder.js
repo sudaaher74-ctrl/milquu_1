@@ -12,11 +12,18 @@ dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 const seedAdmin = async () => {
   try {
-    await connectDB();
-
-    const email = 'milquufresh@gmail.com';
-    const password = 'milquu@2026';
+    // Credentials come from the environment — never from source, which is
+    // public. Run as: ADMIN_EMAIL=... ADMIN_PASSWORD=... npm run seed:admin
+    const email = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+    const password = process.env.ADMIN_PASSWORD || '';
     const role = 'admin';
+
+    if (!email || password.length < 12) {
+      console.error('Set ADMIN_EMAIL and ADMIN_PASSWORD (12+ characters) before seeding the admin.');
+      process.exit(1);
+    }
+
+    await connectDB();
 
     let user = await User.findOne({ email });
 

@@ -36,11 +36,30 @@ const dailyCostPaise = (sub) => {
   return 0;
 };
 
+const INSUFFICIENT_BALANCE_NOTE = 'Insufficient wallet balance';
+
 /**
- * Auto-resume a subscription whose pause window has ended.
+ * True when the engine itself paused this plan for a short wallet. Plans paused
+ * before `pausedReason` existed are recognised by the refused claim the engine
+ * left behind and by having no pause window of their own.
+ */
+const isAutoPaused = async (sub) => {
+  if (sub.pausedReason === 'insufficient_balance') return true;
+  if (sub.pauseStartDate || sub.pauseEndDate) return false;
+  return Boolean(await SubscriptionDelivery.exists({
+    subscription: sub._id,
+    status: 'failed',
+    note: INSUFFICIENT_BALANCE_NOTE
+  }));
+};
+
+/**
+ * Auto-resume a paused subscription when it is due: its pause window has
+ * ended, or it was auto-paused for a short wallet that now covers a delivery
+ * (which is what the pause email promises the customer).
  * Returns true if the subscription is deliverable after this.
  */
-const resumeIfDue = async (sub, today) => {
+const resumeIfDue = async (sub, today, costPaise) => {
   if (sub.status !== 'Paused') return sub.status === 'Active';
 
   // A pause with an end date that has passed resumes on its own.
@@ -48,9 +67,21 @@ const resumeIfDue = async (sub, today) => {
     sub.status = 'Active';
     sub.pauseStartDate = undefined;
     sub.pauseEndDate = undefined;
+    sub.pausedReason = undefined;
     await sub.save();
     logger.info(`[engine] auto-resumed subscription ${sub._id}`);
     return true;
+  }
+
+  if (costPaise > 0 && await isAutoPaused(sub)) {
+    const user = await User.findById(sub.user).select('walletBalance');
+    if (user && toPaise(user.walletBalance || 0) >= costPaise) {
+      sub.status = 'Active';
+      sub.pausedReason = undefined;
+      await sub.save();
+      logger.info(`[engine] resumed subscription ${sub._id} after a wallet top-up`);
+      return true;
+    }
   }
   return false;
 };
@@ -63,8 +94,9 @@ const buildOrderItems = async (sub) => {
 
   return (sub.items || []).map((item) => {
     const product = byId.get(String(item.product));
+    const baseName = product?.name || item.name || 'Item';
     return {
-      name: product?.name || item.name || 'Item',
+      name: item.unit === '500 ml' && !baseName.includes('500') ? `${baseName} (500 ml)` : baseName,
       qty: item.quantity || 1,
       image: product?.image || '/placeholder.jpg',
       price: item.price,
@@ -78,12 +110,13 @@ const buildOrderItems = async (sub) => {
  * Returns a short result string for the run summary.
  */
 const processSubscription = async (sub, deliveryDate, today) => {
-  const deliverable = await resumeIfDue(sub, today);
+  const costPaise = dailyCostPaise(sub);
+
+  const deliverable = await resumeIfDue(sub, today, costPaise);
   if (!deliverable) return 'paused';
 
   if (!isDeliveryDay(sub, deliveryDate)) return 'not-a-delivery-day';
 
-  const costPaise = dailyCostPaise(sub);
   if (costPaise <= 0) {
     logger.warn(`[engine] subscription ${sub._id} has no priced items — skipping`);
     return 'no-cost';
@@ -109,15 +142,25 @@ const processSubscription = async (sub, deliveryDate, today) => {
     throw error;
   }
 
+  // Debit atomically, and only while the balance still covers the crate. A
+  // customer's own order placed at the same moment cannot leave both debits
+  // standing on a balance that only covered one.
+  const debited = await User.findOneAndUpdate(
+    { _id: user._id, walletBalance: { $gte: toRupees(costPaise) } },
+    { $inc: { walletBalance: -toRupees(costPaise) } },
+    { returnDocument: 'after' }
+  );
+
   // Auto-pause rather than deliver on credit. The claim row is left behind
   // marked failed, so a re-run after a top-up does not double up on the day
   // that was already refused.
-  const balancePaise = toPaise(user.walletBalance || 0);
-  if (balancePaise < costPaise) {
+  if (!debited) {
+    const balancePaise = toPaise(user.walletBalance || 0);
     sub.status = 'Paused';
+    sub.pausedReason = 'insufficient_balance';
     await sub.save();
     claim.status = 'failed';
-    claim.note = 'Insufficient wallet balance';
+    claim.note = INSUFFICIENT_BALANCE_NOTE;
     await claim.save();
     logger.info(
       `[engine] auto-paused subscription ${sub._id}: balance ${toRupees(balancePaise)} < cost ${toRupees(costPaise)}`
@@ -133,40 +176,43 @@ const processSubscription = async (sub, deliveryDate, today) => {
     return 'auto-paused';
   }
 
-  const orderItems = await buildOrderItems(sub);
-  const order = await Order.create({
-    user: sub.user,
-    subscription: sub._id,
-    name: sub.name || user.name,
-    phone: sub.phone || user.phone,
-    orderItems,
-    shippingAddress: {
-      address: sub.deliveryAddress,
-      city: 'Navi Mumbai',
-      postalCode: '000000',
-      country: 'India'
-    },
-    paymentMethod: 'Wallet',
-    paymentStatus: 'PAID',
-    taxPrice: 0,
-    totalPrice: toRupees(costPaise),
-    // Paid from the wallet at generation time — the money has actually moved,
-    // which the previous version claimed but never did.
-    isPaid: true,
-    paidAt: new Date(),
-    isDelivered: false,
-    deliverySlot: sub.deliverySlot || 'Morning',
-    scheduledDeliveryDate: deliveryDate,
-    orderSource: 'App'
-  });
-
-  // Debit atomically and read the resulting balance back, so two concurrent
-  // runs cannot both write a stale balance.
-  const debited = await User.findByIdAndUpdate(
-    user._id,
-    { $inc: { walletBalance: -toRupees(costPaise) } },
-    { returnDocument: 'after' }
-  );
+  let order;
+  try {
+    const orderItems = await buildOrderItems(sub);
+    order = await Order.create({
+      user: sub.user,
+      subscription: sub._id,
+      name: sub.name || user.name,
+      phone: sub.phone || user.phone,
+      orderItems,
+      shippingAddress: {
+        address: sub.deliveryAddress,
+        city: 'Navi Mumbai',
+        postalCode: '000000',
+        country: 'India'
+      },
+      paymentMethod: 'Wallet',
+      paymentStatus: 'PAID',
+      taxPrice: 0,
+      totalPrice: toRupees(costPaise),
+      // Paid from the wallet at generation time — the money has actually moved.
+      isPaid: true,
+      paidAt: new Date(),
+      isDelivered: false,
+      deliverySlot: sub.deliverySlot || 'Morning',
+      scheduledDeliveryDate: deliveryDate,
+      // The subscription's delivery person, so the order shows up in their app.
+      deliveryStaff: sub.assignedStaff || undefined,
+      orderSource: 'App'
+    });
+  } catch (error) {
+    // Put the money back so a failed order never leaves a silent charge.
+    await User.findByIdAndUpdate(user._id, { $inc: { walletBalance: toRupees(costPaise) } });
+    claim.status = 'failed';
+    claim.note = `Order creation failed: ${error.message}`;
+    await claim.save();
+    throw error;
+  }
 
   await WalletTransaction.create({
     user: user._id,

@@ -13,6 +13,7 @@ import Order from '../models/Order.js';
 import Subscription from '../models/Subscription.js';
 import WalletTransaction from '../models/WalletTransaction.js';
 import SubscriptionDelivery from '../models/SubscriptionDelivery.js';
+import mongoose from 'mongoose';
 import { istTomorrow } from '../utils/ist.js';
 
 beforeAll(async () => { await connectTestDb(); }, 120000);
@@ -185,6 +186,55 @@ describe('criterion 10: a short balance auto-pauses the subscription', () => {
     const resumed = await Subscription.findById(sub._id);
     expect(resumed.status).toBe('Active');
     expect(await Order.countDocuments({ user: user._id })).toBe(1);
+  });
+
+  it('resumes an auto-paused plan the day after a top-up', async () => {
+    const user = await makeUser({ walletBalance: 50 });
+    const product = await makeProduct();
+    const sub = await makeSubscription(user, product);
+    const firstDay = istTomorrow();
+    const nextDay = new Date(firstDay.getTime() + 24 * 3600 * 1000);
+
+    await runSubscriptionEngine({ date: firstDay });
+    expect((await Subscription.findById(sub._id)).pausedReason).toBe('insufficient_balance');
+
+    await User.findByIdAndUpdate(user._id, { walletBalance: 1000 });
+    const summary = await runSubscriptionEngine({ date: nextDay });
+
+    expect(summary.ordered).toBe(1);
+    const resumed = await Subscription.findById(sub._id);
+    expect(resumed.status).toBe('Active');
+    expect(resumed.pausedReason).toBeUndefined();
+    expect((await User.findById(user._id)).walletBalance).toBe(880);
+  });
+
+  it('leaves a plan the customer paused themselves alone after a top-up', async () => {
+    const user = await makeUser({ walletBalance: 1000 });
+    const product = await makeProduct();
+    const sub = await makeSubscription(user, product, {
+      status: 'Paused',
+      pauseStartDate: new Date(),
+      pauseEndDate: new Date(Date.now() + 10 * 24 * 3600 * 1000)
+    });
+
+    await runSubscriptionEngine();
+
+    expect((await Subscription.findById(sub._id)).status).toBe('Paused');
+    expect(await Order.countDocuments({ user: user._id })).toBe(0);
+  });
+});
+
+describe('generated orders reach the delivery app', () => {
+  it('assigns the subscription’s delivery person to the order', async () => {
+    const user = await makeUser({ walletBalance: 1000 });
+    const product = await makeProduct();
+    const staffId = new mongoose.Types.ObjectId();
+    await makeSubscription(user, product, { assignedStaff: staffId });
+
+    await runSubscriptionEngine();
+
+    const order = await Order.findOne({ user: user._id });
+    expect(String(order.deliveryStaff)).toBe(String(staffId));
   });
 });
 

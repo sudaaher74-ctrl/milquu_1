@@ -42,7 +42,10 @@ export const priceCrate = async (items, { rhythm = 'daily', weekdays = [], onPla
     }
     return pid;
   });
-  const products = await Product.find({ _id: { $in: ids } }).select('name price planPrice image unit category');
+  // An id that is not an ObjectId would make find() throw a CastError (a 500);
+  // it is simply an unknown product, reported as such below.
+  const validIds = ids.filter((id) => /^[0-9a-fA-F]{24}$/.test(String(id)));
+  const products = await Product.find({ _id: { $in: validIds } }).select('name price planPrice image unit category');
   const byId = new Map(products.map((p) => [String(p._id), p]));
 
   // Standing-order plans are cow or buffalo milk only — ghee, paneer, dahi and
@@ -96,7 +99,12 @@ export const priceCrate = async (items, { rhythm = 'daily', weekdays = [], onPla
   return {
     // Only product/quantity/price are stored on the subscription; name and
     // image are returned for the caller to build an order line from.
-    items: priced.map(({ product, quantity, price }) => ({ product, quantity, price })),
+    items: priced.map(({ product, quantity, price, unit }) => ({
+      product,
+      quantity,
+      price,
+      ...(unit === '500 ml' ? { unit: '500 ml' } : {})
+    })),
     detailedItems: priced,
     dailyTotal: toRupees(dailyPaise),
     monthlyTotal: toRupees(dailyPaise * perMonth),

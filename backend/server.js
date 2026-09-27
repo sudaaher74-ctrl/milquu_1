@@ -13,6 +13,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './config/swagger.js';
 import productRoutes from './routes/productRoutes.js';
 import { SERVICE_AREAS } from './config/serviceAreas.js';
+import { isAllowedOrigin } from './config/cors.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import erpRoutes from './routes/erpRoutes.js'; // Added ERP routes
@@ -22,6 +23,7 @@ import userRoutes from './routes/userRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import freeSampleRoutes from './routes/freeSampleRoutes.js';
+import checkoutRoutes from './routes/checkoutRoutes.js';
 import { startScheduler } from './cron/scheduler.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
@@ -64,29 +66,7 @@ app.use(express.json({ limit: '100kb' }));
 // Sanitize data against NoSQL query injection
 app.use(sanitizeInput);
 
-// Enable CORS — restrict to known origins.
-//
-// A trailing slash in CORS_ORIGIN (easy to paste by accident) would silently
-// never match a real Origin header, which never has one — so it's stripped
-// on both sides before comparing.
-const stripTrailingSlash = (value) => value.trim().replace(/\/+$/, '');
-
-const allowedOrigins = (process.env.CORS_ORIGIN || '')
-  .split(',')
-  .map(stripTrailingSlash)
-  .filter(Boolean);
-if (process.env.NODE_ENV !== 'production') {
-  allowedOrigins.push('http://localhost:5173', 'http://localhost:3000');
-}
-
-// Vercel mints a unique preview URL per deploy/branch
-// (milquufresh-<hash>-<team>.vercel.app), so it can't be listed in
-// CORS_ORIGIN by exact value — it's matched by pattern instead.
-const VERCEL_PREVIEW_ORIGIN = /^https:\/\/milquufresh-[a-z0-9-]+\.vercel\.app$/;
-
-const isAllowedOrigin = (origin) =>
-  allowedOrigins.includes(stripTrailingSlash(origin)) || VERCEL_PREVIEW_ORIGIN.test(origin);
-
+// Enable CORS — restrict to known origins (config/cors.js).
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -127,6 +107,7 @@ app.use('/api/users/login', authLimiter);
 app.use('/api/users/register', authLimiter);
 app.use('/api/admin/login', authLimiter);
 app.use('/api/delivery/login', authLimiter);
+app.use('/api/users/google-login', authLimiter);
 
 // Mount routes
 // Serviceable localities — read by the customer app's address picker.
@@ -148,6 +129,8 @@ if (process.env.NODE_ENV !== 'production') {
 // free-sample and payment stay on the tighter public-endpoint limit
 app.use('/api/users', userRoutes);
 app.use('/api/payment', apiLimiter, paymentRoutes);
+// Website cart checkout (guests and signed-in customers)
+app.use('/api/orders', apiLimiter, checkoutRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/free-sample', apiLimiter, freeSampleRoutes);
 

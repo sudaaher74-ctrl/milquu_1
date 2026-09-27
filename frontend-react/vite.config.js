@@ -59,8 +59,11 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
-        maximumFileSizeToCacheInBytes: 10485760, // 10 MB
+        // Precache the app shell only. Product and banner photos (≈85 MB) used
+        // to be precached too, so installing the app downloaded all of them
+        // up front; they are cached on first view by the images-cache rule below.
+        globPatterns: ['**/*.{js,css,html,ico,svg}', 'pwa-*.png', 'brand-logo.jpg'],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4 MB (largest JS chunk is ~3 MB)
         navigateFallback: '/index.html',
         navigateFallbackAllowlist: [/^(?!\/__).*/],
         runtimeCaching: [

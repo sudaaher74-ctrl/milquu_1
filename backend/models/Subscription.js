@@ -17,7 +17,10 @@ const subscriptionSchema = new mongoose.Schema({
     {
       product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
       quantity: { type: Number, required: true },
-      price: { type: Number, required: true }
+      price: { type: Number, required: true },
+      // Milk can be planned by the half litre. Kept on the line so a later
+      // edit reprices it as 500 ml rather than silently as a full litre.
+      unit: { type: String, enum: ['1 Litre', '500 ml'] }
     }
   ],
   totalAmount: { type: Number, required: true },
@@ -42,6 +45,9 @@ const subscriptionSchema = new mongoose.Schema({
   startDate: { type: Date, default: Date.now },
   pauseStartDate: { type: Date },
   pauseEndDate: { type: Date },
+  // Set when the engine pauses a plan because the wallet could not cover a
+  // delivery, so it can resume the plan once the wallet is topped up again.
+  pausedReason: { type: String, enum: ['insufficient_balance'] },
   assignedStaff: { type: mongoose.Schema.Types.ObjectId, ref: 'DeliveryStaff', index: true },
   deliverySlot: { type: String, enum: ['Morning', 'Evening'], default: 'Morning' },
   // The app offers two morning windows, which 'Morning' alone cannot express.

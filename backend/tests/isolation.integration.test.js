@@ -109,7 +109,8 @@ describe('criterion 11: one customer cannot see or touch another\'s data', () =>
       .set('Authorization', as(bob))
       .send({ status: 'Cancelled' });
 
-    expect(res.statusCode).toBe(401);
+    // Scoped by owner in the query, like the other plan endpoints: not found.
+    expect(res.statusCode).toBe(404);
     expect((await Subscription.findById(aliceSub._id)).status).toBe('Active');
   });
 

@@ -58,6 +58,7 @@ const orderSchema = new mongoose.Schema({
   proofOfDelivery: { type: String },
   deliveryStatus: { type: String, default: 'Pending', index: true },
   failedReason: { type: String },
+  deliveryNotes: { type: String },
   deliverySlot: { type: String, enum: ['Morning', 'Evening'], default: 'Morning' },
   scheduledDeliveryDate: { type: Date },
   scheduledDeliveryWindow: { type: String, default: '4:00 AM – 7:00 AM' },
@@ -75,6 +76,8 @@ const orderSchema = new mongoose.Schema({
   billingCycle: { type: String },
   creditDueDate: { type: Date, index: true },
   creditSettledAt: { type: Date },
+  // Part-payments received against a credit bill before it is fully settled
+  creditPaidAmount: { type: Number, default: 0 },
   creditSettledMethod: { type: String }
 }, {
   timestamps: true
@@ -87,6 +90,12 @@ orderSchema.index({ createdAt: -1 });
 // there are thousands of customers.
 orderSchema.index({ scheduledDeliveryDate: 1, isDelivered: 1 });
 orderSchema.index({ user: 1, createdAt: -1 });
+// One order per Razorpay payment — a paid-for cart cannot be replayed into a
+// second order.
+orderSchema.index(
+  { razorpayPaymentId: 1 },
+  { unique: true, partialFilterExpression: { razorpayPaymentId: { $type: 'string' } } }
+);
 
 // Pre-save hook to calculate COGS using FIFO.
 // Takes no `next`: Mongoose 9 does not pass one to a hook that returns a

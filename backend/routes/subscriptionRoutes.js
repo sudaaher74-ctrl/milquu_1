@@ -2,7 +2,9 @@ import express from 'express';
 import Subscription from '../models/Subscription.js';
 import DeliveryStaff from '../models/DeliveryStaff.js';
 import Order from '../models/Order.js';
-import { protect, admin } from '../middleware/authMiddleware.js';
+import { protect, admin, optionalProtect } from '../middleware/authMiddleware.js';
+import User from '../models/User.js';
+import { normalisePhone, isValidPhone } from '../utils/phone.js';
 import { priceCrate, normaliseRhythm, legacyFrequency, PricingError } from '../services/subscriptionPricing.js';
 import { istStartOfDay, istTomorrow, istDayOfWeek, istDateKey } from '../utils/ist.js';
 import { isDeliveryDay } from '../utils/rhythm.js';
@@ -12,10 +14,11 @@ const router = express.Router();
 
 // @route   POST /api/subscriptions
 // @desc    Create a new subscription/order
-// @access  Public (Guest Checkout)
-router.post('/', apiLimiter, async (req, res) => {
+// @access  Public (Guest Checkout); an admin can also create plans here
+router.post('/', apiLimiter, optionalProtect, async (req, res) => {
   try {
-    const { user, name, phone, items, deliveryAddress, frequency } = req.body;
+    const { name, phone, items, deliveryAddress, frequency } = req.body;
+    const isAdmin = req.user?.role === 'admin';
 
     if (!Array.isArray(items) || !items.length) {
       return res.status(400).json({ message: 'A subscription needs at least one item' });
@@ -31,9 +34,23 @@ router.post('/', apiLimiter, async (req, res) => {
     const rhythm = normaliseRhythm(frequency);
     const priced = await priceCrate(items, { rhythm, weekdays: [], milkOnly: true });
 
+    // Who the plan belongs to comes from the token, never the body — a guest
+    // could otherwise attach a plan to any customer's account. An admin may
+    // name the customer, or it is linked by phone number when one matches.
+    let owner;
+    if (isAdmin) {
+      if (/^[0-9a-fA-F]{24}$/.test(String(req.body.user || ''))) {
+        owner = req.body.user;
+      } else if (isValidPhone(phone)) {
+        owner = (await User.findOne({ phone: normalisePhone(phone) }).select('_id'))?._id;
+      }
+    } else if (req.user) {
+      owner = req.user._id;
+    }
+
     const subscription = new Subscription({
       subscriptionId: 'SUB-' + Date.now() + Math.floor(Math.random() * 1000),
-      user: req.user ? req.user._id : user, // fallback to user from body if guest
+      user: owner,
       name,
       phone,
       items: priced.items,
@@ -42,7 +59,8 @@ router.post('/', apiLimiter, async (req, res) => {
       monthlyTotal: priced.monthlyTotal,
       deliveryAddress,
       frequency: legacyFrequency(rhythm),
-      status: 'Pending' // Force pending
+      // Guests' plans wait for the admin; an admin creating one may start it.
+      status: isAdmin && req.body.status === 'Active' ? 'Active' : 'Pending'
     });
 
     const createdSubscription = await subscription.save();
@@ -60,7 +78,7 @@ router.post('/', apiLimiter, async (req, res) => {
 // @access  Private/Admin
 router.get('/', protect, admin, async (req, res) => {
   try {
-    const subscriptions = await Subscription.find({}).sort({ createdAt: -1 });
+    const subscriptions = await Subscription.find({}).populate('items.product', 'name').sort({ createdAt: -1 });
     res.json(subscriptions);
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
@@ -72,7 +90,8 @@ router.get('/', protect, admin, async (req, res) => {
 // @access  Private/Admin
 router.put('/:id', protect, admin, async (req, res) => {
   try {
-    const updated = await Subscription.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await Subscription.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!updated) return res.status(404).json({ message: 'Subscription not found' });
     res.json(updated);
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
@@ -214,7 +233,15 @@ router.put('/:id/assign-staff', protect, admin, async (req, res) => {
       { assignedStaff: staffId },
       { new: true }
     );
-    if (!updated) {
+    if (updated) {
+      // Orders the engine already generated for this plan and not yet
+      // delivered move to the new delivery person too, or they would never
+      // appear in anyone's delivery app.
+      await Order.updateMany(
+        { subscription: updated._id, isDelivered: false, scheduledDeliveryDate: { $gte: istStartOfDay() } },
+        { deliveryStaff: staffId || undefined }
+      );
+    } else {
       updated = await Order.findByIdAndUpdate(
         req.params.id,
         { deliveryStaff: staffId, deliveryStatus: 'Out For Delivery' },

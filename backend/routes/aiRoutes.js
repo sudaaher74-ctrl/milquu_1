@@ -9,29 +9,30 @@ import Purchase from '../models/Purchase.js';
 import User from '../models/User.js';
 import DeliveryStaff from '../models/DeliveryStaff.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
+import { istStartOfDay, istTomorrow, istStartOfMonth, istDayOfWeek } from '../utils/ist.js';
 
 const router = express.Router();
 
 router.get('/business-update', protect, admin, async (req, res) => {
   try {
-    // Get today's start and end date
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(today);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Today, as an Indian calendar day (the server runs in UTC)
+    const today = istStartOfDay();
+    const endOfDay = new Date(istTomorrow().getTime() - 1);
 
     // Fetch metrics
     const ordersToday = await Order.countDocuments({
       createdAt: { $gte: today, $lte: endOfDay }
     });
 
-    const ordersData = await Order.find({
-      createdAt: { $gte: today, $lte: endOfDay }
-    });
-    const revenueToday = ordersData.reduce((acc, order) => acc + order.totalAmount, 0);
+    // Orders carry totalPrice; reading totalAmount made this NaN.
+    const paidToday = await Order.find({
+      isPaid: true,
+      paidAt: { $gte: today, $lte: endOfDay }
+    }).select('totalPrice');
+    const revenueToday = paidToday.reduce((acc, order) => acc + (order.totalPrice || 0), 0);
 
     const activeSubscriptions = await Subscription.countDocuments({
-      status: 'active'
+      status: { $in: ['Active', 'active'] }
     });
 
     // Generate fallback template string
@@ -86,19 +87,16 @@ router.post('/chat', protect, admin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'No input provided' });
     }
     
-    // Get today's start and end date
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(today);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Indian calendar boundaries (the server runs in UTC)
+    const DAY = 24 * 60 * 60 * 1000;
+    const today = istStartOfDay();
+    const endOfDay = new Date(istTomorrow().getTime() - 1);
 
     // Get this month's start
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    
+    const startOfMonth = istStartOfMonth();
+
     // Get this week's start (Sunday)
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
+    const startOfWeek = new Date(today.getTime() - istDayOfWeek() * DAY);
 
     // Fetch metrics
     const ordersToday = await Order.find({
@@ -108,10 +106,8 @@ router.post('/chat', protect, admin, async (req, res) => {
     const revenueToday = ordersToday.reduce((acc, order) => acc + order.totalPrice, 0);
     const totalOrdersTodayCount = ordersToday.length;
 
-    const yesterdayStart = new Date(today);
-    yesterdayStart.setDate(yesterdayStart.getDate() - 1);
-    const yesterdayEnd = new Date(yesterdayStart);
-    yesterdayEnd.setHours(23, 59, 59, 999);
+    const yesterdayStart = new Date(today.getTime() - DAY);
+    const yesterdayEnd = new Date(today.getTime() - 1);
 
     const ordersYesterday = await Order.find({
       isPaid: true,
@@ -126,13 +122,9 @@ router.post('/chat', protect, admin, async (req, res) => {
     const revenueMonth = ordersMonth.reduce((acc, order) => acc + order.totalPrice, 0);
     const totalOrdersMonthCount = ordersMonth.length;
 
-    const activeSubscriptions = await Subscription.countDocuments({
-      status: 'active'
-    });
-    
     // Fetch anomalies for Dashboard Analysis
     const unassignedSubs = await Subscription.countDocuments({
-      status: 'active',
+      status: { $in: ['Active', 'active'] },
       $or: [{ assignedStaff: null }, { assignedStaff: { $exists: false } }]
     });
 
@@ -146,9 +138,9 @@ router.post('/chat', protect, admin, async (req, res) => {
     const wastageMonthData = await Wastage.find({
       date: { $gte: startOfMonth, $lte: endOfDay }
     });
-    const totalWastageLossToday = wastageMonthData.filter(w => new Date(w.date) >= today).reduce((acc, w) => acc + (w.lossAmount || 0), 0);
-    const totalWastageLossWeek = wastageMonthData.filter(w => new Date(w.date) >= startOfWeek).reduce((acc, w) => acc + (w.lossAmount || 0), 0);
-    const totalWastageLossMonth = wastageMonthData.reduce((acc, w) => acc + (w.lossAmount || 0), 0);
+    const totalWastageLossToday = wastageMonthData.filter(w => new Date(w.date) >= today).reduce((acc, w) => acc + (w.lossValue || 0), 0);
+    const totalWastageLossWeek = wastageMonthData.filter(w => new Date(w.date) >= startOfWeek).reduce((acc, w) => acc + (w.lossValue || 0), 0);
+    const totalWastageLossMonth = wastageMonthData.reduce((acc, w) => acc + (w.lossValue || 0), 0);
 
     const purchaseMonthData = await Purchase.find({
       date: { $gte: startOfMonth, $lte: endOfDay }
@@ -165,8 +157,8 @@ router.post('/chat', protect, admin, async (req, res) => {
       .map(([name, cost]) => `${name} (₹${cost})`)
       .join(', ') || 'None';
 
-    const lowStockProducts = await Product.find({ countInStock: { $lt: 20 } }).select('name countInStock');
-    const lowStockList = lowStockProducts.map(p => `${p.name} (${p.countInStock} left)`).join(', ') || 'None';
+    const lowStockProducts = await Product.find({ stock: { $lt: 20 } }).select('name stock');
+    const lowStockList = lowStockProducts.map(p => `${p.name} (${p.stock} left)`).join(', ') || 'None';
 
     // -- Customer Data --
     const totalCustomers = await User.countDocuments({ role: 'user' });
@@ -206,6 +198,8 @@ router.post('/chat', protect, admin, async (req, res) => {
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         
+        // Greet whoever is signed in, not a name baked into the prompt.
+        const adminFirstName = String(req.user?.name || 'there').trim().split(/\s+/)[0];
         const systemPrompt = `You are MilQuu Fresh's AI female voice assistant and advanced business analyst.
 Context Data:
 - Customers: Total ${totalCustomers} | New this month ${newCustomersThisMonth}
@@ -228,8 +222,8 @@ Rules:
 3. The JSON must have exactly two keys: "reply" (string) and "action" (string).
 4. "reply" is your conversational answer. You CAN use markdown inside the "reply" string to format lists, bold text, or tables.
 5. "action" must be either "none" or "download_delivery_report". Set to "download_delivery_report" ONLY if the user explicitly asks to download or print today's delivery report/list.
-6. CRITICAL: NEVER invent or hallucinate internal business data. For internal metrics, use ONLY the Context Data above. However, if the user asks about external topics (like competitor pricing, market analysis in Navi Mumbai, etc.), you MUST use your Google Search capability to find real-time answers and summarize them.
-7. ALWAYS start your reply with "Hi Sudarshan".`;
+6. CRITICAL: NEVER invent or hallucinate internal business data. For internal metrics, use ONLY the Context Data above. You have no live internet access: for external topics (competitor pricing, market trends), say so and offer general guidance only, clearly labelled as such.
+7. ALWAYS start your reply with "Hi ${adminFirstName}".`;
 
         // Call Gemini from the server — the API key must never be sent to the browser
         const contents = chatHistory.map((m) => ({
@@ -275,8 +269,7 @@ Rules:
 
         return res.status(500).json({
           success: false,
-          message: 'Failed to communicate with AI provider',
-          error: error.message
+          message: 'Failed to communicate with AI provider'
         });
       }
     } else {

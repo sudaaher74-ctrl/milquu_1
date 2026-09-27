@@ -24,6 +24,11 @@ const walletTransactionSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  // Set on Razorpay top-ups. Unique, so the same payment can never be
+  // credited twice even when two verify requests race each other.
+  razorpayPaymentId: {
+    type: String
+  },
   performedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -33,6 +38,7 @@ const walletTransactionSchema = new mongoose.Schema({
 });
 
 walletTransactionSchema.index({ createdAt: -1 });
+walletTransactionSchema.index({ razorpayPaymentId: 1 }, { unique: true, sparse: true });
 
 const WalletTransaction = mongoose.model('WalletTransaction', walletTransactionSchema);
 

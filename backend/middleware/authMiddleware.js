@@ -48,3 +48,31 @@ export const admin = (req, res, next) => {
     res.status(403).json({ message: 'Not authorized as an admin' });
   }
 };
+
+/** Delivery staff only — the delivery app's endpoints. */
+export const deliveryOnly = (req, res, next) => {
+  if (req.user && req.user.role === 'delivery') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Not authorized as delivery staff' });
+  }
+};
+
+/**
+ * Attach req.user when a valid token is present, and carry on without one.
+ * For public endpoints (guest checkout) that behave differently for a
+ * signed-in customer. A bad token is treated as no token, not an error.
+ */
+export const optionalProtect = async (req, res, next) => {
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ') || !process.env.JWT_SECRET) return next();
+  try {
+    const decoded = jwt.verify(header.split(' ')[1], process.env.JWT_SECRET);
+    if (decoded.role !== 'delivery') {
+      req.user = await User.findById(decoded.id).select('-password');
+    }
+  } catch {
+    // ignore — the request proceeds as a guest
+  }
+  next();
+};

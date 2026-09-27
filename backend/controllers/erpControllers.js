@@ -7,6 +7,11 @@ import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import User from '../models/User.js';
 import Subscription from '../models/Subscription.js';
+import DeliveryStaff from '../models/DeliveryStaff.js';
+import crypto from 'crypto';
+import { exactCaseInsensitive } from '../utils/regex.js';
+import { normalisePhone, isValidPhone } from '../utils/phone.js';
+import { istStartOfDay, istStartOfMonth, istStartOfYear, IST_TIMEZONE } from '../utils/ist.js';
 
 // --- PURCHASES ---
 export const getPurchases = async (req, res) => {
@@ -260,7 +265,7 @@ export const recordVendorPayment = async (req, res) => {
       // Allocate payment to unpaid purchases of this supplier from oldest to newest
       let remaining = payAmount;
       const unpaidPurchases = await Purchase.find({
-        supplierName: { $regex: new RegExp(`^${supplierName.trim()}$`, 'i') },
+        supplierName: exactCaseInsensitive(supplierName),
         status: { $in: ['Pending', 'Partial', 'Received'] }
       }).sort({ date: 1 });
 
@@ -408,7 +413,7 @@ export const getVendorLedger = async (req, res) => {
       return res.status(400).json({ message: 'Supplier name is required' });
     }
 
-    const regex = new RegExp(`^${rawSupplier}$`, 'i');
+    const regex = exactCaseInsensitive(rawSupplier);
     const purchases = await Purchase.find({ supplierName: regex }).sort({ date: 1 });
     const payments = await VendorPayment.find({ supplierName: regex }).sort({ date: 1 });
 
@@ -628,7 +633,7 @@ export const createOrder = async (req, res) => {
         }
         let productDoc = null;
         try {
-          if (productId) {
+          if (productId && /^[0-9a-fA-F]{24}$/.test(String(productId))) {
             productDoc = await Product.findById(productId);
           }
         } catch {
@@ -637,36 +642,51 @@ export const createOrder = async (req, res) => {
         if (!productDoc && item.name) {
           try {
             const rawName = item.name.replace(/\s*\((500\s*ml|1L|1\s*Litre)\)/gi, '').trim();
-            productDoc = await Product.findOne({ name: { $regex: new RegExp(`^${rawName}$`, 'i') } });
+            productDoc = await Product.findOne({ name: exactCaseInsensitive(rawName) });
           } catch {}
         }
 
+        // POS is admin-only, and the shop sets its own rate (the daily milk
+        // register takes a per-customer price), so a valid price sent by the
+        // admin is honoured; otherwise the catalogue price applies.
+        const qty = Number(item.qty ?? item.quantity);
+        if (!Number.isFinite(qty) || qty <= 0) {
+          return res.status(400).json({ message: `Invalid quantity for ${item.name || 'an item'}` });
+        }
+        const sentPrice = Number(item.price);
+        const hasSentPrice = item.price !== undefined && item.price !== '' && Number.isFinite(sentPrice) && sentPrice >= 0;
+
         if (productDoc) {
           const isMilk = productDoc.category === 'milk' || (productDoc.name || '').toLowerCase().includes('milk');
-          const effectivePrice = (isMilk && isHalfLitre) ? Math.ceil(productDoc.price / 2) : (item.price || productDoc.price);
+          const catalogPrice = (isMilk && isHalfLitre) ? Math.ceil(productDoc.price / 2) : productDoc.price;
+          const effectivePrice = hasSentPrice ? sentPrice : catalogPrice;
           secureItems.push({
             ...item,
+            qty,
             product: productDoc._id,
             name: item.name || productDoc.name,
             image: item.image || productDoc.image || '/img/categories/logo.png',
             unit: isHalfLitre ? '500 ml' : (item.unit || productDoc.unit || '1 Litre'),
-            price: effectivePrice // Force secure price from DB
+            price: effectivePrice
           });
-          calculatedTotalPrice += effectivePrice * (item.qty || item.quantity || 1);
+          calculatedTotalPrice += effectivePrice * qty;
         } else {
           // Graceful fallback for custom items
+          const price = hasSentPrice ? sentPrice : 0;
           secureItems.push({
             ...item,
+            qty,
+            product: undefined,
             name: item.name || 'Dairy Item',
             image: item.image || '/img/categories/logo.png',
             unit: isHalfLitre ? '500 ml' : (item.unit || '1 Litre'),
-            price: Number(item.price) || 0
+            price
           });
-          calculatedTotalPrice += (Number(item.price) || 0) * (item.qty || item.quantity || 1);
+          calculatedTotalPrice += price * qty;
         }
       }
       orderData.orderItems = secureItems;
-      const discount = Number(orderData.discount) || 0;
+      const discount = Math.max(0, Number(orderData.discount) || 0);
       orderData.totalPrice = Math.max(0, calculatedTotalPrice - discount);
     }
 
@@ -676,11 +696,11 @@ export const createOrder = async (req, res) => {
         try {
           let existingUser = null;
           if (orderData.phone && String(orderData.phone).trim()) {
-            existingUser = await User.findOne({ phone: String(orderData.phone).trim() });
+            existingUser = await User.findOne({ phone: normalisePhone(orderData.phone) });
           }
           if (!existingUser && orderData.name && String(orderData.name).trim()) {
             existingUser = await User.findOne({
-              name: { $regex: new RegExp(`^${String(orderData.name).trim()}$`, 'i') }
+              name: exactCaseInsensitive(orderData.name)
             });
           }
           if (existingUser) {
@@ -690,13 +710,16 @@ export const createOrder = async (req, res) => {
             }
           } else if (orderData.paymentMethod === 'Credit' && orderData.name && String(orderData.name).trim()) {
             // Auto-create customer so daily credit entries are persistently tracked in Khata
-            const cleanPhone = orderData.phone ? String(orderData.phone).trim() : undefined;
+            // role 'customer' is not a valid role and no password was set, so
+            // this save always failed and credit bills were never linked.
+            const cleanPhone = isValidPhone(orderData.phone) ? normalisePhone(orderData.phone) : undefined;
             const newUser = new User({
               name: String(orderData.name).trim(),
               phone: cleanPhone,
               isCreditCustomer: true,
               billingCycle: orderData.billingCycle || '15 Days',
-              role: 'customer'
+              role: 'user',
+              password: crypto.randomBytes(24).toString('hex')
             });
             const savedUser = await newUser.save();
             orderData.user = savedUser._id;
@@ -756,7 +779,7 @@ export const createOrder = async (req, res) => {
       const area = orderData.shippingAddress.city;
       // Find an active delivery staff for this area
       const staff = await DeliveryStaff.findOne({ 
-        area: { $regex: new RegExp(`^${area}$`, 'i') }, 
+        area: exactCaseInsensitive(area), 
         status: 'Active' 
       });
       
@@ -803,24 +826,21 @@ export const getDashboardAnalytics = async (req, res) => {
   try {
     const { dateRange } = req.query; // 'Today', 'Last 7 Days', 'Last 30 Days', 'This Month', 'This Year'
 
-    // Calculate Date Range Filter
+    // Calculate Date Range Filter, on Indian calendar days (the server runs in UTC)
     let startDate = new Date(0);
     let endDate = new Date();
-    
+    const DAY = 24 * 60 * 60 * 1000;
+
     if (dateRange === 'Today') {
-      startDate.setHours(0,0,0,0);
+      startDate = istStartOfDay();
     } else if (dateRange === 'Last 7 Days') {
-      startDate.setDate(endDate.getDate() - 7);
-      startDate.setHours(0,0,0,0);
+      startDate = new Date(istStartOfDay().getTime() - 7 * DAY);
     } else if (dateRange === 'Last 30 Days') {
-      startDate.setDate(endDate.getDate() - 30);
-      startDate.setHours(0,0,0,0);
+      startDate = new Date(istStartOfDay().getTime() - 30 * DAY);
     } else if (dateRange === 'This Month') {
-      startDate.setDate(1);
-      startDate.setHours(0,0,0,0);
+      startDate = istStartOfMonth();
     } else if (dateRange === 'This Year') {
-      startDate.setMonth(0, 1);
-      startDate.setHours(0,0,0,0);
+      startDate = istStartOfYear();
     }
 
     const dateFilter = startDate.getTime() > 0 ? { createdAt: { $gte: startDate, $lte: endDate } } : {};
@@ -875,9 +895,7 @@ export const getDashboardAnalytics = async (req, res) => {
     const inventoryValue = inventoryPipeline.length > 0 ? inventoryPipeline[0].totalValue : 0;
 
     // Daily Revenue/Profit Data (Last 7 Days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+    const sevenDaysAgo = new Date(istStartOfDay().getTime() - 6 * DAY);
 
     const dailyRevenuePipeline = await Order.aggregate([
       { $match: { 
@@ -888,11 +906,11 @@ export const getDashboardAnalytics = async (req, res) => {
       { $unwind: "$orderItems" },
       {
         $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: IST_TIMEZONE } },
           revenue: { $sum: { $multiply: ["$orderItems.price", "$orderItems.qty"] } },
           grossProfit: { $sum: { $subtract: [
             { $multiply: ["$orderItems.price", "$orderItems.qty"] },
-            { $multiply: [{ $ifNull: ["$orderItems.cogs", 0] }, "$orderItems.qty"] }
+            { $ifNull: ["$orderItems.cogs", 0] } // already the line total
           ]}},
           salesVolume: { $sum: "$orderItems.qty" }
         }
@@ -901,14 +919,16 @@ export const getDashboardAnalytics = async (req, res) => {
     ]);
 
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    // One entry per IST day. Shifting by +5:30 and reading the UTC fields gives
+    // the Indian calendar date and weekday.
+    const istDay = (i) => new Date(sevenDaysAgo.getTime() + i * DAY + 5.5 * 60 * 60 * 1000);
     const revenueData = [];
     for (let i = 0; i < 7; i++) {
-      const d = new Date(sevenDaysAgo);
-      d.setDate(d.getDate() + i);
+      const d = istDay(i);
       const dateStr = d.toISOString().split('T')[0];
       const found = dailyRevenuePipeline.find(x => x._id === dateStr);
       revenueData.push({
-        name: days[d.getDay()],
+        name: days[d.getUTCDay()],
         revenue: found ? found.revenue : 0,
         profit: found ? found.grossProfit : 0,
         salesVolume: found ? found.salesVolume : 0
@@ -919,24 +939,16 @@ export const getDashboardAnalytics = async (req, res) => {
     const activeCustomers = await User.countDocuments({ role: 'user' });
     const activeSubscribers = await Subscription.countDocuments({ status: { $in: ['Active', 'active'] } });
 
-    // Customer Growth Data (Approximation of growth over last 7 days)
-    // We will generate a rolling sum based on total count
+    // Customer growth over the last 7 days, from real sign-up and plan dates.
+    // This used to be a made-up curve that only matched reality on the last day.
     const customerData = [];
-    let custCount = activeCustomers - 6; // Mock historical curve ending at exact real count
-    let subCount = activeSubscribers - 3;
     for (let i = 0; i < 7; i++) {
-      const d = new Date(sevenDaysAgo);
-      d.setDate(d.getDate() + i);
-      customerData.push({
-        name: days[d.getDay()],
-        customers: Math.max(0, custCount + i),
-        subs: Math.max(0, subCount + Math.floor(i/2))
-      });
-    }
-    // Ensure last day perfectly matches real counts
-    if (customerData.length > 0) {
-      customerData[customerData.length - 1].customers = activeCustomers;
-      customerData[customerData.length - 1].subs = activeSubscribers;
+      const endOfDay = new Date(sevenDaysAgo.getTime() + (i + 1) * DAY - 1);
+      const [customers, subs] = await Promise.all([
+        User.countDocuments({ role: 'user', createdAt: { $lte: endOfDay } }),
+        Subscription.countDocuments({ status: { $in: ['Active', 'active'] }, createdAt: { $lte: endOfDay } })
+      ]);
+      customerData.push({ name: days[istDay(i).getUTCDay()], customers, subs });
     }
 
     // Top Performers & Profitability
@@ -1009,15 +1021,6 @@ export const getDashboardAnalytics = async (req, res) => {
     const completedDeliveries = await Order.countDocuments({ deliveryStatus: 'Delivered' });
     const recentExpenses = await Expense.find(dateFilter).sort({ createdAt: -1 }).limit(2).select('category amount');
     
-    // Debug reporting
-    console.log("=== PROFIT ANALYTICS BREAKDOWN ===");
-    console.log(`Revenue: ₹${orderStats.totalRevenue}`);
-    console.log(`COGS: ₹${orderStats.totalCogs}`);
-    console.log(`Gross Profit: ₹${orderStats.grossProfit}`);
-    console.log(`Expenses: ₹${totalExpenses}`);
-    console.log(`Net Profit: ₹${netProfit}`);
-    console.log("==================================");
-
     res.json({
       revenue: orderStats.totalRevenue,
       cogs: orderStats.totalCogs,
@@ -1050,7 +1053,6 @@ export const getDashboardAnalytics = async (req, res) => {
 };
 
 // --- DELIVERY STAFF ---
-import DeliveryStaff from '../models/DeliveryStaff.js';
 
 export const getDeliveryStaff = async (req, res) => {
   try {
@@ -1188,12 +1190,15 @@ export const getCreditCustomers = async (req, res) => {
       const orderDue = o.creditDueDate ? new Date(o.creditDueDate) : null;
       const isOrderOverdue = orderDue ? orderDue < now : false;
 
-      entry.totalDue += Number(o.totalPrice) || 0;
+      const outstanding = Math.max(0, (Number(o.totalPrice) || 0) - (Number(o.creditPaidAmount) || 0));
+      entry.totalDue += outstanding;
       entry.unpaidCount += 1;
       entry.orders.push({
         _id: o._id,
         orderId: o._id,
         totalPrice: o.totalPrice,
+        paidSoFar: o.creditPaidAmount || 0,
+        outstanding,
         createdAt: o.createdAt,
         creditDueDate: o.creditDueDate,
         billingCycle: o.billingCycle || entry.billingCycle,
@@ -1283,7 +1288,14 @@ export const settleCreditCustomer = async (req, res) => {
       return res.json({ message: 'Bill marked as paid', order });
     }
 
-    // Otherwise bulk/lump sum settlement against oldest unpaid orders
+    // Otherwise a lump sum, applied to the oldest unpaid bills first. A
+    // missing amount used to mean "settle everything", and a payment smaller
+    // than the oldest bill was silently dropped; both are fixed here.
+    const payment = Number(amount);
+    if (!Number.isFinite(payment) || payment <= 0) {
+      return res.status(400).json({ message: 'Enter the amount received' });
+    }
+
     let query = { orderSource: 'POS', isPaid: false };
     if (id.startsWith('guest_')) {
       const phoneOrName = id.replace('guest_', '');
@@ -1293,39 +1305,39 @@ export const settleCreditCustomer = async (req, res) => {
     }
 
     const unpaidOrders = await Order.find(query).sort({ createdAt: 1 });
-    let remainingPayment = Number(amount) || Infinity;
+    let remainingPayment = payment;
     const settledOrders = [];
+    const partiallyPaidOrders = [];
 
     for (const order of unpaidOrders) {
       if (remainingPayment <= 0) break;
-      if (remainingPayment >= order.totalPrice) {
+      const due = Math.max(0, (order.totalPrice || 0) - (order.creditPaidAmount || 0));
+      // Within a rupee counts as settled, as before.
+      if (remainingPayment >= due || due - remainingPayment < 1) {
+        order.creditPaidAmount = order.totalPrice;
         order.isPaid = true;
         order.paidAt = new Date();
         order.paymentStatus = 'PAID';
         order.creditSettledAt = new Date();
         order.creditSettledMethod = settledMethod;
         await order.save();
-        remainingPayment -= order.totalPrice;
+        remainingPayment -= due;
         settledOrders.push(order._id);
       } else {
-        // If remaining payment is very close to order price (within 1 rupee)
-        if (order.totalPrice - remainingPayment < 1) {
-          order.isPaid = true;
-          order.paidAt = new Date();
-          order.paymentStatus = 'PAID';
-          order.creditSettledAt = new Date();
-          order.creditSettledMethod = settledMethod;
-          await order.save();
-          settledOrders.push(order._id);
-        }
-        break;
+        order.creditPaidAmount = (order.creditPaidAmount || 0) + remainingPayment;
+        order.creditSettledMethod = settledMethod;
+        await order.save();
+        partiallyPaidOrders.push(order._id);
+        remainingPayment = 0;
       }
     }
 
     res.json({
       message: 'Settlement processed successfully',
       settledOrdersCount: settledOrders.length,
-      settledOrders
+      settledOrders,
+      partiallyPaidOrders,
+      unappliedAmount: Math.max(0, Math.round(remainingPayment * 100) / 100)
     });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });

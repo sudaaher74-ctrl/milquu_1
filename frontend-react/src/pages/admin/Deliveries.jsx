@@ -102,7 +102,13 @@ const Deliveries = () => {
     fetchLiveTracking();
     
     // Initialize Socket Connection
-    socketRef.current = io('https://milquu-backend.onrender.com');
+    let adminToken = null;
+    try {
+      adminToken = JSON.parse(localStorage.getItem('adminToken') || 'null')?.token;
+    } catch {
+      adminToken = null;
+    }
+    socketRef.current = io(api.defaults.baseURL, { auth: { token: adminToken } });
 
     return () => {
       if (socketRef.current) socketRef.current.disconnect();

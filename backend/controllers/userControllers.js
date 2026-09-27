@@ -8,6 +8,7 @@ import { isServiceableArea } from '../config/serviceAreas.js';
 import { normalisePhone, isValidPhone, looksLikeEmail } from '../utils/phone.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { razorpayClient } from '../utils/razorpay.js';
 import { OAuth2Client } from 'google-auth-library';
 
 /**
@@ -206,33 +207,42 @@ export const getMySubscriptions = async (req, res) => {
   }
 };
 
+// The statuses a customer may put their own plan into, keyed by what older
+// clients send. 'Pending' plans are waiting on the admin and cannot be
+// activated from here; that used to be possible by sending any status string.
+const CUSTOMER_STATUS = { active: 'Active', paused: 'Paused', cancelled: 'Cancelled' };
+
 export const updateSubscriptionStatus = async (req, res) => {
   try {
-    const { status, pauseStartDate, pauseEndDate } = req.body; // e.g. 'paused', 'Active', 'Cancelled'
-    
-    const subscription = await Subscription.findById(req.params.id);
-    
-    if (subscription) {
-      // Ensure the subscription belongs to the user
-      if (subscription.user.toString() !== req.user._id.toString()) {
-        return res.status(401).json({ message: 'Not authorized to update this subscription' });
-      }
-      
-      subscription.status = status;
+    const { pauseStartDate, pauseEndDate } = req.body;
+    const status = CUSTOMER_STATUS[String(req.body.status || '').toLowerCase()];
+    if (!status) {
+      return res.status(400).json({ message: 'Status must be Active, Paused or Cancelled' });
+    }
+
+    // Ownership is part of the query, so another customer's plan is a 404.
+    const subscription = await Subscription.findOne({ _id: req.params.id, user: req.user._id });
+    if (!subscription) {
+      return res.status(404).json({ message: 'Subscription not found' });
+    }
+
+    if (subscription.status === 'Pending' && status !== 'Cancelled') {
+      return res.status(400).json({ message: 'This plan is still waiting for approval' });
+    }
+
+    subscription.status = status;
+    if (status === 'Paused') {
       if (pauseStartDate) subscription.pauseStartDate = new Date(pauseStartDate);
       if (pauseEndDate) subscription.pauseEndDate = new Date(pauseEndDate);
-      
-      // If resuming manually, clear the dates
-      if (status === 'Active' || status === 'active') {
-        subscription.pauseStartDate = undefined;
-        subscription.pauseEndDate = undefined;
-      }
-
-      const updatedSubscription = await subscription.save();
-      res.json(updatedSubscription);
     } else {
-      res.status(404).json({ message: 'Subscription not found' });
+      // Resuming or cancelling clears any pause window
+      subscription.pauseStartDate = undefined;
+      subscription.pauseEndDate = undefined;
     }
+    subscription.pausedReason = undefined;
+
+    const updatedSubscription = await subscription.save();
+    res.json(updatedSubscription);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -318,7 +328,7 @@ export const requestWithdrawal = async (req, res) => {
     const withdrawalRequest = await WithdrawalRequest.create({
       user: user._id,
       amount: Number(amount),
-      refundMethod,
+      refundMethod: refundMethod === 'Bank Transfer' ? 'Bank Account' : refundMethod,
       upiId,
       bankDetails,
       status: 'Pending'
@@ -365,7 +375,11 @@ export const createRechargeOrder = async (req, res) => {
     const options = {
       amount: Math.round(amount * 100), // Razorpay works in paise
       currency: 'INR',
-      receipt: receiptStr
+      receipt: receiptStr,
+      // Ties the Razorpay order to this customer and to a wallet top-up, so a
+      // payment made for something else (or by someone else) cannot be
+      // presented here to credit a wallet.
+      notes: { purpose: 'wallet', userId: String(req.user._id) }
     };
 
     const order = await razorpay.orders.create(options);
@@ -422,38 +436,64 @@ export const rechargeWallet = async (req, res) => {
       return res.status(400).json({ message: 'Payment verification failed' });
     }
 
-    // Prevent the same payment from being credited twice
+    // Legacy guard for top-ups credited before razorpayPaymentId existed
     const alreadyCredited = await WalletTransaction.findOne({
-      description: `Customer Recharge (Razorpay: ${razorpay_payment_id})`
+      $or: [
+        { razorpayPaymentId: razorpay_payment_id },
+        { description: `Customer Recharge (Razorpay: ${razorpay_payment_id})` }
+      ]
     });
     if (alreadyCredited) {
       return res.status(400).json({ message: 'This payment has already been credited' });
     }
 
     // Credit the amount Razorpay actually charged — never the amount the client claims
-    const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: secret,
-    });
-    const order = await razorpay.orders.fetch(razorpay_order_id);
+    const order = await razorpayClient().orders.fetch(razorpay_order_id);
     if (!order || !order.amount) {
       return res.status(400).json({ message: 'Payment verification failed' });
+    }
+    // Orders created by this server carry their purpose and owner. Older
+    // orders predate the notes and are accepted as before.
+    const notes = order.notes || {};
+    if (notes.purpose && notes.purpose !== 'wallet') {
+      return res.status(400).json({ message: 'This payment was not a wallet top-up' });
+    }
+    if (notes.userId && notes.userId !== String(req.user._id)) {
+      return res.status(400).json({ message: 'This payment belongs to a different account' });
     }
     const creditAmount = order.amount / 100; // paise -> rupees
 
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    user.walletBalance = (user.walletBalance || 0) + creditAmount;
-    await user.save();
+    // Claim the payment first. The unique index on razorpayPaymentId means a
+    // second, concurrent verify of the same payment fails here, before any
+    // money moves.
+    let transaction;
+    try {
+      transaction = await WalletTransaction.create({
+        user: user._id,
+        amount: creditAmount,
+        type: 'credit',
+        description: `Customer Recharge (Razorpay: ${razorpay_payment_id})`,
+        balanceAfter: user.walletBalance || 0,
+        razorpayPaymentId: razorpay_payment_id
+      });
+    } catch (error) {
+      if (error?.code === 11000) {
+        return res.status(400).json({ message: 'This payment has already been credited' });
+      }
+      throw error;
+    }
 
-    const transaction = await WalletTransaction.create({
-      user: user._id,
-      amount: creditAmount,
-      type: 'credit',
-      description: `Customer Recharge (Razorpay: ${razorpay_payment_id})`,
-      balanceAfter: user.walletBalance
-    });
+    const credited = await User.findByIdAndUpdate(
+      user._id,
+      { $inc: { walletBalance: creditAmount } },
+      { returnDocument: 'after' }
+    );
+    transaction.balanceAfter = credited.walletBalance;
+    await transaction.save();
+    user.walletBalance = credited.walletBalance;
 
     res.json({
       message: 'Wallet recharged successfully',
@@ -473,6 +513,11 @@ export const googleLogin = async (req, res) => {
     if (!token) {
       return res.status(400).json({ message: 'Google token is required' });
     }
+    // Without a configured client id, verifyIdToken skips the audience check
+    // and would accept a token minted for any other app.
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return res.status(500).json({ message: 'Google sign-in is not configured' });
+    }
 
     // Verify token
     const ticket = await client.verifyIdToken({
@@ -483,6 +528,10 @@ export const googleLogin = async (req, res) => {
     
     if (!payload || !payload.email) {
       return res.status(400).json({ message: 'Invalid Google token' });
+    }
+    // An unverified address could belong to someone else's account here.
+    if (payload.email_verified === false) {
+      return res.status(401).json({ message: 'Your Google email address is not verified' });
     }
 
     const { email, name } = payload;
@@ -510,6 +559,6 @@ export const googleLogin = async (req, res) => {
 
   } catch (error) {
     console.error('Google login error:', error);
-    res.status(401).json({ message: 'Google authentication failed', error: error.message });
+    res.status(401).json({ message: 'Google authentication failed' });
   }
 };

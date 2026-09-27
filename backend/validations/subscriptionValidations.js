@@ -8,7 +8,8 @@ const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid product');
  */
 const itemSchema = z.object({
   product: objectId,
-  quantity: z.number().int().min(1, 'Quantity must be at least 1').max(20, 'That is more than we can deliver in one crate')
+  quantity: z.number().int().min(1, 'Quantity must be at least 1').max(20, 'That is more than we can deliver in one crate'),
+  unit: z.enum(['1 Litre', '500 ml']).optional()
 });
 
 /**

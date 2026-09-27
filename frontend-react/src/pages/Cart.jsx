@@ -60,8 +60,20 @@ const Cart = () => {
       return;
     }
     
+    // Checked before any payment is taken, so a typo never leaves a customer
+    // charged for an order the server then refuses.
+    const digits = String(formData.phone || '').replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, '');
+    if (!/^[6-9]\d{9}$/.test(digits)) {
+      alert('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    if (String(formData.address || '').trim().length < 5 || !formData.city) {
+      alert('Please enter your full delivery address and city.');
+      return;
+    }
+
     if (paymentMethod === 'COD') {
-      await saveOrder(null, 'COD', 'PENDING');
+      await saveOrder('COD');
     } else {
       const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
       
@@ -76,8 +88,9 @@ const Cart = () => {
       }
 
       try {
-        // Create Razorpay order on backend
-        const { data: orderData } = await api.post('/api/payment/orders', { amount: total });
+        // Create Razorpay order on backend. The server prices the cart itself;
+        // only the items are sent, never an amount.
+        const { data: orderData } = await api.post('/api/payment/orders', { items: cartPayload() });
 
         if (!orderData || !orderData.id) {
           alert('Failed to initialize payment. Please try again.');
@@ -85,8 +98,7 @@ const Cart = () => {
         }
 
         // Fetch Razorpay key dynamically
-        const { data: keyData } = await api.get('/api/payment/key');
-        const key = keyData.key;
+        const key = orderData.key_id || (await api.get('/api/payment/key')).data.key;
 
         const options = {
           key,
@@ -96,25 +108,13 @@ const Cart = () => {
           description: "Farm Fresh Milk Delivery",
           order_id: orderData.id,
           handler: async function (response) {
-            try {
-              const { data: verifyData } = await api.post('/api/payment/verify', {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature
-              });
-              if (verifyData.success) {
-                await saveOrder(response.razorpay_payment_id, 'ONLINE', 'PAID', {
-                  razorpayOrderId: response.razorpay_order_id,
-                  razorpayPaymentId: response.razorpay_payment_id,
-                  razorpaySignature: response.razorpay_signature
-                });
-              } else {
-                alert('Payment verification failed.');
-              }
-            } catch (err) {
-              console.error(err);
-              alert('Error verifying payment.');
-            }
+            // The server verifies the signature and the amount itself when
+            // the order is placed, so there is no separate verify call.
+            await saveOrder('ONLINE', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
           },
           prefill: {
             name: formData.name,
@@ -139,54 +139,45 @@ const Cart = () => {
     }
   };
 
-  const saveOrder = async (paymentId, method, paymentStatus, razorpayDetails = {}) => {
-    try {
-      const userInfoStr = localStorage.getItem('userInfo');
-      const userId = userInfoStr && userInfoStr !== 'undefined' ? JSON.parse(userInfoStr)._id : undefined;
+  // Cart lines as the server wants them: product and quantity (plus the unit,
+  // which picks the 500 ml price). Prices are never sent — the server
+  // recomputes every one.
+  const cartPayload = () => cartItems.map(item => ({
+    product: String(item._id || item.id),
+    quantity: item.quantity,
+    unit: item.unit || (item.name?.includes('500') ? '500 ml' : '1 Litre'),
+    name: item.name
+  }));
 
+  const saveOrder = async (method, razorpayDetails = {}) => {
+    try {
       const orderData = {
-        user: userId,
         name: formData.name,
         phone: formData.phone,
-        orderItems: cartItems.map(item => ({
-          product: item._id || item.id,
-          name: item.name,
-          unit: item.unit || (item.name?.includes('500') ? '500 ml' : '1 Litre'),
-          qty: item.quantity,
-          image: item.image,
-          price: typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.-]+/g, '')) : item.price
-        })),
+        items: cartPayload(),
         shippingAddress: {
           address: formData.address,
           city: formData.city,
-          postalCode: formData.pincode,
-          country: 'India'
+          postalCode: formData.pincode
         },
         paymentMethod: method,
-        paymentStatus: paymentStatus,
-        razorpayOrderId: razorpayDetails.razorpayOrderId,
-        razorpayPaymentId: razorpayDetails.razorpayPaymentId,
-        razorpaySignature: razorpayDetails.razorpaySignature,
-        isPaid: paymentStatus === 'PAID',
-        paymentResult: paymentId ? {
-          id: paymentId,
-          status: 'paid',
-          update_time: new Date().toISOString()
-        } : undefined,
-        totalPrice: total,
-        orderSource: 'Website',
         deliverySlot: selectedSlot?.id || 'Morning',
-        scheduledDeliveryDate: selectedSlot?.deliveryDate || null,
-        scheduledDeliveryWindow: selectedSlot?.window || '4:00 AM – 7:00 AM',
+        ...razorpayDetails
       };
 
-      // POST to the authenticated customer order endpoint (not the admin ERP route)
-      await api.post('/api/users/orders', orderData);
+      // Guests and signed-in customers alike. It used to post to
+      // /api/users/orders, which needs a login and a different payload, so
+      // the customer was charged and the order was then rejected.
+      await api.post('/api/orders/checkout', orderData);
       setStep(3); // Success page
       clearCart();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'An error occurred while submitting order.');
+      const message = err.response?.data?.message || 'An error occurred while submitting order.';
+      const paymentId = razorpayDetails.razorpay_payment_id;
+      alert(paymentId
+        ? `${message}\n\nYour payment reference is ${paymentId}. Please share it with us so we can sort this out.`
+        : message);
     }
   };
 

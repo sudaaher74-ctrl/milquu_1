@@ -1,45 +1,40 @@
-import Razorpay from 'razorpay';
-import crypto from 'crypto';
+import { isGatewayConfigured, isValidPaymentSignature, razorpayClient } from '../utils/razorpay.js';
+import { priceBasket, PricingError } from '../services/subscriptionPricing.js';
 
-const getRazorpaySecret = () => process.env.RAZORPAY_SECRET || process.env.RAZORPAY_KEY_SECRET;
-
-const isGatewayConfigured = () => Boolean(process.env.RAZORPAY_KEY_ID && getRazorpaySecret());
-
-// @desc    Create a new Razorpay order
+// @desc    Create a Razorpay order for a website cart
 // @route   POST /api/payment/orders
 // @access  Public
+//
+// The amount is priced here from the Product collection. It used to be taken
+// from the request, so the customer's browser decided what it would be charged.
 export const createOrder = async (req, res) => {
   try {
     if (!isGatewayConfigured()) {
       return res.status(500).json({ message: 'Payment gateway is not configured' });
     }
 
-    const amount = Number(req.body.amount);
-    const { currency = 'INR', receipt = 'receipt#1' } = req.body;
-
-    if (!Number.isFinite(amount) || amount <= 0 || amount > 100000) {
-      return res.status(400).json({ message: 'Invalid amount' });
+    const basket = await priceBasket(req.body.items);
+    if (basket.totalPaise <= 0 || basket.totalPaise > 10000000) {
+      return res.status(400).json({ message: 'Invalid cart total' });
     }
 
-    const instance = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: getRazorpaySecret(),
+    const order = await razorpayClient().orders.create({
+      amount: basket.totalPaise,
+      currency: 'INR',
+      receipt: `WEB${Date.now().toString().slice(-10)}_${Math.random().toString(36).slice(2, 6)}`,
+      // Checked again when the order is placed, so this payment can only pay
+      // for a website order — never a wallet top-up — and only this amount.
+      notes: { purpose: 'order' }
     });
-
-    // Amount is in paise for INR and must be an integer
-    const options = {
-      amount: Math.round(amount * 100),
-      currency,
-      receipt
-    };
-
-    const order = await instance.orders.create(options);
     if (!order) {
       return res.status(500).json({ message: 'Error creating Razorpay order' });
     }
 
-    res.json(order);
+    res.json({ ...order, key_id: process.env.RAZORPAY_KEY_ID });
   } catch (error) {
+    if (error instanceof PricingError) {
+      return res.status(400).json({ message: error.message });
+    }
     res.status(500).json({ message: 'Error creating payment order' });
   }
 };
@@ -54,25 +49,7 @@ export const verifyPayment = async (req, res) => {
     }
 
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-
-    if (
-      typeof razorpay_order_id !== 'string' ||
-      typeof razorpay_payment_id !== 'string' ||
-      typeof razorpay_signature !== 'string'
-    ) {
-      return res.status(400).json({ success: false, message: 'Missing payment details' });
-    }
-
-    const generated_signature = crypto
-      .createHmac('sha256', getRazorpaySecret())
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest('hex');
-
-    const provided = Buffer.from(razorpay_signature, 'utf8');
-    const expected = Buffer.from(generated_signature, 'utf8');
-
-    if (provided.length === expected.length && crypto.timingSafeEqual(provided, expected)) {
-      // Payment is successful
+    if (isValidPaymentSignature(razorpay_order_id, razorpay_payment_id, razorpay_signature)) {
       res.json({ success: true, message: 'Payment verified successfully' });
     } else {
       res.status(400).json({ success: false, message: 'Payment verification failed' });
