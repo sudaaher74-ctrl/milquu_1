@@ -59,85 +59,190 @@ const PurchaseBillModal = ({ handleDownloadBillPDF, handlePrint, handleShareBill
           </div>
 
           {/* Printable Bill Area (Scrollable within modal) */}
-          <div id="purchase-bill-printable" className="flex-1 overflow-y-auto p-6 sm:p-8 bg-white text-gray-800 font-sans">
+          <div
+            id="purchase-bill-printable"
+            className="flex-1 overflow-y-auto p-6 sm:p-8 bg-white text-gray-800 font-sans"
+            style={{
+              backgroundColor: '#ffffff',
+              color: '#1f2937',
+              fontFamily: "'Outfit', sans-serif",
+              padding: '32px',
+              boxSizing: 'border-box'
+            }}
+          >
             
             {/* Header */}
-            <div className="border-b-2 border-gray-800 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+            <div
+              className="border-b-2 border-gray-800 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4"
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                borderBottom: '2px solid #111827',
+                paddingBottom: '20px',
+                marginBottom: '24px'
+              }}
+            >
               <div>
-                <h1 className="text-2xl font-serif font-black text-milquu-dark tracking-tight">{business.businessName}</h1>
-                {business.tagline && <p className="text-xs font-semibold text-gray-600 mt-0.5">{business.tagline}</p>}
-                {business.address && <p className="text-[11px] text-gray-500">{business.address}</p>}
-                <p className="text-[11px] text-gray-500">{[business.supportPhone && `Tel: ${business.supportPhone}`, business.supportEmail && `Email: ${business.supportEmail}`].filter(Boolean).join(' | ')}</p>
-                {business.gstin && <p className="text-[11px] text-gray-500">GSTIN: {business.gstin}</p>}
+                <h1
+                  className="text-2xl font-serif font-black text-milquu-dark tracking-tight"
+                  style={{
+                    fontFamily: "'Playfair Display', serif",
+                    fontSize: '26px',
+                    fontWeight: 900,
+                    color: '#111827',
+                    margin: '0 0 2px 0',
+                    letterSpacing: '-0.02em'
+                  }}
+                >
+                  {business.businessName}
+                </h1>
+                <p
+                  className="text-xs font-semibold text-gray-600 mt-0.5"
+                  style={{ fontSize: '13px', fontWeight: 600, color: '#4b5563', margin: '2px 0 0 0' }}
+                >
+                  {business.tagline}
+                </p>
+                <p
+                  className="text-[11px] text-gray-500"
+                  style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0 0' }}
+                >
+                  {business.address}
+                </p>
+                <p
+                  className="text-[11px] text-gray-500"
+                  style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0 0' }}
+                >
+                  {[business.supportPhone && `Tel: ${business.supportPhone}`, business.supportEmail && `Email: ${business.supportEmail}`, business.gstin && `GSTIN: ${business.gstin}`].filter(Boolean).join(' | ')}
+                </p>
               </div>
-              <div className="sm:text-right">
-                <span className="inline-block bg-milquu-dark text-white text-[11px] font-bold px-3 py-1 rounded-md tracking-wider uppercase mb-1">
+              <div className="sm:text-right" style={{ textAlign: 'right' }}>
+                <span
+                  className="inline-block bg-milquu-dark text-white text-[11px] font-bold px-3 py-1 rounded-md tracking-wider uppercase mb-1"
+                  style={{
+                    display: 'inline-block',
+                    backgroundColor: '#1f2937',
+                    color: '#ffffff',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '4px 12px',
+                    borderRadius: '6px',
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    marginBottom: '6px'
+                  }}
+                >
                   Purchase Voucher
                 </span>
-                <p className="text-xs text-gray-500">
-                  PO No: <span className="font-bold text-gray-900">{selectedPurchaseForBill.poNumber}</span>
+                <p className="text-xs text-gray-500" style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0' }}>
+                  PO No: <span className="font-bold text-gray-900" style={{ color: '#111827', fontWeight: 700 }}>{selectedPurchaseForBill.poNumber}</span>
                 </p>
-                <p className="text-xs text-gray-500">
-                  Date: <span className="font-semibold text-gray-900">{new Date(selectedPurchaseForBill.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                <p className="text-xs text-gray-500" style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0' }}>
+                  Date: <span className="font-semibold text-gray-900" style={{ color: '#111827', fontWeight: 600 }}>{new Date(selectedPurchaseForBill.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                 </p>
               </div>
             </div>
 
             {/* Vendor & Status Grid */}
-            <div className="grid grid-cols-2 gap-6 p-4 rounded-xl bg-gray-50 border border-gray-200 mb-6">
+            <div
+              className="grid grid-cols-2 gap-6 p-4 rounded-xl bg-gray-50 border border-gray-200 mb-6"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '24px',
+                padding: '16px 20px',
+                borderRadius: '12px',
+                backgroundColor: '#f9fafb',
+                border: '1px solid #e5e7eb',
+                marginBottom: '24px',
+                boxSizing: 'border-box'
+              }}
+            >
               <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Vendor / Farmer Details</p>
-                <p className="font-bold text-milquu-dark text-sm">{selectedPurchaseForBill.supplierName}</p>
-                <p className="text-xs text-gray-600 mt-0.5">
+                <p
+                  className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"
+                  style={{ fontSize: '10px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px 0' }}
+                >
+                  Vendor / Farmer Details
+                </p>
+                <p
+                  className="font-bold text-milquu-dark text-sm"
+                  style={{ fontSize: '15px', fontWeight: 700, color: '#111827', margin: '0 0 2px 0' }}
+                >
+                  {selectedPurchaseForBill.supplierName}
+                </p>
+                <p
+                  className="text-xs text-gray-600 mt-0.5"
+                  style={{ fontSize: '12px', color: '#4b5563', margin: '2px 0 0 0' }}
+                >
                   Phone: {selectedPurchaseForBill.supplierPhone || 'N/A'}
                 </p>
                 {selectedPurchaseForBill.supplierAddress && (
-                  <p className="text-xs text-gray-600 mt-0.5">
+                  <p
+                    className="text-xs text-gray-600 mt-0.5"
+                    style={{ fontSize: '12px', color: '#4b5563', margin: '2px 0 0 0' }}
+                  >
                     Address: {selectedPurchaseForBill.supplierAddress}
                   </p>
                 )}
               </div>
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Payment Status</p>
-                <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                  selectedPurchaseForBill.status === 'Paid' ? 'bg-emerald-100 text-emerald-800' :
-                  selectedPurchaseForBill.status === 'Received' ? 'bg-blue-100 text-blue-800' :
-                  selectedPurchaseForBill.status === 'Partial' ? 'bg-amber-100 text-amber-800' :
-                  'bg-orange-100 text-orange-800'
-                }`}>
+              <div className="text-right" style={{ textAlign: 'right' }}>
+                <p
+                  className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"
+                  style={{ fontSize: '10px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px 0' }}
+                >
+                  Payment Status
+                </p>
+                <span
+                  className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                  style={{
+                    display: 'inline-block',
+                    padding: '4px 14px',
+                    borderRadius: '9999px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    backgroundColor: selectedPurchaseForBill.status === 'Paid' ? '#d1fae5' : selectedPurchaseForBill.status === 'Received' ? '#dbeafe' : selectedPurchaseForBill.status === 'Partial' ? '#fef3c7' : '#ffedd5',
+                    color: selectedPurchaseForBill.status === 'Paid' ? '#065f46' : selectedPurchaseForBill.status === 'Received' ? '#1e40af' : selectedPurchaseForBill.status === 'Partial' ? '#92400e' : '#9a3412'
+                  }}
+                >
                   {selectedPurchaseForBill.status}
                 </span>
-                <p className="text-xs text-gray-500 mt-1.5">
-                  Payment Mode: <span className="font-semibold text-gray-800">{selectedPurchaseForBill.paymentMode || 'Cash'}</span>
+                <p className="text-xs text-gray-500 mt-1.5" style={{ fontSize: '12px', color: '#6b7280', margin: '6px 0 0 0' }}>
+                  Payment Mode: <span className="font-semibold text-gray-800" style={{ fontWeight: 600, color: '#111827' }}>{selectedPurchaseForBill.paymentMode || 'Cash'}</span>
                 </p>
               </div>
             </div>
 
             {/* Line Items Table */}
-            <div className="mb-6 overflow-hidden rounded-xl border border-gray-200">
-              <table className="w-full text-left border-collapse">
+            <div
+              className="mb-6 overflow-hidden rounded-xl border border-gray-200"
+              style={{ borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden', marginBottom: '24px' }}
+            >
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                 <thead>
-                  <tr className="bg-gray-100 border-b border-gray-200 text-xs font-bold text-gray-600 uppercase tracking-wider">
-                    <th className="p-3">#</th>
-                    <th className="p-3">Particulars / Material</th>
-                    <th className="p-3">Category</th>
-                    <th className="p-3 text-right">Quantity</th>
-                    <th className="p-3 text-right">Rate / Unit</th>
-                    <th className="p-3 text-right">Total Amount</th>
+                  <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: 700, textTransform: 'uppercase', fontSize: '11px' }}>
+                    <th style={{ padding: '12px 16px' }}>#</th>
+                    <th style={{ padding: '12px 16px' }}>Particulars / Material</th>
+                    <th style={{ padding: '12px 16px' }}>Category</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'right' }}>Quantity</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'right' }}>Rate / Unit</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'right' }}>Total Amount</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 text-xs">
+                <tbody>
                   <tr>
-                    <td className="p-3 font-semibold text-gray-500">1</td>
-                    <td className="p-3 font-bold text-gray-900">{selectedPurchaseForBill.productName}</td>
-                    <td className="p-3 text-gray-600">{selectedPurchaseForBill.category}</td>
-                    <td className="p-3 text-right font-semibold text-gray-900">
+                    <td style={{ padding: '14px 16px', color: '#6b7280', fontWeight: 600 }}>1</td>
+                    <td style={{ padding: '14px 16px', fontWeight: 700, color: '#111827' }}>{selectedPurchaseForBill.productName}</td>
+                    <td style={{ padding: '14px 16px', color: '#4b5563' }}>{selectedPurchaseForBill.category}</td>
+                    <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 600, color: '#111827' }}>
                       {selectedPurchaseForBill.quantity} {selectedPurchaseForBill.unit || 'Litre'}
                     </td>
-                    <td className="p-3 text-right font-medium text-gray-700">
+                    <td style={{ padding: '14px 16px', textAlign: 'right', color: '#374151' }}>
                       ₹{Number(selectedPurchaseForBill.rate || 0).toFixed(2)}
                     </td>
-                    <td className="p-3 text-right font-bold text-gray-900">
+                    <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 700, color: '#111827' }}>
                       ₹{Number(selectedPurchaseForBill.totalCost || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
@@ -146,23 +251,23 @@ const PurchaseBillModal = ({ handleDownloadBillPDF, handlePrint, handleShareBill
             </div>
 
             {/* Financial Calculation Box */}
-            <div className="flex justify-end mb-8">
-              <div className="w-64 space-y-2 text-xs">
-                <div className="flex justify-between py-1 border-b border-gray-100">
-                  <span className="text-gray-600">Total Purchase Cost:</span>
-                  <span className="font-bold text-gray-900">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '32px' }}>
+              <div style={{ width: '260px', fontSize: '13px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f3f4f6' }}>
+                  <span style={{ color: '#4b5563' }}>Total Purchase Cost:</span>
+                  <strong style={{ color: '#111827' }}>
                     ₹{Number(selectedPurchaseForBill.totalCost || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </span>
+                  </strong>
                 </div>
-                <div className="flex justify-between py-1 border-b border-gray-100 text-emerald-700">
-                  <span className="font-medium">Amount Paid:</span>
-                  <span className="font-bold">
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f3f4f6', color: '#047857' }}>
+                  <span>Amount Paid:</span>
+                  <strong style={{ color: '#047857' }}>
                     ₹{Number(selectedPurchaseForBill.paidAmount || (selectedPurchaseForBill.status === 'Paid' ? selectedPurchaseForBill.totalCost : 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </span>
+                  </strong>
                 </div>
-                <div className="flex justify-between py-1.5 border-t-2 border-gray-800 text-sm font-bold text-milquu-dark">
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '2px solid #111827', fontSize: '14px', fontWeight: 700, color: '#111827' }}>
                   <span>Balance Due:</span>
-                  <span className={selectedPurchaseForBill.balanceAmount > 0 ? 'text-amber-700' : 'text-emerald-700'}>
+                  <span style={{ color: (selectedPurchaseForBill.balanceAmount ?? (selectedPurchaseForBill.totalCost - (selectedPurchaseForBill.paidAmount || 0))) > 0 ? '#b45309' : '#047857', fontWeight: 700 }}>
                     ₹{Number(selectedPurchaseForBill.balanceAmount ?? (selectedPurchaseForBill.totalCost - (selectedPurchaseForBill.paidAmount || 0))).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                   </span>
                 </div>
@@ -170,23 +275,23 @@ const PurchaseBillModal = ({ handleDownloadBillPDF, handlePrint, handleShareBill
             </div>
 
             {/* Signatures */}
-            <div className="pt-8 border-t border-dashed border-gray-300 grid grid-cols-2 gap-10 text-center text-xs text-gray-600">
+            <div style={{ paddingTop: '32px', borderTop: '1px dashed #d1d5db', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', textAlign: 'center', fontSize: '12px', color: '#4b5563' }}>
               <div>
-                <div className="h-14"></div>
-                <div className="border-t border-gray-400 pt-1.5 font-medium">
+                <div style={{ height: '50px' }}></div>
+                <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '6px', fontWeight: 500 }}>
                   Vendor / Farmer Signature
                 </div>
               </div>
               <div>
-                <div className="h-14"></div>
-                <div className="border-t border-gray-400 pt-1.5 font-bold text-milquu-dark">
-                  Authorized Signatory (MilQuu Fresh)
+                <div style={{ height: '50px' }}></div>
+                <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '6px', fontWeight: 700, color: '#111827' }}>
+                  Authorized Signatory ({business.businessName})
                 </div>
               </div>
             </div>
 
-            <p className="text-[10px] text-center text-gray-400 mt-6">
-              Thank you for supplying pure, high quality produce to MilQuu Fresh!
+            <p style={{ fontSize: '10px', textAlign: 'center', color: '#9ca3af', marginTop: '24px', marginBottom: 0 }}>
+              Thank you for supplying pure, high quality produce to {business.businessName}!
             </p>
           </div>
 
