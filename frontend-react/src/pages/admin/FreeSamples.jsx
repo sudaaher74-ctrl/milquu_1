@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PackageOpen, MapPin, CheckCircle, Clock, XCircle, Search, Map, Download, Eye, X, Phone, MessageCircle, Package, Navigation, FileText, Monitor, Calendar } from 'lucide-react';
 import api from '../../utils/api';
+import toast from '../../utils/toast';
 
 // ─── Detail Modal ────────────────────────────────────────────────────────────
 const SampleDetailModal = ({ sample, onClose, onStatusChange }) => {
@@ -221,6 +222,7 @@ const FreeSamples = () => {
   };
 
   const updateStatus = async (id, newStatus) => {
+    if (newStatus === 'Rejected' && !window.confirm('Reject this free-sample request?')) return;
     try {
       await api.put(`/api/free-sample/admin/${id}/status`, { status: newStatus });
       setSamples(samples.map(s => s._id === id ? { ...s, status: newStatus } : s));
@@ -229,7 +231,7 @@ const FreeSamples = () => {
         setSelectedSample(prev => ({ ...prev, status: newStatus }));
       }
     } catch (err) {
-      alert('Failed to update status.');
+      toast.error('Failed to update status.');
     }
   };
 

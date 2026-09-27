@@ -128,7 +128,9 @@ router.get('/', protect, staffUp, async (req, res) => {
         .limit(limit)
         .lean(),
       Subscription.countDocuments(query),
-      Subscription.aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }])
+      Subscription.aggregate([
+        { $group: { _id: '$status', n: { $sum: 1 }, monthly: { $sum: { $ifNull: ['$monthlyTotal', 0] } } } }
+      ])
     ]);
 
     res.json({
@@ -136,7 +138,9 @@ router.get('/', protect, staffUp, async (req, res) => {
       total,
       page,
       pages: Math.max(1, Math.ceil(total / limit)),
-      counts: Object.fromEntries(counts.map((c) => [c._id, c.n]))
+      counts: Object.fromEntries(counts.map((c) => [c._id, c.n])),
+      // What active plans bring in over a typical month, priced by the server
+      activeMonthly: Math.round(counts.find((c) => c._id === 'Active')?.monthly || 0)
     });
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });

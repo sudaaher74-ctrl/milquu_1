@@ -1,125 +1,120 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../../utils/api.js';
-import { Search, Filter, ChevronLeft, ChevronRight, Download, X, MapPin, Phone, User, Package, Calendar, Truck, CheckCircle, Navigation } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, X, MapPin, Phone, User, Package, Calendar, Truck, Navigation } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ExportButton from '../../components/admin/ExportButton';
+import toast from '../../utils/toast';
+
+const PAGE_SIZE = 20;
+
+const StatusBadge = ({ status }) => {
+  const normalized = String(status || 'Pending').toLowerCase();
+  let classes = 'bg-blue-100 text-blue-700';
+  if (normalized === 'delivered') classes = 'bg-green-100 text-green-700';
+  if (normalized === 'failed') classes = 'bg-red-100 text-red-700';
+  if (normalized === 'out for delivery') classes = 'bg-amber-100 text-amber-700';
+  return <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${classes}`}>{status || 'Pending'}</span>;
+};
+
+/** The delivery person's name for an order, or 'Unassigned'. */
+const staffName = (order) => order.deliveryStaff?.name || 'Unassigned';
+const deliveryLabel = (order) => order.isDelivered ? 'Delivered' : (order.deliveryStatus || 'Pending');
 
 const Orders = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  
-  // State for advanced features
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('All');
-  const [filterPayment, setFilterPayment] = useState('All');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchInput, setSearchInput] = useState(searchParams.get('search') || '');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [staffList, setStaffList] = useState([]);
-  const itemsPerPage = 8;
+
+  // Filters live in the URL, so the header search and a refresh land on the same view.
+  const search = searchParams.get('search') || '';
+  const source = searchParams.get('source') || '';
+  const payment = searchParams.get('payment') || '';
+  const delivery = searchParams.get('delivery') || '';
+  const currentPage = Math.max(1, parseInt(searchParams.get('page'), 10) || 1);
+
+  const setFilter = (key, value) => {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set(key, value); else next.delete(key);
+    next.delete('page');
+    setLoading(true);
+    setSearchParams(next);
+  };
+  const setPage = (page) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('page', String(page));
+    setLoading(true);
+    setSearchParams(next);
+  };
 
   useEffect(() => {
-    const fetchOrdersAndStaff = async () => {
-      try {
-        const [ordersRes, staffRes] = await Promise.all([
-          api.get('/api/erp/orders'),
-          api.get('/api/erp/delivery-staff')
-        ]);
-        const data = ordersRes.data;
-        const staffData = staffRes.data;
-        setStaffList(staffData);
-        
-        // Auto-assign from real database staff
-        const mappedData = data.map((order, index) => {
-          let area = order.shippingAddress?.city || 'Panvel';
-          
-          // Try to find a staff member matching the area, otherwise just pick one round-robin
-          const areaStaff = staffData.filter(s => s.area?.toLowerCase().includes(area.toLowerCase()) || s.city?.toLowerCase().includes(area.toLowerCase()));
-          const selectedStaff = areaStaff.length > 0 
-            ? areaStaff[index % areaStaff.length] 
-            : (staffData.length > 0 ? staffData[index % staffData.length] : { name: 'Unassigned' });
-          
-          return {
-            ...order,
-            deliveryArea: area,
-            assignedBoy: selectedStaff.name,
-            deliveryStatus: order.deliveryStatus || (order.isDelivered ? 'Delivered' : 'Pending Assignment')
-          };
-        });
-        
-        setOrders(mappedData);
-      } catch (error) {
-        console.error("Failed to fetch orders", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchOrdersAndStaff();
+    api.get('/api/erp/delivery-staff').then(({ data }) => setStaffList(data)).catch(() => setStaffList([]));
   }, []);
 
-  // Filter & Search Logic
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = (order.name || order.user?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          order._id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'All' || (order.status || 'Pending').toLowerCase() === filterStatus.toLowerCase();
-    const matchesPayment = filterPayment === 'All' || (order.paymentMethod || 'COD').toUpperCase() === filterPayment.toUpperCase();
-    return matchesSearch && matchesStatus && matchesPayment;
-  });
+  // Keep the search box in step when the header search changes the URL
+  const [lastSearch, setLastSearch] = useState(search);
+  if (search !== lastSearch) {
+    setLastSearch(search);
+    setSearchInput(search);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    const params = new URLSearchParams({ page: String(currentPage), limit: String(PAGE_SIZE) });
+    if (search) params.set('search', search);
+    if (source) params.set('source', source);
+    if (payment) params.set('payment', payment);
+    if (delivery) params.set('delivery', delivery);
+    api.get(`/api/erp/orders?${params}`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setOrders(data.orders);
+        setTotal(data.total);
+        setPages(data.pages);
+      })
+      .catch((error) => toast.error(error.response?.data?.message || 'Could not load orders'))
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [currentPage, search, source, payment, delivery]);
+
+  const submitSearch = (e) => {
+    e.preventDefault();
+    setFilter('search', searchInput.trim());
+  };
 
   const handleAssignDriver = async (orderId, staffId) => {
     try {
-      const adminTokenStr = localStorage.getItem('adminToken');
-      const res = await api.put(`/api/erp/orders/${orderId}/assign`, {
-        deliveryBoyId: staffId
-      });
-      
-      if (!res.data) throw new Error('Failed to assign driver');
-      
-      const updatedOrder = res.data;
-      
-      // Update local state
-      const staff = staffList.find(s => s._id === staffId);
-      setOrders(orders.map(o => o._id === orderId ? { ...o, deliveryStaff: staffId, assignedBoy: staff?.name, deliveryStatus: 'Out For Delivery' } : o));
-      setSelectedOrder(prev => ({ ...prev, deliveryStaff: staffId, assignedBoy: staff?.name, deliveryStatus: 'Out For Delivery' }));
-      
+      const { data: updated } = await api.put(`/api/erp/orders/${orderId}/assign`, { deliveryBoyId: staffId });
+      const staff = staffList.find((s) => s._id === staffId);
+      const patch = (o) => (o._id === orderId
+        ? { ...o, deliveryStaff: staff ? { _id: staff._id, name: staff.name } : null, deliveryStatus: updated.deliveryStatus }
+        : o);
+      setOrders((list) => list.map(patch));
+      setSelectedOrder((o) => (o ? patch(o) : o));
+      toast.success(`Assigned to ${staff?.name || 'delivery person'}`);
     } catch (error) {
-      console.error(error);
-      alert('Failed to assign driver');
+      toast.error(error.response?.data?.message || 'Failed to assign driver');
     }
   };
 
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-  const currentOrders = filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const StatusBadge = ({ status }) => {
-    const normalized = (status || 'Pending').toLowerCase();
-    let classes = 'bg-gray-100 text-gray-800';
-    if (normalized === 'active' || normalized === 'delivered') classes = 'bg-green-100 text-green-700';
-    if (normalized === 'pending') classes = 'bg-blue-100 text-blue-700';
-    if (normalized === 'paused' || normalized === 'cancelled') classes = 'bg-orange-100 text-orange-700';
-
-    return <span className={`px-2.5 py-1 rounded-md text-xs font-semibold ${classes}`}>{status || 'Pending'}</span>;
-  };
-
-  if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto p-8 flex flex-col space-y-4">
-        <div className="h-10 bg-gray-200 rounded-xl w-1/4 animate-pulse"></div>
-        <div className="h-96 bg-gray-100 rounded-2xl animate-pulse w-full mt-8"></div>
-      </div>
-    );
-  }
-
-  const exportData = filteredOrders.map(order => ({
+  const exportData = orders.map(order => ({
     'Order ID': order._id,
     'Customer Name': order.name || order.user?.name || 'Unknown',
     'Phone': order.phone || 'N/A',
-    'Area': order.deliveryArea || 'N/A',
-    'Status': order.status || 'Pending',
-    'Delivery Boy': order.assignedBoy || 'Unassigned',
+    'Source': order.orderSource,
+    'Delivery': deliveryLabel(order),
+    'Delivery Boy': staffName(order),
+    'Payment': `${order.paymentMethod || 'COD'} (${order.paymentStatus || 'PENDING'})`,
     'Total (Rs)': order.totalPrice || 0,
-    'Date': new Date(order.createdAt).toLocaleDateString()
+    'Date': new Date(order.createdAt).toLocaleDateString('en-IN')
   }));
+
+  const selectClass = 'bg-transparent outline-none text-sm font-medium text-gray-600 appearance-none pr-6 cursor-pointer w-full';
 
   return (
     <div className="max-w-7xl mx-auto pb-10 font-sans">
@@ -127,10 +122,10 @@ const Orders = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Recent Orders</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage and track all customer orders and subscriptions.</p>
+          <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Orders</h1>
+          <p className="text-gray-500 text-sm mt-1">{loading ? 'Loading…' : `${total.toLocaleString('en-IN')} order${total === 1 ? '' : 's'}${search ? ` matching “${search}”` : ''}`}</p>
         </div>
-        <ExportButton data={exportData} filename="Orders_Export" title="Orders Report" />
+        <ExportButton data={exportData} filename="Orders_Export" title="Orders Report (this page)" label="Export page" />
       </div>
 
       <motion.div 
@@ -139,49 +134,32 @@ const Orders = () => {
         className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
       >
         {/* Toolbar */}
-        <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-50/50">
-          <div className="flex items-center bg-white rounded-lg px-4 py-2.5 w-full sm:w-96 border border-gray-200 focus-within:border-milquu-blue focus-within:shadow-sm transition-all shadow-sm">
+        <div className="p-5 border-b border-gray-100 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 bg-gray-50/50">
+          <form onSubmit={submitSearch} role="search" className="flex items-center bg-white rounded-lg px-4 py-2.5 w-full lg:w-96 border border-gray-200 focus-within:border-milquu-blue focus-within:shadow-sm transition-all shadow-sm">
             <Search size={18} className="text-gray-400 mr-2" />
-            <input 
-              type="text" 
-              placeholder="Search by Order ID or Customer Name..." 
+            <input
+              type="search"
+              aria-label="Search orders"
+              placeholder="Name, phone or full order ID — press Enter"
               className="bg-transparent border-none outline-none text-sm w-full font-sans text-gray-700"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
-          </div>
-          
-          <div className="flex space-x-2 w-full sm:w-auto">
-            <div className="relative w-full sm:w-auto">
-              <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm px-4 py-2.5 cursor-pointer">
-                <Filter size={16} className="text-gray-500 mr-2" />
-                <select 
-                  className="bg-transparent outline-none text-sm font-medium text-gray-600 appearance-none pr-6 cursor-pointer w-full"
-                  value={filterPayment}
-                  onChange={(e) => { setFilterPayment(e.target.value); setCurrentPage(1); }}
-                >
-                  <option value="All">All Payments</option>
-                  <option value="COD">COD</option>
-                  <option value="ONLINE">Online</option>
+          </form>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto">
+            {[
+              { key: 'source', value: source, label: 'Source', options: [['', 'All sources'], ['Website', 'Website'], ['App', 'App'], ['POS', 'Shop POS']] },
+              { key: 'payment', value: payment, label: 'Payment', options: [['', 'All payments'], ['paid', 'Paid'], ['unpaid', 'Unpaid']] },
+              { key: 'delivery', value: delivery, label: 'Delivery', options: [['', 'All deliveries'], ['pending', 'Pending'], ['unassigned', 'Unassigned'], ['delivered', 'Delivered'], ['failed', 'Failed']] }
+            ].map((f) => (
+              <div key={f.key} className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm px-4 py-2.5">
+                <Filter size={16} className="text-gray-500 mr-2 shrink-0" />
+                <select aria-label={f.label} className={selectClass} value={f.value} onChange={(e) => setFilter(f.key, e.target.value)}>
+                  {f.options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select>
               </div>
-            </div>
-            <div className="relative w-full sm:w-auto">
-              <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm px-4 py-2.5 cursor-pointer">
-                <Filter size={16} className="text-gray-500 mr-2" />
-                <select 
-                  className="bg-transparent outline-none text-sm font-medium text-gray-600 appearance-none pr-6 cursor-pointer w-full"
-                  value={filterStatus}
-                  onChange={(e) => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-                >
-                  <option value="All">All Status</option>
-                  <option value="Active">Active</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Paused">Paused</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -192,15 +170,17 @@ const Orders = () => {
               <tr>
                 <th className="px-6 py-4 font-semibold">Order ID</th>
                 <th className="px-6 py-4 font-semibold">Customer</th>
-                <th className="px-6 py-4 font-semibold">Product/Freq</th>
+                <th className="px-6 py-4 font-semibold">Items / Source</th>
                 <th className="px-6 py-4 font-semibold">Amount</th>
                 <th className="px-6 py-4 font-semibold">Payment</th>
                 <th className="px-6 py-4 font-semibold">Delivery Info</th>
-                <th className="px-6 py-4 font-semibold">Status</th>
+                <th className="px-6 py-4 font-semibold">Delivery</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {currentOrders.length > 0 ? currentOrders.map((order) => (
+              {loading ? (
+                <tr><td colSpan="7" className="px-6 py-12 text-center text-gray-400 text-sm">Loading orders…</td></tr>
+              ) : orders.length > 0 ? orders.map((order) => (
                 <tr key={order._id} onClick={() => setSelectedOrder(order)} className="hover:bg-gray-50/80 transition-colors group cursor-pointer">
                   <td className="px-6 py-4">
                     <span className="text-sm font-bold text-milquu-blue bg-blue-50 px-2 py-1 rounded-md">
@@ -227,14 +207,11 @@ const Orders = () => {
                     </p>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-milquu-dark flex items-center"><Truck size={12} className="mr-1 text-milquu-blue" /> {order.assignedBoy}</p>
-                    <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mt-0.5">{order.deliveryArea}</p>
+                    <p className={`text-sm font-bold flex items-center ${order.deliveryStaff ? 'text-milquu-dark' : 'text-red-600'}`}><Truck size={12} className="mr-1 text-milquu-blue" /> {staffName(order)}</p>
+                    <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mt-0.5">{order.shippingAddress?.city || '—'}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <StatusBadge status={order.status} />
-                    <p className={`text-[10px] mt-1 font-bold ${order.deliveryStatus === 'Delivered' ? 'text-green-600' : order.deliveryStatus === 'Failed' ? 'text-red-600' : 'text-blue-600'}`}>
-                      {order.deliveryStatus}
-                    </p>
+                    <StatusBadge status={deliveryLabel(order)} />
                     {order.deliverySlot && (
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded mt-1 inline-block ${order.deliverySlot === 'Morning' ? 'bg-orange-100 text-orange-700' : 'bg-indigo-100 text-indigo-700'}`}>
                         {order.deliverySlot === 'Morning' ? '🌅' : '🌇'} {order.deliverySlot}
@@ -244,7 +221,7 @@ const Orders = () => {
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                     <p className="text-sm font-medium">No orders found matching your criteria.</p>
                   </td>
                 </tr>
@@ -253,37 +230,27 @@ const Orders = () => {
           </table>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
+        {/* Pagination (in the database — only one page is ever loaded) */}
+        {pages > 1 && (
           <div className="p-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
             <p className="text-xs text-gray-500">
-              Showing <span className="font-semibold text-gray-700">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-semibold text-gray-700">{Math.min(currentPage * itemsPerPage, filteredOrders.length)}</span> of <span className="font-semibold text-gray-700">{filteredOrders.length}</span> results
+              Showing <span className="font-semibold text-gray-700">{(currentPage - 1) * PAGE_SIZE + 1}</span>–<span className="font-semibold text-gray-700">{Math.min(currentPage * PAGE_SIZE, total)}</span> of <span className="font-semibold text-gray-700">{total.toLocaleString('en-IN')}</span>
             </p>
-            <div className="flex space-x-1">
-              <button 
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setPage(currentPage - 1)}
+                disabled={currentPage <= 1}
+                aria-label="Previous page"
+                className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={18} />
               </button>
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <button 
-                  key={i}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    currentPage === i + 1 
-                      ? 'bg-milquu-blue text-white shadow-sm' 
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button 
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              <span className="text-sm text-gray-600">Page {currentPage} of {pages}</span>
+              <button
+                onClick={() => setPage(currentPage + 1)}
+                disabled={currentPage >= pages}
+                aria-label="Next page"
+                className="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRight size={18} />
               </button>
@@ -325,7 +292,7 @@ const Orders = () => {
               </div>
 
               {/* Body */}
-              <div className="p-6 overflow-y-auto">
+              <div id="order-invoice" className="p-6 overflow-y-auto">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
                   {/* Customer Info */}
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
@@ -370,8 +337,8 @@ const Orders = () => {
                       <Truck size={20} />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-milquu-dark">Assigned to: {selectedOrder.assignedBoy}</h4>
-                      <p className="text-xs text-gray-500">Area: {selectedOrder.deliveryArea}</p>
+                      <h4 className="text-sm font-bold text-milquu-dark">Assigned to: {staffName(selectedOrder)}</h4>
+                      <p className="text-xs text-gray-500">Area: {selectedOrder.shippingAddress?.city || '—'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -379,7 +346,7 @@ const Orders = () => {
                       <select 
                         onChange={(e) => handleAssignDriver(selectedOrder._id, e.target.value)}
                         className="text-xs border-gray-200 rounded-md py-1 px-2 text-gray-600 focus:outline-none focus:ring-1 focus:ring-milquu-blue"
-                        defaultValue={selectedOrder.deliveryStaff || ''}
+                        value={selectedOrder.deliveryStaff?._id || ''}
                       >
                         <option value="" disabled>Assign Driver</option>
                         {staffList.map(staff => (
@@ -388,7 +355,7 @@ const Orders = () => {
                       </select>
                     )}
                     <span className="px-3 py-1 bg-white rounded-full text-xs font-bold text-milquu-blue shadow-sm border border-blue-100">
-                      {selectedOrder.deliveryStatus}
+                      {deliveryLabel(selectedOrder)}
                     </span>
                   </div>
                 </div>
@@ -397,7 +364,7 @@ const Orders = () => {
                   <h3 className="text-sm font-bold text-milquu-dark flex items-center"><Package size={16} className="mr-1.5 text-milquu-blue" /> Order Items</h3>
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center text-sm text-gray-500"><Calendar size={14} className="mr-1" /> {new Date(selectedOrder.createdAt).toLocaleDateString()}</div>
-                    <StatusBadge status={selectedOrder.status} />
+                    <StatusBadge status={deliveryLabel(selectedOrder)} />
                   </div>
                 </div>
 
@@ -470,7 +437,7 @@ const Orders = () => {
                 <button onClick={() => setSelectedOrder(null)} className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors">
                   Close
                 </button>
-                <button className="px-4 py-2 bg-milquu-blue text-white rounded-lg text-sm font-medium hover:bg-blue-800 shadow-md shadow-milquu-blue/20 transition-colors">
+                <button onClick={() => window.print()} className="px-4 py-2 bg-milquu-blue text-white rounded-lg text-sm font-medium hover:bg-blue-800 shadow-md shadow-milquu-blue/20 transition-colors">
                   Print Invoice
                 </button>
               </div>
@@ -480,6 +447,15 @@ const Orders = () => {
         )}
       </AnimatePresence>
 
+      {/* Print only the open order */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #order-invoice, #order-invoice * { visibility: visible; }
+          #order-invoice { position: absolute; left: 0; top: 0; width: 100%; overflow: visible; }
+          #order-invoice select { display: none; }
+        }
+      `}</style>
     </div>
   );
 };

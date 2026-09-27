@@ -1,22 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../utils/api.js';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ShoppingCart, Plus, Search, Filter, Download,
-  TrendingUp, Truck, Package, IndianRupee, Factory, Edit2, Trash2,
-  FileText, Printer, CheckCircle, Clock, AlertCircle, Eye,
-  ArrowUpRight, ArrowDownLeft, Calendar, User, Phone, MapPin,
-  CreditCard, ChevronRight, Share2, X, RefreshCw, BookOpen, Layers
-} from 'lucide-react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
-} from 'recharts';
+import { ShoppingCart, Plus, Download, IndianRupee, BookOpen } from 'lucide-react';
 import { exportToExcel } from '../../utils/exportUtils.js';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
+import PurchaseOrdersTab from './purchases/PurchaseOrdersTab';
+import { useBusinessSettings } from '../../utils/useBusinessSettings';
+import VendorLedgerTab from './purchases/VendorLedgerTab';
+import PurchaseBillModal from './purchases/PurchaseBillModal';
+import VendorStatementModal from './purchases/VendorStatementModal';
+import VendorPaymentModal from './purchases/VendorPaymentModal';
+import PurchaseFormModal from './purchases/PurchaseFormModal';
+import toast from '../../utils/toast';
 
 const Purchases = () => {
+  // Signs off the WhatsApp statement with the saved business details
+  const business = useBusinessSettings();
   // Navigation & Filter Tabs
   const [activeTab, setActiveTab] = useState('purchases'); // 'purchases' | 'vendors'
   const [searchTerm, setSearchTerm] = useState('');
@@ -123,7 +123,7 @@ const Purchases = () => {
       setVendorLedgerData(res.data);
     } catch (error) {
       console.error('Error loading vendor ledger', error);
-      alert('Failed to load vendor ledger statement.');
+      toast.error('Failed to load vendor ledger statement.');
     } finally {
       setLoadingLedger(false);
     }
@@ -168,7 +168,7 @@ const Purchases = () => {
       fetchData();
     } catch (error) {
       console.error('Error deleting purchase', error);
-      alert('Failed to delete purchase');
+      toast.error('Failed to delete purchase');
     }
   };
 
@@ -208,7 +208,7 @@ const Purchases = () => {
       await fetchData();
     } catch (error) {
       console.error('Error saving purchase', error);
-      alert('Failed to save purchase: ' + (error.response?.data?.message || error.message));
+      toast.error('Failed to save purchase: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -233,7 +233,7 @@ const Purchases = () => {
     e.preventDefault();
     const payAmount = Number(paymentFormData.amount);
     if (!payAmount || payAmount <= 0) {
-      alert('Please enter a valid payment amount greater than 0');
+      toast('Please enter a valid payment amount greater than 0');
       return;
     }
     try {
@@ -243,10 +243,10 @@ const Purchases = () => {
       if (showLedgerModal && selectedVendorForLedger) {
         await fetchVendorLedger(selectedVendorForLedger);
       }
-      alert(`Payment of ₹${payAmount.toLocaleString('en-IN')} recorded successfully!`);
+      toast(`Payment of ₹${payAmount.toLocaleString('en-IN')} recorded successfully!`);
     } catch (error) {
       console.error('Error recording payment', error);
-      alert('Failed to record payment: ' + (error.response?.data?.message || error.message));
+      toast.error('Failed to record payment: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -410,7 +410,7 @@ const Purchases = () => {
       pdf.save(`MilQuu_Purchase_Bill_${targetPurchase.poNumber || 'Voucher'}.pdf`);
     } catch (err) {
       console.error('Error generating PDF bill with html2canvas', err);
-      alert('Could not download PDF. Please try again or use the Print option.');
+      toast('Could not download PDF. Please try again or use the Print option.');
     } finally {
       setIsGeneratingBillPdf(false);
     }
@@ -520,7 +520,7 @@ const Purchases = () => {
       pdf.save(`MilQuu_Vendor_Statement_${safeName}.pdf`);
     } catch (err) {
       console.error('Error downloading vendor ledger PDF', err);
-      alert('Could not download PDF. Please try again or use the Print button.');
+      toast('Could not download PDF. Please try again or use the Print button.');
     } finally {
       setIsGeneratingLedgerPdf(false);
     }
@@ -562,7 +562,7 @@ const Purchases = () => {
       `*Current Net Balance:* ₹${Number(s.balanceDue || 0).toLocaleString('en-IN')}\n` +
       `*Status:* ${s.balanceDue <= 0 ? 'Fully Settled ✅' : 'Pending Payment ⏳'}\n\n` +
       `As of: ${new Date().toLocaleDateString('en-IN')}\n` +
-      `MilQuu Fresh Dairy, Panvel, Navi Mumbai.`;
+      `${business.businessName}${business.address ? `, ${business.address}` : ''}.`;
 
     const url = phone && phone.length === 10
       ? `https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`
@@ -574,7 +574,7 @@ const Purchases = () => {
   const handleExport = () => {
     if (activeTab === 'purchases') {
       if (purchaseData.length === 0) {
-        alert('No purchase orders to export');
+        toast.info('No purchase orders to export');
         return;
       }
       const rows = purchaseData.map((p) => {
@@ -602,7 +602,7 @@ const Purchases = () => {
       exportToExcel(rows, `MilQuu_Purchase_Orders_${new Date().toISOString().split('T')[0]}`);
     } else {
       if (vendorsSummary.length === 0) {
-        alert('No vendor summary data to export');
+        toast.info('No vendor summary data to export');
         return;
       }
       const rows = vendorsSummary.map((v) => ({
@@ -791,1290 +791,84 @@ const Purchases = () => {
         </button>
       </div>
 
-      {/* TAB 1: PURCHASE ORDERS */}
-      {activeTab === 'purchases' && (
-        <>
-          {/* Top Dashboard Metrics & Charts */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-            {/* KPI Cards */}
-            <div className="flex flex-col space-y-4">
-              <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between flex-1">
-                <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Monthly Purchase Cost</p>
-                  <h3 className="text-3xl font-bold text-milquu-dark">₹{totalMonthlyCost.toLocaleString('en-IN')}</h3>
-                  <p className="text-xs text-emerald-600 font-medium mt-1 flex items-center">
-                    <TrendingUp size={12} className="mr-1" /> Active Procurements
-                  </p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
-                  <IndianRupee size={24} />
-                </div>
-              </div>
-              <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between flex-1">
-                <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Active Suppliers</p>
-                  <h3 className="text-3xl font-bold text-milquu-dark">{activeSuppliersCount}</h3>
-                  <p className="text-xs text-gray-500 font-medium mt-1">{pendingDeliveriesCount} pending deliveries</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-milquu-blue">
-                  <Factory size={24} />
-                </div>
-              </div>
-            </div>
+      <PurchaseOrdersTab
+        activeSuppliersCount={activeSuppliersCount}
+        activeTab={activeTab}
+        filteredPurchases={filteredPurchases}
+        handleDelete={handleDelete}
+        openBillModal={openBillModal}
+        openEditModal={openEditModal}
+        pendingDeliveriesCount={pendingDeliveriesCount}
+        purchaseStatusFilter={purchaseStatusFilter}
+        searchTerm={searchTerm}
+        setPurchaseStatusFilter={setPurchaseStatusFilter}
+        setSearchTerm={setSearchTerm}
+        totalMonthlyCost={totalMonthlyCost}
+        trendData={trendData}
+      />
 
-            {/* Purchase Trends Chart */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 col-span-1 sm:col-span-2">
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-base font-bold text-milquu-dark">Purchase Trends (Last 6 Months)</h2>
-                <span className="text-xs text-gray-400">Monthly procurement spend</span>
-              </div>
-              <div className="h-[180px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={trendData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={8} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} tickFormatter={(val) => `₹${val / 1000}k`} />
-                    <Tooltip
-                      cursor={{ fill: '#F8FAFC' }}
-                      contentStyle={{ borderRadius: '10px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.08)' }}
-                      formatter={(val) => [`₹${Number(val).toLocaleString('en-IN')}`, 'Cost']}
-                    />
-                    <Bar dataKey="cost" fill="#3B82F6" radius={[6, 6, 0, 0]} barSize={34} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
+      <VendorLedgerTab
+        activeTab={activeTab}
+        fetchData={fetchData}
+        fetchVendorLedger={fetchVendorLedger}
+        filteredVendors={filteredVendors}
+        openRecordPaymentModal={openRecordPaymentModal}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        setVendorStatusFilter={setVendorStatusFilter}
+        vendorStatusFilter={vendorStatusFilter}
+        vendorSummaryMetrics={vendorSummaryMetrics}
+        vendorsSummary={vendorsSummary}
+      />
 
-          {/* Purchases Table Section */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Toolbar */}
-            <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-gray-50/50">
-              <div className="relative flex-1 max-w-md">
-                <Search size={16} className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search by supplier, product or PO number..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-milquu-blue transition-all"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-1">Status:</span>
-                {['all', 'Pending', 'Received', 'Paid', 'Partial'].map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => setPurchaseStatusFilter(st)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                      purchaseStatusFilter === st
-                        ? 'bg-milquu-dark text-white'
-                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    {st === 'all' ? 'All' : st}
-                  </button>
-                ))}
-              </div>
-            </div>
+      <PurchaseBillModal
+        handleDownloadBillPDF={handleDownloadBillPDF}
+        handlePrint={handlePrint}
+        handleShareBillWhatsApp={handleShareBillWhatsApp}
+        isGeneratingBillPdf={isGeneratingBillPdf}
+        selectedPurchaseForBill={selectedPurchaseForBill}
+        setShowBillModal={setShowBillModal}
+        showBillModal={showBillModal}
+      />
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1050px]">
-                <thead>
-                  <tr className="bg-gray-50/80 border-b border-gray-100 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                    <th className="px-6 py-3.5">PO Number</th>
-                    <th className="px-6 py-3.5">Date</th>
-                    <th className="px-6 py-3.5">Supplier / Vendor</th>
-                    <th className="px-6 py-3.5">Category & Product</th>
-                    <th className="px-6 py-3.5 text-right">Quantity</th>
-                    <th className="px-6 py-3.5 text-right">Rate</th>
-                    <th className="px-6 py-3.5 text-right">Total Cost</th>
-                    <th className="px-6 py-3.5 text-right">Paid / Due</th>
-                    <th className="px-6 py-3.5">Status</th>
-                    <th className="px-6 py-3.5 text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 text-sm">
-                  {filteredPurchases.length === 0 ? (
-                    <tr>
-                      <td colSpan="10" className="px-6 py-12 text-center text-gray-400">
-                        No purchase orders found matching your search.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredPurchases.map((purchase) => {
-                      const total = Number(purchase.totalCost || 0);
-                      const paid = Number(purchase.paidAmount || (purchase.status === 'Paid' ? total : 0));
-                      const due = Math.max(0, total - paid);
+      <VendorStatementModal
+        handleDownloadLedgerExcel={handleDownloadLedgerExcel}
+        handleDownloadLedgerPDF={handleDownloadLedgerPDF}
+        handlePrint={handlePrint}
+        handleShareLedgerWhatsApp={handleShareLedgerWhatsApp}
+        isGeneratingLedgerPdf={isGeneratingLedgerPdf}
+        loadingLedger={loadingLedger}
+        openRecordPaymentModal={openRecordPaymentModal}
+        selectedVendorForLedger={selectedVendorForLedger}
+        setShowLedgerModal={setShowLedgerModal}
+        showLedgerModal={showLedgerModal}
+        vendorLedgerData={vendorLedgerData}
+      />
 
-                      return (
-                        <tr key={purchase._id} className="hover:bg-blue-50/20 transition-colors group">
-                          <td className="px-6 py-4">
-                            <button
-                              onClick={() => openBillModal(purchase)}
-                              className="font-bold text-milquu-blue hover:underline flex items-center gap-1 cursor-pointer"
-                              title="Click to view & print Purchase Bill"
-                            >
-                              <span>{purchase.poNumber}</span>
-                              <FileText size={13} className="text-milquu-blue/70" />
-                            </button>
-                          </td>
-                          <td className="px-6 py-4 text-gray-600 text-xs font-medium">
-                            {new Date(purchase.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="font-bold text-milquu-dark">{purchase.supplierName}</p>
-                            {purchase.supplierPhone && (
-                              <p className="text-xs text-gray-400">{purchase.supplierPhone}</p>
-                            )}
-                          </td>
-                          <td className="px-6 py-4">
-                            <p className="font-bold text-gray-800">{purchase.productName}</p>
-                            <p className="text-xs text-gray-400 flex items-center mt-0.5">
-                              {purchase.category === 'Raw Milk' ? <Package size={11} className="mr-1" /> :
-                               purchase.category === 'Transport' ? <Truck size={11} className="mr-1" /> :
-                               <ShoppingCart size={11} className="mr-1" />}
-                              {purchase.category}
-                            </p>
-                          </td>
-                          <td className="px-6 py-4 text-right font-medium text-gray-800">
-                            {purchase.quantity ? purchase.quantity.toLocaleString('en-IN') : 0} {purchase.unit || 'L'}
-                          </td>
-                          <td className="px-6 py-4 text-right font-medium text-gray-800">
-                            ₹{Number(purchase.rate || 0).toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 text-right font-bold text-milquu-dark">
-                            ₹{total.toLocaleString('en-IN')}
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <span className="text-xs font-semibold text-emerald-600">₹{paid.toLocaleString('en-IN')}</span>
-                            {due > 0 ? (
-                              <span className="block text-[11px] font-bold text-amber-600">Due: ₹{due.toLocaleString('en-IN')}</span>
-                            ) : (
-                              <span className="block text-[11px] font-medium text-gray-400">Clear</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide inline-flex items-center gap-1 ${
-                              purchase.status === 'Paid' ? 'bg-emerald-100 text-emerald-800' :
-                              purchase.status === 'Received' ? 'bg-blue-100 text-blue-800' :
-                              purchase.status === 'Partial' ? 'bg-amber-100 text-amber-800' :
-                              'bg-orange-100 text-orange-800'
-                            }`}>
-                              {purchase.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
-                              {/* Print / View Bill Button */}
-                              <button
-                                onClick={() => openBillModal(purchase)}
-                                className="p-2 text-milquu-blue hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                                title="View & Print Bill / Invoice"
-                              >
-                                <Printer size={16} />
-                              </button>
-                              {/* Edit Button */}
-                              <button
-                                onClick={() => openEditModal(purchase)}
-                                className="p-2 text-gray-500 hover:text-milquu-blue hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                                title="Edit Purchase"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              {/* Delete Button */}
-                              <button
-                                onClick={() => handleDelete(purchase._id)}
-                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                                title="Delete Purchase"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      )}
+      <VendorPaymentModal
+        currentVendorDue={currentVendorDue}
+        existingSupplierNames={existingSupplierNames}
+        handleSavePayment={handleSavePayment}
+        paymentFormData={paymentFormData}
+        setPaymentFormData={setPaymentFormData}
+        setShowPaymentModal={setShowPaymentModal}
+        showPaymentModal={showPaymentModal}
+      />
 
-      {/* TAB 2: VENDOR ACCOUNTING & LEDGER (KHATA) */}
-      {activeTab === 'vendors' && (
-        <>
-          {/* Vendor Accounting KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-5 mb-8">
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Purchases</p>
-                <h3 className="text-2xl font-bold text-milquu-dark">₹{vendorSummaryMetrics.totalBilledAll.toLocaleString('en-IN')}</h3>
-                <p className="text-xs text-gray-500 mt-1">{vendorSummaryMetrics.totalVendors} Registered Suppliers</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-milquu-blue">
-                <ShoppingCart size={22} />
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Amount Paid</p>
-                <h3 className="text-2xl font-bold text-emerald-600">₹{vendorSummaryMetrics.totalPaidAll.toLocaleString('en-IN')}</h3>
-                <p className="text-xs text-emerald-700 mt-1 flex items-center">
-                  <CheckCircle size={12} className="mr-1" /> Cleared Payments
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                <CreditCard size={22} />
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Outstanding Dues</p>
-                <h3 className="text-2xl font-bold text-amber-600">₹{vendorSummaryMetrics.totalOutstandingAll.toLocaleString('en-IN')}</h3>
-                <p className="text-xs text-amber-700 mt-1 font-medium">
-                  {vendorSummaryMetrics.vendorsWithDues} vendors have pending dues
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
-                <Clock size={22} />
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Suppliers Count</p>
-                <h3 className="text-2xl font-bold text-milquu-dark">{vendorsSummary.length}</h3>
-                <button
-                  onClick={fetchData}
-                  className="text-xs text-milquu-blue font-semibold mt-1 flex items-center hover:underline cursor-pointer"
-                >
-                  <RefreshCw size={11} className="mr-1" /> Refresh Summary
-                </button>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                <Factory size={22} />
-              </div>
-            </div>
-          </div>
-
-          {/* Vendors Directory & Khata Table */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            {/* Toolbar */}
-            <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-gray-50/50">
-              <div className="relative flex-1 max-w-md">
-                <Search size={16} className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search vendor by name or phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-milquu-blue transition-all"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider mr-1">Filter:</span>
-                {[
-                  { id: 'all', label: 'All Vendors' },
-                  { id: 'dues', label: 'Pending Dues' },
-                  { id: 'settled', label: 'Fully Settled' }
-                ].map((st) => (
-                  <button
-                    key={st.id}
-                    onClick={() => setVendorStatusFilter(st.id)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                      vendorStatusFilter === st.id
-                        ? 'bg-milquu-dark text-white'
-                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    {st.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse whitespace-nowrap min-w-[1100px]">
-                <thead>
-                  <tr className="bg-gray-50/80 border-b border-gray-100 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                    <th className="px-6 py-3.5">Vendor / Supplier</th>
-                    <th className="px-6 py-3.5">Contact & Location</th>
-                    <th className="px-6 py-3.5">Products Supplied</th>
-                    <th className="px-6 py-3.5 text-center">Orders</th>
-                    <th className="px-6 py-3.5 text-right">Total Billed</th>
-                    <th className="px-6 py-3.5 text-right">Total Paid</th>
-                    <th className="px-6 py-3.5 text-right">Balance Due</th>
-                    <th className="px-6 py-3.5">Status</th>
-                    <th className="px-6 py-3.5 text-right">Accounting Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 text-sm">
-                  {filteredVendors.length === 0 ? (
-                    <tr>
-                      <td colSpan="9" className="px-6 py-12 text-center text-gray-400">
-                        No vendors found matching your filter criteria.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredVendors.map((vendor, idx) => (
-                      <tr key={idx} className="hover:bg-blue-50/20 transition-colors group">
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => fetchVendorLedger(vendor.supplierName)}
-                            className="font-bold text-milquu-dark hover:text-milquu-blue flex items-center gap-1.5 text-left cursor-pointer"
-                          >
-                            <span>{vendor.supplierName}</span>
-                            <ChevronRight size={14} className="text-gray-400 group-hover:text-milquu-blue transition-colors" />
-                          </button>
-                          <span className="text-xs text-gray-400">
-                            Last purchase: {vendor.lastPurchaseDate ? new Date(vendor.lastPurchaseDate).toLocaleDateString('en-IN') : 'N/A'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <p className="text-xs font-semibold text-gray-700 flex items-center gap-1">
-                            <Phone size={12} className="text-gray-400" />
-                            {vendor.supplierPhone || 'No Phone Recorded'}
-                          </p>
-                          {vendor.supplierAddress && (
-                            <p className="text-[11px] text-gray-400 flex items-center gap-1 mt-0.5">
-                              <MapPin size={11} className="text-gray-400" />
-                              {vendor.supplierAddress}
-                            </p>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-wrap gap-1.5 max-w-[260px]">
-                            {vendor.productsList && vendor.productsList.length > 0 ? (
-                              vendor.productsList.slice(0, 3).map((prod, pIdx) => (
-                                <span
-                                  key={pIdx}
-                                  className="bg-gray-100 text-gray-700 text-[11px] px-2 py-0.5 rounded-md font-medium"
-                                >
-                                  {prod.name} ({prod.totalQty} {prod.unit})
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-xs text-gray-400">None</span>
-                            )}
-                            {vendor.productsList && vendor.productsList.length > 3 && (
-                              <span className="text-[11px] text-gray-400 font-semibold">
-                                +{vendor.productsList.length - 3} more
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-center font-bold text-gray-700">
-                          {vendor.totalPurchasesCount}
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold text-gray-800">
-                          ₹{Number(vendor.totalBilled || 0).toLocaleString('en-IN')}
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold text-emerald-600">
-                          ₹{Number(vendor.totalPaid || 0).toLocaleString('en-IN')}
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold">
-                          {vendor.balanceDue > 0 ? (
-                            <span className="text-amber-600 text-base">₹{Number(vendor.balanceDue).toLocaleString('en-IN')}</span>
-                          ) : (
-                            <span className="text-emerald-700 text-xs font-semibold">₹0 (Settled)</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide ${
-                            vendor.balanceDue > 0
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-emerald-100 text-emerald-800'
-                          }`}>
-                            {vendor.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {/* View Ledger Statement */}
-                            <button
-                              onClick={() => fetchVendorLedger(vendor.supplierName)}
-                              className="px-3 py-1.5 bg-blue-50 text-milquu-blue hover:bg-blue-100 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-                              title="View full account statement & products breakdown"
-                            >
-                              <BookOpen size={13} /> Khata Ledger
-                            </button>
-                            {/* Record Payment */}
-                            <button
-                              onClick={() => openRecordPaymentModal(vendor.supplierName, vendor.supplierPhone, vendor.balanceDue)}
-                              className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-                              title="Record payment to this vendor"
-                            >
-                              <IndianRupee size={13} /> Pay
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL 1: PRINTABLE & DOWNLOADABLE PURCHASE BILL / VOUCHER               */}
-      {/* ========================================================================= */}
-      {showBillModal && selectedPurchaseForBill && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/70 backdrop-blur-sm p-3 sm:p-6 flex justify-center items-start">
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
-            
-            {/* Modal Control Header (Sticky at top, always visible) */}
-            <div className="shrink-0 sticky top-0 z-20 p-4 bg-gray-100 border-b border-gray-200 flex justify-between items-center no-print shadow-xs">
-              <div className="flex items-center gap-2">
-                <FileText size={18} className="text-milquu-dark" />
-                <span className="font-bold text-milquu-dark text-sm">Purchase Bill / Voucher</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePrint}
-                  className="px-3.5 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-50 flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                >
-                  <Printer size={14} /> Print Bill
-                </button>
-                <button
-                  onClick={() => handleDownloadBillPDF(selectedPurchaseForBill)}
-                  disabled={isGeneratingBillPdf}
-                  className="px-3.5 py-1.5 bg-milquu-dark text-white rounded-lg text-xs font-bold hover:bg-gray-800 flex items-center gap-1.5 shadow-sm transition-all cursor-pointer disabled:opacity-60"
-                >
-                  {isGeneratingBillPdf ? (
-                    <>
-                      <RefreshCw size={14} className="animate-spin" /> Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Download size={14} /> Download PDF
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => handleShareBillWhatsApp(selectedPurchaseForBill)}
-                  className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                >
-                  <Share2 size={14} /> WhatsApp
-                </button>
-                <button
-                  onClick={() => setShowBillModal(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg cursor-pointer ml-1"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
-
-            {/* Printable Bill Area (Scrollable within modal) */}
-            <div id="purchase-bill-printable" className="flex-1 overflow-y-auto p-6 sm:p-8 bg-white text-gray-800 font-sans">
-              
-              {/* Header */}
-              <div className="border-b-2 border-gray-800 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-                <div>
-                  <h1 className="text-2xl font-serif font-black text-milquu-dark tracking-tight">MilQuu Fresh</h1>
-                  <p className="text-xs font-semibold text-gray-600 mt-0.5">Pure Farm Fresh Milk & Dairy Products</p>
-                  <p className="text-[11px] text-gray-500">Panvel, Navi Mumbai, Maharashtra</p>
-                  <p className="text-[11px] text-gray-500">Tel: +91 87670 67884 | Email: support@milquufresh.in</p>
-                </div>
-                <div className="sm:text-right">
-                  <span className="inline-block bg-milquu-dark text-white text-[11px] font-bold px-3 py-1 rounded-md tracking-wider uppercase mb-1">
-                    Purchase Voucher
-                  </span>
-                  <p className="text-xs text-gray-500">
-                    PO No: <span className="font-bold text-gray-900">{selectedPurchaseForBill.poNumber}</span>
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Date: <span className="font-semibold text-gray-900">{new Date(selectedPurchaseForBill.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                  </p>
-                </div>
-              </div>
-
-              {/* Vendor & Status Grid */}
-              <div className="grid grid-cols-2 gap-6 p-4 rounded-xl bg-gray-50 border border-gray-200 mb-6">
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Vendor / Farmer Details</p>
-                  <p className="font-bold text-milquu-dark text-sm">{selectedPurchaseForBill.supplierName}</p>
-                  <p className="text-xs text-gray-600 mt-0.5">
-                    Phone: {selectedPurchaseForBill.supplierPhone || 'N/A'}
-                  </p>
-                  {selectedPurchaseForBill.supplierAddress && (
-                    <p className="text-xs text-gray-600 mt-0.5">
-                      Address: {selectedPurchaseForBill.supplierAddress}
-                    </p>
-                  )}
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Payment Status</p>
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                    selectedPurchaseForBill.status === 'Paid' ? 'bg-emerald-100 text-emerald-800' :
-                    selectedPurchaseForBill.status === 'Received' ? 'bg-blue-100 text-blue-800' :
-                    selectedPurchaseForBill.status === 'Partial' ? 'bg-amber-100 text-amber-800' :
-                    'bg-orange-100 text-orange-800'
-                  }`}>
-                    {selectedPurchaseForBill.status}
-                  </span>
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    Payment Mode: <span className="font-semibold text-gray-800">{selectedPurchaseForBill.paymentMode || 'Cash'}</span>
-                  </p>
-                </div>
-              </div>
-
-              {/* Line Items Table */}
-              <div className="mb-6 overflow-hidden rounded-xl border border-gray-200">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-100 border-b border-gray-200 text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      <th className="p-3">#</th>
-                      <th className="p-3">Particulars / Material</th>
-                      <th className="p-3">Category</th>
-                      <th className="p-3 text-right">Quantity</th>
-                      <th className="p-3 text-right">Rate / Unit</th>
-                      <th className="p-3 text-right">Total Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 text-xs">
-                    <tr>
-                      <td className="p-3 font-semibold text-gray-500">1</td>
-                      <td className="p-3 font-bold text-gray-900">{selectedPurchaseForBill.productName}</td>
-                      <td className="p-3 text-gray-600">{selectedPurchaseForBill.category}</td>
-                      <td className="p-3 text-right font-semibold text-gray-900">
-                        {selectedPurchaseForBill.quantity} {selectedPurchaseForBill.unit || 'Litre'}
-                      </td>
-                      <td className="p-3 text-right font-medium text-gray-700">
-                        ₹{Number(selectedPurchaseForBill.rate || 0).toFixed(2)}
-                      </td>
-                      <td className="p-3 text-right font-bold text-gray-900">
-                        ₹{Number(selectedPurchaseForBill.totalCost || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Financial Calculation Box */}
-              <div className="flex justify-end mb-8">
-                <div className="w-64 space-y-2 text-xs">
-                  <div className="flex justify-between py-1 border-b border-gray-100">
-                    <span className="text-gray-600">Total Purchase Cost:</span>
-                    <span className="font-bold text-gray-900">
-                      ₹{Number(selectedPurchaseForBill.totalCost || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-gray-100 text-emerald-700">
-                    <span className="font-medium">Amount Paid:</span>
-                    <span className="font-bold">
-                      ₹{Number(selectedPurchaseForBill.paidAmount || (selectedPurchaseForBill.status === 'Paid' ? selectedPurchaseForBill.totalCost : 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1.5 border-t-2 border-gray-800 text-sm font-bold text-milquu-dark">
-                    <span>Balance Due:</span>
-                    <span className={selectedPurchaseForBill.balanceAmount > 0 ? 'text-amber-700' : 'text-emerald-700'}>
-                      ₹{Number(selectedPurchaseForBill.balanceAmount ?? (selectedPurchaseForBill.totalCost - (selectedPurchaseForBill.paidAmount || 0))).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Signatures */}
-              <div className="pt-8 border-t border-dashed border-gray-300 grid grid-cols-2 gap-10 text-center text-xs text-gray-600">
-                <div>
-                  <div className="h-14"></div>
-                  <div className="border-t border-gray-400 pt-1.5 font-medium">
-                    Vendor / Farmer Signature
-                  </div>
-                </div>
-                <div>
-                  <div className="h-14"></div>
-                  <div className="border-t border-gray-400 pt-1.5 font-bold text-milquu-dark">
-                    Authorized Signatory (MilQuu Fresh)
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-[10px] text-center text-gray-400 mt-6">
-                Thank you for supplying pure, high quality produce to MilQuu Fresh!
-              </p>
-            </div>
-
-            {/* Bottom Sticky Action Bar (Ensures actions are always visible) */}
-            <div className="shrink-0 p-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center no-print">
-              <span className="text-xs text-gray-500 font-medium">Voucher #{selectedPurchaseForBill.poNumber}</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleDownloadBillPDF(selectedPurchaseForBill)}
-                  disabled={isGeneratingBillPdf}
-                  className="px-4 py-2 bg-milquu-dark text-white rounded-xl text-xs font-bold hover:bg-gray-800 flex items-center gap-1.5 shadow-md cursor-pointer disabled:opacity-60"
-                >
-                  {isGeneratingBillPdf ? (
-                    <>
-                      <RefreshCw size={14} className="animate-spin" /> Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Download size={14} /> Download PDF
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handlePrint}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 flex items-center gap-1.5 shadow-md cursor-pointer"
-                >
-                  <Printer size={14} /> Print
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL 2: VENDOR LEDGER STATEMENT MODAL (KHATA)                          */}
-      {/* ========================================================================= */}
-      {showLedgerModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/70 backdrop-blur-sm p-3 sm:p-6 flex justify-center items-start">
-          <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
-            
-            {/* Modal Control Header (Sticky at top, always visible) */}
-            <div className="shrink-0 sticky top-0 z-20 p-4 bg-gray-100 border-b border-gray-200 flex flex-wrap justify-between items-center gap-3 no-print shadow-xs">
-              <div className="flex items-center gap-2">
-                <BookOpen size={18} className="text-milquu-dark" />
-                <span className="font-bold text-milquu-dark text-sm">
-                  Vendor Ledger & Khata Account: {selectedVendorForLedger}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => openRecordPaymentModal(
-                    selectedVendorForLedger,
-                    vendorLedgerData?.vendor?.phone,
-                    vendorLedgerData?.summary?.balanceDue
-                  )}
-                  className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 flex items-center gap-1 shadow-sm transition-all cursor-pointer"
-                >
-                  <IndianRupee size={13} /> Record Payment
-                </button>
-                <button
-                  onClick={handleDownloadLedgerExcel}
-                  className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-50 flex items-center gap-1 shadow-sm transition-all cursor-pointer"
-                >
-                  <Download size={13} /> Excel
-                </button>
-                <button
-                  onClick={handleDownloadLedgerPDF}
-                  disabled={isGeneratingLedgerPdf}
-                  className="px-3 py-1.5 bg-milquu-dark text-white rounded-lg text-xs font-bold hover:bg-gray-800 flex items-center gap-1 shadow-sm transition-all cursor-pointer disabled:opacity-60"
-                >
-                  {isGeneratingLedgerPdf ? (
-                    <>
-                      <RefreshCw size={13} className="animate-spin" /> PDF...
-                    </>
-                  ) : (
-                    <>
-                      <Download size={13} /> PDF
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handlePrint}
-                  className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-50 flex items-center gap-1 shadow-sm transition-all cursor-pointer"
-                >
-                  <Printer size={13} /> Print
-                </button>
-                <button
-                  onClick={handleShareLedgerWhatsApp}
-                  className="px-3 py-1.5 bg-emerald-700 text-white rounded-lg text-xs font-bold hover:bg-emerald-800 flex items-center gap-1 shadow-sm transition-all cursor-pointer"
-                >
-                  <Share2 size={13} /> WhatsApp
-                </button>
-                <button
-                  onClick={() => setShowLedgerModal(false)}
-                  className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg cursor-pointer ml-1"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
-
-            {/* Scrollable Modal Content */}
-            <div id="vendor-ledger-printable" className="p-6 overflow-y-auto font-sans">
-              {loadingLedger || !vendorLedgerData ? (
-                <div className="py-20 text-center">
-                  <RefreshCw size={28} className="animate-spin text-milquu-blue mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-gray-500">Generating vendor accounting ledger...</p>
-                </div>
-              ) : (
-                <>
-                  {/* Brand Header for Statement */}
-                  <div className="border-b-2 border-gray-800 pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
-                    <div>
-                      <h1 className="text-2xl font-serif font-black text-milquu-dark tracking-tight">MilQuu Fresh</h1>
-                      <p className="text-xs font-semibold text-gray-600 mt-0.5">Dairy Supply Ledger & Khata Account Statement</p>
-                      <p className="text-[11px] text-gray-500">Panvel, Navi Mumbai | Tel: +91 87670 67884 | support@milquufresh.in</p>
-                    </div>
-                    <div className="sm:text-right">
-                      <span className="inline-block bg-milquu-dark text-white text-[11px] font-bold px-3 py-1 rounded-md tracking-wider uppercase mb-1">
-                        Vendor Statement
-                      </span>
-                      <p className="text-xs text-gray-500">
-                        Date: <span className="font-semibold text-gray-900">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Vendor Details Banner */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6 gap-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-serif font-bold text-milquu-dark">{vendorLedgerData.vendor?.name}</h2>
-                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-                          vendorLedgerData.summary?.balanceDue > 0
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-emerald-100 text-emerald-800'
-                        }`}>
-                          {vendorLedgerData.summary?.balanceDue > 0 ? 'Pending Dues' : 'Fully Settled'}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 mt-1 flex items-center gap-2">
-                        <span>Tel: {vendorLedgerData.vendor?.phone || 'N/A'}</span>
-                        {vendorLedgerData.vendor?.address && (
-                          <span>• Address: {vendorLedgerData.vendor.address}</span>
-                        )}
-                      </p>
-                    </div>
-
-                    {/* Financial Summary Badges */}
-                    <div className="flex flex-wrap gap-3">
-                      <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-right">
-                        <span className="text-[10px] uppercase font-bold text-gray-400 block">Total Purchases</span>
-                        <span className="text-sm font-bold text-milquu-dark">₹{Number(vendorLedgerData.summary?.totalBilled || 0).toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-right">
-                        <span className="text-[10px] uppercase font-bold text-emerald-600 block">Total Paid</span>
-                        <span className="text-sm font-bold text-emerald-700">₹{Number(vendorLedgerData.summary?.totalPaid || 0).toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-right">
-                        <span className="text-[10px] uppercase font-bold text-amber-600 block">Net Balance Due</span>
-                        <span className="text-base font-bold text-amber-700">₹{Number(vendorLedgerData.summary?.balanceDue || 0).toLocaleString('en-IN')}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Section: Products Supplied Breakdown */}
-                  {vendorLedgerData.productsBreakdown && vendorLedgerData.productsBreakdown.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                        <Package size={14} className="text-milquu-blue" />
-                        Products Purchased From This Vendor
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {vendorLedgerData.productsBreakdown.map((prod, idx) => (
-                          <div key={idx} className="bg-white border border-gray-200 rounded-xl p-3.5 flex justify-between items-center shadow-xs">
-                            <div>
-                              <p className="font-bold text-gray-900 text-xs">{prod.name}</p>
-                              <p className="text-[11px] text-gray-500">{prod.category || 'General'}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-milquu-dark text-xs">{prod.quantity.toLocaleString('en-IN')} {prod.unit || 'L'}</p>
-                              <p className="text-[11px] text-gray-400">₹{Number(prod.totalCost).toLocaleString('en-IN')}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Section: Chronological Ledger Transactions */}
-                  <div>
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                      <Layers size={14} className="text-milquu-blue" />
-                      Detailed Ledger Statement (Bills & Payments)
-                    </h3>
-                    <div className="overflow-x-auto rounded-xl border border-gray-200">
-                      <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
-                        <thead>
-                          <tr className="bg-gray-100 border-b border-gray-200 font-bold text-gray-600 uppercase tracking-wider text-[10px]">
-                            <th className="p-3">Date</th>
-                            <th className="p-3">Type</th>
-                            <th className="p-3">Ref / PO #</th>
-                            <th className="p-3">Particulars / Description</th>
-                            <th className="p-3 text-right">Debit (Billed)</th>
-                            <th className="p-3 text-right">Credit (Paid)</th>
-                            <th className="p-3 text-right">Balance</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {vendorLedgerData.transactions.length === 0 ? (
-                            <tr>
-                              <td colSpan="7" className="p-6 text-center text-gray-400">
-                                No transactions found for this vendor.
-                              </td>
-                            </tr>
-                          ) : (
-                            vendorLedgerData.transactions.map((tx, idx) => (
-                              <tr key={idx} className="hover:bg-gray-50/50">
-                                <td className="p-3 text-gray-600">
-                                  {new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                </td>
-                                <td className="p-3">
-                                  <span className={`px-2 py-0.5 rounded font-bold text-[10px] tracking-wider uppercase inline-flex items-center gap-1 ${
-                                    tx.type === 'BILL'
-                                      ? 'bg-blue-100 text-blue-800'
-                                      : 'bg-emerald-100 text-emerald-800'
-                                  }`}>
-                                    {tx.type === 'BILL' ? <ArrowUpRight size={10} /> : <ArrowDownLeft size={10} />}
-                                    {tx.type}
-                                  </span>
-                                </td>
-                                <td className="p-3 font-semibold text-milquu-dark">{tx.refNo || '-'}</td>
-                                <td className="p-3">
-                                  <p className="font-semibold text-gray-800">{tx.productName || tx.notes || '-'}</p>
-                                  {tx.quantity > 0 && (
-                                    <p className="text-[10px] text-gray-400">{tx.quantity} {tx.unit} @ ₹{tx.rate}</p>
-                                  )}
-                                  {tx.paymentMode && (
-                                    <p className="text-[10px] text-emerald-600 font-medium">Via {tx.paymentMode}</p>
-                                  )}
-                                </td>
-                                <td className="p-3 text-right font-bold text-gray-900">
-                                  {tx.debit > 0 ? `₹${Number(tx.debit).toLocaleString('en-IN')}` : '-'}
-                                </td>
-                                <td className="p-3 text-right font-bold text-emerald-600">
-                                  {tx.credit > 0 ? `₹${Number(tx.credit).toLocaleString('en-IN')}` : '-'}
-                                </td>
-                                <td className="p-3 text-right font-bold text-milquu-dark">
-                                  ₹{Number(tx.balance).toLocaleString('en-IN')}
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL 3: RECORD VENDOR PAYMENT                                           */}
-      {/* ========================================================================= */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 z-10">
-            <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
-              <div>
-                <h2 className="text-lg font-bold text-milquu-dark">Record Vendor Payment</h2>
-                <p className="text-xs text-gray-500">Record cash, UPI, or bank transfer made to supplier</p>
-              </div>
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="text-gray-400 hover:text-gray-700 p-1 cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSavePayment} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Vendor / Supplier Name</label>
-                <input
-                  required
-                  type="text"
-                  list="vendor-names-list"
-                  value={paymentFormData.supplierName}
-                  onChange={(e) => setPaymentFormData({ ...paymentFormData, supplierName: e.target.value })}
-                  placeholder="Select or enter vendor name"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-milquu-blue"
-                />
-                <datalist id="vendor-names-list">
-                  {existingSupplierNames.map((s, idx) => (
-                    <option key={idx} value={s} />
-                  ))}
-                </datalist>
-              </div>
-
-              {currentVendorDue > 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex justify-between items-center text-xs">
-                  <span className="text-amber-800 font-medium">Outstanding Balance Due:</span>
-                  <span className="text-amber-900 font-bold text-sm">₹{currentVendorDue.toLocaleString('en-IN')}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Amount to Pay (₹)</label>
-                  <input
-                    required
-                    type="number"
-                    min="1"
-                    step="any"
-                    value={paymentFormData.amount}
-                    onChange={(e) => setPaymentFormData({ ...paymentFormData, amount: e.target.value })}
-                    placeholder="e.g. 5000"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-bold text-milquu-dark focus:outline-none focus:border-milquu-blue"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Payment Date</label>
-                  <input
-                    required
-                    type="date"
-                    value={paymentFormData.date}
-                    onChange={(e) => setPaymentFormData({ ...paymentFormData, date: e.target.value })}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-milquu-blue"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Payment Mode</label>
-                  <select
-                    value={paymentFormData.paymentMode}
-                    onChange={(e) => setPaymentFormData({ ...paymentFormData, paymentMode: e.target.value })}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-milquu-blue"
-                  >
-                    <option value="Cash">Cash</option>
-                    <option value="UPI">UPI / QR Code</option>
-                    <option value="Bank Transfer">Bank Transfer / NEFT</option>
-                    <option value="Cheque">Cheque</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Reference / UTR #</label>
-                  <input
-                    type="text"
-                    value={paymentFormData.reference}
-                    onChange={(e) => setPaymentFormData({ ...paymentFormData, reference: e.target.value })}
-                    placeholder="e.g. UPI Ref #1234"
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-milquu-blue"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Notes / Remarks</label>
-                <input
-                  type="text"
-                  value={paymentFormData.notes}
-                  onChange={(e) => setPaymentFormData({ ...paymentFormData, notes: e.target.value })}
-                  placeholder="e.g. Weekly milk supply settlement"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2.5 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentModal(false)}
-                  className="px-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-md cursor-pointer"
-                >
-                  Confirm & Save Payment
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* MODAL 4: ADD / EDIT PURCHASE ORDER                                       */}
-      {/* ========================================================================= */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-sm overflow-y-auto">
-          <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl p-6 my-auto z-10 max-h-[92vh] flex flex-col">
-            <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100 shrink-0">
-              <h2 className="text-xl font-serif font-bold text-milquu-dark">
-                {editingId ? 'Edit Purchase Order' : 'Create New Purchase Order'}
-              </h2>
-              <button
-                onClick={() => { setIsModalOpen(false); setEditingId(null); }}
-                className="text-gray-400 hover:text-gray-700 p-1 cursor-pointer"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSavePurchase} className="space-y-4 overflow-y-auto pr-1">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Date</label>
-                  <input
-                    required
-                    type="date"
-                    name="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Supplier / Vendor Name</label>
-                  <input
-                    required
-                    type="text"
-                    name="supplierName"
-                    list="po-supplier-list"
-                    value={formData.supplierName}
-                    onChange={(e) => setFormData({ ...formData, supplierName: e.target.value })}
-                    placeholder="e.g. Ramesh Patil (Dairy)"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue"
-                  />
-                  <datalist id="po-supplier-list">
-                    {existingSupplierNames.map((s, idx) => (
-                      <option key={idx} value={s} />
-                    ))}
-                  </datalist>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Supplier Phone (For Bill & WA)</label>
-                  <input
-                    type="text"
-                    name="supplierPhone"
-                    value={formData.supplierPhone}
-                    onChange={(e) => setFormData({ ...formData, supplierPhone: e.target.value })}
-                    placeholder="e.g. 9876543210"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Category</label>
-                  <select
-                    required
-                    name="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue"
-                  >
-                    <option value="Raw Milk">Raw Milk</option>
-                    <option value="Packaging">Packaging</option>
-                    <option value="Transport">Transport</option>
-                    <option value="Feed & Fodder">Feed & Fodder</option>
-                    <option value="Veterinary">Veterinary</option>
-                    <option value="Equipment">Equipment</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Product / Material Name</label>
-                <div className="flex gap-2">
-                  <select
-                    name="productName"
-                    value={formData.productName}
-                    onChange={(e) => {
-                      const selProd = products.find(p => p.name === e.target.value);
-                      setFormData({
-                        ...formData,
-                        productName: e.target.value,
-                        rate: selProd?.purchasePrice ? selProd.purchasePrice.toString() : formData.rate,
-                        sellingPrice: selProd?.price ? selProd.price.toString() : formData.sellingPrice
-                      });
-                    }}
-                    className="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue"
-                  >
-                    <option value="" disabled>Select from products catalog</option>
-                    {products.map((p) => (
-                      <option key={p._id} value={p.name}>{p.name}</option>
-                    ))}
-                  </select>
-                  <input
-                    type="text"
-                    placeholder="Or type custom item..."
-                    value={formData.productName}
-                    onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
-                    className="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Purchase Quantity</label>
-                  <input
-                    required
-                    type="number"
-                    min="1"
-                    name="quantity"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    placeholder="e.g. 100"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Unit</label>
-                  <select
-                    name="unit"
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-milquu-blue"
-                  >
-                    <option value="Litre">Litre</option>
-                    <option value="Kg">Kg</option>
-                    <option value="Units">Units / Pcs</option>
-                    <option value="Bags">Bags</option>
-                    <option value="Box">Box</option>
-                    <option value="Trips">Trips</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Purchase Rate / Unit (₹)</label>
-                  <input
-                    required
-                    type="number"
-                    min="0"
-                    step="any"
-                    name="rate"
-                    value={formData.rate}
-                    onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
-                    placeholder="e.g. 55"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Total Bill Cost (₹)</label>
-                  <div className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2 text-sm font-bold text-milquu-dark">
-                    ₹{computedTotalCost.toLocaleString('en-IN')}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Selling Price / Unit (₹)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="any"
-                    name="sellingPrice"
-                    value={formData.sellingPrice}
-                    onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
-                    placeholder="e.g. 75"
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Expected Margin (%)</label>
-                  <div className="w-full border border-gray-200 bg-gray-50 rounded-xl px-4 py-2 text-sm font-semibold text-emerald-700">
-                    {marginPercentage}%
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Section */}
-              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 space-y-3">
-                <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Payment & Settlement</p>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Amount Paid (₹)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      name="paidAmount"
-                      value={formData.paidAmount}
-                      onChange={(e) => setFormData({ ...formData, paidAmount: e.target.value })}
-                      placeholder="0 if pending"
-                      className="w-full border border-gray-200 bg-white rounded-xl px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-milquu-blue"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Payment Mode</label>
-                    <select
-                      name="paymentMode"
-                      value={formData.paymentMode}
-                      onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value })}
-                      className="w-full border border-gray-200 bg-white rounded-xl px-2 py-1.5 text-xs focus:outline-none focus:border-milquu-blue"
-                    >
-                      <option value="Cash">Cash</option>
-                      <option value="UPI">UPI / QR</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                      <option value="Cheque">Cheque</option>
-                      <option value="Credit">Credit / Due</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Status</label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full border border-gray-200 bg-white rounded-xl px-2 py-1.5 text-xs font-semibold focus:outline-none focus:border-milquu-blue"
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Received">Received</option>
-                      <option value="Paid">Paid</option>
-                      <option value="Partial">Partial</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex justify-between items-center text-xs font-semibold pt-1">
-                  <span className="text-gray-500">Calculated Balance Due:</span>
-                  <span className={computedBalance > 0 ? 'text-amber-700 font-bold' : 'text-emerald-700 font-bold'}>
-                    ₹{computedBalance.toLocaleString('en-IN')}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Notes / Remarks</label>
-                <input
-                  type="text"
-                  name="notes"
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="e.g. Batch #45 morning delivery"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => { setIsModalOpen(false); setEditingId(null); }}
-                  className="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 bg-milquu-dark text-white rounded-xl text-sm font-bold hover:bg-gray-800 shadow-md cursor-pointer"
-                >
-                  {editingId ? 'Update Purchase Order' : 'Save Purchase Order'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <PurchaseFormModal
+        computedBalance={computedBalance}
+        computedTotalCost={computedTotalCost}
+        editingId={editingId}
+        existingSupplierNames={existingSupplierNames}
+        formData={formData}
+        handleSavePurchase={handleSavePurchase}
+        isModalOpen={isModalOpen}
+        marginPercentage={marginPercentage}
+        products={products}
+        setEditingId={setEditingId}
+        setFormData={setFormData}
+        setIsModalOpen={setIsModalOpen}
+      />
 
       {/* Embedded Print Stylesheet */}
       <style>{`

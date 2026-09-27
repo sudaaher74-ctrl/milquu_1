@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../utils/api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Filter, MoreVertical, Edit, Trash2, MapPin, Phone, Mail, X, Bike, CheckCircle2 } from 'lucide-react';
+import toast from '../../utils/toast';
 
 const DeliveryBoys = () => {
   const [boys, setBoys] = useState([]);
@@ -28,6 +29,12 @@ const DeliveryBoys = () => {
     fetchBoys();
   }, []);
 
+  // The delivery areas Milquu actually serves (backend config/serviceAreas.js)
+  const [serviceAreas, setServiceAreas] = useState([]);
+  useEffect(() => {
+    api.get('/api/service-areas').then(({ data }) => setServiceAreas(Array.isArray(data) ? data : [])).catch(() => setServiceAreas([]));
+  }, []);
+
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -45,8 +52,7 @@ const DeliveryBoys = () => {
         area: formData.area,
         vehicleType: formData.vehicleType,
         vehicleNumber: formData.vehicleNumber,
-        status: formData.status,
-        image: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70)}`
+        status: formData.status
       };
       
       const { data } = await api.post('/api/erp/delivery-staff', newBoy);
@@ -58,7 +64,7 @@ const DeliveryBoys = () => {
       });
     } catch (error) {
       console.error('Error creating staff:', error);
-      alert('Failed to create staff');
+      toast.error('Failed to create staff');
     }
   };
 
@@ -69,7 +75,7 @@ const DeliveryBoys = () => {
         setBoys(boys.filter(boy => boy.staffId !== staffId));
       } catch (error) {
         console.error('Error deleting staff:', error);
-        alert('Failed to delete staff');
+        toast.error('Failed to delete staff');
       }
     }
   };
@@ -170,10 +176,17 @@ const DeliveryBoys = () => {
                   <td colSpan="6" className="px-6 py-12 text-center text-gray-500 font-medium">Loading staff...</td>
                 </tr>
               ) : filteredBoys.length > 0 ? filteredBoys.map((boy) => (
-                <tr key={boy.id} className="hover:bg-gray-50/80 transition-colors group">
+                <tr key={boy._id || boy.staffId} className="hover:bg-gray-50/80 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-4">
-                      <img src={boy.image || 'https://i.pravatar.cc/150'} alt={boy.name} className="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm" />
+                      {boy.image && !boy.image.includes('pravatar.cc') ? (
+                        <img src={boy.image} alt={boy.name} className="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm" />
+                      ) : (
+                        // Initials rather than a stranger's stock photo
+                        <div aria-hidden="true" className="w-10 h-10 rounded-full bg-milquu-blue/10 text-milquu-blue font-bold text-sm flex items-center justify-center border border-gray-200">
+                          {(boy.name || '?').split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase()}
+                        </div>
+                      )}
                       <div>
                         <p className="text-sm font-bold text-milquu-dark">{boy.name}</p>
                         <p className="text-xs text-milquu-blue font-medium">{boy.staffId}</p>
@@ -295,14 +308,7 @@ const DeliveryBoys = () => {
                       <div>
                         <label className="block text-xs font-semibold text-gray-700 mb-1.5">Assigned Area</label>
                         <select required name="area" value={formData.area} onChange={handleInputChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-milquu-blue/30 focus:border-milquu-blue outline-none transition-all appearance-none">
-                          <option value="Panvel">Panvel</option>
-                          <option value="New Panvel">New Panvel</option>
-                          <option value="Khanda Colony">Khanda Colony</option>
-                          <option value="Kamothe">Kamothe</option>
-                          <option value="Karanjade">Karanjade</option>
-                          <option value="Kharghar">Kharghar</option>
-                          <option value="Belapur">Belapur</option>
-                          <option value="Nerul">Nerul</option>
+                          {serviceAreas.map((a) => <option key={a.slug} value={a.name}>{a.name}</option>)}
                         </select>
                       </div>
                       <div>

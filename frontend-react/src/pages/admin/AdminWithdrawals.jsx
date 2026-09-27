@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { IndianRupee, Clock, CheckCircle2, XCircle, FileText, Search, RefreshCw } from 'lucide-react';
 import api from '../../utils/api.js';
+import toast from '../../utils/toast';
 
 const AdminWithdrawals = () => {
   const [requests, setRequests] = useState([]);
@@ -16,7 +17,7 @@ const AdminWithdrawals = () => {
       setRequests(data);
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Error fetching requests');
+      toast.error(err.response?.data?.message || 'Error fetching requests');
     } finally {
       setLoading(false);
     }
@@ -38,11 +39,11 @@ const AdminWithdrawals = () => {
     setProcessingId(id);
     try {
       await api.put(`/api/admin/withdrawals/${id}/status`, { status, adminRemarks: remarks });
-      alert(`Status updated to ${status}`);
+      toast(`Status updated to ${status}`);
       fetchRequests();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.message || 'Error updating status');
+      toast.error(err.response?.data?.message || 'Error updating status');
     } finally {
       setProcessingId(null);
     }

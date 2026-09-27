@@ -7,6 +7,7 @@ import {
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
+import toast from '../../utils/toast';
 
 const wastageTrendData = [];
 
@@ -74,7 +75,7 @@ const Wastage = () => {
       setFormData({ product: '', qty: '', reason: 'Spoilage', lossValue: '' });
     } catch (error) {
       console.error('Error reporting wastage:', error);
-      alert('Failed to log wastage');
+      toast.error('Failed to log wastage');
     }
   };
 

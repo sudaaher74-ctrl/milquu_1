@@ -5,6 +5,7 @@ import {
   ArrowUpDown, Package, DollarSign, TrendingUp, AlertCircle, X, Image as ImageIcon, CheckCircle
 } from 'lucide-react';
 import ExportButton from '../../components/admin/ExportButton';
+import toast from '../../utils/toast';
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -98,7 +99,7 @@ const AdminProducts = () => {
         fetchProducts();
       } catch (error) {
         console.error("Delete error:", error);
-        alert("Failed to delete product");
+        toast.error("Failed to delete product");
       }
     }
   };
@@ -106,7 +107,7 @@ const AdminProducts = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!imageFile && !editingProductId && !formData.image) {
-      alert('Please select an image');
+      toast('Please select an image');
       return;
     }
     
@@ -138,10 +139,10 @@ const AdminProducts = () => {
 
       if (editingProductId) {
         await api.put(`/api/products/${editingProductId}`, productPayload);
-        alert('Product updated successfully!');
+        toast('Product updated successfully!');
       } else {
         await api.post('/api/products', productPayload);
-        alert('Product added successfully!');
+        toast('Product added successfully!');
       }
       
       setIsModalOpen(false);
@@ -154,7 +155,7 @@ const AdminProducts = () => {
       const serverMessage = error.response?.data?.message || 
         error.response?.data?.errors?.map(e => e.message).join(', ') || 
         error.message;
-      alert(`${editingProductId ? 'Failed to update product' : 'Failed to add product'}: ${serverMessage}`);
+      toast.error(`${editingProductId ? 'Failed to update product' : 'Failed to add product'}: ${serverMessage}`);
     } finally {
       setIsUploading(false);
     }
@@ -298,7 +299,7 @@ const AdminProducts = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center p-1">
-                          <img src={product.image} alt={product.name} className="max-w-full max-h-full object-contain mix-blend-multiply" />
+                          <img src={product.image || '/img/categories/logo.png'} alt={product.name} className="max-w-full max-h-full object-contain mix-blend-multiply" />
                         </div>
                         <div>
                           <p className="text-sm font-bold text-milquu-dark">{product.name}</p>

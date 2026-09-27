@@ -31,7 +31,6 @@ const Notifications = lazy(() => import('./pages/admin/Notifications'));
 const Settings = lazy(() => import('./pages/admin/Settings'));
 const DeliveryBoys = lazy(() => import('./pages/admin/DeliveryBoys'));
 const AdminWithdrawals = lazy(() => import('./pages/admin/AdminWithdrawals'));
-const BusinessOverview = lazy(() => import('./pages/admin/BusinessOverview'));
 const POS = lazy(() => import('./pages/admin/POS'));
 const Purchases = lazy(() => import('./pages/admin/Purchases'));
 const Expenses = lazy(() => import('./pages/admin/Expenses'));
@@ -174,7 +173,8 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Overview /> },
           { path: "dashboard", element: <Overview /> },
-          { path: "business-overview", element: <BusinessOverview /> },
+          // Merged into the dashboard — old links still land somewhere sensible
+          { path: "business-overview", element: <Navigate to="/admin" replace /> },
           { path: "orders", element: <Orders /> },
           { path: "customers", element: <Customers /> },
           { path: "products", element: <AdminProducts /> },

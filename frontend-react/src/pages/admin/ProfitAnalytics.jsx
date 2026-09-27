@@ -222,7 +222,7 @@ const ProfitAnalytics = () => {
           </div>
           <div className="p-0">
             {topProfitable.map((p, i) => (
-              <div key={p.id} className="p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+              <div key={p.name} className="p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
                 <div className="flex justify-between items-start mb-1">
                   <h4 className="text-sm font-bold text-gray-800 leading-tight">{p.name}</h4>
                   <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">{p.margin}</span>
@@ -244,7 +244,7 @@ const ProfitAnalytics = () => {
           </div>
           <div className="p-0">
             {leastProfitable.map((p, i) => (
-              <div key={p.id} className="p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+              <div key={p.name} className="p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
                 <div className="flex justify-between items-start mb-1">
                   <h4 className="text-sm font-bold text-gray-800 leading-tight">{p.name}</h4>
                   <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded">{p.margin}</span>

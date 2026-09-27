@@ -6,6 +6,8 @@ import {
   CalendarDays, ShoppingBag, Truck, Store, Globe, AlertTriangle, ArrowUpRight
 } from 'lucide-react';
 import ExportButton from '../../components/admin/ExportButton';
+import TodayPanel from '../../components/admin/TodayPanel';
+import { getAdminSession, isManagerRole } from '../../utils/adminAccess';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, LineChart, Line, ComposedChart
@@ -39,7 +41,13 @@ const StatCard = ({ title, value, icon, trend, colorClass, subtitle }) => (
   </motion.div>
 );
 
+const DATE_RANGES = ['Today', 'Last 7 Days', 'Last 30 Days', 'This Month', 'This Year', 'All Time'];
+
 const Overview = () => {
+  const role = getAdminSession()?.role || 'staff';
+  // Business figures are for managers and admins; counter staff get the day's work.
+  const showBusiness = isManagerRole(role);
+  const [dateRange, setDateRange] = useState('This Month');
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({
     revenue: 0,
@@ -72,9 +80,12 @@ const Overview = () => {
   ];
 
   React.useEffect(() => {
+    if (!showBusiness) return;
     const fetchAnalytics = async () => {
       try {
-        const res = await api.get('/api/erp/analytics');
+        setLoading(true);
+        const query = dateRange === 'All Time' ? '' : `?dateRange=${encodeURIComponent(dateRange)}`;
+        const res = await api.get(`/api/erp/analytics${query}`);
         setMetrics(res.data);
       } catch (error) {
         console.error("Failed to fetch analytics", error);
@@ -83,22 +94,36 @@ const Overview = () => {
       }
     };
     fetchAnalytics();
-  }, []);
+  }, [dateRange, showBusiness]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 font-sans pb-10">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div>
+        <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Dashboard</h1>
+        <p className="text-gray-500 text-sm mt-1">What needs you today, and how the business is doing.</p>
+      </div>
+
+      <TodayPanel role={role} />
+
+      {showBusiness && (<>
+      {/* Business performance */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4 border-t border-gray-200">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Executive Dashboard</h1>
-          <p className="text-gray-500 text-sm mt-1">Real-time command center for your entire dairy business.</p>
+          <h2 className="text-xl font-bold text-milquu-dark">Business performance</h2>
+          <p className="text-gray-500 text-sm mt-0.5">{loading ? 'Loading…' : `Showing ${dateRange.toLowerCase()}`}</p>
         </div>
         <div className="flex space-x-3">
-          <button className="px-4 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
-            Last 7 Days
-          </button>
-          <ExportButton data={reportData} filename="Executive_Overview" title="Executive Overview Report" className="!bg-milquu-dark !text-white hover:!bg-gray-800" />
+          <label className="sr-only" htmlFor="dashboard-range">Date range</label>
+          <select
+            id="dashboard-range"
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium shadow-sm"
+          >
+            {DATE_RANGES.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+          <ExportButton data={reportData} filename="Business_Performance" title={`Business Performance — ${dateRange}`} className="!bg-milquu-dark !text-white hover:!bg-gray-800" />
         </div>
       </div>
       
@@ -176,7 +201,7 @@ const Overview = () => {
       </div>
 
       {/* SMART BUSINESS WIDGETS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Top Selling & Profitable */}
         <div className="bg-white/80 backdrop-blur-xl rounded-[24px] shadow-sm hover:shadow-xl transition-shadow duration-300 border border-white/60 p-6">
@@ -192,31 +217,6 @@ const Overview = () => {
               </div>
             )) : (
               <p className="text-sm text-gray-500">No top performers data available yet.</p>
-            )}
-          </div>
-        </div>
-
-        {/* Alerts & Low Stock */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-[24px] shadow-sm hover:shadow-xl transition-shadow duration-300 border border-white/60 p-6">
-          <h2 className="text-lg font-bold text-milquu-dark mb-4 flex items-center">
-            <AlertTriangle size={18} className="text-orange-500 mr-2" /> Action Required
-          </h2>
-          <div className="space-y-3">
-            {metrics.actionRequired?.length > 0 ? metrics.actionRequired.map((item, idx) => (
-              <div key={idx} className="flex justify-between items-center p-3 border border-red-100 bg-red-50 rounded-xl">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center text-red-600">
-                    <Package size={16} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-red-800">{item.name}</p>
-                    <p className="text-xs text-red-600">Low Stock</p>
-                  </div>
-                </div>
-                <p className="text-sm font-bold text-red-600">Only {item.stock} left</p>
-              </div>
-            )) : (
-              <p className="text-sm text-gray-500">No immediate actions required.</p>
             )}
           </div>
         </div>
@@ -250,6 +250,7 @@ const Overview = () => {
         </div>
 
       </div>
+      </>)}
 
     </div>
   );

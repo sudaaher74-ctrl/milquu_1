@@ -4,6 +4,7 @@ import {
   Users, Plus, Search, Filter, Download, Droplet, 
   Activity, TrendingUp, Sun, Moon
 } from 'lucide-react';
+import toast from '../../utils/toast';
 
 const topFarmers = [];
 
@@ -64,7 +65,7 @@ const Procurement = () => {
       setFormData({ farmer: '', type: 'Buffalo', qty: '', fat: '', snf: '', rate: '' });
     } catch (error) {
       console.error('Error creating procurement:', error);
-      alert('Failed to log procurement');
+      toast.error('Failed to log procurement');
     }
   };
 

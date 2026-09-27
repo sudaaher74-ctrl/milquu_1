@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ExportButton from '../../components/admin/ExportButton';
+import toast from '../../utils/toast';
 
 const InventoryCard = ({ item }) => {
   const stockValue = item.stock * item.purchasePrice;
@@ -118,7 +119,7 @@ const Inventory = () => {
   const handleAddStockSubmit = async (e) => {
     e.preventDefault();
     if (!addStockForm.productId || addStockForm.quantity <= 0) {
-      alert("Please select a product and valid quantity.");
+      toast("Please select a product and valid quantity.");
       return;
     }
     
@@ -138,13 +139,13 @@ const Inventory = () => {
         image: product.image,
         stock: newStock
       });
-      alert('Stock added successfully!');
+      toast('Stock added successfully!');
       setIsAddStockModalOpen(false);
       setAddStockForm({ productId: '', quantity: 0 });
       fetchInventory();
     } catch (error) {
       console.error('Error adding stock', error);
-      alert(error.response?.data?.message || 'Failed to add stock');
+      toast.error(error.response?.data?.message || 'Failed to add stock');
     }
   };
 

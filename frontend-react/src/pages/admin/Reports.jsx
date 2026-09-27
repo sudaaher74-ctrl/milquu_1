@@ -6,6 +6,7 @@ import {
   FileText, Download, FileSpreadsheet, Calendar, 
   TrendingUp, Package, Users, Truck, DollarSign, PieChart, ShieldCheck
 } from 'lucide-react';
+import toast from '../../utils/toast';
 
 const reportsList = [
   { 
@@ -54,19 +55,26 @@ const Reports = () => {
       case 'financial':
         const e1 = await api.get('/api/erp/expenses');
         const o1 = await api.get('/api/erp/orders');
+        // Sales are paid orders; unpaid (khata / cash-on-delivery) bills are listed separately.
+        const paid = o1.data.filter((o) => o.isPaid);
+        const unpaid = o1.data.filter((o) => !o.isPaid);
         return [
-          { type: 'Revenue', source: 'Total Sales', amount: o1.data.reduce((a,b)=>a+(b.totalPrice||0),0) },
-          { type: 'Cost', source: 'Cost of Goods Sold (COGS)', amount: o1.data.reduce((a,b)=>a+(b.totalCogs||0),0) },
+          { type: 'Revenue', source: 'Sales received (paid orders)', amount: paid.reduce((a,b)=>a+(b.totalPrice||0),0) },
+          { type: 'Receivable', source: 'Unpaid bills (khata / COD)', amount: unpaid.reduce((a,b)=>a+((b.totalPrice||0)-(b.creditPaidAmount||0)),0) },
+          { type: 'Cost', source: 'Cost of Goods Sold (COGS)', amount: paid.reduce((a,b)=>a+(b.totalCogs||0),0) },
           { type: 'Cost', source: 'Operating Expenses', amount: e1.data.reduce((a,b)=>a+(b.amount||0),0) }
         ];
       case 'sales':
         const orders = await api.get('/api/erp/orders');
         return orders.data.map(o => ({
-          OrderId: o.orderId || o._id,
-          Customer: o.customerName || 'Unknown',
-          Status: o.status || o.paymentStatus || 'Completed',
+          OrderId: o._id,
+          Customer: o.name || 'Walk-in',
+          Phone: o.phone || '',
+          Source: o.orderSource || 'Website',
+          Payment: `${o.paymentMethod || 'COD'} (${o.paymentStatus || 'PENDING'})`,
+          Delivery: o.isDelivered ? 'Delivered' : (o.deliveryStatus || 'Pending'),
           Amount: o.totalPrice || 0,
-          Date: new Date(o.createdAt).toLocaleDateString()
+          Date: new Date(o.createdAt).toLocaleDateString('en-IN')
         }));
       case 'inventory':
         const products = await api.get('/api/products');
@@ -79,13 +87,15 @@ const Reports = () => {
       case 'procurement':
         const procs = await api.get('/api/erp/procurements');
         return procs.data.map(p => ({
-          Farmer: p.farmerName || p.farmer,
-          MilkType: p.milkType || p.type,
-          Qty: p.quantity || p.qty,
-          FAT: p.fat,
-          SNF: p.snf,
-          Payout: p.totalPayout || p.totalAmount,
-          Date: new Date(p.date).toLocaleDateString()
+          Farmer: p.farmerName,
+          Shift: p.shift,
+          MilkType: p.milkType,
+          Litres: p.quantityLiters,
+          'FAT %': p.fatPercentage,
+          'SNF %': p.snfPercentage,
+          'Rate/L': p.ratePerLiter,
+          Payout: p.totalAmount,
+          Date: new Date(p.date).toLocaleDateString('en-IN')
         }));
       default:
         return [];
@@ -97,7 +107,7 @@ const Reports = () => {
       setLoadingReport(`${reportId}-csv`);
       const data = await fetchReportData(reportId);
       if (!data || data.length === 0) {
-        alert("No data available for this report.");
+        toast.info("No data available for this report.");
         return;
       }
 
@@ -118,7 +128,7 @@ const Reports = () => {
       document.body.removeChild(link);
     } catch (error) {
       console.error("Export Error:", error);
-      alert("Failed to export report.");
+      toast.error("Failed to export report.");
     } finally {
       setLoadingReport(null);
     }
@@ -129,7 +139,7 @@ const Reports = () => {
       setLoadingReport(`${reportId}-pdf`);
       const data = await fetchReportData(reportId);
       if (!data || data.length === 0) {
-        alert("No data available for this report.");
+        toast.info("No data available for this report.");
         return;
       }
 
@@ -154,7 +164,7 @@ const Reports = () => {
       doc.save(`${title.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
       console.error("Export Error:", error);
-      alert("Failed to export report.");
+      toast.error("Failed to export report.");
     } finally {
       setLoadingReport(null);
     }
