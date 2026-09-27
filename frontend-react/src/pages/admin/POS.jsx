@@ -236,10 +236,16 @@ const POS = () => {
     setIsSavingCustomer(true);
     try {
       const payload = {
-        ...newCustomer,
+        name: newCustomer.name.trim(),
+        phone: newCustomer.phone?.trim() || undefined,
+        address: newCustomer.address?.trim() || '',
+        billingCycle: newCustomer.billingCycle || '15 Days',
         isCreditCustomer: newCustomer.billingCycle !== 'none',
         creditLimit: Number(newCustomer.creditLimit) || 0
       };
+      if (newCustomer.email && newCustomer.email.trim()) {
+        payload.email = newCustomer.email.trim();
+      }
       const { data } = await api.post('/api/admin/customers', payload);
       setCustomerList(prev => [data, ...prev]);
       selectCustomer(data);

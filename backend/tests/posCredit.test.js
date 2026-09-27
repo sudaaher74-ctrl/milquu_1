@@ -187,4 +187,35 @@ describe('Shop POS Credit & Billing System (10, 15, 30 Days)', () => {
     expect(mockCustomer.creditLimit).toBe(5000);
     expect(mockCustomer.save).toHaveBeenCalled();
   });
+
+  it('POST /api/admin/customers creates customer without email successfully', async () => {
+    User.findOne.mockResolvedValue(null);
+    let savedInstance = null;
+    User.mockImplementation(function (data) {
+      const inst = {
+        ...data,
+        _id: 'cust_new_123',
+        save: vi.fn().mockImplementation(() => {
+          savedInstance = inst;
+          return Promise.resolve(inst);
+        })
+      };
+      savedInstance = inst;
+      return inst;
+    });
+
+    const res = await request(app)
+      .post('/api/admin/customers')
+      .send({
+        name: 'Siddhesh Aher',
+        phone: '9272594694',
+        billingCycle: '30 Days',
+        address: 'sec 3 new panvel'
+      });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.name).toBe('Siddhesh Aher');
+    expect(res.body.phone).toBe('9272594694');
+    expect(savedInstance.email).toBeUndefined();
+  });
 });

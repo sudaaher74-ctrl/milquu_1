@@ -5,6 +5,7 @@ import WalletTransaction from '../models/WalletTransaction.js';
 import generateToken from '../utils/generateToken.js';
 import { runSubscriptionEngine } from '../cron/subscriptionEngine.js';
 import { istDateKey } from '../utils/ist.js';
+import { normalisePhone } from '../utils/phone.js';
 
 export const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
@@ -329,8 +330,9 @@ export const createCustomer = async (req, res) => {
       return res.status(400).json({ message: 'Customer name is required' });
     }
 
-    if (phone) {
-      const existing = await User.findOne({ phone: phone.trim() });
+    const normPhone = phone ? normalisePhone(phone) : undefined;
+    if (normPhone) {
+      const existing = await User.findOne({ phone: normPhone });
       if (existing) {
         return res.status(400).json({ message: 'A customer with this phone number already exists' });
       }
@@ -338,10 +340,8 @@ export const createCustomer = async (req, res) => {
 
     const hasCredit = Boolean(isCreditCustomer) || (billingCycle && billingCycle !== 'none');
 
-    const customer = new User({
+    const customerData = {
       name: name.trim(),
-      phone: phone?.trim() || undefined,
-      email: email?.trim() || undefined,
       address: address?.trim() || '',
       password: 'poscustomer123',
       role: 'user',
@@ -349,11 +349,22 @@ export const createCustomer = async (req, res) => {
       isCreditCustomer: hasCredit,
       creditLimit: Number(creditLimit) || 0,
       creditNotes: creditNotes?.trim() || ''
-    });
+    };
+
+    if (normPhone) customerData.phone = normPhone;
+    if (email && typeof email === 'string' && email.trim()) {
+      customerData.email = email.trim().toLowerCase();
+    }
+
+    const customer = new User(customerData);
 
     await customer.save();
     res.status(201).json(customer);
   } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || 'field';
+      return res.status(400).json({ message: `A customer with this ${field} already exists` });
+    }
     res.status(400).json({ message: error.message });
   }
 };
@@ -369,8 +380,13 @@ export const updateCustomer = async (req, res) => {
     }
 
     if (name) customer.name = name.trim();
-    if (phone !== undefined) customer.phone = phone?.trim() || undefined;
-    if (email !== undefined) customer.email = email?.trim() || undefined;
+    if (phone !== undefined) {
+      const normPhone = phone ? normalisePhone(phone) : undefined;
+      customer.phone = normPhone || undefined;
+    }
+    if (email !== undefined) {
+      customer.email = (email && typeof email === 'string' && email.trim()) ? email.trim().toLowerCase() : undefined;
+    }
     if (address !== undefined) customer.address = address?.trim() || '';
     if (billingCycle !== undefined) {
       customer.billingCycle = billingCycle;
@@ -385,6 +401,10 @@ export const updateCustomer = async (req, res) => {
     await customer.save();
     res.json(customer);
   } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || 'field';
+      return res.status(400).json({ message: `A customer with this ${field} already exists` });
+    }
     res.status(400).json({ message: error.message });
   }
 };
