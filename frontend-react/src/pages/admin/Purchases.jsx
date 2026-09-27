@@ -277,6 +277,7 @@ const Purchases = () => {
       useCORS: true,
       logging: false,
       backgroundColor: '#ffffff',
+      windowWidth: 1200, // Forces desktop layout queries even on small mobile screens
       ...options,
       onclone: (clonedDoc) => {
         if (options.onclone) {
@@ -353,12 +354,14 @@ const Purchases = () => {
             while (parent) {
               parent.style.overflow = 'visible';
               parent.style.maxHeight = 'none';
+              parent.style.maxWidth = 'none';
+              parent.style.width = 'auto';
               parent.style.height = 'auto';
               parent = parent.parentElement;
             }
             el.style.overflow = 'visible';
             el.style.maxHeight = 'none';
-            el.style.height = 'auto';
+            el.style.maxWidth = 'none';
             el.style.width = '760px';
             el.style.padding = '36px';
             el.style.margin = '0 auto';
@@ -460,12 +463,14 @@ const Purchases = () => {
             while (parent) {
               parent.style.overflow = 'visible';
               parent.style.maxHeight = 'none';
+              parent.style.maxWidth = 'none';
+              parent.style.width = 'auto';
               parent.style.height = 'auto';
               parent = parent.parentElement;
             }
             el.style.overflow = 'visible';
             el.style.maxHeight = 'none';
-            el.style.height = 'auto';
+            el.style.maxWidth = 'none';
             el.style.width = '820px';
             el.style.padding = '32px';
             el.style.margin = '0 auto';

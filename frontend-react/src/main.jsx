@@ -33,10 +33,11 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 import { registerSW } from 'virtual:pwa-register'
 
 // Register PWA service worker with auto-update and offline capability
-registerSW({
+const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    console.log('[PWA] New version detected, updating cache in background...');
+    console.log('[PWA] New version detected, updating cache...');
+    updateSW(true);
   },
   onOfflineReady() {
     console.log('[PWA] MilQuu is ready for offline usage.');
