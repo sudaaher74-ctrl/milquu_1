@@ -1276,84 +1276,190 @@ const Purchases = () => {
             </div>
 
             {/* Printable Bill Area (Scrollable within modal) */}
-            <div id="purchase-bill-printable" className="flex-1 overflow-y-auto p-6 sm:p-8 bg-white text-gray-800 font-sans">
+            <div
+              id="purchase-bill-printable"
+              className="flex-1 overflow-y-auto p-6 sm:p-8 bg-white text-gray-800 font-sans"
+              style={{
+                backgroundColor: '#ffffff',
+                color: '#1f2937',
+                fontFamily: "'Outfit', sans-serif",
+                padding: '32px',
+                boxSizing: 'border-box'
+              }}
+            >
               
               {/* Header */}
-              <div className="border-b-2 border-gray-800 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+              <div
+                className="border-b-2 border-gray-800 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4"
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-end',
+                  borderBottom: '2px solid #111827',
+                  paddingBottom: '20px',
+                  marginBottom: '24px'
+                }}
+              >
                 <div>
-                  <h1 className="text-2xl font-serif font-black text-milquu-dark tracking-tight">MilQuu Fresh</h1>
-                  <p className="text-xs font-semibold text-gray-600 mt-0.5">Pure Farm Fresh Milk & Dairy Products</p>
-                  <p className="text-[11px] text-gray-500">Panvel, Navi Mumbai, Maharashtra</p>
-                  <p className="text-[11px] text-gray-500">Tel: +91 87670 67884 | Email: support@milquufresh.in</p>
+                  <h1
+                    className="text-2xl font-serif font-black text-milquu-dark tracking-tight"
+                    style={{
+                      fontFamily: "'Playfair Display', serif",
+                      fontSize: '26px',
+                      fontWeight: 900,
+                      color: '#111827',
+                      margin: '0 0 2px 0',
+                      letterSpacing: '-0.02em'
+                    }}
+                  >
+                    MilQuu Fresh
+                  </h1>
+                  <p
+                    className="text-xs font-semibold text-gray-600 mt-0.5"
+                    style={{ fontSize: '13px', fontWeight: 600, color: '#4b5563', margin: '2px 0 0 0' }}
+                  >
+                    Pure Farm Fresh Milk &amp; Dairy Products
+                  </p>
+                  <p
+                    className="text-[11px] text-gray-500"
+                    style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0 0' }}
+                  >
+                    Panvel, Navi Mumbai, Maharashtra
+                  </p>
+                  <p
+                    className="text-[11px] text-gray-500"
+                    style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0 0' }}
+                  >
+                    Tel: +91 87670 67884 | Email: support@milquufresh.in
+                  </p>
                 </div>
-                <div className="sm:text-right">
-                  <span className="inline-block bg-milquu-dark text-white text-[11px] font-bold px-3 py-1 rounded-md tracking-wider uppercase mb-1">
+                <div className="sm:text-right" style={{ textAlign: 'right' }}>
+                  <span
+                    className="inline-block bg-milquu-dark text-white text-[11px] font-bold px-3 py-1 rounded-md tracking-wider uppercase mb-1"
+                    style={{
+                      display: 'inline-block',
+                      backgroundColor: '#1f2937',
+                      color: '#ffffff',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      padding: '4px 12px',
+                      borderRadius: '6px',
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                      marginBottom: '6px'
+                    }}
+                  >
                     Purchase Voucher
                   </span>
-                  <p className="text-xs text-gray-500">
-                    PO No: <span className="font-bold text-gray-900">{selectedPurchaseForBill.poNumber}</span>
+                  <p className="text-xs text-gray-500" style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0' }}>
+                    PO No: <span className="font-bold text-gray-900" style={{ color: '#111827', fontWeight: 700 }}>{selectedPurchaseForBill.poNumber}</span>
                   </p>
-                  <p className="text-xs text-gray-500">
-                    Date: <span className="font-semibold text-gray-900">{new Date(selectedPurchaseForBill.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                  <p className="text-xs text-gray-500" style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0' }}>
+                    Date: <span className="font-semibold text-gray-900" style={{ color: '#111827', fontWeight: 600 }}>{new Date(selectedPurchaseForBill.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                   </p>
                 </div>
               </div>
 
               {/* Vendor & Status Grid */}
-              <div className="grid grid-cols-2 gap-6 p-4 rounded-xl bg-gray-50 border border-gray-200 mb-6">
+              <div
+                className="grid grid-cols-2 gap-6 p-4 rounded-xl bg-gray-50 border border-gray-200 mb-6"
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '24px',
+                  padding: '16px 20px',
+                  borderRadius: '12px',
+                  backgroundColor: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                  marginBottom: '24px',
+                  boxSizing: 'border-box'
+                }}
+              >
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Vendor / Farmer Details</p>
-                  <p className="font-bold text-milquu-dark text-sm">{selectedPurchaseForBill.supplierName}</p>
-                  <p className="text-xs text-gray-600 mt-0.5">
+                  <p
+                    className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"
+                    style={{ fontSize: '10px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px 0' }}
+                  >
+                    Vendor / Farmer Details
+                  </p>
+                  <p
+                    className="font-bold text-milquu-dark text-sm"
+                    style={{ fontSize: '15px', fontWeight: 700, color: '#111827', margin: '0 0 2px 0' }}
+                  >
+                    {selectedPurchaseForBill.supplierName}
+                  </p>
+                  <p
+                    className="text-xs text-gray-600 mt-0.5"
+                    style={{ fontSize: '12px', color: '#4b5563', margin: '2px 0 0 0' }}
+                  >
                     Phone: {selectedPurchaseForBill.supplierPhone || 'N/A'}
                   </p>
                   {selectedPurchaseForBill.supplierAddress && (
-                    <p className="text-xs text-gray-600 mt-0.5">
+                    <p
+                      className="text-xs text-gray-600 mt-0.5"
+                      style={{ fontSize: '12px', color: '#4b5563', margin: '2px 0 0 0' }}
+                    >
                       Address: {selectedPurchaseForBill.supplierAddress}
                     </p>
                   )}
                 </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Payment Status</p>
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                    selectedPurchaseForBill.status === 'Paid' ? 'bg-emerald-100 text-emerald-800' :
-                    selectedPurchaseForBill.status === 'Received' ? 'bg-blue-100 text-blue-800' :
-                    selectedPurchaseForBill.status === 'Partial' ? 'bg-amber-100 text-amber-800' :
-                    'bg-orange-100 text-orange-800'
-                  }`}>
+                <div className="text-right" style={{ textAlign: 'right' }}>
+                  <p
+                    className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1"
+                    style={{ fontSize: '10px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 6px 0' }}
+                  >
+                    Payment Status
+                  </p>
+                  <span
+                    className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+                    style={{
+                      display: 'inline-block',
+                      padding: '4px 14px',
+                      borderRadius: '9999px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      backgroundColor: selectedPurchaseForBill.status === 'Paid' ? '#d1fae5' : selectedPurchaseForBill.status === 'Received' ? '#dbeafe' : selectedPurchaseForBill.status === 'Partial' ? '#fef3c7' : '#ffedd5',
+                      color: selectedPurchaseForBill.status === 'Paid' ? '#065f46' : selectedPurchaseForBill.status === 'Received' ? '#1e40af' : selectedPurchaseForBill.status === 'Partial' ? '#92400e' : '#9a3412'
+                    }}
+                  >
                     {selectedPurchaseForBill.status}
                   </span>
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    Payment Mode: <span className="font-semibold text-gray-800">{selectedPurchaseForBill.paymentMode || 'Cash'}</span>
+                  <p className="text-xs text-gray-500 mt-1.5" style={{ fontSize: '12px', color: '#6b7280', margin: '6px 0 0 0' }}>
+                    Payment Mode: <span className="font-semibold text-gray-800" style={{ fontWeight: 600, color: '#111827' }}>{selectedPurchaseForBill.paymentMode || 'Cash'}</span>
                   </p>
                 </div>
               </div>
 
               {/* Line Items Table */}
-              <div className="mb-6 overflow-hidden rounded-xl border border-gray-200">
-                <table className="w-full text-left border-collapse">
+              <div
+                className="mb-6 overflow-hidden rounded-xl border border-gray-200"
+                style={{ borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden', marginBottom: '24px' }}
+              >
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                   <thead>
-                    <tr className="bg-gray-100 border-b border-gray-200 text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      <th className="p-3">#</th>
-                      <th className="p-3">Particulars / Material</th>
-                      <th className="p-3">Category</th>
-                      <th className="p-3 text-right">Quantity</th>
-                      <th className="p-3 text-right">Rate / Unit</th>
-                      <th className="p-3 text-right">Total Amount</th>
+                    <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: 700, textTransform: 'uppercase', fontSize: '11px' }}>
+                      <th style={{ padding: '12px 16px' }}>#</th>
+                      <th style={{ padding: '12px 16px' }}>Particulars / Material</th>
+                      <th style={{ padding: '12px 16px' }}>Category</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>Quantity</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>Rate / Unit</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>Total Amount</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 text-xs">
+                  <tbody>
                     <tr>
-                      <td className="p-3 font-semibold text-gray-500">1</td>
-                      <td className="p-3 font-bold text-gray-900">{selectedPurchaseForBill.productName}</td>
-                      <td className="p-3 text-gray-600">{selectedPurchaseForBill.category}</td>
-                      <td className="p-3 text-right font-semibold text-gray-900">
+                      <td style={{ padding: '14px 16px', color: '#6b7280', fontWeight: 600 }}>1</td>
+                      <td style={{ padding: '14px 16px', fontWeight: 700, color: '#111827' }}>{selectedPurchaseForBill.productName}</td>
+                      <td style={{ padding: '14px 16px', color: '#4b5563' }}>{selectedPurchaseForBill.category}</td>
+                      <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 600, color: '#111827' }}>
                         {selectedPurchaseForBill.quantity} {selectedPurchaseForBill.unit || 'Litre'}
                       </td>
-                      <td className="p-3 text-right font-medium text-gray-700">
+                      <td style={{ padding: '14px 16px', textAlign: 'right', color: '#374151' }}>
                         ₹{Number(selectedPurchaseForBill.rate || 0).toFixed(2)}
                       </td>
-                      <td className="p-3 text-right font-bold text-gray-900">
+                      <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 700, color: '#111827' }}>
                         ₹{Number(selectedPurchaseForBill.totalCost || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                       </td>
                     </tr>
@@ -1362,23 +1468,23 @@ const Purchases = () => {
               </div>
 
               {/* Financial Calculation Box */}
-              <div className="flex justify-end mb-8">
-                <div className="w-64 space-y-2 text-xs">
-                  <div className="flex justify-between py-1 border-b border-gray-100">
-                    <span className="text-gray-600">Total Purchase Cost:</span>
-                    <span className="font-bold text-gray-900">
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '32px' }}>
+                <div style={{ width: '260px', fontSize: '13px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f3f4f6' }}>
+                    <span style={{ color: '#4b5563' }}>Total Purchase Cost:</span>
+                    <strong style={{ color: '#111827' }}>
                       ₹{Number(selectedPurchaseForBill.totalCost || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </span>
+                    </strong>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-gray-100 text-emerald-700">
-                    <span className="font-medium">Amount Paid:</span>
-                    <span className="font-bold">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f3f4f6', color: '#047857' }}>
+                    <span>Amount Paid:</span>
+                    <strong style={{ color: '#047857' }}>
                       ₹{Number(selectedPurchaseForBill.paidAmount || (selectedPurchaseForBill.status === 'Paid' ? selectedPurchaseForBill.totalCost : 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </span>
+                    </strong>
                   </div>
-                  <div className="flex justify-between py-1.5 border-t-2 border-gray-800 text-sm font-bold text-milquu-dark">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '2px solid #111827', fontSize: '14px', fontWeight: 700, color: '#111827' }}>
                     <span>Balance Due:</span>
-                    <span className={selectedPurchaseForBill.balanceAmount > 0 ? 'text-amber-700' : 'text-emerald-700'}>
+                    <span style={{ color: (selectedPurchaseForBill.balanceAmount ?? (selectedPurchaseForBill.totalCost - (selectedPurchaseForBill.paidAmount || 0))) > 0 ? '#b45309' : '#047857', fontWeight: 700 }}>
                       ₹{Number(selectedPurchaseForBill.balanceAmount ?? (selectedPurchaseForBill.totalCost - (selectedPurchaseForBill.paidAmount || 0))).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
@@ -1386,22 +1492,22 @@ const Purchases = () => {
               </div>
 
               {/* Signatures */}
-              <div className="pt-8 border-t border-dashed border-gray-300 grid grid-cols-2 gap-10 text-center text-xs text-gray-600">
+              <div style={{ paddingTop: '32px', borderTop: '1px dashed #d1d5db', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', textAlign: 'center', fontSize: '12px', color: '#4b5563' }}>
                 <div>
-                  <div className="h-14"></div>
-                  <div className="border-t border-gray-400 pt-1.5 font-medium">
+                  <div style={{ height: '50px' }}></div>
+                  <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '6px', fontWeight: 500 }}>
                     Vendor / Farmer Signature
                   </div>
                 </div>
                 <div>
-                  <div className="h-14"></div>
-                  <div className="border-t border-gray-400 pt-1.5 font-bold text-milquu-dark">
+                  <div style={{ height: '50px' }}></div>
+                  <div style={{ borderTop: '1px solid #9ca3af', paddingTop: '6px', fontWeight: 700, color: '#111827' }}>
                     Authorized Signatory (MilQuu Fresh)
                   </div>
                 </div>
               </div>
 
-              <p className="text-[10px] text-center text-gray-400 mt-6">
+              <p style={{ fontSize: '10px', textAlign: 'center', color: '#9ca3af', marginTop: '24px', marginBottom: 0 }}>
                 Thank you for supplying pure, high quality produce to MilQuu Fresh!
               </p>
             </div>
@@ -1507,86 +1613,195 @@ const Purchases = () => {
             </div>
 
             {/* Scrollable Modal Content */}
-            <div id="vendor-ledger-printable" className="p-6 overflow-y-auto font-sans">
+            <div
+              id="vendor-ledger-printable"
+              className="p-6 overflow-y-auto font-sans"
+              style={{
+                backgroundColor: '#ffffff',
+                color: '#1f2937',
+                fontFamily: "'Outfit', sans-serif",
+                padding: '32px',
+                boxSizing: 'border-box'
+              }}
+            >
               {loadingLedger || !vendorLedgerData ? (
-                <div className="py-20 text-center">
+                <div className="py-20 text-center" style={{ textAlign: 'center', padding: '80px 0' }}>
                   <RefreshCw size={28} className="animate-spin text-milquu-blue mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-gray-500">Generating vendor accounting ledger...</p>
+                  <p className="text-sm font-semibold text-gray-500" style={{ fontSize: '14px', fontWeight: 600, color: '#6b7280' }}>
+                    Generating vendor accounting ledger...
+                  </p>
                 </div>
               ) : (
                 <>
                   {/* Brand Header for Statement */}
-                  <div className="border-b-2 border-gray-800 pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
+                  <div
+                    className="border-b-2 border-gray-800 pb-4 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-end',
+                      borderBottom: '2px solid #111827',
+                      paddingBottom: '16px',
+                      marginBottom: '24px'
+                    }}
+                  >
                     <div>
-                      <h1 className="text-2xl font-serif font-black text-milquu-dark tracking-tight">MilQuu Fresh</h1>
-                      <p className="text-xs font-semibold text-gray-600 mt-0.5">Dairy Supply Ledger & Khata Account Statement</p>
-                      <p className="text-[11px] text-gray-500">Panvel, Navi Mumbai | Tel: +91 87670 67884 | support@milquufresh.in</p>
+                      <h1
+                        className="text-2xl font-serif font-black text-milquu-dark tracking-tight"
+                        style={{
+                          fontFamily: "'Playfair Display', serif",
+                          fontSize: '24px',
+                          fontWeight: 900,
+                          color: '#111827',
+                          margin: '0 0 2px 0'
+                        }}
+                      >
+                        MilQuu Fresh
+                      </h1>
+                      <p className="text-xs font-semibold text-gray-600 mt-0.5" style={{ fontSize: '13px', fontWeight: 600, color: '#4b5563', margin: '2px 0 0 0' }}>
+                        Dairy Supply Ledger &amp; Khata Account Statement
+                      </p>
+                      <p className="text-[11px] text-gray-500" style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0 0' }}>
+                        Panvel, Navi Mumbai | Tel: +91 87670 67884 | support@milquufresh.in
+                      </p>
                     </div>
-                    <div className="sm:text-right">
-                      <span className="inline-block bg-milquu-dark text-white text-[11px] font-bold px-3 py-1 rounded-md tracking-wider uppercase mb-1">
+                    <div className="sm:text-right" style={{ textAlign: 'right' }}>
+                      <span
+                        className="inline-block bg-milquu-dark text-white text-[11px] font-bold px-3 py-1 rounded-md tracking-wider uppercase mb-1"
+                        style={{
+                          display: 'inline-block',
+                          backgroundColor: '#1f2937',
+                          color: '#ffffff',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          padding: '4px 12px',
+                          borderRadius: '6px',
+                          letterSpacing: '0.05em',
+                          textTransform: 'uppercase',
+                          marginBottom: '6px'
+                        }}
+                      >
                         Vendor Statement
                       </span>
-                      <p className="text-xs text-gray-500">
-                        Date: <span className="font-semibold text-gray-900">{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                      <p className="text-xs text-gray-500" style={{ fontSize: '12px', color: '#6b7280', margin: '2px 0' }}>
+                        Date: <span className="font-semibold text-gray-900" style={{ fontWeight: 600, color: '#111827' }}>{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                       </p>
                     </div>
                   </div>
 
                   {/* Vendor Details Banner */}
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6 gap-4">
+                  <div
+                    className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6 gap-4"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      backgroundColor: '#f9fafb',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '16px',
+                      padding: '20px',
+                      marginBottom: '24px',
+                      gap: '16px',
+                      boxSizing: 'border-box'
+                    }}
+                  >
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-serif font-bold text-milquu-dark">{vendorLedgerData.vendor?.name}</h2>
-                        <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-                          vendorLedgerData.summary?.balanceDue > 0
-                            ? 'bg-amber-100 text-amber-800'
-                            : 'bg-emerald-100 text-emerald-800'
-                        }`}>
+                      <div className="flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h2
+                          className="text-xl font-serif font-bold text-milquu-dark"
+                          style={{ fontFamily: "'Playfair Display', serif", fontSize: '20px', fontWeight: 700, color: '#111827', margin: 0 }}
+                        >
+                          {vendorLedgerData.vendor?.name}
+                        </h2>
+                        <span
+                          className="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider"
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '2px 10px',
+                            borderRadius: '9999px',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            backgroundColor: vendorLedgerData.summary?.balanceDue > 0 ? '#fef3c7' : '#d1fae5',
+                            color: vendorLedgerData.summary?.balanceDue > 0 ? '#92400e' : '#065f46'
+                          }}
+                        >
                           {vendorLedgerData.summary?.balanceDue > 0 ? 'Pending Dues' : 'Fully Settled'}
                         </span>
                       </div>
-                      <p className="text-xs text-gray-600 mt-1 flex items-center gap-2">
+                      <p className="text-xs text-gray-600 mt-1 flex items-center gap-2" style={{ fontSize: '12px', color: '#4b5563', margin: '6px 0 0 0' }}>
                         <span>Tel: {vendorLedgerData.vendor?.phone || 'N/A'}</span>
                         {vendorLedgerData.vendor?.address && (
-                          <span>• Address: {vendorLedgerData.vendor.address}</span>
+                          <span> • Address: {vendorLedgerData.vendor.address}</span>
                         )}
                       </p>
                     </div>
 
                     {/* Financial Summary Badges */}
-                    <div className="flex flex-wrap gap-3">
-                      <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-right">
-                        <span className="text-[10px] uppercase font-bold text-gray-400 block">Total Purchases</span>
-                        <span className="text-sm font-bold text-milquu-dark">₹{Number(vendorLedgerData.summary?.totalBilled || 0).toLocaleString('en-IN')}</span>
+                    <div className="flex flex-wrap gap-3" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <div
+                        className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-right"
+                        style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '8px 16px', textAlign: 'right' }}
+                      >
+                        <span className="text-[10px] uppercase font-bold text-gray-400 block" style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, color: '#9ca3af', display: 'block' }}>
+                          Total Purchases
+                        </span>
+                        <span className="text-sm font-bold text-milquu-dark" style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>
+                          ₹{Number(vendorLedgerData.summary?.totalBilled || 0).toLocaleString('en-IN')}
+                        </span>
                       </div>
-                      <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-right">
-                        <span className="text-[10px] uppercase font-bold text-emerald-600 block">Total Paid</span>
-                        <span className="text-sm font-bold text-emerald-700">₹{Number(vendorLedgerData.summary?.totalPaid || 0).toLocaleString('en-IN')}</span>
+                      <div
+                        className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-right"
+                        style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '8px 16px', textAlign: 'right' }}
+                      >
+                        <span className="text-[10px] uppercase font-bold text-emerald-600 block" style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, color: '#059669', display: 'block' }}>
+                          Total Paid
+                        </span>
+                        <span className="text-sm font-bold text-emerald-700" style={{ fontSize: '14px', fontWeight: 700, color: '#047857' }}>
+                          ₹{Number(vendorLedgerData.summary?.totalPaid || 0).toLocaleString('en-IN')}
+                        </span>
                       </div>
-                      <div className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-right">
-                        <span className="text-[10px] uppercase font-bold text-amber-600 block">Net Balance Due</span>
-                        <span className="text-base font-bold text-amber-700">₹{Number(vendorLedgerData.summary?.balanceDue || 0).toLocaleString('en-IN')}</span>
+                      <div
+                        className="bg-white border border-gray-200 rounded-xl px-4 py-2 text-right"
+                        style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '8px 16px', textAlign: 'right' }}
+                      >
+                        <span className="text-[10px] uppercase font-bold text-amber-600 block" style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, color: '#d97706', display: 'block' }}>
+                          Net Balance Due
+                        </span>
+                        <span className="text-base font-bold text-amber-700" style={{ fontSize: '16px', fontWeight: 700, color: '#b45309' }}>
+                          ₹{Number(vendorLedgerData.summary?.balanceDue || 0).toLocaleString('en-IN')}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Section: Products Supplied Breakdown */}
                   {vendorLedgerData.productsBreakdown && vendorLedgerData.productsBreakdown.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <div className="mb-6" style={{ marginBottom: '24px' }}>
+                      <h3
+                        className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5"
+                        style={{ fontSize: '12px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
                         <Package size={14} className="text-milquu-blue" />
                         Products Purchased From This Vendor
                       </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div
+                        className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+                        style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}
+                      >
                         {vendorLedgerData.productsBreakdown.map((prod, idx) => (
-                          <div key={idx} className="bg-white border border-gray-200 rounded-xl p-3.5 flex justify-between items-center shadow-xs">
+                          <div
+                            key={idx}
+                            className="bg-white border border-gray-200 rounded-xl p-3.5 flex justify-between items-center shadow-xs"
+                            style={{ backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                          >
                             <div>
-                              <p className="font-bold text-gray-900 text-xs">{prod.name}</p>
-                              <p className="text-[11px] text-gray-500">{prod.category || 'General'}</p>
+                              <p className="font-bold text-gray-900 text-xs" style={{ fontSize: '12px', fontWeight: 700, color: '#111827', margin: 0 }}>{prod.name}</p>
+                              <p className="text-[11px] text-gray-500" style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0 0' }}>{prod.category || 'General'}</p>
                             </div>
-                            <div className="text-right">
-                              <p className="font-bold text-milquu-dark text-xs">{prod.quantity.toLocaleString('en-IN')} {prod.unit || 'L'}</p>
-                              <p className="text-[11px] text-gray-400">₹{Number(prod.totalCost).toLocaleString('en-IN')}</p>
+                            <div className="text-right" style={{ textAlign: 'right' }}>
+                              <p className="font-bold text-milquu-dark text-xs" style={{ fontSize: '12px', fontWeight: 700, color: '#111827', margin: 0 }}>{prod.quantity.toLocaleString('en-IN')} {prod.unit || 'L'}</p>
+                              <p className="text-[11px] text-gray-400" style={{ fontSize: '11px', color: '#9ca3af', margin: '2px 0 0 0' }}>₹{Number(prod.totalCost).toLocaleString('en-IN')}</p>
                             </div>
                           </div>
                         ))}
@@ -1596,63 +1811,79 @@ const Purchases = () => {
 
                   {/* Section: Chronological Ledger Transactions */}
                   <div>
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                    <h3
+                      className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5"
+                      style={{ fontSize: '12px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
                       <Layers size={14} className="text-milquu-blue" />
-                      Detailed Ledger Statement (Bills & Payments)
+                      Detailed Ledger Statement (Bills &amp; Payments)
                     </h3>
-                    <div className="overflow-x-auto rounded-xl border border-gray-200">
-                      <table className="w-full text-left border-collapse text-xs whitespace-nowrap">
+                    <div
+                      className="overflow-x-auto rounded-xl border border-gray-200"
+                      style={{ borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden' }}
+                    >
+                      <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                         <thead>
-                          <tr className="bg-gray-100 border-b border-gray-200 font-bold text-gray-600 uppercase tracking-wider text-[10px]">
-                            <th className="p-3">Date</th>
-                            <th className="p-3">Type</th>
-                            <th className="p-3">Ref / PO #</th>
-                            <th className="p-3">Particulars / Description</th>
-                            <th className="p-3 text-right">Debit (Billed)</th>
-                            <th className="p-3 text-right">Credit (Paid)</th>
-                            <th className="p-3 text-right">Balance</th>
+                          <tr style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: 700, textTransform: 'uppercase', fontSize: '10px', letterSpacing: '0.05em' }}>
+                            <th style={{ padding: '12px 14px' }}>Date</th>
+                            <th style={{ padding: '12px 14px' }}>Type</th>
+                            <th style={{ padding: '12px 14px' }}>Ref / PO #</th>
+                            <th style={{ padding: '12px 14px' }}>Particulars / Description</th>
+                            <th style={{ padding: '12px 14px', textAlign: 'right' }}>Debit (Billed)</th>
+                            <th style={{ padding: '12px 14px', textAlign: 'right' }}>Credit (Paid)</th>
+                            <th style={{ padding: '12px 14px', textAlign: 'right' }}>Balance</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody>
                           {vendorLedgerData.transactions.length === 0 ? (
                             <tr>
-                              <td colSpan="7" className="p-6 text-center text-gray-400">
+                              <td colSpan="7" style={{ padding: '24px', textAlign: 'center', color: '#9ca3af' }}>
                                 No transactions found for this vendor.
                               </td>
                             </tr>
                           ) : (
                             vendorLedgerData.transactions.map((tx, idx) => (
-                              <tr key={idx} className="hover:bg-gray-50/50">
-                                <td className="p-3 text-gray-600">
+                              <tr key={idx} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                <td style={{ padding: '12px 14px', color: '#4b5563' }}>
                                   {new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                                 </td>
-                                <td className="p-3">
-                                  <span className={`px-2 py-0.5 rounded font-bold text-[10px] tracking-wider uppercase inline-flex items-center gap-1 ${
-                                    tx.type === 'BILL'
-                                      ? 'bg-blue-100 text-blue-800'
-                                      : 'bg-emerald-100 text-emerald-800'
-                                  }`}>
+                                <td style={{ padding: '12px 14px' }}>
+                                  <span
+                                    style={{
+                                      padding: '2px 8px',
+                                      borderRadius: '4px',
+                                      fontWeight: 700,
+                                      fontSize: '10px',
+                                      letterSpacing: '0.05em',
+                                      textTransform: 'uppercase',
+                                      backgroundColor: tx.type === 'BILL' ? '#dbeafe' : '#d1fae5',
+                                      color: tx.type === 'BILL' ? '#1e40af' : '#065f46',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
                                     {tx.type === 'BILL' ? <ArrowUpRight size={10} /> : <ArrowDownLeft size={10} />}
                                     {tx.type}
                                   </span>
                                 </td>
-                                <td className="p-3 font-semibold text-milquu-dark">{tx.refNo || '-'}</td>
-                                <td className="p-3">
-                                  <p className="font-semibold text-gray-800">{tx.productName || tx.notes || '-'}</p>
+                                <td style={{ padding: '12px 14px', fontWeight: 600, color: '#111827' }}>{tx.refNo || '-'}</td>
+                                <td style={{ padding: '12px 14px' }}>
+                                  <p style={{ fontWeight: 600, color: '#1f2937', margin: 0 }}>{tx.productName || tx.notes || '-'}</p>
                                   {tx.quantity > 0 && (
-                                    <p className="text-[10px] text-gray-400">{tx.quantity} {tx.unit} @ ₹{tx.rate}</p>
+                                    <p style={{ fontSize: '11px', color: '#9ca3af', margin: '2px 0 0 0' }}>{tx.quantity} {tx.unit} @ ₹{tx.rate}</p>
                                   )}
                                   {tx.paymentMode && (
-                                    <p className="text-[10px] text-emerald-600 font-medium">Via {tx.paymentMode}</p>
+                                    <p style={{ fontSize: '11px', color: '#059669', fontWeight: 500, margin: '2px 0 0 0' }}>Via {tx.paymentMode}</p>
                                   )}
                                 </td>
-                                <td className="p-3 text-right font-bold text-gray-900">
+                                <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: '#111827' }}>
                                   {tx.debit > 0 ? `₹${Number(tx.debit).toLocaleString('en-IN')}` : '-'}
                                 </td>
-                                <td className="p-3 text-right font-bold text-emerald-600">
+                                <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: '#059669' }}>
                                   {tx.credit > 0 ? `₹${Number(tx.credit).toLocaleString('en-IN')}` : '-'}
                                 </td>
-                                <td className="p-3 text-right font-bold text-milquu-dark">
+                                <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: '#111827' }}>
                                   ₹{Number(tx.balance).toLocaleString('en-IN')}
                                 </td>
                               </tr>
