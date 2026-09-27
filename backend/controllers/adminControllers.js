@@ -7,6 +7,8 @@ import generateToken from '../utils/generateToken.js';
 import { runSubscriptionEngine } from '../cron/subscriptionEngine.js';
 import { istDateKey, istStartOfDay, istTomorrow, istStartOfYear, istStartOfMonth, istMonthYear, IST_TIMEZONE } from '../utils/ist.js';
 import { normalisePhone } from '../utils/phone.js';
+import { escapeRegex } from '../utils/regex.js';
+import { recordAudit } from '../utils/audit.js';
 
 export const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
@@ -15,9 +17,12 @@ export const loginAdmin = async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
     const staffRoles = ['admin', 'manager', 'staff', 'superadmin'];
     if (user && staffRoles.includes(user.role) && (await user.matchPassword(password))) {
+      if (user.isActive === false) {
+        return res.status(403).json({ message: 'This account has been deactivated. Ask an admin to reactivate it.' });
+      }
       res.json({
         token: generateToken(user._id, user.role),
         role: user.role,
@@ -62,9 +67,137 @@ export const getOrders = async (req, res) => {
   }
 };
 
+/** Paid-order count and lifetime value for the given customers. */
+const orderStatsFor = (userIds) => Order.aggregate([
+  { $match: { isPaid: true, user: { $in: userIds } } },
+  { $group: { _id: '$user', totalOrders: { $sum: 1 }, lifetimeValue: { $sum: '$totalPrice' } } }
+]);
+
+const customerStatus = (stats) =>
+  (stats && stats.totalOrders > 5) ? 'VIP' : (stats && stats.totalOrders > 0 ? 'Active' : 'New');
+
+/**
+ * One page of customers, searched and paged in the database. Staff accounts
+ * are excluded — they used to be listed among the customers.
+ */
+const getCustomersPage = async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 25));
+  const query = { role: 'user' };
+  const search = String(req.query.search || '').trim();
+  if (search) {
+    const pattern = new RegExp(escapeRegex(search), 'i');
+    const digits = search.replace(/\D/g, '');
+    query.$or = [{ name: pattern }, { email: pattern }, ...(digits.length >= 4 ? [{ phone: new RegExp(digits) }] : [])];
+  }
+  if (req.query.credit === 'true') query.isCreditCustomer = true;
+
+  const [customers, total] = await Promise.all([
+    User.find(query)
+      .select('name email phone address deliveryAddress walletBalance billingCycle isCreditCustomer creditLimit createdAt')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+    User.countDocuments(query)
+  ]);
+  const stats = await orderStatsFor(customers.map((c) => c._id));
+  const byId = new Map(stats.map((s) => [String(s._id), s]));
+
+  res.json({
+    customers: customers.map((c) => {
+      const st = byId.get(String(c._id));
+      return {
+        ...c,
+        orders: st?.totalOrders || 0,
+        lifetimeValue: st?.lifetimeValue || 0,
+        walletBalance: c.walletBalance || 0,
+        status: customerStatus(st)
+      };
+    }),
+    total,
+    page,
+    pages: Math.max(1, Math.ceil(total / limit))
+  });
+};
+
+// @route  GET /api/admin/customers/insights
+// @desc   Headline numbers and charts for the Customers page, counted in the
+//         database rather than by loading every customer.
+export const getCustomerInsights = async (req, res) => {
+  try {
+    const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [totalCustomers, newCustomers30d, ltvAgg] = await Promise.all([
+      User.countDocuments({ role: 'user' }),
+      User.countDocuments({ role: 'user', createdAt: { $gte: monthAgo } }),
+      Order.aggregate([
+        { $match: { isPaid: true, user: { $exists: true, $ne: null } } },
+        { $group: { _id: '$user', lifetimeValue: { $sum: '$totalPrice' } } },
+        { $group: { _id: null, buyers: { $sum: 1 }, total: { $sum: '$lifetimeValue' } } }
+      ])
+    ]);
+    const buyers = ltvAgg[0]?.buyers || 0;
+
+    // Growth by IST month over the last six months
+    const { year: nowYear, month: nowMonth } = istMonthYear();
+    const istMonthStart = (y, m0) => istStartOfMonth(new Date(Date.UTC(y, m0, 15)));
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const growthData = [];
+    for (let i = 0; i < 6; i++) {
+      const start = istMonthStart(nowYear, nowMonth - 5 + i);
+      const { year: y, month: m0 } = istMonthYear(start);
+      const end = istMonthStart(y, m0 + 1);
+      const [newC, returning] = await Promise.all([
+        User.countDocuments({ role: 'user', createdAt: { $gte: start, $lt: end } }),
+        Order.aggregate([
+          { $match: { isPaid: true, paidAt: { $gte: start, $lt: end }, user: { $ne: null } } },
+          { $group: { _id: '$user' } },
+          { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'u' } },
+          { $unwind: '$u' },
+          { $match: { 'u.createdAt': { $lt: start } } },
+          { $count: 'n' }
+        ])
+      ]);
+      growthData.push({ name: monthNames[m0], new: newC, returning: returning[0]?.n || 0 });
+    }
+
+    const [daily, alt, weekly, subscribers] = await Promise.all([
+      Subscription.countDocuments({ frequency: 'Daily', status: 'Active' }),
+      Subscription.countDocuments({ frequency: 'Alternate Days', status: 'Active' }),
+      Subscription.countDocuments({ frequency: 'Weekly', status: 'Active' }),
+      Subscription.distinct('user', { status: 'Active', user: { $ne: null } })
+    ]);
+    const occasional = Math.max(0, totalCustomers - subscribers.length);
+    const segmentTotal = daily + alt + weekly + occasional || 1;
+    const pct = (n) => Math.round((n / segmentTotal) * 100);
+
+    res.json({
+      stats: {
+        totalCustomers,
+        newCustomers30d,
+        // Share of customers who have ever paid for an order
+        retentionRate: totalCustomers ? Number(((buyers / totalCustomers) * 100).toFixed(1)) : 0,
+        avgLTV: buyers ? Math.round((ltvAgg[0]?.total || 0) / buyers) : 0
+      },
+      growthData,
+      segmentData: [
+        { name: 'Daily Milk', value: pct(daily), color: '#0D47A1' },
+        { name: 'Alt Days', value: pct(alt), color: '#2E7D32' },
+        { name: 'Weekly', value: pct(weekly), color: '#D4AF37' },
+        { name: 'No plan', value: pct(occasional), color: '#9CA3AF' }
+      ]
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error: error.message });
+  }
+};
+
 export const getCustomers = async (req, res) => {
   try {
-    const customers = await User.find({}).sort({ createdAt: -1 }).lean();
+    if (req.query.page !== undefined) return await getCustomersPage(req, res);
+
+    // Full list — used by the POS customer picker. Customers only, not staff.
+    const customers = await User.find({ role: 'user' }).select('-password').sort({ createdAt: -1 }).lean();
     
     const orderStats = await Order.aggregate([
       { $match: { isPaid: true, user: { $exists: true, $ne: null } } },
@@ -244,15 +377,6 @@ export const getRevenueAnalytics = async (req, res) => {
   }
 };
 
-export const getEmployees = async (req, res) => {
-  try {
-    const employees = await User.find({ role: { $in: ['admin', 'manager', 'staff', 'superadmin'] } }).select('-password');
-    res.json(employees);
-  } catch (error) {
-    res.status(500).json({ message: 'Server Error', error: error.message });
-  }
-};
-
 export const createWalletTransaction = async (req, res) => {
   try {
     const { userId, amount, type, description } = req.body;
@@ -290,6 +414,14 @@ export const createWalletTransaction = async (req, res) => {
       performedBy: req.user._id
     });
 
+    await recordAudit(req, {
+      action: `wallet.${type}`,
+      entity: 'Customer',
+      entityId: user._id,
+      summary: `${type === 'credit' ? 'Credited' : 'Debited'} ₹${transactionAmount} ${type === 'credit' ? 'to' : 'from'} ${user.name}'s wallet — ${description}`,
+      meta: { amount: transactionAmount, balanceAfter: user.walletBalance }
+    });
+
     res.status(201).json({ message: `Wallet ${type} successful`, walletBalance: user.walletBalance, transaction });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });
@@ -313,6 +445,12 @@ export const triggerSubscriptionEngine = async (req, res) => {
     }
 
     const summary = await runSubscriptionEngine({ date: date ? new Date(date) : undefined });
+    await recordAudit(req, {
+      action: 'engine.run',
+      entity: 'System',
+      summary: `Ran the subscription engine for ${summary.date}: ${summary.ordered} ordered, ${summary.autoPaused} paused`,
+      meta: summary
+    });
 
     res.json({
       message: `Subscription engine run for ${summary.date}`,
@@ -363,6 +501,12 @@ export const createCustomer = async (req, res) => {
     const customer = new User(customerData);
 
     await customer.save();
+    await recordAudit(req, {
+      action: 'customer.create',
+      entity: 'Customer',
+      entityId: customer._id,
+      summary: `Added customer ${customer.name}${customer.isCreditCustomer ? ` (credit, ${customer.billingCycle})` : ''}`
+    });
     res.status(201).json(customer);
   } catch (error) {
     if (error.code === 11000) {
@@ -402,7 +546,17 @@ export const updateCustomer = async (req, res) => {
     if (creditLimit !== undefined) customer.creditLimit = Number(creditLimit) || 0;
     if (creditNotes !== undefined) customer.creditNotes = creditNotes?.trim() || '';
 
+    const changed = ['name', 'phone', 'email', 'address', 'billingCycle', 'isCreditCustomer', 'creditLimit', 'creditNotes']
+      .filter((field) => req.body[field] !== undefined);
     await customer.save();
+    if (changed.length) {
+      await recordAudit(req, {
+        action: 'customer.update',
+        entity: 'Customer',
+        entityId: customer._id,
+        summary: `Edited customer ${customer.name}: ${changed.join(', ')}`
+      });
+    }
     res.json(customer);
   } catch (error) {
     if (error.code === 11000) {

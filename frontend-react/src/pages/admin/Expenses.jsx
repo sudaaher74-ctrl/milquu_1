@@ -8,6 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
+import toast from '../../utils/toast';
 
 const Expenses = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,7 +54,7 @@ const Expenses = () => {
       });
     } catch (error) {
       console.error("Error creating expense", error);
-      alert('Failed to save expense');
+      toast.error('Failed to save expense');
     } finally {
       setIsSubmitting(false);
     }

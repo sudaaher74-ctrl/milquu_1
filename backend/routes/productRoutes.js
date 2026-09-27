@@ -1,6 +1,7 @@
 import express from 'express';
 import Product from '../models/Product.js';
-import { protect, admin } from '../middleware/authMiddleware.js';
+import { protect, managerUp } from '../middleware/authMiddleware.js';
+import { recordAudit } from '../utils/audit.js';
 import { validateRequest } from '../middleware/validateRequest.js';
 import { productSchema, updateProductSchema } from '../validations/productValidations.js';
 
@@ -57,10 +58,16 @@ router.get('/', async (req, res) => {
 // @route   POST /api/products
 // @desc    Create a product
 // @access  Private/Admin
-router.post('/', protect, admin, validateRequest(productSchema), async (req, res) => {
+router.post('/', protect, managerUp, validateRequest(productSchema), async (req, res) => {
   try {
     const product = new Product(req.body);
     const createdProduct = await product.save();
+    await recordAudit(req, {
+      action: 'product.create',
+      entity: 'Product',
+      entityId: createdProduct._id,
+      summary: `Added product ${createdProduct.name} at ₹${createdProduct.price}`
+    });
     res.status(201).json(createdProduct);
   } catch (error) {
     res.status(400).json({ message: 'Invalid product data', error: error.message });
@@ -86,10 +93,24 @@ router.get('/:id', async (req, res) => {
 // @route   PUT /api/products/:id
 // @desc    Update a product
 // @access  Private/Admin
-router.put('/:id', protect, admin, validateRequest(updateProductSchema), async (req, res) => {
+router.put('/:id', protect, managerUp, validateRequest(updateProductSchema), async (req, res) => {
   try {
+    const before = await Product.findById(req.params.id).lean();
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
     if (product) {
+      // Price and stock changes are what an owner most needs to trace.
+      const tracked = ['price', 'planPrice', 'stock', 'name', 'purchasePrice'];
+      const changes = tracked
+        .filter((k) => req.body[k] !== undefined && String(before?.[k]) !== String(product[k]))
+        .map((k) => `${k} ${before?.[k] ?? '—'} → ${product[k]}`);
+      if (changes.length) {
+        await recordAudit(req, {
+          action: 'product.update',
+          entity: 'Product',
+          entityId: product._id,
+          summary: `Edited ${product.name}: ${changes.join(', ')}`
+        });
+      }
       res.json(product);
     } else {
       res.status(404).json({ message: 'Product not found' });
@@ -102,10 +123,16 @@ router.put('/:id', protect, admin, validateRequest(updateProductSchema), async (
 // @route   DELETE /api/products/:id
 // @desc    Delete a product
 // @access  Private/Admin
-router.delete('/:id', protect, admin, async (req, res) => {
+router.delete('/:id', protect, managerUp, async (req, res) => {
   try {
     const product = await Product.findByIdAndDelete(req.params.id);
     if (product) {
+      await recordAudit(req, {
+        action: 'product.delete',
+        entity: 'Product',
+        entityId: product._id,
+        summary: `Deleted product ${product.name}`
+      });
       res.json({ message: 'Product removed' });
     } else {
       res.status(404).json({ message: 'Product not found' });

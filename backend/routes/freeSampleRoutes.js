@@ -1,6 +1,6 @@
 import express from 'express';
 import FreeSample from '../models/FreeSample.js';
-import { protect, admin } from '../middleware/authMiddleware.js';
+import { protect, staffUp } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -61,7 +61,7 @@ router.get('/count', async (req, res) => {
 // @route   GET /api/free-sample/admin/all
 // @desc    Get all free sample requests (Admin)
 // @access  Private/Admin
-router.get('/admin/all', protect, admin, async (req, res) => {
+router.get('/admin/all', protect, staffUp, async (req, res) => {
   try {
     const samples = await FreeSample.find({}).sort({ createdAt: -1 });
     res.status(200).json(samples);
@@ -74,7 +74,7 @@ router.get('/admin/all', protect, admin, async (req, res) => {
 // @route   PUT /api/free-sample/admin/:id/status
 // @desc    Update status of a free sample request
 // @access  Private/Admin
-router.put('/admin/:id/status', protect, admin, async (req, res) => {
+router.put('/admin/:id/status', protect, staffUp, async (req, res) => {
   try {
     const { status } = req.body;
     

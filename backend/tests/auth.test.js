@@ -6,9 +6,13 @@ import User from '../models/User.js';
 
 vi.mock('../models/User.js');
 vi.mock('../models/WalletTransaction.js');
-vi.mock('../middleware/authMiddleware.js', () => ({
+vi.mock('../middleware/authMiddleware.js', async (importOriginal) => ({
+  ...(await importOriginal()),
   protect: (req, res, next) => next(),
-  admin: (req, res, next) => next()
+  admin: (req, res, next) => next(),
+  managerUp: (req, res, next) => next(),
+  staffUp: (req, res, next) => next(),
+  optionalProtect: (req, res, next) => next()
 }));
 vi.mock('../utils/generateToken.js', () => ({
   default: () => 'mocked_token'

@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import WalletTransaction from '../models/WalletTransaction.js';
 import Subscription from '../models/Subscription.js';
 import Order from '../models/Order.js';
+import { recordAudit } from '../utils/audit.js';
 
 export const getWithdrawalRequests = async (req, res) => {
   try {
@@ -68,6 +69,12 @@ export const updateWithdrawalStatus = async (req, res) => {
         request.adminRemarks = 'System Auto-Rejected: Insufficient withdrawable balance at time of approval due to pending deliveries.';
         await request.save();
         console.log(`[SIMULATED SMS to ${user.phone}]: Hi ${user.name}, your refund request was rejected due to insufficient withdrawable balance.`);
+        await recordAudit(req, {
+          action: 'refund.auto-rejected',
+          entity: 'Refund',
+          entityId: request._id,
+          summary: `Refund of ₹${request.amount} for ${user.name} auto-rejected: balance no longer covers it`
+        });
         return res.status(400).json({ message: 'Auto-Rejected: User no longer has sufficient withdrawable balance.', request });
       }
 
@@ -117,6 +124,13 @@ export const updateWithdrawalStatus = async (req, res) => {
     }
 
     const updatedRequest = await request.save();
+    await recordAudit(req, {
+      action: `refund.${String(updatedRequest.status).toLowerCase().replace(/\s+/g, '-')}`,
+      entity: 'Refund',
+      entityId: updatedRequest._id,
+      summary: `Refund of ₹${updatedRequest.amount} for ${user.name}: ${updatedRequest.status}`,
+      meta: { amount: updatedRequest.amount, status: updatedRequest.status }
+    });
     res.json(updatedRequest);
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error: error.message });

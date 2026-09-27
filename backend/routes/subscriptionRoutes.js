@@ -2,7 +2,9 @@ import express from 'express';
 import Subscription from '../models/Subscription.js';
 import DeliveryStaff from '../models/DeliveryStaff.js';
 import Order from '../models/Order.js';
-import { protect, admin, optionalProtect } from '../middleware/authMiddleware.js';
+import { protect, optionalProtect, managerUp, staffUp, MANAGER_ROLES } from '../middleware/authMiddleware.js';
+import { escapeRegex } from '../utils/regex.js';
+import { recordAudit } from '../utils/audit.js';
 import User from '../models/User.js';
 import { normalisePhone, isValidPhone } from '../utils/phone.js';
 import { priceCrate, normaliseRhythm, legacyFrequency, PricingError } from '../services/subscriptionPricing.js';
@@ -18,7 +20,8 @@ const router = express.Router();
 router.post('/', apiLimiter, optionalProtect, async (req, res) => {
   try {
     const { name, phone, items, deliveryAddress, frequency } = req.body;
-    const isAdmin = req.user?.role === 'admin';
+    // Managers and admins create plans from the admin panel; guests from the site.
+    const isAdmin = MANAGER_ROLES.includes(req.user?.role);
 
     if (!Array.isArray(items) || !items.length) {
       return res.status(400).json({ message: 'A subscription needs at least one item' });
@@ -64,6 +67,14 @@ router.post('/', apiLimiter, optionalProtect, async (req, res) => {
     });
 
     const createdSubscription = await subscription.save();
+    if (isAdmin) {
+      await recordAudit(req, {
+        action: 'subscription.create',
+        entity: 'Subscription',
+        entityId: createdSubscription._id,
+        summary: `Created a ${createdSubscription.frequency} plan for ${name || 'a customer'} (${createdSubscription.status})`
+      });
+    }
     res.status(201).json(createdSubscription);
   } catch (error) {
     if (error instanceof PricingError) {
@@ -76,10 +87,61 @@ router.post('/', apiLimiter, optionalProtect, async (req, res) => {
 // @route   GET /api/subscriptions
 // @desc    Get all subscriptions
 // @access  Private/Admin
-router.get('/', protect, admin, async (req, res) => {
+router.get('/', protect, staffUp, async (req, res) => {
   try {
-    const subscriptions = await Subscription.find({}).populate('items.product', 'name').sort({ createdAt: -1 });
-    res.json(subscriptions);
+    // Without ?page: the full list, as before. With it: one page, searched and
+    // filtered in the database, for the Subscriptions screen.
+    if (req.query.page === undefined) {
+      const subscriptions = await Subscription.find({}).populate('items.product', 'name').sort({ createdAt: -1 });
+      return res.json(subscriptions);
+    }
+
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 25));
+    const query = {};
+    const statuses = ['Active', 'Pending', 'Paused', 'Cancelled', 'Completed'];
+    if (statuses.includes(req.query.status)) query.status = req.query.status;
+    if (req.query.area) query.deliveryArea = String(req.query.area);
+    if (req.query.unassigned === 'true') {
+      query.$or = [{ assignedStaff: null }, { assignedStaff: { $exists: false } }];
+    }
+    const search = String(req.query.search || '').trim();
+    if (search) {
+      const pattern = new RegExp(escapeRegex(search), 'i');
+      const digits = search.replace(/\D/g, '');
+      query.$and = [{
+        $or: [
+          { name: pattern },
+          { subscriptionId: pattern },
+          { deliveryAddress: pattern },
+          ...(digits.length >= 4 ? [{ phone: new RegExp(digits) }] : [])
+        ]
+      }];
+    }
+
+    const [subscriptions, total, counts] = await Promise.all([
+      Subscription.find(query)
+        .populate('items.product', 'name')
+        .populate('assignedStaff', 'name')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Subscription.countDocuments(query),
+      Subscription.aggregate([
+        { $group: { _id: '$status', n: { $sum: 1 }, monthly: { $sum: { $ifNull: ['$monthlyTotal', 0] } } } }
+      ])
+    ]);
+
+    res.json({
+      subscriptions,
+      total,
+      page,
+      pages: Math.max(1, Math.ceil(total / limit)),
+      counts: Object.fromEntries(counts.map((c) => [c._id, c.n])),
+      // What active plans bring in over a typical month, priced by the server
+      activeMonthly: Math.round(counts.find((c) => c._id === 'Active')?.monthly || 0)
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
   }
@@ -88,10 +150,19 @@ router.get('/', protect, admin, async (req, res) => {
 // @route   PUT /api/subscriptions/:id
 // @desc    Update subscription (status, assigned staff, etc.)
 // @access  Private/Admin
-router.put('/:id', protect, admin, async (req, res) => {
+router.put('/:id', protect, managerUp, async (req, res) => {
   try {
+    const before = await Subscription.findById(req.params.id).lean();
+    if (!before) return res.status(404).json({ message: 'Subscription not found' });
     const updated = await Subscription.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-    if (!updated) return res.status(404).json({ message: 'Subscription not found' });
+    const changed = Object.keys(req.body || {}).filter((k) => String(before[k]) !== String(req.body[k]));
+    await recordAudit(req, {
+      action: 'subscription.update',
+      entity: 'Subscription',
+      entityId: updated._id,
+      summary: `Edited ${updated.name || 'a'} plan${changed.length ? `: ${changed.join(', ')}` : ''}${req.body.status && req.body.status !== before.status ? ` (${before.status} → ${req.body.status})` : ''}`,
+      meta: { changed }
+    });
     res.json(updated);
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
@@ -101,7 +172,7 @@ router.put('/:id', protect, admin, async (req, res) => {
 // @route   GET /api/subscriptions/today-orders
 // @desc    Generate today's delivery list from all active subscriptions
 // @access  Private/Admin
-router.get('/today-orders', protect, admin, async (req, res) => {
+router.get('/today-orders', protect, staffUp, async (req, res) => {
   try {
     // The day being delivered, as an Indian calendar date. This used to be
     // computed by adding 5h30m to a Date and then calling getDay(), which reads
@@ -225,7 +296,7 @@ router.get('/today-orders', protect, admin, async (req, res) => {
 // @route   PUT /api/subscriptions/:id/assign-staff
 // @desc    Assign a delivery boy to a subscription or an order
 // @access  Private/Admin
-router.put('/:id/assign-staff', protect, admin, async (req, res) => {
+router.put('/:id/assign-staff', protect, staffUp, async (req, res) => {
   try {
     const { staffId } = req.body;
     let updated = await Subscription.findByIdAndUpdate(

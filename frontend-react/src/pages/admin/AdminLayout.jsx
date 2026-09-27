@@ -7,9 +7,14 @@ import {
   Package, CalendarDays, Truck, BarChart3, Boxes, 
   Bell, Settings, Search, Plus, Menu, X, ChevronDown, Bike,
   Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart, MessageCircle, Wand2, Mic, Volume2, Loader2, Sparkles, Banknote, Gift,
-  PanelLeft, PanelLeftClose
+  PanelLeft, PanelLeftClose, ShieldOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { canAccess, getAdminSession, ROLE_LABELS } from '../../utils/adminAccess.js';
+import { ToastHost } from '../../components/admin/Toast.jsx';
+import { useToday } from '../../utils/useToday.js';
+import { buildAlerts, getReadAlerts } from '../../utils/adminAlerts.js';
+import { eventBus } from '../../utils/eventBus.js';
 
 const AdminLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -29,20 +34,19 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const synth = window.speechSynthesis;
 
-  // Read admin name and role from adminToken in localStorage
-  const adminInfo = (() => {
-    try {
-      const raw = localStorage.getItem('adminToken');
-      if (!raw) return { name: 'Admin', role: 'Admin' };
-      if (raw.startsWith('{')) {
-        const parsed = JSON.parse(raw);
-        return { name: parsed.name || 'Admin', role: parsed.role || 'Admin' };
-      }
-      const payload = JSON.parse(atob(raw.split('.')[1]));
-      return { name: payload.name || 'Admin', role: payload.role || 'Admin' };
-    } catch { return { name: 'Admin', role: 'Admin' }; }
-  })();
-  
+  // The signed-in employee, saved by the login page
+  const session = getAdminSession();
+  const role = session?.role || 'staff';
+  const adminInfo = { name: session?.name || 'Admin', role: ROLE_LABELS[role] || role };
+
+  const { today } = useToday();
+  const [searchTerm, setSearchTerm] = useState('');
+  // Re-read the "read" set when alerts are marked read elsewhere
+  const [, setReadTick] = useState(0);
+  useEffect(() => eventBus.on('ALERTS_READ', () => setReadTick((t) => t + 1)), []);
+  const readAlerts = getReadAlerts();
+  const unreadCount = buildAlerts(today, role).filter((a) => !readAlerts.has(a.id)).length;
+
   // Setup Speech Recognition
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const recognition = SpeechRecognition ? new SpeechRecognition() : null;
@@ -52,32 +56,79 @@ const AdminLayout = () => {
     recognition.lang = 'en-US';
   }
 
-  const navItems = [
-    { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={20} /> },
-    { name: 'Orders', path: '/admin/orders', icon: <ShoppingBag size={20} /> },
-    { name: 'Customers', path: '/admin/customers', icon: <Users size={20} /> },
-    { name: 'Products', path: '/admin/products', icon: <Package size={20} /> },
-    { name: 'Free Samples', path: '/admin/free-samples', icon: <Gift size={20} /> },
-    { name: 'Subscriptions', path: '/admin/subscriptions', icon: <CalendarDays size={20} /> },
-    { name: "Today's Orders", path: '/admin/today-orders', icon: <ShoppingCart size={20} /> },
-    { name: 'Live Tracking', path: '/admin/deliveries', icon: <Truck size={20} /> },
-    { name: 'Delivery Staff', path: '/admin/delivery-boys', icon: <Bike size={20} /> },
-    { name: 'Revenue', path: '/admin/revenue', icon: <BarChart3 size={20} /> },
-    { name: 'Inventory', path: '/admin/inventory', icon: <Boxes size={20} /> },
-    { name: 'Refunds', path: '/admin/refunds', icon: <Banknote size={20} /> },
-    
-    // New ERP Modules
-    { name: 'Business Overview', path: '/admin/business-overview', icon: <Briefcase size={20} /> },
-    { name: 'Shop POS', path: '/admin/pos', icon: <Store size={20} /> },
-    { name: 'Purchases', path: '/admin/purchases', icon: <ShoppingCart size={20} /> },
-    { name: 'Expenses', path: '/admin/expenses', icon: <Receipt size={20} /> },
-    { name: 'Profit Analytics', path: '/admin/profit', icon: <TrendingUp size={20} /> },
-    { name: 'Milk Procurement', path: '/admin/procurement', icon: <Droplets size={20} /> },
-    { name: 'Wastage', path: '/admin/wastage', icon: <Trash2 size={20} /> },
-    { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={20} /> },
-    { name: 'Notifications', path: '/admin/notifications', icon: <Bell size={20} /> },
-    { name: 'Settings', path: '/admin/settings', icon: <Settings size={20} /> },
-  ];
+  // Grouped by what the page is for; each role only sees what it can open.
+  const navSections = [
+    {
+      title: 'Today',
+      items: [
+        { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={20} /> },
+        { name: "Today's Orders", path: '/admin/today-orders', icon: <ShoppingCart size={20} /> },
+        { name: 'Live Tracking', path: '/admin/deliveries', icon: <Truck size={20} /> },
+        { name: 'Alerts', path: '/admin/notifications', icon: <Bell size={20} /> },
+      ]
+    },
+    {
+      title: 'Sales',
+      items: [
+        { name: 'Shop POS', path: '/admin/pos', icon: <Store size={20} /> },
+        { name: 'Orders', path: '/admin/orders', icon: <ShoppingBag size={20} /> },
+        { name: 'Subscriptions', path: '/admin/subscriptions', icon: <CalendarDays size={20} /> },
+        { name: 'Free Samples', path: '/admin/free-samples', icon: <Gift size={20} /> },
+      ]
+    },
+    {
+      title: 'Customers',
+      items: [
+        { name: 'Customers', path: '/admin/customers', icon: <Users size={20} /> },
+        { name: 'Refunds', path: '/admin/refunds', icon: <Banknote size={20} /> },
+      ]
+    },
+    {
+      title: 'Stock & Purchasing',
+      items: [
+        { name: 'Products', path: '/admin/products', icon: <Package size={20} /> },
+        { name: 'Inventory', path: '/admin/inventory', icon: <Boxes size={20} /> },
+        { name: 'Purchases', path: '/admin/purchases', icon: <ShoppingCart size={20} /> },
+        { name: 'Milk Procurement', path: '/admin/procurement', icon: <Droplets size={20} /> },
+        { name: 'Wastage', path: '/admin/wastage', icon: <Trash2 size={20} /> },
+      ]
+    },
+    {
+      title: 'Finance',
+      items: [
+        { name: 'Revenue', path: '/admin/revenue', icon: <BarChart3 size={20} /> },
+        { name: 'Profit Analytics', path: '/admin/profit', icon: <TrendingUp size={20} /> },
+        { name: 'Expenses', path: '/admin/expenses', icon: <Receipt size={20} /> },
+        { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={20} /> },
+      ]
+    },
+    {
+      title: 'Team & Settings',
+      items: [
+        { name: 'Delivery Staff', path: '/admin/delivery-boys', icon: <Bike size={20} /> },
+        { name: 'Settings', path: '/admin/settings', icon: <Settings size={20} /> },
+      ]
+    }
+  ]
+    .map((section) => ({ ...section, items: section.items.filter((item) => canAccess(item.path, role)) }))
+    .filter((section) => section.items.length > 0);
+
+  const pageAllowed = canAccess(location.pathname, role);
+
+  const quickAddLinks = [
+    { to: '/admin/products', label: 'Add Product', icon: <Package size={16} className="mr-2"/> },
+    { to: '/admin/pos', label: 'New POS Bill', icon: <Store size={16} className="mr-2"/> },
+    { to: '/admin/subscriptions', label: 'Create Subscription', icon: <CalendarDays size={16} className="mr-2"/> },
+    { to: '/admin/deliveries', label: 'Assign Delivery', icon: <Truck size={16} className="mr-2"/> },
+  ].filter((link) => canAccess(link.to, role));
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const term = searchTerm.trim();
+    if (!term) return;
+    navigate(`/admin/orders?search=${encodeURIComponent(term)}`);
+    setSearchTerm('');
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
@@ -166,26 +217,31 @@ const AdminLayout = () => {
         </div>
         
         <nav className="flex-1 overflow-y-auto p-4 space-y-1 hide-scrollbar">
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4 px-3 mt-2">Menu</div>
-          {navItems.map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.path}
-              end={item.path === '/admin'}
-              onClick={() => setMobileMenuOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-300 group relative z-10 ${
-                  isActive 
-                    ? 'bg-milquu-blue/10 text-milquu-blue font-bold shadow-sm' 
-                    : 'text-gray-500 hover:bg-white/60 hover:text-milquu-dark'
-                }`
-              }
-            >
-              <div className={({ isActive }) => isActive ? 'text-milquu-blue' : 'text-gray-400 group-hover:text-milquu-blue transition-colors'}>
-                {React.cloneElement(item.icon, { className: location.pathname === item.path || (item.path === '/admin' && location.pathname === '/admin') ? 'text-milquu-blue' : 'text-gray-400 group-hover:text-milquu-blue transition-colors' })}
-              </div>
-              <span className="text-sm relative z-10">{item.name}</span>
-            </NavLink>
+          {navSections.map((section) => (
+            <div key={section.title} className="mb-3">
+              <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5 px-3 mt-3">{section.title}</div>
+              {section.items.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={item.path === '/admin'}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-300 group relative z-10 ${
+                      isActive
+                        ? 'bg-milquu-blue/10 text-milquu-blue font-bold shadow-sm'
+                        : 'text-gray-500 hover:bg-white/60 hover:text-milquu-dark'
+                    }`
+                  }
+                >
+                  {React.cloneElement(item.icon, { className: location.pathname === item.path ? 'text-milquu-blue' : 'text-gray-400 group-hover:text-milquu-blue transition-colors' })}
+                  <span className="text-sm relative z-10 flex-1">{item.name}</span>
+                  {item.path === '/admin/notifications' && unreadCount > 0 && (
+                    <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center">{unreadCount}</span>
+                  )}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
 
@@ -221,14 +277,19 @@ const AdminLayout = () => {
             </button>
             
             {/* Search Bar */}
-            <div className="hidden md:flex items-center bg-gray-100/80 rounded-full px-4 py-2 border border-transparent focus-within:border-milquu-blue/30 focus-within:bg-white focus-within:shadow-sm transition-all w-80">
-              <Search size={18} className="text-gray-400 mr-2" />
-              <input 
-                type="text" 
-                placeholder="Search orders, customers, products..." 
-                className="bg-transparent border-none outline-none text-sm w-full font-sans text-gray-700 placeholder-gray-400"
-              />
-            </div>
+            {canAccess('/admin/orders', role) && (
+              <form onSubmit={handleSearch} role="search" className="hidden md:flex items-center bg-gray-100/80 rounded-full px-4 py-2 border border-transparent focus-within:border-milquu-blue/30 focus-within:bg-white focus-within:shadow-sm transition-all w-80">
+                <Search size={18} className="text-gray-400 mr-2" />
+                <input
+                  type="search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search orders by name, phone or ID…"
+                  aria-label="Search orders"
+                  className="bg-transparent border-none outline-none text-sm w-full font-sans text-gray-700 placeholder-gray-400"
+                />
+              </form>
+            )}
           </div>
 
           <div className="flex items-center space-x-3 sm:space-x-5">
@@ -236,7 +297,7 @@ const AdminLayout = () => {
             <div className="relative">
               <button 
                 onClick={() => setQuickAddOpen(!quickAddOpen)}
-                className="hidden sm:flex items-center space-x-2 bg-milquu-dark text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors shadow-md"
+                className={`${quickAddLinks.length ? 'hidden sm:flex' : 'hidden'} items-center space-x-2 bg-milquu-dark text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors shadow-md`}
               >
                 <Plus size={16} />
                 <span>Quick Add</span>
@@ -253,10 +314,9 @@ const AdminLayout = () => {
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 py-2"
                     >
-                      <Link to="/admin/products" onClick={() => setQuickAddOpen(false)} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center"><Package size={16} className="mr-2"/> Add Product</Link>
-                      <Link to="/admin/customers" onClick={() => setQuickAddOpen(false)} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center"><Users size={16} className="mr-2"/> Add Customer</Link>
-                      <Link to="/admin/subscriptions" onClick={() => setQuickAddOpen(false)} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center"><CalendarDays size={16} className="mr-2"/> Create Subscription</Link>
-                      <Link to="/admin/deliveries" onClick={() => setQuickAddOpen(false)} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center"><Truck size={16} className="mr-2"/> Assign Delivery</Link>
+                      {quickAddLinks.map((link) => (
+                        <Link key={link.to} to={link.to} onClick={() => setQuickAddOpen(false)} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center">{link.icon} {link.label}</Link>
+                      ))}
                     </motion.div>
                   </>
                 )}
@@ -264,10 +324,17 @@ const AdminLayout = () => {
             </div>
 
             {/* Notification */}
-            <button className="relative p-2 text-gray-400 hover:text-milquu-blue transition-colors rounded-full hover:bg-blue-50">
+            <Link
+              to="/admin/notifications"
+              className="relative p-2 text-gray-400 hover:text-milquu-blue transition-colors rounded-full hover:bg-blue-50"
+              aria-label={unreadCount ? `${unreadCount} unread alerts` : 'Alerts'}
+              title={unreadCount ? `${unreadCount} unread alerts` : 'No new alerts'}
+            >
               <Bell size={22} />
-              <span className="absolute top-1.5 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
-            </button>
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white flex items-center justify-center">{unreadCount}</span>
+              )}
+            </Link>
 
             {/* Profile */}
             <div className="flex items-center space-x-3 pl-2 sm:pl-4 border-l border-gray-200">
@@ -284,8 +351,16 @@ const AdminLayout = () => {
         
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
-          <Outlet />
+          {pageAllowed ? <Outlet /> : (
+            <div className="max-w-lg mx-auto mt-16 bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+              <ShieldOff size={36} className="mx-auto text-gray-400 mb-3" />
+              <h1 className="text-xl font-bold text-milquu-dark mb-1">You don’t have access to this page</h1>
+              <p className="text-sm text-gray-500 mb-5">Your role ({adminInfo.role}) can’t open it. Ask an admin if you need it.</p>
+              <Link to="/admin" className="inline-block bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800">Back to dashboard</Link>
+            </div>
+          )}
         </div>
+        <ToastHost />
       </main>
     </div>
   );

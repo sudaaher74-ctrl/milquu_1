@@ -1,158 +1,149 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../../utils/api.js';
-import { Users, UserPlus, UserCheck, Star, ArrowUpRight, ArrowDownRight, Download, Filter } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import toast from '../../utils/toast';
+import { getAdminSession, isAdminRole } from '../../utils/adminAccess';
+import { Users, UserPlus, UserCheck, Star, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import ExportButton from '../../components/admin/ExportButton';
 
-// Data is now fetched dynamically from API
+const PAGE_SIZE = 25;
+const rupees = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
+
+const StatCard = ({ title, value, icon, hint }) => (
+  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between">
+    <div>
+      <h3 className="text-gray-500 text-sm font-medium mb-1">{title}</h3>
+      <p className="text-2xl font-bold text-milquu-dark">{value}</p>
+      {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
+    </div>
+    <div className="p-4 rounded-xl bg-gray-50 text-gray-700">{icon}</div>
+  </div>
+);
 
 const Customers = () => {
-  const [topCustomers, setTopCustomers] = React.useState([]);
-  const [growthData, setGrowthData] = React.useState([]);
-  const [segmentData, setSegmentData] = React.useState([]);
-  const [stats, setStats] = React.useState({
-    totalCustomers: 0,
-    newCustomers30d: 0,
-    retentionRate: 0,
-    avgLTV: 0
-  });
-  const [loading, setLoading] = React.useState(true);
+  const canManageWallets = isAdminRole(getAdminSession()?.role);
 
-  React.useEffect(() => {
-    const fetchCustomers = async () => {
-      try {
-        const res = await api.get('/api/admin/customers');
-        const data = res.data;
-        const mapped = data.topCustomers.map(c => ({
-          id: c._id,
-          name: c.name,
-          joined: new Date(c.createdAt).toLocaleDateString(),
-          orders: c.orders, 
-          lifetimeValue: `₹${c.lifetimeValue}`,
-          walletBalance: c.walletBalance || 0,
-          status: c.status
-        }));
-        setTopCustomers(mapped);
-        setGrowthData(data.growthData || []);
-        setSegmentData(data.segmentData || []);
-        if (data.stats) setStats(data.stats);
-      } catch (error) {
-        console.error("Failed to fetch customers", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchCustomers();
-  }, []);
+  // Headline numbers and charts, counted by the server
+  const [insights, setInsights] = useState(null);
+  // One page of customers
+  const [customers, setCustomers] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [pages, setPages] = useState(1);
+  const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [creditOnly, setCreditOnly] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [walletModalOpen, setWalletModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [walletForm, setWalletForm] = useState({ amount: '', type: 'credit', description: 'Manual Recharge' });
 
+  useEffect(() => {
+    api.get('/api/admin/customers/insights')
+      .then(({ data }) => setInsights(data))
+      .catch((error) => toast.error(error.response?.data?.message || 'Could not load customer insights'));
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+    if (search) params.set('search', search);
+    if (creditOnly) params.set('credit', 'true');
+    api.get(`/api/admin/customers?${params}`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setCustomers(data.customers);
+        setTotal(data.total);
+        setPages(data.pages);
+      })
+      .catch((error) => toast.error(error.response?.data?.message || 'Could not load customers'))
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [page, search, creditOnly, reloadKey]);
+
+  const submitSearch = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setPage(1);
+    setSearch(searchInput.trim());
+  };
+
   const handleWalletSubmit = async (e) => {
     e.preventDefault();
+    const verb = walletForm.type === 'credit' ? 'Add' : 'Deduct';
+    if (!window.confirm(`${verb} ₹${walletForm.amount} ${walletForm.type === 'credit' ? 'to' : 'from'} ${selectedCustomer.name}'s wallet? This is recorded in the audit log.`)) return;
     try {
       await api.post('/api/admin/wallets/transaction', {
-        userId: selectedCustomer.id,
+        userId: selectedCustomer._id,
         amount: walletForm.amount,
         type: walletForm.type,
         description: walletForm.description
       });
-      // Refresh list
-      const res = await api.get('/api/admin/customers');
-      const mapped = res.data.topCustomers.map(c => ({
-          id: c._id,
-          name: c.name,
-          joined: new Date(c.createdAt).toLocaleDateString(),
-          orders: c.orders, 
-          lifetimeValue: `₹${c.lifetimeValue}`,
-          walletBalance: c.walletBalance || 0,
-          status: c.status
-      }));
-      setTopCustomers(mapped);
+      toast.success(`Wallet ${walletForm.type === 'credit' ? 'credited' : 'debited'}`);
       setWalletModalOpen(false);
+      setWalletForm({ amount: '', type: 'credit', description: 'Manual Recharge' });
+      setReloadKey((k) => k + 1);
     } catch (error) {
-      alert(error.response?.data?.message || 'Transaction failed');
+      toast.error(error.response?.data?.message || 'Transaction failed');
     }
   };
 
-const StatCard = ({ title, value, icon, trend, colorClass }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between relative overflow-hidden group">
-    <div>
-      <h3 className="text-gray-500 text-sm font-medium mb-1">{title}</h3>
-      <div className="flex items-end space-x-2">
-        <p className="text-2xl font-bold text-milquu-dark">{value}</p>
-        <span className={`text-xs font-bold flex items-center mb-1 ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
-          {trend > 0 ? <ArrowUpRight size={14}/> : <ArrowDownRight size={14}/>} {Math.abs(trend)}%
-        </span>
-      </div>
-    </div>
-    <div className={`p-4 rounded-xl ${colorClass.replace('from-', 'bg-').split(' ')[0]} bg-opacity-10 text-gray-700 relative z-10`}>
-      {icon}
-    </div>
-    <div className={`absolute -bottom-6 -right-6 w-24 h-24 bg-gradient-to-br ${colorClass} opacity-5 rounded-full transition-transform duration-500 group-hover:scale-150`}></div>
-  </div>
-);
+  const stats = insights?.stats;
+  const growthData = insights?.growthData || [];
+  const segmentData = insights?.segmentData || [];
 
-  const exportData = topCustomers.map(c => ({
-    'Customer ID': c.id,
+  const exportData = customers.map(c => ({
+    'Customer ID': c._id,
     'Name': c.name,
-    'Joined Date': c.joined,
-    'Total Orders': c.orders,
+    'Phone': c.phone || '',
+    'Joined': new Date(c.createdAt).toLocaleDateString('en-IN'),
+    'Paid Orders': c.orders,
     'Lifetime Value': c.lifetimeValue,
+    'Wallet': c.walletBalance,
     'Status': c.status
   }));
 
   return (
     <div className="max-w-7xl mx-auto pb-10 font-sans">
-      
-      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Customer Insights</h1>
-          <p className="text-gray-500 text-sm mt-1">Analyze acquisition, retention, and customer lifetime value.</p>
+          <h1 className="text-3xl font-serif font-bold text-milquu-dark tracking-tight">Customers</h1>
+          <p className="text-gray-500 text-sm mt-1">Who your customers are, how they buy, and their wallets.</p>
         </div>
-        <div className="flex space-x-3">
-          <ExportButton data={exportData} filename="Customers_Export" title="Customer Insights Report" />
-        </div>
+        <ExportButton data={exportData} filename="Customers_Export" title="Customers (this page)" label="Export page" />
       </div>
 
-      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        <StatCard title="Total Customers" value={stats.totalCustomers} trend={12.5} icon={<Users size={24} className="text-blue-600"/>} colorClass="from-blue-400 to-blue-600" />
-        <StatCard title="New Customers (30d)" value={stats.newCustomers30d} trend={24.1} icon={<UserPlus size={24} className="text-green-600"/>} colorClass="from-green-400 to-green-600" />
-        <StatCard title="Retention Rate" value={`${stats.retentionRate}%`} trend={1.2} icon={<UserCheck size={24} className="text-purple-600"/>} colorClass="from-purple-400 to-purple-600" />
-        <StatCard title="Avg Lifetime Value" value={`₹${stats.avgLTV.toLocaleString()}`} trend={-2.4} icon={<Star size={24} className="text-orange-600"/>} colorClass="from-orange-400 to-orange-600" />
+        <StatCard title="Total customers" value={stats ? stats.totalCustomers.toLocaleString('en-IN') : '—'} icon={<Users size={24} className="text-blue-600" />} />
+        <StatCard title="New in the last 30 days" value={stats ? stats.newCustomers30d.toLocaleString('en-IN') : '—'} icon={<UserPlus size={24} className="text-green-600" />} />
+        <StatCard title="Have ever ordered" value={stats ? `${stats.retentionRate}%` : '—'} hint="Share of customers with a paid order" icon={<UserCheck size={24} className="text-purple-600" />} />
+        <StatCard title="Avg lifetime value" value={stats ? rupees(stats.avgLTV) : '—'} hint="Per customer who has ordered" icon={<Star size={24} className="text-orange-600" />} />
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        
-        {/* Main Growth Chart */}
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-milquu-dark">Customer Acquisition & Growth</h2>
-            <select className="bg-gray-50 border border-gray-200 text-xs rounded-lg px-3 py-1.5 outline-none focus:border-milquu-blue">
-              <option>Last 6 Months</option>
-              <option>This Year</option>
-            </select>
+            <h2 className="text-lg font-bold text-milquu-dark">New and returning customers</h2>
+            <span className="text-xs text-gray-500">Last 6 months</span>
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={growthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorNew" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2E7D32" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#2E7D32" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#2E7D32" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#2E7D32" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorReturning" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0D47A1" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#0D47A1" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#0D47A1" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#0D47A1" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
+                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
                 <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
                 <Area type="monotone" dataKey="returning" name="Returning" stroke="#0D47A1" strokeWidth={3} fillOpacity={1} fill="url(#colorReturning)" />
                 <Area type="monotone" dataKey="new" name="New" stroke="#2E7D32" strokeWidth={3} fillOpacity={1} fill="url(#colorNew)" />
@@ -161,70 +152,81 @@ const StatCard = ({ title, value, icon, trend, colorClass }) => (
           </div>
         </div>
 
-        {/* Segmentation Chart */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
-          <h2 className="text-lg font-bold text-milquu-dark mb-4">Customer Segmentation</h2>
+          <h2 className="text-lg font-bold text-milquu-dark mb-4">Plans by rhythm</h2>
           <div className="flex-1 min-h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={segmentData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                  {segmentData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
+                  {segmentData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
                 </Pie>
                 <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
           <div className="grid grid-cols-2 gap-3 mt-4">
-            {segmentData.map((segment, idx) => (
-              <div key={idx} className="flex items-center text-xs">
-                <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: segment.color }}></span>
+            {segmentData.map((segment) => (
+              <div key={segment.name} className="flex items-center text-xs">
+                <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: segment.color }} />
                 <span className="text-gray-600 font-medium">{segment.name}</span>
                 <span className="ml-auto font-bold text-milquu-dark">{segment.value}%</span>
               </div>
             ))}
           </div>
         </div>
-
       </div>
 
-      {/* Top Customers Table */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-5 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-milquu-dark">Top Customers (By LTV)</h2>
-          <button className="flex items-center text-sm font-medium text-gray-500 hover:text-milquu-blue transition-colors">
-            <Filter size={16} className="mr-1" /> Sort/Filter
-          </button>
+        <div className="p-5 border-b border-gray-100 flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-milquu-dark">All customers</h2>
+            <p className="text-xs text-gray-500">{loading ? 'Loading…' : `${total.toLocaleString('en-IN')} customer${total === 1 ? '' : 's'}${search ? ` matching “${search}”` : ''}`} · newest first</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <form onSubmit={submitSearch} role="search" className="flex items-center bg-gray-50 rounded-lg px-3 py-2 border border-gray-200 sm:w-72">
+              <Search size={16} className="text-gray-400 mr-2" />
+              <input type="search" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} placeholder="Name, phone or email" aria-label="Search customers" className="bg-transparent border-none outline-none text-sm w-full" />
+            </form>
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <input type="checkbox" checked={creditOnly} onChange={(e) => { setLoading(true); setPage(1); setCreditOnly(e.target.checked); }} />
+              Khata customers only
+            </label>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-gray-50/50 text-gray-500 text-xs uppercase tracking-wider">
               <tr>
                 <th className="px-6 py-4 font-semibold">Customer</th>
-                <th className="px-6 py-4 font-semibold">Joined Date</th>
-                <th className="px-6 py-4 font-semibold">Total Orders</th>
+                <th className="px-6 py-4 font-semibold">Joined</th>
+                <th className="px-6 py-4 font-semibold">Paid orders</th>
                 <th className="px-6 py-4 font-semibold">Wallet</th>
-                <th className="px-6 py-4 font-semibold">Lifetime Value</th>
+                <th className="px-6 py-4 font-semibold">Lifetime value</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
-                <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                {canManageWallets && <th className="px-6 py-4 font-semibold text-right">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {topCustomers.map((customer) => (
-                <tr key={customer.id} className="hover:bg-gray-50/80 transition-colors">
+              {!loading && customers.length === 0 && (
+                <tr><td colSpan="7" className="px-6 py-10 text-center text-sm text-gray-500">No customers found.</td></tr>
+              )}
+              {customers.map((customer) => (
+                <tr key={customer._id} className="hover:bg-gray-50/80 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-100 to-green-100 flex items-center justify-center text-milquu-dark font-bold text-xs mr-3">
-                        {customer.name.charAt(0)}
+                        {(customer.name || '?').charAt(0)}
                       </div>
-                      <span className="text-sm font-bold text-milquu-dark">{customer.name}</span>
+                      <div>
+                        <p className="text-sm font-bold text-milquu-dark">{customer.name}</p>
+                        <p className="text-xs text-gray-400">{customer.phone || customer.email || '—'}</p>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{customer.joined}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{new Date(customer.createdAt).toLocaleDateString('en-IN')}</td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-700">{customer.orders}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-milquu-blue">₹{customer.walletBalance}</td>
-                  <td className="px-6 py-4 text-sm font-bold text-green-600">{customer.lifetimeValue}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-milquu-blue">{rupees(customer.walletBalance)}</td>
+                  <td className="px-6 py-4 text-sm font-bold text-green-600">{rupees(customer.lifetimeValue)}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${
                       customer.status === 'VIP' ? 'bg-orange-100 text-orange-700 border border-orange-200' :
@@ -233,62 +235,71 @@ const StatCard = ({ title, value, icon, trend, colorClass }) => (
                     }`}>
                       {customer.status}
                     </span>
+                    {customer.isCreditCustomer && <span className="ml-2 px-2 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700">Khata</span>}
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => { setSelectedCustomer(customer); setWalletModalOpen(true); }}
-                      className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded font-bold transition-colors"
-                    >
-                      Manage Wallet
-                    </button>
-                  </td>
+                  {canManageWallets && (
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => { setSelectedCustomer(customer); setWalletModalOpen(true); }}
+                        className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded font-bold transition-colors"
+                      >
+                        Manage wallet
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        {pages > 1 && (
+          <div className="p-4 border-t border-gray-100 flex items-center justify-between text-sm">
+            <span className="text-gray-500">Page {page} of {pages}</span>
+            <div className="flex gap-2">
+              <button onClick={() => { setLoading(true); setPage((p) => p - 1); }} disabled={page <= 1} aria-label="Previous page" className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-40"><ChevronLeft size={18} /></button>
+              <button onClick={() => { setLoading(true); setPage((p) => p + 1); }} disabled={page >= pages} aria-label="Next page" className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-40"><ChevronRight size={18} /></button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Wallet Management Modal */}
       {walletModalOpen && selectedCustomer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" role="dialog" aria-modal="true" aria-labelledby="wallet-title">
           <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold text-milquu-dark mb-1">Manage Wallet</h2>
-            <p className="text-sm text-gray-500 mb-6">Customer: <span className="font-bold">{selectedCustomer.name}</span> | Balance: <span className="font-bold text-milquu-blue">₹{selectedCustomer.walletBalance}</span></p>
-            
+            <h2 id="wallet-title" className="text-xl font-bold text-milquu-dark mb-1">Manage wallet</h2>
+            <p className="text-sm text-gray-500 mb-6">Customer: <span className="font-bold">{selectedCustomer.name}</span> | Balance: <span className="font-bold text-milquu-blue">{rupees(selectedCustomer.walletBalance)}</span></p>
             <form onSubmit={handleWalletSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Transaction Type</label>
+              <fieldset>
+                <legend className="block text-sm font-semibold text-gray-700 mb-1">Transaction type</legend>
                 <div className="flex space-x-4">
                   <label className="flex items-center space-x-2 cursor-pointer">
-                    <input type="radio" name="type" checked={walletForm.type === 'credit'} onChange={() => setWalletForm({...walletForm, type: 'credit', description: 'Manual Recharge'})} className="text-milquu-blue" />
-                    <span className="text-sm font-medium text-gray-700">Credit (Add)</span>
+                    <input type="radio" name="type" checked={walletForm.type === 'credit'} onChange={() => setWalletForm({ ...walletForm, type: 'credit', description: 'Manual Recharge' })} />
+                    <span className="text-sm font-medium text-gray-700">Credit (add)</span>
                   </label>
                   <label className="flex items-center space-x-2 cursor-pointer">
-                    <input type="radio" name="type" checked={walletForm.type === 'debit'} onChange={() => setWalletForm({...walletForm, type: 'debit', description: 'Manual Deduction'})} className="text-red-500" />
-                    <span className="text-sm font-medium text-gray-700">Debit (Deduct)</span>
+                    <input type="radio" name="type" checked={walletForm.type === 'debit'} onChange={() => setWalletForm({ ...walletForm, type: 'debit', description: 'Manual Deduction' })} />
+                    <span className="text-sm font-medium text-gray-700">Debit (deduct)</span>
                   </label>
                 </div>
+              </fieldset>
+              <div>
+                <label htmlFor="wallet-amount" className="block text-sm font-semibold text-gray-700 mb-1">Amount (₹)</label>
+                <input id="wallet-amount" type="number" required min="1" step="0.01" value={walletForm.amount} onChange={e => setWalletForm({ ...walletForm, amount: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-milquu-blue text-sm" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Amount (₹)</label>
-                <input type="number" required min="1" value={walletForm.amount} onChange={e => setWalletForm({...walletForm, amount: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-milquu-blue text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Description / Reason</label>
-                <input type="text" required value={walletForm.description} onChange={e => setWalletForm({...walletForm, description: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-milquu-blue text-sm" />
+                <label htmlFor="wallet-reason" className="block text-sm font-semibold text-gray-700 mb-1">Reason</label>
+                <input id="wallet-reason" type="text" required value={walletForm.description} onChange={e => setWalletForm({ ...walletForm, description: e.target.value })} className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-milquu-blue text-sm" />
               </div>
               <div className="flex justify-end space-x-3 pt-4">
-                <button type="button" onClick={() => setWalletModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">Cancel</button>
-                <button type="submit" className={`px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors ${walletForm.type === 'credit' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
-                  Confirm {walletForm.type === 'credit' ? 'Recharge' : 'Deduction'}
+                <button type="button" onClick={() => setWalletModalOpen(false)} className="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg">Cancel</button>
+                <button type="submit" className={`px-4 py-2 text-sm font-semibold text-white rounded-lg ${walletForm.type === 'credit' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
+                  Confirm {walletForm.type === 'credit' ? 'recharge' : 'deduction'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 };

@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../../utils/api.js';
-import { Users, CalendarCheck, RefreshCw, AlertCircle, Search, Filter, TrendingDown, IndianRupee } from 'lucide-react';
+import { Users, CalendarCheck, AlertCircle, Search, Filter, IndianRupee, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import ExportButton from '../../components/admin/ExportButton';
+import toast from '../../utils/toast';
 
 const StatCard = ({ title, value, subtitle, icon, color }) => (
   <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start space-x-4 relative overflow-hidden">
@@ -16,10 +18,33 @@ const StatCard = ({ title, value, subtitle, icon, color }) => (
   </div>
 );
 
+const PAGE_SIZE = 25;
+const STATUSES = ['Active', 'Pending', 'Paused', 'Cancelled'];
+
+/** Row shape for the table and the manage modal. */
+const toRow = (sub) => ({
+  ...sub,
+  id: sub._id,
+  product: sub.items && sub.items.length > 0
+    ? sub.items.map(i => `${i.product?.name || i.name || 'Item'}${i.unit === '500 ml' ? ' (500 ml)' : ''}`).join(', ')
+    : 'Custom Box',
+  qty: sub.items && sub.items.length > 0 ? sub.items.map(i => i.quantity ?? i.qty).join(', ') : 1,
+  freq: sub.frequency,
+  staffName: sub.assignedStaff?.name || null,
+  pausedUntil: sub.status === 'Paused' && sub.pauseEndDate ? new Date(sub.pauseEndDate).toLocaleDateString('en-IN') : null
+});
+
 const AdminSubscriptions = () => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const statusFilter = STATUSES.includes(searchParams.get('status')) ? searchParams.get('status') : '';
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [unassignedOnly, setUnassignedOnly] = useState(false);
+  const [page, setPage] = useState(1);
   const [subscriptionsData, setSubscriptionsData] = useState([]);
+  const [summary, setSummary] = useState({ total: 0, pages: 1, counts: {}, activeMonthly: 0 });
   const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -37,27 +62,6 @@ const AdminSubscriptions = () => {
   // milk product rather than typing a name and a hardcoded price.
   const [milkProducts, setMilkProducts] = useState([]);
 
-  const fetchSubscriptions = async () => {
-    try {
-      const { data } = await api.get('/api/subscriptions');
-        const mappedData = data.map(sub => ({
-          ...sub,
-          id: sub._id,
-          product: sub.items && sub.items.length > 0 ? sub.items.map(i => i.product?.name || i.name || 'Item').join(', ') : 'Custom Box',
-          qty: sub.items && sub.items.length > 0 ? sub.items.map(i => i.quantity ?? i.qty).join(', ') : 1,
-          freq: sub.frequency,
-          nextDelivery: new Date(sub.createdAt).toLocaleDateString(), 
-          renewal: (sub.status === 'paused' || sub.status === 'Paused') && sub.pauseEndDate 
-            ? `Resumes: ${new Date(sub.pauseEndDate).toLocaleDateString()}` 
-            : 'Auto-renew'
-        }));
-        setSubscriptionsData(mappedData);
-        setLoading(false);
-      } catch (error) {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     api.get('/api/products')
       .then(({ data }) => {
@@ -68,9 +72,39 @@ const AdminSubscriptions = () => {
       .catch(() => setMilkProducts([]));
   }, []);
 
+  const fetchSubscriptions = useCallback(() => setReloadKey((k) => k + 1), []);
+
   useEffect(() => {
-    fetchSubscriptions();
-  }, []);
+    let cancelled = false;
+    const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+    if (search) params.set('search', search);
+    if (statusFilter) params.set('status', statusFilter);
+    if (unassignedOnly) params.set('unassigned', 'true');
+    api.get(`/api/subscriptions?${params}`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        setSubscriptionsData(data.subscriptions.map(toRow));
+        setSummary({ total: data.total, pages: data.pages, counts: data.counts || {}, activeMonthly: data.activeMonthly || 0 });
+      })
+      .catch((error) => toast.error(error.response?.data?.message || 'Could not load subscriptions'))
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [page, search, statusFilter, unassignedOnly, reloadKey]);
+
+  const setStatusFilter = (value) => {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set('status', value); else next.delete('status');
+    setLoading(true);
+    setPage(1);
+    setSearchParams(next);
+  };
+
+  const submitSearch = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setPage(1);
+    setSearch(searchInput.trim());
+  };
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -88,16 +122,16 @@ const AdminSubscriptions = () => {
         status: 'Active',
       };
       if (!formData.productId) {
-        alert('Please choose a milk product');
+        toast('Please choose a milk product');
         return;
       }
       await api.post('/api/subscriptions', payload);
-      alert('Subscription created successfully!');
+      toast('Subscription created successfully!');
       setIsModalOpen(false);
       setFormData({ name: '', phone: '', deliveryAddress: '', frequency: 'Daily', productId: milkProducts[0]?._id || '', qty: 1 });
       fetchSubscriptions();
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to create subscription');
+      toast.error(error.response?.data?.message || 'Failed to create subscription');
     }
   };
 
@@ -108,13 +142,14 @@ const AdminSubscriptions = () => {
 
   const handleUpdateStatus = async (status) => {
     if (!selectedSub) return;
+    if (status === 'Cancelled' && !window.confirm(`Cancel ${selectedSub.name || 'this'} plan? Deliveries stop from tomorrow.`)) return;
     try {
       await api.put(`/api/subscriptions/${selectedSub.id}`, { status });
-      alert(`Subscription marked as ${status}`);
+      toast(`Subscription marked as ${status}`);
       setIsManageModalOpen(false);
       fetchSubscriptions();
     } catch (error) {
-      alert('Failed to update subscription');
+      toast.error(error.response?.data?.message || 'Failed to update subscription');
     }
   };
 
@@ -128,7 +163,7 @@ const AdminSubscriptions = () => {
           <p className="text-gray-500 text-sm mt-1">Manage recurring orders and monthly subscribers.</p>
         </div>
         <div className="flex space-x-3">
-          <ExportButton data={subscriptionsData} filename="Subscriptions_Export" title="Subscriptions Report" />
+          <ExportButton data={subscriptionsData.map(({ id, name, phone, product, qty, freq, status, staffName }) => ({ ID: id, Name: name, Phone: phone, Plan: product, Qty: qty, Frequency: freq, Status: status, "Delivery person": staffName || "Unassigned" }))} filename="Subscriptions_Export" title="Subscriptions (this page)" label="Export page" />
           <button 
             onClick={() => setIsModalOpen(true)}
             className="bg-milquu-blue text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors shadow-md shadow-milquu-blue/20"
@@ -138,36 +173,43 @@ const AdminSubscriptions = () => {
         </div>
       </div>
 
-      {/* Top Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5 mb-8">
-        <div className="xl:col-span-1"><StatCard title="Active Plans" value={subscriptionsData.filter(s => s.status === 'Active').length} subtitle="Currently active" icon={<CalendarCheck size={20} className="text-green-600" />} color="bg-green-500" /></div>
-        <div className="xl:col-span-1"><StatCard title="Upcoming Deliveries" value={subscriptionsData.filter(s => s.status === 'Active').length} subtitle="For tomorrow" icon={<RefreshCw size={20} className="text-blue-600" />} color="bg-blue-500" /></div>
-        <div className="xl:col-span-1"><StatCard title="Total Subs" value={subscriptionsData.length} subtitle="All time" icon={<Users size={20} className="text-purple-600" />} color="bg-purple-500" /></div>
-        <div className="xl:col-span-1"><StatCard title="Paused Plans" value={subscriptionsData.filter(s => s.status === 'Paused' || s.status === 'paused').length} subtitle="Currently on hold" icon={<AlertCircle size={20} className="text-orange-600" />} color="bg-orange-500" /></div>
-        <div className="xl:col-span-1"><StatCard title="Sub Revenue" value={`₹${subscriptionsData.filter(s => s.status === 'Active').reduce((acc, s) => acc + ((s.items && s.items[0]?.price * s.items[0]?.qty) || 0), 0) * 30}`} subtitle="Est. Monthly" icon={<IndianRupee size={20} className="text-milquu-blue" />} color="bg-milquu-blue" /></div>
-        <div className="xl:col-span-1"><StatCard title="Churn Rate" value="0%" subtitle="0% vs last" icon={<TrendingDown size={20} className="text-red-600" />} color="bg-red-500" /></div>
+      {/* Top Stats — counted by the server across all plans */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+        <StatCard title="Active plans" value={summary.counts.Active || 0} subtitle="Delivering now" icon={<CalendarCheck size={20} className="text-green-600" />} color="bg-green-500" />
+        <StatCard title="Waiting for approval" value={summary.counts.Pending || 0} subtitle="From the website" icon={<Clock size={20} className="text-blue-600" />} color="bg-blue-500" />
+        <StatCard title="Paused" value={summary.counts.Paused || 0} subtitle="Holiday or low wallet" icon={<AlertCircle size={20} className="text-orange-600" />} color="bg-orange-500" />
+        <StatCard title="All plans" value={Object.values(summary.counts).reduce((a, b) => a + b, 0)} subtitle="Every status" icon={<Users size={20} className="text-purple-600" />} color="bg-purple-500" />
+        <StatCard title="Plan revenue" value={`₹${summary.activeMonthly.toLocaleString('en-IN')}`} subtitle="Active plans, typical month" icon={<IndianRupee size={20} className="text-milquu-blue" />} color="bg-milquu-blue" />
       </div>
 
       {/* Main Table Area */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         
         {/* Toolbar */}
-        <div className="p-5 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="flex items-center bg-gray-50 rounded-lg px-3 py-2 w-full sm:w-80 border border-gray-200 focus-within:border-milquu-blue transition-colors">
+        <div className="p-5 border-b border-gray-100 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4">
+          <form onSubmit={submitSearch} role="search" className="flex items-center bg-gray-50 rounded-lg px-3 py-2 w-full md:w-80 border border-gray-200 focus-within:border-milquu-blue transition-colors">
             <Search size={16} className="text-gray-400 mr-2" />
-            <input 
-              type="text" 
-              placeholder="Search by name, ID or product..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+            <input
+              type="search"
+              aria-label="Search subscriptions"
+              placeholder="Name, phone, plan ID or address"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="bg-transparent border-none outline-none text-sm w-full font-sans"
             />
-          </div>
-          <div className="flex space-x-2 w-full sm:w-auto">
-            <button className="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-              <Filter size={16} />
-              <span>Filter</span>
-            </button>
+          </form>
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+            <div className="flex items-center bg-white border border-gray-200 rounded-lg px-3 py-2">
+              <Filter size={16} className="text-gray-500 mr-2" />
+              <select aria-label="Status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="bg-transparent outline-none text-sm font-medium text-gray-600">
+                <option value="">All statuses</option>
+                {STATUSES.map((st) => <option key={st} value={st}>{st} ({summary.counts[st] || 0})</option>)}
+              </select>
+            </div>
+            <label className="flex items-center gap-2 text-sm text-gray-600">
+              <input type="checkbox" checked={unassignedOnly} onChange={(e) => { setLoading(true); setPage(1); setUnassignedOnly(e.target.checked); }} />
+              No delivery person
+            </label>
           </div>
         </div>
 
@@ -179,23 +221,20 @@ const AdminSubscriptions = () => {
                 <th className="px-6 py-4 font-semibold">Subscriber</th>
                 <th className="px-6 py-4 font-semibold">Plan Details</th>
                 <th className="px-6 py-4 font-semibold">Frequency</th>
-                <th className="px-6 py-4 font-semibold">Next Delivery</th>
-                <th className="px-6 py-4 font-semibold">Status/Renewal</th>
+                <th className="px-6 py-4 font-semibold">Delivery person</th>
+                <th className="px-6 py-4 font-semibold">Status</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {subscriptionsData
-                .filter(sub => 
-                  (sub.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  (sub.id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  (sub.product || '').toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .map((sub, i) => (
-                <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+              {!loading && subscriptionsData.length === 0 && (
+                <tr><td colSpan="6" className="px-6 py-10 text-center text-sm text-gray-500">No subscriptions match.</td></tr>
+              )}
+              {subscriptionsData.map((sub) => (
+                <tr key={sub.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <p className="text-sm font-bold text-milquu-dark">{sub.name}</p>
-                    <p className="text-xs text-gray-400">{sub.id}</p>
+                    <p className="text-xs text-gray-400">{sub.phone || sub.subscriptionId || sub.id}</p>
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-sm font-medium text-gray-800">{sub.product}</p>
@@ -206,15 +245,16 @@ const AdminSubscriptions = () => {
                       {sub.freq}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 font-medium">{sub.nextDelivery}</td>
+                  <td className="px-6 py-4 text-sm font-medium">
+                    {sub.staffName ? <span className="text-gray-700">{sub.staffName}</span> : <span className="text-red-600">Unassigned</span>}
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-2 mb-1">
                       <span className={`w-2 h-2 rounded-full ${sub.status === 'Active' ? 'bg-green-500' : 'bg-orange-500'}`}></span>
                       <span className="text-sm font-semibold text-gray-700">{sub.status}</span>
                     </div>
-                    <p className={`text-xs ${sub.renewal.includes('Alert') ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
-                      {sub.renewal}
-                    </p>
+                    {sub.pausedReason === 'insufficient_balance' && <p className="text-xs text-red-500 font-medium">Wallet ran short</p>}
+                    {sub.pausedUntil && <p className="text-xs text-gray-400">Until {sub.pausedUntil}</p>}
                   </td>
                   <td className="px-6 py-4 text-right">
                     <button onClick={() => openManageModal(sub)} className="text-milquu-blue text-sm font-medium hover:underline">Manage</button>
@@ -224,6 +264,15 @@ const AdminSubscriptions = () => {
             </tbody>
           </table>
         </div>
+        {summary.pages > 1 && (
+          <div className="p-4 border-t border-gray-100 flex items-center justify-between text-sm">
+            <span className="text-gray-500">{summary.total.toLocaleString('en-IN')} plans · page {page} of {summary.pages}</span>
+            <div className="flex gap-2">
+              <button onClick={() => { setLoading(true); setPage((p) => p - 1); }} disabled={page <= 1} aria-label="Previous page" className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-40"><ChevronLeft size={18} /></button>
+              <button onClick={() => { setLoading(true); setPage((p) => p + 1); }} disabled={page >= summary.pages} aria-label="Next page" className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-40"><ChevronRight size={18} /></button>
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Create Subscription Modal */}

@@ -32,6 +32,13 @@ export const protect = async (req, res, next) => {
         return;
       }
 
+      // A deactivated employee (or delivery person) is signed out at once,
+      // without waiting for their token to expire.
+      if (req.user.isActive === false || req.user.status === 'Inactive') {
+        res.status(401).json({ message: 'This account has been deactivated' });
+        return;
+      }
+
       next();
     } catch (error) {
       res.status(401).json({ message: 'Not authorized, token failed' });
@@ -41,13 +48,29 @@ export const protect = async (req, res, next) => {
   }
 };
 
-export const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
+// Admin-panel roles. Each group includes the ones above it, so a route gated
+// to STAFF_ROLES is open to managers and admins too.
+//   admin / superadmin — everything, including money out, staff accounts and settings
+//   manager            — day-to-day running: sales, stock, purchasing, finance reports
+//   staff              — the counter and the round: POS, today's orders, deliveries
+export const ADMIN_ROLES = ['superadmin', 'admin'];
+export const MANAGER_ROLES = [...ADMIN_ROLES, 'manager'];
+export const STAFF_ROLES = [...MANAGER_ROLES, 'staff'];
+
+/** Allow only signed-in users whose role is in `roles`. Use after protect. */
+export const allow = (roles) => (req, res, next) => {
+  if (req.user && roles.includes(req.user.role)) {
     next();
   } else {
-    res.status(403).json({ message: 'Not authorized as an admin' });
+    res.status(403).json({ message: 'You do not have access to this' });
   }
 };
+
+// Admin (and superadmin) only. Used to accept 'admin' alone, which locked out
+// the superadmin role the schema already allowed.
+export const admin = allow(ADMIN_ROLES);
+export const managerUp = allow(MANAGER_ROLES);
+export const staffUp = allow(STAFF_ROLES);
 
 /** Delivery staff only — the delivery app's endpoints. */
 export const deliveryOnly = (req, res, next) => {

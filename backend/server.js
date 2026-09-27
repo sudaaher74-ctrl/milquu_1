@@ -57,8 +57,6 @@ app.use(compression());
 // Security Headers
 app.use(helmet());
 
-// Global rate limit for all API routes
-app.use('/api', globalLimiter);
 
 // Body parser (capped to prevent oversized-payload abuse)
 app.use(express.json({ limit: '100kb' }));
@@ -96,6 +94,12 @@ app.use(
     },
   })
 );
+
+// Global rate limit for all API routes. Registered after CORS and the request
+// log, so a 429 is logged and still carries CORS headers — before, the browser
+// saw a blocked request as a network error and the admin panel showed
+// "Could not load…" with no explanation.
+app.use('/api', globalLimiter);
 
 // Basic Route
 app.get('/', (req, res) => {

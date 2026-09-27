@@ -10,9 +10,12 @@ import { runSubscriptionEngine } from '../cron/subscriptionEngine.js';
 import { istStartOfDay, istTomorrow, istDayOfWeek } from '../utils/ist.js';
 
 // The round itself is admin-only; the auth path is covered elsewhere.
-vi.mock('../middleware/authMiddleware.js', () => ({
+vi.mock('../middleware/authMiddleware.js', async (importOriginal) => ({
+  ...(await importOriginal()),
   protect: (req, res, next) => { req.user = { _id: 'admin', role: 'admin' }; next(); },
   admin: (req, res, next) => next(),
+  managerUp: (req, res, next) => next(),
+  staffUp: (req, res, next) => next(),
   optionalProtect: (req, res, next) => next()
 }));
 vi.mock('../middleware/rateLimiters.js', () => ({
