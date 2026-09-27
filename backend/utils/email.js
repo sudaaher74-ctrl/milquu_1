@@ -8,8 +8,8 @@ import logger from './logger.js';
  */
 const createTransporter = () => {
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.example.com',
-    port: process.env.SMTP_PORT || 587,
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT) || 587,
     secure: process.env.SMTP_PORT === '465', // true for 465, false for other ports
     auth: {
       user: process.env.SMTP_USER,
@@ -23,6 +23,12 @@ const createTransporter = () => {
  * @param {Object} options - { to, subject, text, html }
  */
 export const sendEmail = async (options) => {
+  // Not configured: skip rather than try to reach a placeholder host, which
+  // made every notice in the nightly run wait on a connection that never came.
+  if (!process.env.SMTP_HOST) {
+    logger.warn(`Email not sent to ${options.to}: SMTP_HOST is not configured`);
+    return false;
+  }
   try {
     const transporter = createTransporter();
     

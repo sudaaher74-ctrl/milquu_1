@@ -27,6 +27,25 @@ services:
         sync: false
       - key: RAZORPAY_KEY_SECRET
         sync: false
+      # Google OAuth client id (defaults to the one the frontend ships with).
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
 
   # Nightly subscription run.
   #
@@ -51,6 +70,17 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
+      # The engine emails customers when a plan pauses or the wallet runs low.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
 
   # Frontend Static Site
   #
@@ -68,6 +98,8 @@ services:
         value: production
       - key: VITE_API_URL
         value: https://milquu-backend.onrender.com
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false
     routes:
       # Redirect all 404s to index.html for React Router
       - type: rewrite

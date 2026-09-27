@@ -156,7 +156,7 @@ export const updateMySubscription = async (req, res) => {
     // the number of deliveries a month if the rhythm did.
     const rhythmNow = normaliseRhythm(subscription.frequency);
     const priced = await priceCrate(
-      subscription.items.map((i) => ({ product: i.product, quantity: i.quantity })),
+      subscription.items.map((i) => ({ product: i.product, quantity: i.quantity, unit: i.unit })),
       { rhythm: rhythmNow, weekdays: subscription.weekdays || [], milkOnly: true }
     );
 

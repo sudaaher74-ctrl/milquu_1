@@ -50,44 +50,61 @@ export const createMyOrder = async (req, res) => {
       });
     }
 
-    const order = await Order.create({
-      user: user._id,
-      name: user.name,
-      phone: user.phone,
-      orderItems: basket.items.map((item) => ({
-        name: item.name,
-        qty: item.quantity,
-        image: item.image || '/placeholder.jpg',
-        price: item.price,
-        product: item.product
-      })),
-      shippingAddress: {
-        address: [address.line1, address.line2, areaName(address.area)].filter(Boolean).join(', '),
-        city: 'Navi Mumbai',
-        postalCode: '000000',
-        country: 'India'
-      },
-      paymentMethod: 'Wallet',
-      paymentStatus: 'PAID',
-      taxPrice: 0,
-      totalPrice: toRupees(basket.totalPaise),
-      isPaid: true,
-      paidAt: new Date(),
-      isDelivered: false,
-      scheduledDeliveryDate: deliveryDate,
-      orderSource: 'App'
-    });
-
-    // Debit atomically so two taps of the button cannot both read a stale balance.
-    const debited = await User.findByIdAndUpdate(
-      user._id,
-      { $inc: { walletBalance: -toRupees(basket.totalPaise) } },
+    // Debit first, atomically, and only while the balance still covers it.
+    // Checking a balance read earlier and then decrementing unconditionally
+    // let two quick taps both pass and drive the wallet negative.
+    const totalRupees = toRupees(basket.totalPaise);
+    const debited = await User.findOneAndUpdate(
+      { _id: user._id, walletBalance: { $gte: totalRupees } },
+      { $inc: { walletBalance: -totalRupees } },
       { returnDocument: 'after' }
     );
+    if (!debited) {
+      const latest = await User.findById(user._id).select('walletBalance');
+      return res.status(402).json({
+        message: 'Your wallet does not cover this order',
+        shortfall: toRupees(basket.totalPaise - toPaise(latest?.walletBalance || 0))
+      });
+    }
+
+    let order;
+    try {
+      order = await Order.create({
+        user: user._id,
+        name: user.name,
+        phone: user.phone,
+        orderItems: basket.items.map((item) => ({
+          name: item.name,
+          qty: item.quantity,
+          image: item.image || '/placeholder.jpg',
+          price: item.price,
+          product: item.product
+        })),
+        shippingAddress: {
+          address: [address.line1, address.line2, areaName(address.area)].filter(Boolean).join(', '),
+          city: 'Navi Mumbai',
+          postalCode: '000000',
+          country: 'India'
+        },
+        paymentMethod: 'Wallet',
+        paymentStatus: 'PAID',
+        taxPrice: 0,
+        totalPrice: toRupees(basket.totalPaise),
+        isPaid: true,
+        paidAt: new Date(),
+        isDelivered: false,
+        scheduledDeliveryDate: deliveryDate,
+        orderSource: 'App'
+      });
+    } catch (error) {
+      // Never keep the money for an order that was not created.
+      await User.findByIdAndUpdate(user._id, { $inc: { walletBalance: totalRupees } });
+      throw error;
+    }
 
     await WalletTransaction.create({
       user: user._id,
-      amount: toRupees(basket.totalPaise),
+      amount: totalRupees,
       type: 'debit',
       description: `Crate for ${istDateKey(deliveryDate)}`,
       balanceAfter: toRupees(toPaise(debited.walletBalance))

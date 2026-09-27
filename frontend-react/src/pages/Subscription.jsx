@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../utils/api.js';
+import { useAuth } from '../context/AuthContext';
+import { rechargeWallet, RechargeError } from '../utils/razorpay';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, CalendarDays, Milk, Clock } from 'lucide-react';
 
@@ -13,13 +16,26 @@ const DEFAULT_PRODUCTS = [
 
 const frequencies = [
   { id: 'daily', name: 'Daily Delivery', desc: 'Every morning' },
-  { id: 'alt', name: 'Alternate Days', desc: 'Mon, Wed, Fri' },
+  { id: 'alt', name: 'Alternate Days', desc: 'Every other morning' },
   { id: 'weekly', name: 'Once a Week', desc: 'Every Sunday' },
 ];
 
 // timeSlots removed as delivery is only in the morning
 
+// How each choice maps onto the plan API, and deliveries in a typical month
+// (used to size the upfront wallet top-up).
+const RHYTHM = {
+  daily: { frequency: 'daily', perMonth: 30 },
+  alt: { frequency: 'alternate', perMonth: 15 },
+  weekly: { frequency: 'custom', weekdays: [0], perMonth: 4 } // every Sunday
+};
+
 const Subscription = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [serverProducts, setServerProducts] = useState([]);
+  const [serviceAreas, setServiceAreas] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [products, setProducts] = useState(DEFAULT_PRODUCTS);
   const [selectedProduct, setSelectedProduct] = useState('a2');
   const [selectedUnit, setSelectedUnit] = useState('1 Litre');
@@ -36,150 +52,77 @@ const Subscription = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const loadScript = (src) => {
-    return new Promise((resolve) => {
-      if (document.querySelector(`script[src="${src}"]`)) {
-        return resolve(true);
-      }
-      const script = document.createElement('script');
-      script.src = src;
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
-  const saveSubscription = async (paymentId, method, isPaid = false) => {
-    try {
-      const selectedProdDetails = products.find(p => p.id === selectedProduct);
-      const priceNum = selectedUnit === '500 ml' ? Math.ceil(selectedProdDetails.basePrice / 2) : selectedProdDetails.basePrice;
-      const totalAmount = priceNum * quantity * 30; // Estimating 30 days upfront
-      
-      let orderData = {
-        name: formData.name,
-        phone: formData.phone,
-        deliveryAddress: `${formData.address}, ${formData.city}, ${formData.pincode}`,
-        frequency: selectedFreq === 'daily' ? 'Daily' : selectedFreq === 'alt' ? 'Alternate Days' : 'Weekly',
-        totalAmount: totalAmount,
-        items: [{
-          name: `${selectedProdDetails.name} (${selectedUnit})`,
-          quantity: quantity,
-          price: priceNum
-        }],
-        paymentMethod: method,
-        isPaid: isPaid
-      };
-
-      if (paymentId) {
-        orderData.paymentResult = {
-          id: paymentId,
-          status: 'paid',
-          update_time: new Date().toISOString()
-        };
-      }
-
-      const userInfoStr = localStorage.getItem('userInfo');
-      if (userInfoStr && userInfoStr !== 'undefined') {
-        try {
-          orderData.user = JSON.parse(userInfoStr)._id;
-        } catch (e) {
-          console.error(e);
-        }
-      }
-
-      const res = await api.post('/api/subscriptions', orderData);
-
-      if (res.data) {
-        alert("Subscription created successfully!");
-        setFormData({ name: '', phone: '', address: '', city: '', pincode: '' });
-      } else {
-        alert("Failed to submit subscription.");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error submitting subscription.");
-    }
-  };
-
+  // A plan is paid for from the customer's wallet, one delivery at a time, by
+  // the nightly engine — the same model as the customer app. This page used
+  // to take 30 days' payment through Razorpay and then post a plan the server
+  // always rejected, so customers were charged and got nothing. Now the
+  // payment tops up the wallet (credited and verified by the server) and the
+  // plan is created against the signed-in account.
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const res = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
-    
-    if (!res) {
-      alert('Razorpay SDK failed to load. Are you online? Check if an adblocker is active.');
+    if (isSubmitting) return;
+
+    if (!user) {
+      alert('Please sign in or create an account to start a subscription.');
+      navigate('/login', { state: { from: '/subscribe' } });
       return;
     }
 
-    if (!window.Razorpay) {
-      alert('Razorpay failed to initialize. Please check your browser settings.');
+    const digits = String(formData.phone || '').replace(/\D/g, '').replace(/^(91|0)(?=\d{10}$)/, '');
+    if (!/^[6-9]\d{9}$/.test(digits)) {
+      alert('Please enter a valid 10-digit mobile number.');
       return;
     }
 
+    const selectedProdDetails = products.find(p => p.id === selectedProduct);
+    const serverProduct = serverProducts.find(
+      p => p.name.trim().toLowerCase() === selectedProdDetails?.name.trim().toLowerCase()
+    );
+    if (!serverProduct) {
+      alert('That milk is not available for subscription right now. Please choose another.');
+      return;
+    }
+
+    const rhythm = RHYTHM[selectedFreq] || RHYTHM.daily;
+    const unitRate = selectedUnit === '500 ml' ? Math.ceil(selectedProdDetails.basePrice / 2) : selectedProdDetails.basePrice;
+    const upfront = unitRate * quantity * rhythm.perMonth;
+
+    setIsSubmitting(true);
     try {
-      const selectedProdDetails = products.find(p => p.id === selectedProduct);
-      const priceNum = selectedUnit === '500 ml' ? Math.ceil(selectedProdDetails.basePrice / 2) : selectedProdDetails.basePrice;
-      const total = priceNum * quantity * 30; // 30 days upfront with quantity
+      // 1. Delivery address on the account — the plan is delivered there.
+      await api.put('/api/users/profile', {
+        name: formData.name,
+        phone: formData.phone,
+        deliveryAddress: {
+          line1: formData.address,
+          line2: formData.pincode ? `Pincode ${formData.pincode}` : '',
+          area: formData.city
+        }
+      });
 
-      // Create Razorpay order on backend
-      const { data: orderData } = await api.post('/api/payment/orders', { amount: total });
-
-      if (!orderData || !orderData.id) {
-        alert('Failed to initialize payment. Please try again.');
-        return;
+      // 2. Top the wallet up to cover about a month, if it doesn't already.
+      const { data: wallet } = await api.get('/api/users/wallet');
+      const shortfall = Math.ceil(upfront - (wallet.walletBalance || 0));
+      if (shortfall > 0) {
+        const paid = await rechargeWallet({ amount: shortfall, user: { ...user, name: formData.name, phone: digits } });
+        if (!paid) return; // customer closed the payment sheet
       }
 
-      // Fetch Razorpay key dynamically
-      const { data: keyData } = await api.get('/api/payment/key');
-      const key = keyData.key;
-
-      const options = {
-        key: key, 
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: "Milquu Fresh",
-        description: "Monthly Subscription Upfront",
-        order_id: orderData.id,
-        handler: async function (response) {
-          await saveSubscription(response.razorpay_payment_id, paymentMethod === 'PHONEPE' ? 'PhonePe' : paymentMethod === 'GPAY' ? 'GPay' : 'Cred', true);
-        },
-        prefill: {
-          name: formData.name,
-          contact: formData.phone,
-          method: 'upi'
-        },
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: 'Pay using UPI',
-                instruments: [
-                  {
-                    method: 'upi'
-                  }
-                ]
-              }
-            },
-            sequence: ['block.upi'],
-            preferences: {
-              show_default_blocks: false
-            }
-          }
-        },
-        theme: {
-          color: paymentMethod === 'PHONEPE' ? "#5f259f" : paymentMethod === 'GPAY' ? "#1a73e8" : "#000000" 
-        }
-      };
-
-      const paymentObject = new window.Razorpay(options);
-      paymentObject.on('payment.failed', function (response){
-        alert("Payment Failed: " + response.error.description);
+      // 3. The plan itself, priced by the server.
+      await api.post('/api/users/subscriptions', {
+        items: [{ product: serverProduct._id, quantity, unit: selectedUnit }],
+        frequency: rhythm.frequency,
+        weekdays: rhythm.weekdays
       });
-      paymentObject.open();
-      
-    } catch (error) {
-      console.error(error);
-      alert('Error connecting to payment gateway.');
+
+      alert('Your subscription is active! Deliveries start tomorrow morning and are paid from your wallet.');
+      setFormData({ name: '', phone: '', address: '', city: '', pincode: '' });
+      navigate('/account');
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof RechargeError ? err.message : (err.response?.data?.message || 'Could not start your subscription. Please try again.'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -188,6 +131,7 @@ const Subscription = () => {
       try {
         const { data } = await api.get('/api/products');
         if (data && data.length) {
+          setServerProducts(data.filter(p => p.category === 'milk'));
           const map = {};
           data.forEach(p => {
             const stockVal = parseInt(p.stock, 10);
@@ -209,6 +153,9 @@ const Subscription = () => {
       }
     };
     fetchStockAndPrices();
+    api.get('/api/service-areas')
+      .then(({ data }) => setServiceAreas(Array.isArray(data) ? data : []))
+      .catch(() => setServiceAreas([]));
     window.scrollTo(0, 0);
   }, []);
 
@@ -369,7 +316,7 @@ const Subscription = () => {
                 const selectedProd = products.find(p => p.id === selectedProduct);
                 const unitRate = selectedUnit === '500 ml' ? Math.ceil((selectedProd?.basePrice || 64) / 2) : (selectedProd?.basePrice || 64);
                 const dailyTotal = unitRate * quantity;
-                const monthlyTotal = dailyTotal * 30;
+                const monthlyTotal = dailyTotal * (RHYTHM[selectedFreq]?.perMonth || 30);
                 return (
                   <div className="mt-4 bg-gradient-to-r from-[#FBF7EE] to-[#F7F2E7] border border-[#ECDDBF] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
                     <div>
@@ -384,7 +331,7 @@ const Subscription = () => {
                       <span className="text-2xl font-bold text-[#856214] font-sans block">
                         ₹{monthlyTotal.toLocaleString()}
                       </span>
-                      <span className="text-[11px] text-gray-500 font-medium">approx. 30 days upfront</span>
+                      <span className="text-[11px] text-gray-500 font-medium">approx. one month, added to your wallet</span>
                     </div>
                   </div>
                 );
@@ -484,14 +431,9 @@ const Subscription = () => {
                       className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans appearance-none text-gray-700"
                     >
                       <option value="" disabled>Select Delivery Area</option>
-                      <option value="Panvel">Panvel</option>
-                      <option value="New Panvel">New Panvel</option>
-                      <option value="Khanda Colony">Khanda Colony</option>
-                      <option value="Kamothe">Kamothe</option>
-                      <option value="Karanjade">Karanjade</option>
-                      <option value="Kharghar">Kharghar</option>
-                      <option value="Belapur">Belapur</option>
-                      <option value="Nerul">Nerul</option>
+                      {serviceAreas.map(area => (
+                        <option key={area.slug} value={area.slug}>{area.name}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -588,12 +530,13 @@ const Subscription = () => {
             <div className="pt-6">
               <button 
                 type="submit" 
-                className="w-full relative group/btn overflow-hidden rounded-full p-[1px]"
+                disabled={isSubmitting}
+                className="w-full relative group/btn overflow-hidden rounded-full p-[1px] disabled:opacity-60 disabled:cursor-wait"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-milquu-cream via-milquu-gold/40 to-milquu-cream rounded-full opacity-80 group-hover/btn:opacity-100 transition-opacity duration-300"></span>
                 <div className="relative bg-gradient-to-r from-[#FFFDF9] to-[#FFF8ED] px-8 py-5 rounded-full flex items-center justify-center space-x-2 transition-all duration-300 group-hover/btn:bg-opacity-0 group-hover/btn:shadow-[0_0_30px_rgba(212,175,55,0.4)]">
                   <span className="font-sans font-bold text-milquu-dark uppercase tracking-wide text-base">
-                    Start Subscription
+                    {isSubmitting ? 'Starting your plan…' : 'Start Subscription'}
                   </span>
                   <ArrowRight size={20} className="text-milquu-gold ml-2 group-hover/btn:translate-x-1 transition-transform" />
                 </div>

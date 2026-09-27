@@ -3,14 +3,16 @@ import Order from '../models/Order.js';
 import User from '../models/User.js';
 import WalletTransaction from '../models/WalletTransaction.js';
 import generateToken from '../utils/generateToken.js';
+import { istStartOfDay, istTomorrow } from '../utils/ist.js';
+import { exactCaseInsensitive } from '../utils/regex.js';
 
 export const loginDeliveryStaff = async (req, res) => {
   try {
     const { email, password } = req.body;
-    // Use case-insensitive search for email
-    const staff = await DeliveryStaff.findOne({ email: new RegExp('^' + email + '$', 'i') });
+    // Case-insensitive, but escaped: an email is not a pattern.
+    const staff = await DeliveryStaff.findOne({ email: exactCaseInsensitive(email) });
     
-    if (staff && (await staff.matchPassword(password))) {
+    if (staff && staff.status !== 'Inactive' && (await staff.matchPassword(password))) {
       res.json({
         _id: staff._id,
         staffId: staff.staffId,
@@ -31,14 +33,14 @@ export const loginDeliveryStaff = async (req, res) => {
 
 export const getMyDeliveries = async (req, res) => {
   try {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    // "Today" is the Indian calendar day. The host clock is UTC on Render, so
+    // setHours() used to switch the round to tomorrow's orders at 5:30 am IST
+    // — in the middle of the morning deliveries.
+    const startOfToday = istStartOfDay();
+    const endOfToday = new Date(istTomorrow().getTime() - 1);
 
-    const endOfToday = new Date();
-    endOfToday.setHours(23, 59, 59, 999);
-
-    const cutoff = new Date(startOfToday);
-    cutoff.setHours(-2); // 10 PM yesterday, to catch cron orders
+    // 10 PM IST yesterday, to catch orders placed for the morning round
+    const cutoff = new Date(startOfToday.getTime() - 2 * 60 * 60 * 1000);
 
     const deliveries = await Order.find({ 
       deliveryStaff: req.user._id, 
@@ -56,33 +58,42 @@ export const getMyDeliveries = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+/** An order assigned to the signed-in delivery person, or null. */
+const findMyOrder = (id, staffId) => Order.findOne({ _id: id, deliveryStaff: staffId });
+
 export const markOrderDelivered = async (req, res) => {
   try {
     const { id } = req.params;
-    const { proofImageUrl, cashCollected } = req.body;
+    const { proofImageUrl, proofOfDelivery, cashCollected } = req.body;
     
-    const order = await Order.findById(id);
+    // Only the delivery person the order is assigned to can close it.
+    const order = await findMyOrder(id, req.user._id);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
+    if (order.isDelivered) {
+      return res.json(order);
+    }
 
-    // Optional: Check if req.user._id matches order.deliveryStaff
     order.deliveryStatus = 'Delivered';
     order.isDelivered = true;
     order.deliveredAt = Date.now();
-    order.proofOfDelivery = proofImageUrl || '';
+    order.proofOfDelivery = proofImageUrl || proofOfDelivery || '';
     
-    if (cashCollected) {
+    if (cashCollected && !order.isPaid) {
       order.paymentStatus = 'PAID';
       order.isPaid = true;
       order.paidAt = Date.now();
     } else if (order.paymentMethod === 'Wallet' && !order.isPaid && order.user) {
-      // Auto deduct from Wallet — only if sufficient balance exists
-      const user = await User.findById(order.user);
-      if (user && user.walletBalance >= order.totalPrice) {
-        user.walletBalance -= order.totalPrice;
-        await user.save();
-        
+      // Auto deduct from the wallet — atomically, and only if it still covers
+      // the order, so it can never go negative.
+      const user = await User.findOneAndUpdate(
+        { _id: order.user, walletBalance: { $gte: order.totalPrice } },
+        { $inc: { walletBalance: -order.totalPrice } },
+        { returnDocument: 'after' }
+      );
+      if (user) {
         await WalletTransaction.create({
           user: user._id,
           amount: order.totalPrice,
@@ -102,6 +113,7 @@ export const markOrderDelivered = async (req, res) => {
     }
 
     const updatedOrder = await order.save();
+    await DeliveryStaff.findByIdAndUpdate(req.user._id, { $inc: { delivered: 1 } });
     res.json(updatedOrder);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -111,19 +123,42 @@ export const markOrderDelivered = async (req, res) => {
 export const markOrderFailed = async (req, res) => {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
+    const { reason, failedReason } = req.body;
     
-    const order = await Order.findById(id);
+    const order = await findMyOrder(id, req.user._id);
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
+    }
+    if (order.isDelivered) {
+      return res.status(400).json({ message: 'This order has already been delivered' });
     }
 
     order.deliveryStatus = 'Failed';
     order.isDelivered = false;
-    order.failedReason = reason || '';
+    order.failedReason = reason || failedReason || '';
     
     const updatedOrder = await order.save();
     res.json(updatedOrder);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/** The delivery app reports its own position — never anyone else's. */
+export const updateMyLocation = async (req, res) => {
+  try {
+    const lat = Number(req.body.lat);
+    const lng = Number(req.body.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      return res.status(400).json({ message: 'Invalid coordinates' });
+    }
+    const staff = await DeliveryStaff.findByIdAndUpdate(
+      req.user._id,
+      { location: { lat, lng, lastUpdated: new Date() } },
+      { returnDocument: 'after' }
+    ).select('-password');
+    if (!staff) return res.status(404).json({ message: 'Staff not found' });
+    res.json({ location: staff.location });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

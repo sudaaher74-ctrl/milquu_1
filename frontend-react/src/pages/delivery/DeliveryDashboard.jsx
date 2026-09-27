@@ -68,7 +68,9 @@ const DeliveryDashboard = () => {
     const staff = staffData ? JSON.parse(staffData) : null;
     
     if (staff && staff._id) {
-      socketRef.current = io(api.defaults.baseURL); // Connect to your backend
+      // The server only accepts authenticated sockets, and only lets a
+      // delivery person publish their own location.
+      socketRef.current = io(api.defaults.baseURL, { auth: { token: staff.token } });
       
       // Join Tracking Room
       socketRef.current.emit('join_tracking', { deliveryBoyId: staff._id });
@@ -160,11 +162,6 @@ const DeliveryDashboard = () => {
   const [isTracking, setIsTracking] = useState(false);
   const [location, setLocation] = useState(null);
   
-  // Get driver ID from auth context
-  const staffDataStr = localStorage.getItem('deliveryStaff');
-  const staffData = staffDataStr && staffDataStr !== 'undefined' ? JSON.parse(staffDataStr) : {};
-  const driverId = staffData.staffId || 'STAFF-001';
-
   useEffect(() => {
     let watchId;
     if (isTracking && 'geolocation' in navigator) {
@@ -175,7 +172,9 @@ const DeliveryDashboard = () => {
           console.log("Live Location Sent to Server:", coords);
           
           try {
-            await api.put(`/api/erp/delivery-staff/${driverId}/location`, coords);
+            // The delivery app's own endpoint — the ERP one is admin-only
+            // and always refused a delivery token.
+            await api.put('/api/delivery/location', coords);
           } catch (error) {
             console.error("Failed to update location to server", error);
           }

@@ -41,7 +41,8 @@ vi.mock('../models/Subscription.js', () => {
 });
 vi.mock('../middleware/authMiddleware.js', () => ({
   protect: (req, res, next) => next(),
-  admin: (req, res, next) => next()
+  admin: (req, res, next) => next(),
+  optionalProtect: (req, res, next) => next()
 }));
 vi.mock('../middleware/rateLimiters.js', () => ({
   apiLimiter: (req, res, next) => next(),

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, User, Package, Calendar, Settings, Play, Pause, XCircle } from 'lucide-react';
+import { LogOut, User, Package, Calendar, Settings, Play, Pause, XCircle, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 
@@ -176,7 +176,7 @@ const MyAccount = () => {
     setLoadingWithdraw(true);
     try {
       const payload = {
-        amount: withdrawData.amount,
+        amount: Number(withdrawData.amount),
         refundMethod: withdrawData.method,
         upiId: withdrawData.method === 'UPI' ? withdrawData.upiId : undefined,
         bankDetails: withdrawData.method === 'Bank Account' ? {
@@ -207,6 +207,7 @@ const MyAccount = () => {
       fetchSubscriptions();
     } catch (err) {
       console.error(err);
+      alert(err.response?.data?.message || 'Could not update your subscription. Please try again.');
     }
   };
 
@@ -399,7 +400,7 @@ const MyAccount = () => {
                               <div className="mt-2 flex items-center gap-2">
                                 <span className={`text-xs font-bold px-2 py-1 rounded-md ${
                                   sub.status === 'Active' ? 'bg-green-100 text-green-700' : 
-                                  sub.status === 'paused' ? 'bg-yellow-100 text-yellow-700' : 
+                                  sub.status === 'Paused' ? 'bg-yellow-100 text-yellow-700' : 
                                   'bg-red-100 text-red-700'
                                 }`}>
                                   {sub.status.toUpperCase()}
@@ -407,7 +408,7 @@ const MyAccount = () => {
                               </div>
                             </div>
                             <div className="flex gap-2 w-full md:w-auto">
-                              {(sub.status === 'paused' || sub.status === 'Cancelled') && (
+                              {(sub.status === 'Paused' || sub.status === 'Cancelled') && (
                                 <button 
                                   onClick={() => handleUpdateStatus(sub._id, 'Active')}
                                   className="flex-1 md:flex-none flex items-center justify-center bg-white border border-gray-200 text-green-600 px-4 py-2 rounded-lg font-semibold hover:bg-green-50 shadow-sm"
@@ -472,7 +473,7 @@ const MyAccount = () => {
                                 <button 
                                   disabled={!pauseTarget.startDate || !pauseTarget.endDate}
                                   onClick={() => {
-                                    handleUpdateStatus(sub._id, 'paused', pauseTarget.startDate, pauseTarget.endDate);
+                                    handleUpdateStatus(sub._id, 'Paused', pauseTarget.startDate, pauseTarget.endDate);
                                     setPauseTarget(null);
                                   }}
                                   className="px-4 py-2 text-sm font-bold text-white bg-yellow-500 rounded-lg hover:bg-yellow-600 disabled:opacity-50"

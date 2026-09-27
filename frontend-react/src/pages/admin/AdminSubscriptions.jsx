@@ -30,9 +30,12 @@ const AdminSubscriptions = () => {
     phone: '',
     deliveryAddress: '',
     frequency: 'Daily',
-    productName: 'Cow Milk',
+    productId: '',
     qty: 1
   });
+  // Plans are priced by the server from the product, so the form picks a real
+  // milk product rather than typing a name and a hardcoded price.
+  const [milkProducts, setMilkProducts] = useState([]);
 
   const fetchSubscriptions = async () => {
     try {
@@ -40,8 +43,8 @@ const AdminSubscriptions = () => {
         const mappedData = data.map(sub => ({
           ...sub,
           id: sub._id,
-          product: sub.items && sub.items.length > 0 ? sub.items.map(i => i.name).join(', ') : 'Custom Box',
-          qty: sub.items && sub.items.length > 0 ? sub.items.map(i => i.qty).join(', ') : 1,
+          product: sub.items && sub.items.length > 0 ? sub.items.map(i => i.product?.name || i.name || 'Item').join(', ') : 'Custom Box',
+          qty: sub.items && sub.items.length > 0 ? sub.items.map(i => i.quantity ?? i.qty).join(', ') : 1,
           freq: sub.frequency,
           nextDelivery: new Date(sub.createdAt).toLocaleDateString(), 
           renewal: (sub.status === 'paused' || sub.status === 'Paused') && sub.pauseEndDate 
@@ -54,6 +57,16 @@ const AdminSubscriptions = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    api.get('/api/products')
+      .then(({ data }) => {
+        const milk = (data || []).filter(p => p.category === 'milk');
+        setMilkProducts(milk);
+        if (milk.length) setFormData(f => (f.productId ? f : { ...f, productId: milk[0]._id }));
+      })
+      .catch(() => setMilkProducts([]));
+  }, []);
 
   useEffect(() => {
     fetchSubscriptions();
@@ -71,16 +84,20 @@ const AdminSubscriptions = () => {
         phone: formData.phone,
         deliveryAddress: formData.deliveryAddress,
         frequency: formData.frequency,
-        items: [{ name: formData.productName, qty: Number(formData.qty), price: 80 }],
+        items: [{ product: formData.productId, quantity: Number(formData.qty) }],
         status: 'Active',
       };
+      if (!formData.productId) {
+        alert('Please choose a milk product');
+        return;
+      }
       await api.post('/api/subscriptions', payload);
       alert('Subscription created successfully!');
       setIsModalOpen(false);
-      setFormData({ name: '', phone: '', deliveryAddress: '', frequency: 'Daily', productName: 'Cow Milk', qty: 1 });
+      setFormData({ name: '', phone: '', deliveryAddress: '', frequency: 'Daily', productId: milkProducts[0]?._id || '', qty: 1 });
       fetchSubscriptions();
     } catch (error) {
-      alert('Failed to create subscription');
+      alert(error.response?.data?.message || 'Failed to create subscription');
     }
   };
 
@@ -230,12 +247,11 @@ const AdminSubscriptions = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Product</label>
-                  <select name="productName" value={formData.productName} onChange={handleInputChange} className="w-full border rounded-lg p-2">
-                    <option value="A2 Cow Milk">A2 Cow Milk</option>
-                    <option value="Premium Buffalo Milk">Premium Buffalo Milk</option>
-                    <option value="Pure Cow Milk">Pure Cow Milk</option>
-                    <option value="Cow Milk (Pouch)">Cow Milk (Pouch)</option>
-                    <option value="Buffalo Milk (Pouch)">Buffalo Milk (Pouch)</option>
+                  <select required name="productId" value={formData.productId} onChange={handleInputChange} className="w-full border rounded-lg p-2">
+                    {milkProducts.length === 0 && <option value="">No milk products found</option>}
+                    {milkProducts.map(p => (
+                      <option key={p._id} value={p._id}>{p.name} — ₹{p.planPrice || p.price}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
