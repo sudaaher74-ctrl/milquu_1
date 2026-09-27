@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getPurchases, createPurchase, updatePurchase, deletePurchase,
+  recordVendorPayment, getVendorsSummary, getVendorLedger,
   getExpenses, createExpense,
   getProcurements, createProcurement,
   getWastages, createWastage,
@@ -20,6 +21,11 @@ const router = express.Router();
 
 router.route('/purchases').get(protect, admin, getPurchases).post(protect, admin, createPurchase);
 router.route('/purchases/:id').put(protect, admin, updatePurchase).delete(protect, admin, deletePurchase);
+
+// Vendor Accounting & Ledger (Khata)
+router.route('/vendors/summary').get(protect, admin, getVendorsSummary);
+router.route('/vendors/:supplierName/ledger').get(protect, admin, getVendorLedger);
+router.route('/vendors/payment').post(protect, admin, recordVendorPayment);
 router.route('/expenses').get(protect, admin, getExpenses).post(protect, admin, createExpense);
 router.route('/procurements').get(protect, admin, getProcurements).post(protect, admin, createProcurement);
 router.route('/wastages').get(protect, admin, getWastages).post(protect, admin, createWastage);

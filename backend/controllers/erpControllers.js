@@ -1,4 +1,5 @@
 import Purchase from '../models/Purchase.js';
+import VendorPayment from '../models/VendorPayment.js';
 import Expense from '../models/Expense.js';
 import Procurement from '../models/Procurement.js';
 import Wastage from '../models/Wastage.js';
@@ -20,14 +21,67 @@ export const getPurchases = async (req, res) => {
 export const createPurchase = async (req, res) => {
   try {
     const { sellingPrice, ...purchaseData } = req.body;
-    const purchase = new Purchase(purchaseData);
+    
+    const quantity = Number(purchaseData.quantity) || 0;
+    const rate = Number(purchaseData.rate) || 0;
+    const totalCost = quantity * rate;
+    
+    let paidAmount = Number(purchaseData.paidAmount) || 0;
+    if (purchaseData.status === 'Paid' && paidAmount === 0) {
+      paidAmount = totalCost;
+    }
+    const balanceAmount = Math.max(0, totalCost - paidAmount);
+    let status = purchaseData.status || (balanceAmount === 0 ? 'Paid' : (paidAmount > 0 ? 'Partial' : 'Pending'));
+
+    const payments = Array.isArray(purchaseData.payments) ? [...purchaseData.payments] : [];
+    if (paidAmount > 0 && payments.length === 0) {
+      payments.push({
+        amount: paidAmount,
+        date: purchaseData.date || new Date(),
+        paymentMode: purchaseData.paymentMode || 'Cash',
+        reference: purchaseData.reference || 'Initial Payment',
+        notes: purchaseData.notes || ''
+      });
+    }
+
+    const poNumber = purchaseData.poNumber || `PO-${Date.now().toString().slice(-6)}`;
+
+    const purchase = new Purchase({
+      ...purchaseData,
+      poNumber,
+      quantity,
+      rate,
+      totalCost,
+      paidAmount,
+      balanceAmount,
+      status,
+      payments
+    });
+
     const createdPurchase = await purchase.save();
+
+    // Record VendorPayment entry if initial payment was made
+    if (paidAmount > 0) {
+      try {
+        await VendorPayment.create({
+          paymentId: `VP-${Date.now().toString().slice(-6)}`,
+          supplierName: purchaseData.supplierName,
+          supplierPhone: purchaseData.supplierPhone || '',
+          purchaseId: createdPurchase._id,
+          poNumber: createdPurchase.poNumber,
+          amount: paidAmount,
+          paymentMode: purchaseData.paymentMode || 'Cash',
+          reference: purchaseData.reference || 'On Purchase',
+          date: purchaseData.date || new Date(),
+          notes: `Payment for ${createdPurchase.poNumber}`
+        });
+      } catch (err) {
+        console.error('Failed to record initial vendor payment:', err);
+      }
+    }
 
     const product = await Product.findOne({ name: purchaseData.productName });
     if (product) {
-      const rate = Number(purchaseData.rate) || 0;
-      const qty = Number(purchaseData.quantity) || 0;
-      
       product.purchasePrice = rate;
       
       if (sellingPrice !== undefined && sellingPrice !== '') {
@@ -40,21 +94,17 @@ export const createPurchase = async (req, res) => {
         }
       }
       
-      product.stock += qty;
-      product.currentStockQty += qty;
+      product.stock += quantity;
+      product.currentStockQty += quantity;
       
       product.stockBatches.push({
-        qty: qty,
+        qty: quantity,
         costPerUnit: rate,
         date: purchaseData.date || Date.now(),
         purchaseId: createdPurchase._id
       });
 
-      let newValue = 0;
-      product.stockBatches.forEach(b => newValue += (b.qty * b.costPerUnit));
-      product.currentStockValue = newValue;
-      product.stockValue = newValue;
-
+      recalcStockTotals(product);
       await product.save();
     }
 
@@ -130,7 +180,14 @@ export const updatePurchase = async (req, res) => {
       await product.save();
     }
 
-    Object.assign(purchase, purchaseData, { quantity, rate, totalCost });
+    let paidAmount = purchaseData.paidAmount !== undefined ? Number(purchaseData.paidAmount) : (purchase.paidAmount || 0);
+    if (purchaseData.status === 'Paid') {
+      paidAmount = totalCost;
+    }
+    const balanceAmount = Math.max(0, totalCost - paidAmount);
+    let status = purchaseData.status || (balanceAmount === 0 ? 'Paid' : (paidAmount > 0 ? 'Partial' : 'Pending'));
+
+    Object.assign(purchase, purchaseData, { quantity, rate, totalCost, paidAmount, balanceAmount, status });
     const updatedPurchase = await purchase.save();
 
     res.json(updatedPurchase);
@@ -155,11 +212,329 @@ export const deletePurchase = async (req, res) => {
       await product.save();
     }
 
+    // Delete or unlink vendor payments tied specifically to this purchase
+    await VendorPayment.deleteMany({ purchaseId: purchase._id });
+
     await purchase.deleteOne();
 
     res.json({ message: 'Purchase deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+// --- VENDOR ACCOUNTING & LEDGER (KHATA) ---
+export const recordVendorPayment = async (req, res) => {
+  try {
+    const { supplierName, supplierPhone = '', purchaseId, amount, paymentMode = 'Cash', reference = '', date = new Date(), notes = '' } = req.body;
+    
+    if (!supplierName || !supplierName.trim()) {
+      return res.status(400).json({ message: 'Supplier/Vendor name is required' });
+    }
+    const payAmount = Number(amount);
+    if (!payAmount || payAmount <= 0) {
+      return res.status(400).json({ message: 'Payment amount must be greater than 0' });
+    }
+
+    const paymentId = `VP-${Date.now().toString().slice(-6)}`;
+    let linkedPoNumber = '';
+
+    // If a specific purchase order is specified
+    if (purchaseId) {
+      const purchase = await Purchase.findById(purchaseId);
+      if (purchase) {
+        linkedPoNumber = purchase.poNumber;
+        purchase.paidAmount = (purchase.paidAmount || 0) + payAmount;
+        purchase.balanceAmount = Math.max(0, (purchase.totalCost || 0) - purchase.paidAmount);
+        purchase.status = purchase.balanceAmount === 0 ? 'Paid' : 'Partial';
+        purchase.payments.push({
+          amount: payAmount,
+          date,
+          paymentMode,
+          reference,
+          notes
+        });
+        await purchase.save();
+      }
+    } else {
+      // Allocate payment to unpaid purchases of this supplier from oldest to newest
+      let remaining = payAmount;
+      const unpaidPurchases = await Purchase.find({
+        supplierName: { $regex: new RegExp(`^${supplierName.trim()}$`, 'i') },
+        status: { $in: ['Pending', 'Partial', 'Received'] }
+      }).sort({ date: 1 });
+
+      for (const pur of unpaidPurchases) {
+        if (remaining <= 0) break;
+        const curDue = pur.balanceAmount || Math.max(0, pur.totalCost - (pur.paidAmount || 0));
+        if (curDue > 0) {
+          const allocate = Math.min(remaining, curDue);
+          pur.paidAmount = (pur.paidAmount || 0) + allocate;
+          pur.balanceAmount = Math.max(0, pur.totalCost - pur.paidAmount);
+          pur.status = pur.balanceAmount === 0 ? 'Paid' : 'Partial';
+          pur.payments.push({
+            amount: allocate,
+            date,
+            paymentMode,
+            reference,
+            notes
+          });
+          await pur.save();
+          remaining -= allocate;
+          if (!linkedPoNumber) linkedPoNumber = pur.poNumber;
+        }
+      }
+    }
+
+    const vendorPayment = new VendorPayment({
+      paymentId,
+      supplierName: supplierName.trim(),
+      supplierPhone: supplierPhone || '',
+      purchaseId: purchaseId || undefined,
+      poNumber: linkedPoNumber,
+      amount: payAmount,
+      paymentMode,
+      reference,
+      date,
+      notes
+    });
+    await vendorPayment.save();
+
+    res.status(201).json({
+      message: `Payment of ₹${payAmount} to ${supplierName} recorded successfully`,
+      payment: vendorPayment
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to record vendor payment', error: error.message });
+  }
+};
+
+export const getVendorsSummary = async (req, res) => {
+  try {
+    const purchases = await Purchase.find({}).sort({ date: -1 });
+    const vendorPayments = await VendorPayment.find({}).sort({ date: -1 });
+
+    const vendorMap = new Map();
+
+    // Process purchases
+    purchases.forEach((p) => {
+      const sName = (p.supplierName || 'Unknown Vendor').trim();
+      const key = sName.toLowerCase();
+
+      if (!vendorMap.has(key)) {
+        vendorMap.set(key, {
+          supplierName: sName,
+          supplierPhone: p.supplierPhone || '',
+          supplierAddress: p.supplierAddress || '',
+          supplierGst: p.supplierGst || '',
+          totalPurchasesCount: 0,
+          totalBilled: 0,
+          totalPaidFromPurchases: 0,
+          products: {},
+          lastPurchaseDate: null
+        });
+      }
+
+      const v = vendorMap.get(key);
+      if (!v.supplierPhone && p.supplierPhone) v.supplierPhone = p.supplierPhone;
+      if (!v.supplierAddress && p.supplierAddress) v.supplierAddress = p.supplierAddress;
+      if (!v.supplierGst && p.supplierGst) v.supplierGst = p.supplierGst;
+
+      v.totalPurchasesCount += 1;
+      v.totalBilled += p.totalCost || 0;
+      v.totalPaidFromPurchases += p.paidAmount || (p.status === 'Paid' ? p.totalCost : 0);
+
+      // Track product breakdown
+      const prodName = p.productName || 'Unspecified Product';
+      if (!v.products[prodName]) {
+        v.products[prodName] = {
+          name: prodName,
+          category: p.category || 'General',
+          totalQty: 0,
+          unit: p.unit || 'Litre',
+          totalCost: 0
+        };
+      }
+      v.products[prodName].totalQty += p.quantity || 0;
+      v.products[prodName].totalCost += p.totalCost || 0;
+
+      const pDate = new Date(p.date || p.createdAt);
+      if (!v.lastPurchaseDate || pDate > new Date(v.lastPurchaseDate)) {
+        v.lastPurchaseDate = pDate;
+      }
+    });
+
+    // Process extra vendor payments
+    const paymentsByVendor = new Map();
+    vendorPayments.forEach((vp) => {
+      const key = (vp.supplierName || '').trim().toLowerCase();
+      paymentsByVendor.set(key, (paymentsByVendor.get(key) || 0) + vp.amount);
+    });
+
+    const vendors = Array.from(vendorMap.values()).map((v) => {
+      const key = v.supplierName.toLowerCase();
+      const standalonePaid = paymentsByVendor.get(key) || 0;
+      const totalPaid = Math.max(v.totalPaidFromPurchases, standalonePaid);
+      const balanceDue = Math.max(0, v.totalBilled - totalPaid);
+
+      return {
+        ...v,
+        totalPaid,
+        balanceDue,
+        status: balanceDue <= 0 ? 'Settled' : 'Pending Dues',
+        productsList: Object.values(v.products)
+      };
+    });
+
+    // Summary metrics across all vendors
+    const summary = {
+      totalVendors: vendors.length,
+      totalBilledAll: vendors.reduce((acc, v) => acc + v.totalBilled, 0),
+      totalPaidAll: vendors.reduce((acc, v) => acc + v.totalPaid, 0),
+      totalOutstandingAll: vendors.reduce((acc, v) => acc + v.balanceDue, 0),
+      vendorsWithDues: vendors.filter(v => v.balanceDue > 0).length
+    };
+
+    res.json({ vendors, summary });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to load vendors summary', error: error.message });
+  }
+};
+
+export const getVendorLedger = async (req, res) => {
+  try {
+    const rawSupplier = decodeURIComponent(req.params.supplierName || '').trim();
+    if (!rawSupplier) {
+      return res.status(400).json({ message: 'Supplier name is required' });
+    }
+
+    const regex = new RegExp(`^${rawSupplier}$`, 'i');
+    const purchases = await Purchase.find({ supplierName: regex }).sort({ date: 1 });
+    const payments = await VendorPayment.find({ supplierName: regex }).sort({ date: 1 });
+
+    let latestPhone = '';
+    let latestAddress = '';
+    let latestGst = '';
+    let totalBilled = 0;
+    const productsMap = {};
+
+    // Collect transactions
+    const transactions = [];
+
+    purchases.forEach((p) => {
+      if (p.supplierPhone) latestPhone = p.supplierPhone;
+      if (p.supplierAddress) latestAddress = p.supplierAddress;
+      if (p.supplierGst) latestGst = p.supplierGst;
+
+      totalBilled += p.totalCost || 0;
+
+      const prodName = p.productName || 'Product';
+      if (!productsMap[prodName]) {
+        productsMap[prodName] = {
+          name: prodName,
+          category: p.category,
+          quantity: 0,
+          unit: p.unit || 'Litre',
+          totalCost: 0
+        };
+      }
+      productsMap[prodName].quantity += p.quantity || 0;
+      productsMap[prodName].totalCost += p.totalCost || 0;
+
+      // Add Bill Entry
+      transactions.push({
+        id: p._id,
+        date: p.date || p.createdAt,
+        type: 'BILL',
+        refNo: p.poNumber,
+        category: p.category,
+        productName: p.productName,
+        quantity: p.quantity,
+        unit: p.unit || 'Litre',
+        rate: p.rate,
+        debit: p.totalCost, // We owe vendor
+        credit: 0,
+        notes: p.notes || ''
+      });
+
+      // If purchase had internal payments not in VendorPayment collection
+      if (Array.isArray(p.payments) && p.payments.length > 0) {
+        p.payments.forEach((pm, idx) => {
+          transactions.push({
+            id: `${p._id}-pay-${idx}`,
+            date: pm.date || p.date,
+            type: 'PAYMENT',
+            refNo: pm.reference || `${p.poNumber}-PAY`,
+            category: 'Payment',
+            productName: `Payment for ${p.poNumber}`,
+            quantity: 0,
+            unit: '',
+            rate: 0,
+            debit: 0,
+            credit: pm.amount, // Payment made to vendor
+            paymentMode: pm.paymentMode || 'Cash',
+            notes: pm.notes || ''
+          });
+        });
+      }
+    });
+
+    // Also include payments from VendorPayment collection (if not duplicating purchase payments)
+    payments.forEach((vp) => {
+      const alreadyAdded = transactions.some(
+        (t) => t.type === 'PAYMENT' && t.refNo && vp.poNumber && t.refNo.includes(vp.poNumber) && Math.abs(t.credit - vp.amount) < 0.01
+      );
+      if (!alreadyAdded) {
+        transactions.push({
+          id: vp._id,
+          date: vp.date,
+          type: 'PAYMENT',
+          refNo: vp.paymentId,
+          category: 'Payment',
+          productName: vp.poNumber ? `Payment for ${vp.poNumber}` : 'Account Payment',
+          quantity: 0,
+          unit: '',
+          rate: 0,
+          debit: 0,
+          credit: vp.amount,
+          paymentMode: vp.paymentMode || 'Cash',
+          notes: vp.notes || ''
+        });
+      }
+    });
+
+    // Sort transactions chronologically
+    transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    // Calculate running balance
+    let runningBalance = 0;
+    let totalPaid = 0;
+
+    transactions.forEach((tx) => {
+      runningBalance += tx.debit - tx.credit;
+      totalPaid += tx.credit;
+      tx.balance = runningBalance;
+    });
+
+    res.json({
+      vendor: {
+        name: rawSupplier,
+        phone: latestPhone,
+        address: latestAddress,
+        gst: latestGst
+      },
+      summary: {
+        totalBilled,
+        totalPaid,
+        balanceDue: Math.max(0, runningBalance),
+        purchaseCount: purchases.length,
+        paymentCount: transactions.filter(t => t.type === 'PAYMENT').length
+      },
+      productsBreakdown: Object.values(productsMap),
+      transactions
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to generate vendor ledger', error: error.message });
   }
 };
 
