@@ -15,6 +15,10 @@ const ProductPage = () => {
   });
   const [isOutOfStock, setIsOutOfStock] = useState(false);
   const [loadingStock, setLoadingStock] = useState(true);
+  const [selectedUnit, setSelectedUnit] = useState('1 Litre');
+
+  const isMilk = (product?.name || '').toLowerCase().includes('milk') || (slug || '').toLowerCase().includes('milk');
+  const currentPrice = (isMilk && selectedUnit === '500 ml') ? Math.ceil((product?.price || 64) / 2) : (product?.price || 64);
 
   useEffect(() => {
     const fetchStock = async () => {
@@ -51,7 +55,8 @@ const ProductPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert('Inquiry submitted successfully! Our team will contact you shortly.');
+    const sizeNote = isMilk ? ` [Preferred size: ${selectedUnit} (₹${currentPrice})]` : '';
+    alert(`Inquiry submitted successfully for ${product.name}${sizeNote}! Our team will contact you shortly.`);
     setFormData({ name: '', phone: '', email: '', quantity: '', message: '' });
   };
 
@@ -102,7 +107,55 @@ const ProductPage = () => {
           <div className="bg-white/80 backdrop-blur-2xl border border-white/60 rounded-[40px] p-6 sm:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.06)] max-w-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-milquu-gold/20 to-transparent opacity-50 rounded-bl-[100px] pointer-events-none"></div>
 
-            <h2 className="text-2xl font-serif font-bold mb-6 tracking-wide text-milquu-dark">Order Inquiry</h2>
+            <div className="flex items-center justify-between mb-4 relative z-10">
+              <h2 className="text-2xl font-serif font-bold tracking-wide text-milquu-dark">Order Inquiry</h2>
+              <div className="text-right">
+                <span className="text-2xl font-bold text-milquu-blue">₹{currentPrice}</span>
+                <span className="text-xs text-gray-500 block font-medium">per {isMilk ? selectedUnit : 'unit'}</span>
+              </div>
+            </div>
+
+            {/* Milk Size Variant Selector */}
+            {isMilk && (
+              <div className="mb-6 p-1.5 bg-gray-100/80 rounded-2xl flex items-center gap-2 border border-gray-200 relative z-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedUnit('1 Litre');
+                    setFormData(prev => ({
+                      ...prev,
+                      quantity: prev.quantity.includes('500') ? '1 Litre daily' : (prev.quantity || '1 Litre daily')
+                    }));
+                  }}
+                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex flex-col items-center transition-all cursor-pointer ${
+                    selectedUnit === '1 Litre'
+                      ? 'bg-white text-milquu-blue shadow-sm border border-gray-200'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  <span>1 Litre</span>
+                  <span className="text-[11px] font-semibold text-gray-400">₹{product.price}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedUnit('500 ml');
+                    setFormData(prev => ({
+                      ...prev,
+                      quantity: prev.quantity.includes('1') ? '500 ml daily' : (prev.quantity || '500 ml daily')
+                    }));
+                  }}
+                  className={`flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex flex-col items-center transition-all cursor-pointer ${
+                    selectedUnit === '500 ml'
+                      ? 'bg-white text-emerald-700 shadow-sm border border-gray-200'
+                      : 'text-gray-500 hover:text-gray-800'
+                  }`}
+                >
+                  <span>500 ml</span>
+                  <span className="text-[11px] font-semibold text-gray-400">₹{Math.ceil(product.price / 2)}</span>
+                </button>
+              </div>
+            )}
             
             <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

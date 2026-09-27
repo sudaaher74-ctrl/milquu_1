@@ -151,6 +151,7 @@ const Cart = () => {
         orderItems: cartItems.map(item => ({
           product: item._id || item.id,
           name: item.name,
+          unit: item.unit || (item.name?.includes('500') ? '500 ml' : '1 Litre'),
           qty: item.quantity,
           image: item.image,
           price: typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.-]+/g, '')) : item.price
@@ -309,8 +310,21 @@ const Cart = () => {
                               <img src={item.image} alt={item.name} className="h-full object-contain" />
                             </div>
                             <div>
-                              <h3 className="text-sm sm:text-base font-serif font-bold text-milquu-dark">{item.name}</h3>
-                              <p className="text-gray-500 font-sans text-xs">{item.unit}</p>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <h3 className="text-sm sm:text-base font-serif font-bold text-milquu-dark leading-snug">{item.name}</h3>
+                                {item.unit && (
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                    item.unit.includes('500') 
+                                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                                      : 'bg-blue-100 text-blue-800 border border-blue-300'
+                                  }`}>
+                                    {item.unit}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-gray-500 font-sans text-xs mt-0.5">
+                                ₹{typeof item.price === 'string' ? parseFloat(item.price.replace(/[^0-9.-]+/g,"")) : item.price} / unit
+                              </p>
                             </div>
                           </div>
 
@@ -385,22 +399,60 @@ const Cart = () => {
                     <div className="pt-6 mt-6 border-t border-gray-100">
                       <h3 className="text-lg font-serif font-bold text-milquu-dark mb-4">You Might Also Like</h3>
                       <div className="flex overflow-x-auto gap-4 pb-4 snap-x hide-scrollbar">
-                        {recommendedProducts.map(product => (
-                          <div key={product._id || product.id} className="min-w-[140px] max-w-[140px] bg-white border border-gray-100 rounded-2xl p-3 snap-start shadow-sm flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
-                            <img src={product.image} className="h-16 object-contain mx-auto mb-3 drop-shadow-md group-hover:scale-110 transition-transform duration-300" alt={product.name} />
-                            <h4 className="font-serif font-bold text-sm text-milquu-dark leading-tight mb-1">{product.name}</h4>
-                            <p className="text-[10px] text-gray-500 font-sans mb-2">{product.unit}</p>
-                            <div className="flex justify-between items-center mt-auto">
-                              <span className="font-sans font-bold text-sm text-milquu-dark">₹{typeof product.price === 'number' ? product.price : product.price.replace('₹','')}</span>
-                              <button 
-                                onClick={() => addToCart(product)} 
-                                className="bg-milquu-green/10 text-milquu-green p-1.5 rounded-full hover:bg-milquu-green hover:text-white transition-colors"
-                              >
-                                <ShoppingCart size={14} />
-                              </button>
+                        {recommendedProducts.map(product => {
+                          const isMilk = (product.category || '').toLowerCase() === 'milk' || (product.name || '').toLowerCase().includes('milk');
+                          const rawPrice = typeof product.price === 'number' ? product.price : parseFloat(String(product.price).replace(/[^0-9.-]+/g, '')) || 0;
+                          return (
+                            <div key={product._id || product.id} className="min-w-[155px] max-w-[155px] bg-white border border-gray-100 rounded-2xl p-3 snap-start shadow-sm flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+                              <img src={product.image} className="h-16 object-contain mx-auto mb-2 drop-shadow-md group-hover:scale-110 transition-transform duration-300" alt={product.name} />
+                              <h4 className="font-serif font-bold text-xs text-milquu-dark leading-tight mb-1 line-clamp-1">{product.name}</h4>
+                              <p className="text-[10px] text-gray-500 font-sans mb-2">₹{rawPrice} / {product.unit || '1 Litre'}</p>
+                              
+                              {isMilk ? (
+                                <div className="grid grid-cols-2 gap-1 mt-auto">
+                                  <button
+                                    type="button"
+                                    onClick={() => addToCart({
+                                      ...product,
+                                      _id: `${product._id || product.id}-1L`,
+                                      id: `${product.id || product._id}-1L`,
+                                      price: rawPrice,
+                                      unit: '1 Litre',
+                                      name: `${product.name} (1L)`
+                                    })}
+                                    className="py-1 px-1 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold text-[10px] rounded-lg border border-blue-200 transition-colors text-center"
+                                  >
+                                    1L ₹{rawPrice}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => addToCart({
+                                      ...product,
+                                      _id: `${product._id || product.id}-500ml`,
+                                      id: `${product.id || product._id}-500ml`,
+                                      price: Math.ceil(rawPrice / 2),
+                                      unit: '500 ml',
+                                      name: `${product.name} (500 ml)`
+                                    })}
+                                    className="py-1 px-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 font-bold text-[10px] rounded-lg border border-emerald-200 transition-colors text-center"
+                                  >
+                                    500ml ₹{Math.ceil(rawPrice / 2)}
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex justify-between items-center mt-auto">
+                                  <span className="font-sans font-bold text-sm text-milquu-dark">₹{rawPrice}</span>
+                                  <button 
+                                    onClick={() => addToCart(product)} 
+                                    className="bg-milquu-green/10 text-milquu-green p-1.5 rounded-full hover:bg-milquu-green hover:text-white transition-colors"
+                                  >
+                                    <ShoppingCart size={14} />
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}

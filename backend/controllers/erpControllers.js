@@ -237,23 +237,32 @@ export const createOrder = async (req, res) => {
   try {
     const orderData = { ...req.body };
     
-    // Clean up product IDs from frontend if they include appended units (e.g. "64ac4...-1Litre")
+    // Clean up product IDs from frontend if they include appended units (e.g. "64ac4...-1Litre" or "64ac4...-500ml")
     if (orderData.orderItems && Array.isArray(orderData.orderItems)) {
       let calculatedTotalPrice = 0;
       const secureItems = [];
       for (const item of orderData.orderItems) {
         let productId = item.product;
+        const isHalfLitre = Boolean(
+          (typeof productId === 'string' && (productId.toLowerCase().includes('500ml') || productId.toLowerCase().includes('500_ml'))) ||
+          (typeof item.unit === 'string' && item.unit.toLowerCase().includes('500')) ||
+          (typeof item.name === 'string' && item.name.toLowerCase().includes('500'))
+        );
         if (typeof productId === 'string' && productId.includes('-')) {
           productId = productId.split('-')[0];
         }
         const productDoc = await Product.findById(productId);
         if (productDoc) {
+          const isMilk = productDoc.category === 'milk' || (productDoc.name || '').toLowerCase().includes('milk');
+          const effectivePrice = (isMilk && isHalfLitre) ? Math.ceil(productDoc.price / 2) : productDoc.price;
           secureItems.push({
             ...item,
             product: productId,
-            price: productDoc.price // Force secure price from DB
+            name: item.name || productDoc.name,
+            unit: isHalfLitre ? '500 ml' : (item.unit || productDoc.unit || '1 Litre'),
+            price: effectivePrice // Force secure price from DB
           });
-          calculatedTotalPrice += productDoc.price * (item.qty || item.quantity || 1);
+          calculatedTotalPrice += effectivePrice * (item.qty || item.quantity || 1);
         }
       }
       orderData.orderItems = secureItems;

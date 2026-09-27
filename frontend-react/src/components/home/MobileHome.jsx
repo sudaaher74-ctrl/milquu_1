@@ -12,6 +12,14 @@ const MobileHome = () => {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUnits, setSelectedUnits] = useState({});
+
+  const isMilkProduct = (product) => {
+    if (!product) return false;
+    const cat = (product.category || '').toLowerCase();
+    const name = (product.name || '').toLowerCase();
+    return cat === 'milk' || name.includes('milk');
+  };
 
   const banners = [
     '/img/banners/subcription.png',
@@ -77,21 +85,25 @@ const MobileHome = () => {
     return n.trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   };
 
-  const handleAddToCart = (product, e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleAddToCart = (product, e, unitOverride = null) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
-    const productName = product.name || '';
-    const selectedUnit = product.unit || '1 Litre';
-    const currentPrice = product.price;
+    const isMilk = isMilkProduct(product);
+    const prodId = product._id || product.id;
+    const selectedUnit = unitOverride || (isMilk ? (selectedUnits[prodId] || '1 Litre') : (product.unit || 'Standard'));
+    const isHalf = isMilk && (selectedUnit === '500 ml' || selectedUnit === '500ml');
+    const currentPrice = isHalf ? Math.ceil(product.price / 2) : product.price;
 
     const productToAdd = {
       ...product,
-      _id: product._id || product.id,
-      id: product.id || product._id,
+      _id: isMilk ? `${prodId}-${isHalf ? '500ml' : '1L'}` : prodId,
+      id: isMilk ? `${prodId}-${isHalf ? '500ml' : '1L'}` : prodId,
       price: currentPrice,
-      unit: selectedUnit,
-      name: productName
+      unit: isMilk ? (isHalf ? '500 ml' : '1 Litre') : (product.unit || 'Standard'),
+      name: isMilk ? (isHalf ? `${product.name} (500 ml)` : `${product.name} (1L)`) : product.name
     };
     addToCart(productToAdd);
   };
@@ -254,10 +266,15 @@ const MobileHome = () => {
         ) : (
           <div className="flex overflow-x-auto hide-scrollbar space-x-4 pb-4 pr-5">
             {bestSellers.map((product) => {
+              const prodId = product._id || product.id;
               const stockLevel = parseInt(product.stock, 10);
               const isOutOfStock = Number.isNaN(stockLevel) ? true : stockLevel <= 0;
+              const isMilk = isMilkProduct(product);
+              const selectedUnit = isMilk ? (selectedUnits[prodId] || '1 Litre') : (product.unit || 'Standard');
+              const currentPrice = (isMilk && selectedUnit === '500 ml') ? Math.ceil(product.price / 2) : product.price;
+
               return (
-              <div key={product._id || product.id} className="w-[280px] flex-shrink-0 bg-white rounded-[20px] p-3 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 flex flex-row items-center relative group">
+              <div key={prodId} className="w-[280px] flex-shrink-0 bg-white rounded-[20px] p-3 shadow-[0_2px_12px_rgba(0,0,0,0.04)] border border-gray-100 flex flex-row items-center relative group">
                 <Link to={`/product/${getProductSlug(product.name || '')}`} className="w-[100px] h-[100px] flex justify-center items-center bg-milquu-gray rounded-[14px] p-2 flex-shrink-0">
                   <img
                     src={product.image}
@@ -269,14 +286,47 @@ const MobileHome = () => {
                 <div className="flex flex-col ml-3 flex-grow h-full justify-between py-1">
                   <div>
                     <h4 className="text-[14px] font-bold text-milquu-dark leading-tight line-clamp-1">{product.name}</h4>
-                    <span className="text-[11px] text-gray-500 font-medium mt-0.5 block">{isOutOfStock ? 'Out of stock' : (product.name || '').toLowerCase().includes('milk') ? 'A2 Milk, Delivered Fresh' : 'Made from Bilona Method'}</span>
+                    <span className="text-[11px] text-gray-500 font-medium mt-0.5 block">
+                      {isOutOfStock ? 'Out of stock' : isMilk ? 'Pure & Farm Fresh' : 'Made from Bilona Method'}
+                    </span>
                   </div>
 
-                  <div className="flex justify-between items-end mt-2">
+                  {isMilk && (
+                    <div className="flex items-center gap-1 my-1.5 bg-gray-50 p-0.5 rounded-lg border border-gray-200 w-fit">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedUnits(prev => ({ ...prev, [prodId]: '1 Litre' }));
+                        }}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                          selectedUnit === '1 Litre' ? 'bg-milquu-blue text-white shadow-2xs' : 'text-gray-500 hover:text-gray-800'
+                        }`}
+                      >
+                        1L
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedUnits(prev => ({ ...prev, [prodId]: '500 ml' }));
+                        }}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                          selectedUnit === '500 ml' ? 'bg-emerald-600 text-white shadow-2xs' : 'text-gray-500 hover:text-gray-800'
+                        }`}
+                      >
+                        500ml
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-end mt-1">
                     <div className="flex flex-col">
                       <span className="text-[16px] font-bold text-milquu-dark">
-                        ₹{product.price}
-                        <span className="text-[11px] font-normal text-gray-500 ml-1">/ {product.unit || '1 Litre'}</span>
+                        ₹{currentPrice}
+                        <span className="text-[11px] font-normal text-gray-500 ml-1">/ {selectedUnit}</span>
                       </span>
                     </div>
                     <button
@@ -311,20 +361,41 @@ const MobileHome = () => {
             {freshPicks.map((product) => {
               const stockLevel = parseInt(product.stock, 10);
               const isOutOfStock = Number.isNaN(stockLevel) ? true : stockLevel <= 0;
+              const isMilk = isMilkProduct(product);
               return (
-                <div key={product._id || product.id} className="w-[190px] flex-shrink-0 bg-white rounded-[16px] p-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-row items-center relative">
-                  <div className="w-[50px] h-[50px] flex justify-center items-center flex-shrink-0 p-1">
-                    <img src={product.image} alt={product.name} className={`max-w-full max-h-full object-contain drop-shadow-sm ${isOutOfStock ? 'opacity-50' : ''}`} />
-                  </div>
-                  <div className="flex flex-col ml-2 justify-center flex-grow min-w-0">
-                    <h4 className="text-[12px] font-bold text-milquu-dark leading-tight line-clamp-1">{product.name}</h4>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-[13px] font-bold text-[#0D47A1]">₹{product.price}</span>
-                      {isOutOfStock && (
-                        <span className="text-[9px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">Sold out</span>
-                      )}
+                <div key={product._id || product.id} className="w-[200px] flex-shrink-0 bg-white rounded-[16px] p-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col justify-between relative">
+                  <div className="flex items-center">
+                    <div className="w-[50px] h-[50px] flex justify-center items-center flex-shrink-0 p-1">
+                      <img src={product.image} alt={product.name} className={`max-w-full max-h-full object-contain drop-shadow-sm ${isOutOfStock ? 'opacity-50' : ''}`} />
+                    </div>
+                    <div className="flex flex-col ml-2 justify-center flex-grow min-w-0">
+                      <h4 className="text-[12px] font-bold text-milquu-dark leading-tight line-clamp-1">{product.name}</h4>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-[13px] font-bold text-[#0D47A1]">₹{product.price}</span>
+                        {isOutOfStock && (
+                          <span className="text-[9px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">Sold out</span>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  {isMilk && !isOutOfStock && (
+                    <div className="flex items-center justify-between gap-1.5 mt-2 pt-2 border-t border-gray-100">
+                      <button
+                        type="button"
+                        onClick={(e) => handleAddToCart(product, e, '1 Litre')}
+                        className="flex-1 py-1 rounded-md text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-600 hover:text-white border border-blue-200 transition-colors"
+                      >
+                        1L ₹{product.price}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleAddToCart(product, e, '500 ml')}
+                        className="flex-1 py-1 rounded-md text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white border border-emerald-200 transition-colors"
+                      >
+                        500ml ₹{Math.ceil(product.price / 2)}
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}

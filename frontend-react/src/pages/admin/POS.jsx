@@ -83,6 +83,11 @@ const POS = () => {
   const [editCreditLimit, setEditCreditLimit] = useState('');
   const [isUpdatingCycle, setIsUpdatingCycle] = useState(false);
 
+  // Manual / Custom Quantity Modal State
+  const [qtyModalItem, setQtyModalItem] = useState(null);
+  const [customQtyInput, setCustomQtyInput] = useState('');
+  const qtyInputRef = useRef(null);
+
   // Initial Data Fetching
   const fetchProducts = async () => {
     try {
@@ -143,12 +148,20 @@ const POS = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Helper: check if product is milk
+  const isMilkProduct = (product) => {
+    if (!product) return false;
+    const cat = (product.category || '').toLowerCase();
+    const name = (product.name || '').toLowerCase();
+    return cat === 'milk' || name.includes('milk');
+  };
+
   // Barcode Handler
   const handleBarcodeSubmit = (e) => {
     e.preventDefault();
     const product = products.find(p => p.barcode === barcodeInput);
     if (product) {
-      addToCart(product);
+      addToCart(product, '1L');
       setBarcodeInput('');
     } else {
       alert('Product not found!');
@@ -156,23 +169,136 @@ const POS = () => {
   };
 
   // Cart operations
-  const addToCart = (product) => {
-    const existingItem = cart.find(item => item.id === product.id);
+  const addToCart = (product, targetUnit = null) => {
+    const isMilk = isMilkProduct(product);
+    const unit = isMilk ? (targetUnit || '1L') : (product.unit || 'Standard');
+    const isHalf = isMilk && (unit === '500 ml' || unit === '500ml');
+    
+    // Unique cart item ID based on unit variant
+    const itemId = isMilk ? `${product.id}-${isHalf ? '500ml' : '1L'}` : product.id;
+    const effectivePrice = isHalf ? Math.ceil(product.price / 2) : product.price;
+    const variantName = isMilk 
+      ? (isHalf 
+          ? (product.name.includes('500') ? product.name : `${product.name} (500 ml)`)
+          : (product.name.includes('1L') || product.name.includes('1 Litre') ? product.name : `${product.name} (1L)`))
+      : product.name;
+
+    const existingItem = cart.find(item => item.id === itemId);
     if (existingItem) {
-      setCart(cart.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item));
+      setCart(cart.map(item => item.id === itemId ? { ...item, qty: (parseFloat(item.qty) || 0) + 1 } : item));
     } else {
-      setCart([...cart, { ...product, qty: 1 }]);
+      setCart([...cart, { 
+        ...product, 
+        id: itemId, 
+        baseProductId: product.id,
+        name: variantName, 
+        unit: isHalf ? '500 ml' : (isMilk ? '1 Litre' : (product.unit || 'Standard')),
+        price: effectivePrice, 
+        basePrice: product.price,
+        isMilk,
+        qty: 1 
+      }]);
+    }
+  };
+
+  // Switch unit between 1L and 500ml for a milk item directly in the cart
+  const switchItemUnit = (cartItemId, newUnit) => {
+    const item = cart.find(i => i.id === cartItemId);
+    if (!item || !item.isMilk) return;
+    const isNowHalf = newUnit === '500 ml' || newUnit === '500ml';
+    const baseId = item.baseProductId || (typeof item.id === 'string' && item.id.includes('-') ? item.id.split('-')[0] : item.id);
+    const newCartId = `${baseId}-${isNowHalf ? '500ml' : '1L'}`;
+    const newPrice = isNowHalf ? Math.ceil(item.basePrice / 2) : item.basePrice;
+    
+    // Base product name without variant suffix
+    const rawName = item.name.replace(/\s*\((500\s*ml|1L|1\s*Litre)\)/gi, '').trim();
+    const newName = isNowHalf ? `${rawName} (500 ml)` : `${rawName} (1L)`;
+    const newUnitText = isNowHalf ? '500 ml' : '1 Litre';
+
+    // If an item with newCartId already exists in cart, merge quantities
+    const existingWithNewId = cart.find(i => i.id === newCartId && i.id !== cartItemId);
+    if (existingWithNewId) {
+      setCart(cart.filter(i => i.id !== cartItemId).map(i => {
+        if (i.id === newCartId) {
+          return { ...i, qty: (parseFloat(i.qty) || 0) + (parseFloat(item.qty) || 1) };
+        }
+        return i;
+      }));
+    } else {
+      setCart(cart.map(i => {
+        if (i.id === cartItemId) {
+          return {
+            ...i,
+            id: newCartId,
+            name: newName,
+            unit: newUnitText,
+            price: newPrice
+          };
+        }
+        return i;
+      }));
     }
   };
 
   const updateQty = (id, change) => {
     setCart(cart.map(item => {
       if (item.id === id) {
-        const newQty = item.qty + change;
-        return newQty > 0 ? { ...item, qty: newQty } : item;
+        const currentQty = typeof item.qty === 'number' ? item.qty : (parseFloat(item.qty) || 1);
+        const newQty = Math.max(1, currentQty + change);
+        return { ...item, qty: newQty };
       }
       return item;
     }));
+  };
+
+  const handleDirectQtyChange = (id, rawValue) => {
+    if (rawValue === '') {
+      setCart(cart.map(item => item.id === id ? { ...item, qty: '' } : item));
+      return;
+    }
+    const val = parseFloat(rawValue);
+    if (!isNaN(val) && val >= 0) {
+      setCart(cart.map(item => item.id === id ? { ...item, qty: val } : item));
+    }
+  };
+
+  const handleDirectQtyBlur = (id, rawValue) => {
+    const val = parseFloat(rawValue);
+    const finalQty = (!isNaN(val) && val > 0) ? val : 1;
+    setCart(cart.map(item => item.id === id ? { ...item, qty: finalQty } : item));
+  };
+
+  const addBulkQty = (id, delta) => {
+    setCart(cart.map(item => {
+      if (item.id === id) {
+        const currentQty = typeof item.qty === 'number' ? item.qty : (parseFloat(item.qty) || 1);
+        return { ...item, qty: currentQty + delta };
+      }
+      return item;
+    }));
+  };
+
+  const openQtyModal = (item) => {
+    setQtyModalItem(item);
+    setCustomQtyInput(String(item.qty || 1));
+    setTimeout(() => {
+      if (qtyInputRef.current) {
+        qtyInputRef.current.focus();
+        qtyInputRef.current.select();
+      }
+    }, 60);
+  };
+
+  const handleSaveCustomQty = (e) => {
+    if (e) e.preventDefault();
+    if (!qtyModalItem) return;
+    const val = parseFloat(customQtyInput);
+    if (isNaN(val) || val <= 0) {
+      alert('Please enter a valid quantity greater than 0');
+      return;
+    }
+    setCart(cart.map(i => i.id === qtyModalItem.id ? { ...i, qty: val } : i));
+    setQtyModalItem(null);
   };
 
   const removeItem = (id) => {
@@ -180,7 +306,10 @@ const POS = () => {
   };
 
   const calculateTotals = () => {
-    const subtotal = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+    const subtotal = cart.reduce((acc, item) => {
+      const q = typeof item.qty === 'number' ? item.qty : (parseFloat(item.qty) || 0);
+      return acc + (item.price * q);
+    }, 0);
     const total = Math.max(0, subtotal - discount);
     return { subtotal, total };
   };
@@ -300,14 +429,20 @@ const POS = () => {
     dueDate.setDate(dueDate.getDate() + cycleDays);
     const formattedDueDate = dueDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
+    const sanitizedCart = cart.map(item => ({
+      ...item,
+      qty: Math.max(1, parseFloat(item.qty) || 1)
+    }));
+
     const payload = {
       user: customerId || undefined,
       name: finalCustomerName,
       phone: finalCustomerPhone || undefined,
-      orderItems: cart.map(item => ({
-        product: item.id,
+      orderItems: sanitizedCart.map(item => ({
+        product: item.baseProductId || (typeof item.id === 'string' && item.id.includes('-') ? item.id.split('-')[0] : item.id),
         name: item.name,
         price: item.price,
+        unit: item.unit || (item.name?.includes('500') ? '500 ml' : '1 Litre'),
         qty: item.qty,
         image: item.image
       })),
@@ -327,7 +462,7 @@ const POS = () => {
         date: billDate,
         customerName: finalCustomerName,
         customerPhone: finalCustomerPhone,
-        items: [...cart],
+        items: [...sanitizedCart],
         subtotal,
         discount,
         total,
@@ -353,7 +488,7 @@ const POS = () => {
         date: billDate,
         customerName: finalCustomerName,
         customerPhone: finalCustomerPhone,
-        items: [...cart],
+        items: [...sanitizedCart],
         subtotal,
         discount,
         total,
@@ -626,19 +761,85 @@ const POS = () => {
             {/* Product Grid */}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50/50">
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredProducts.map(product => (
-                  <div 
-                    key={product.id}
-                    onClick={() => addToCart(product)}
-                    className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-milquu-blue cursor-pointer transition-all flex flex-col items-center text-center group"
-                  >
-                    <div className="h-24 w-24 bg-gray-50 rounded-lg mb-3 flex items-center justify-center p-2 group-hover:scale-105 transition-transform">
-                      <img src={product.image} alt={product.name} className="max-h-full max-w-full mix-blend-multiply" />
+                {filteredProducts.map(product => {
+                  const isMilk = isMilkProduct(product);
+                  const cart1L = cart.find(i => i.id === `${product.id}-1L` || (!isMilk && i.id === product.id));
+                  const cart500 = cart.find(i => i.id === `${product.id}-500ml`);
+                  const nonMilkCart = !isMilk && cart.find(i => i.id === product.id);
+
+                  return (
+                    <div 
+                      key={product.id}
+                      className="relative bg-white p-3 rounded-2xl border border-gray-200 shadow-xs hover:shadow-md hover:border-milquu-blue/60 transition-all flex flex-col items-center text-center group"
+                    >
+                      {/* Active in-bill badges */}
+                      <div className="absolute top-2 right-2 flex flex-col gap-1 items-end z-10">
+                        {isMilk && cart1L && (
+                          <span className="bg-blue-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shadow-xs">
+                            {cart1L.qty}× 1L
+                          </span>
+                        )}
+                        {isMilk && cart500 && (
+                          <span className="bg-emerald-600 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shadow-xs">
+                            {cart500.qty}× 500ml
+                          </span>
+                        )}
+                        {!isMilk && nonMilkCart && (
+                          <span className="bg-amber-500 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
+                            {nonMilkCart.qty} in bill
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="h-20 w-20 bg-gray-50 rounded-xl mb-2 flex items-center justify-center p-2 group-hover:scale-105 transition-transform">
+                        <img src={product.image} alt={product.name} className="max-h-full max-w-full mix-blend-multiply object-contain" />
+                      </div>
+                      
+                      <h3 className="text-xs font-bold text-gray-800 leading-tight mb-2 line-clamp-2 h-8 flex items-center justify-center">
+                        {product.name}
+                      </h3>
+
+                      {isMilk ? (
+                        <div className="w-full mt-auto space-y-1.5">
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {/* 1 Litre button */}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); addToCart(product, '1L'); }}
+                              className="py-1.5 px-1 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-800 border border-blue-200 hover:border-blue-600 rounded-xl transition-all cursor-pointer flex flex-col items-center shadow-2xs group/btn"
+                              title={`Add 1 Litre ${product.name}`}
+                            >
+                              <span className="text-[11px] font-extrabold leading-none">1 Litre</span>
+                              <span className="text-[12px] font-black text-blue-900 group-hover/btn:text-white mt-0.5">₹{product.price}</span>
+                            </button>
+
+                            {/* 500 ml button */}
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); addToCart(product, '500 ml'); }}
+                              className="py-1.5 px-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-200 hover:border-emerald-600 rounded-xl transition-all cursor-pointer flex flex-col items-center shadow-2xs group/btn"
+                              title={`Add 500 ml ${product.name}`}
+                            >
+                              <span className="text-[11px] font-extrabold leading-none">500 ml</span>
+                              <span className="text-[12px] font-black text-emerald-900 group-hover/btn:text-white mt-0.5">₹{Math.ceil(product.price / 2)}</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full mt-auto">
+                          <button
+                            type="button"
+                            onClick={() => addToCart(product)}
+                            className="w-full py-2 bg-gray-100 hover:bg-milquu-blue hover:text-white text-gray-800 rounded-xl font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <span>Add</span>
+                            <span className="font-extrabold text-milquu-blue group-hover:text-white">₹{product.price}</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <h3 className="text-sm font-bold text-gray-800 leading-tight mb-1 line-clamp-2">{product.name}</h3>
-                    <p className="text-lg font-bold text-milquu-blue mt-auto">₹{product.price}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -801,26 +1002,130 @@ const POS = () => {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
-                    className="flex items-center justify-between p-3 bg-white mb-2 rounded-xl border border-gray-100 shadow-sm"
+                    className="p-3 bg-white mb-2 rounded-xl border border-gray-100 shadow-sm"
                   >
-                    <div className="flex-1 pr-3">
-                      <h4 className="text-sm font-bold text-gray-800 leading-tight truncate">{item.name}</h4>
-                      <p className="text-xs text-gray-500 font-medium mt-1">₹{item.price} / unit</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 pr-3">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="text-sm font-bold text-gray-800 leading-tight">{item.name}</h4>
+                          {item.unit && (
+                            <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow-2xs ${
+                              item.unit.includes('500') 
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                                : 'bg-blue-100 text-blue-800 border border-blue-300'
+                            }`}>
+                              {item.unit}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 font-medium mt-0.5">₹{item.price} / unit</p>
+
+                        {/* 1L / 500ml quick toggle in cart row for milk products */}
+                        {item.isMilk && (
+                          <div className="inline-flex rounded-lg border border-gray-200 mt-1 bg-gray-50 p-0.5 shadow-2xs">
+                            <button
+                              type="button"
+                              onClick={() => switchItemUnit(item.id, '1L')}
+                              className={`px-2 py-0.5 text-[10px] font-bold rounded-md cursor-pointer transition-colors ${
+                                !item.unit?.includes('500') 
+                                  ? 'bg-blue-600 text-white shadow-xs' 
+                                  : 'text-gray-600 hover:text-blue-700'
+                              }`}
+                              title="Switch to 1 Litre"
+                            >
+                              1L (₹{item.basePrice || item.price})
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => switchItemUnit(item.id, '500 ml')}
+                              className={`px-2 py-0.5 text-[10px] font-bold rounded-md cursor-pointer transition-colors ${
+                                item.unit?.includes('500') 
+                                  ? 'bg-emerald-600 text-white shadow-xs' 
+                                  : 'text-gray-600 hover:text-emerald-700'
+                              }`}
+                              title="Switch to 500 ml"
+                            >
+                              500ml (₹{Math.ceil((item.basePrice || item.price * 2) / 2)})
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        {/* Qty Controls with direct manual numeric input */}
+                        <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                          <button 
+                            type="button"
+                            onClick={() => updateQty(item.id, -1)} 
+                            className="p-1.5 hover:bg-gray-200 text-gray-600 transition-colors cursor-pointer"
+                            title="Decrease quantity by 1"
+                          >
+                            <Minus size={14}/>
+                          </button>
+                          <input
+                            type="number"
+                            min="1"
+                            step="any"
+                            value={item.qty}
+                            onChange={(e) => handleDirectQtyChange(item.id, e.target.value)}
+                            onBlur={(e) => handleDirectQtyBlur(item.id, e.target.value)}
+                            onFocus={(e) => e.target.select()}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') e.target.blur();
+                            }}
+                            className="w-12 text-center text-sm font-extrabold text-gray-900 bg-white border-x border-gray-200 focus:outline-none focus:bg-amber-50 focus:ring-1 focus:ring-amber-500 py-0.5"
+                            title="Click to type quantity directly"
+                          />
+                          <button 
+                            type="button"
+                            onClick={() => updateQty(item.id, 1)} 
+                            className="p-1.5 hover:bg-gray-200 text-gray-600 transition-colors cursor-pointer"
+                            title="Increase quantity by 1"
+                          >
+                            <Plus size={14}/>
+                          </button>
+                        </div>
+
+                        {/* Set / Manual Qty Button */}
+                        <button
+                          type="button"
+                          onClick={() => openQtyModal(item)}
+                          className="px-2 py-1 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                          title="Manually set quantity or choose presets"
+                        >
+                          <Edit3 size={11} />
+                          <span>Set</span>
+                        </button>
+
+                        <div className="w-16 text-right">
+                          <p className="text-sm font-bold text-milquu-dark font-mono">
+                            ₹{((item.price * (parseFloat(item.qty) || 0))).toFixed(2)}
+                          </p>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => removeItem(item.id)} 
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      {/* Qty Controls */}
-                      <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden">
-                        <button onClick={() => updateQty(item.id, -1)} className="p-1.5 hover:bg-gray-200 text-gray-600 transition-colors"><Minus size={14}/></button>
-                        <span className="w-8 text-center text-sm font-bold text-gray-800">{item.qty}</span>
-                        <button onClick={() => updateQty(item.id, 1)} className="p-1.5 hover:bg-gray-200 text-gray-600 transition-colors"><Plus size={14}/></button>
-                      </div>
-                      <div className="w-16 text-right">
-                        <p className="text-sm font-bold text-milquu-dark">₹{item.price * item.qty}</p>
-                      </div>
-                      <button onClick={() => removeItem(item.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                        <Trash2 size={16} />
-                      </button>
+
+                    {/* Quick Add Presets (+5, +10, +15, +30) */}
+                    <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-100">
+                      <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Quick Add:</span>
+                      {[5, 10, 15, 30].map(delta => (
+                        <button
+                          key={delta}
+                          type="button"
+                          onClick={() => addBulkQty(item.id, delta)}
+                          className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-50 hover:bg-amber-100 hover:text-amber-800 hover:border-amber-300 text-gray-600 border border-gray-200 transition-all cursor-pointer"
+                          title={`Add +${delta} to ${item.name}`}
+                        >
+                          +{delta}
+                        </button>
+                      ))}
                     </div>
                   </motion.div>
                 ))}
@@ -1265,6 +1570,106 @@ const POS = () => {
             )}
           </div>
 
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL 0: MANUAL SET QUANTITY MODAL                           */}
+      {/* ============================================================ */}
+      {qtyModalItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+              <div>
+                <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                  <Calculator size={18} className="text-amber-600" />
+                  Set Quantity: {qtyModalItem.name}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Rate: ₹{qtyModalItem.price} / unit
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setQtyModalItem(null)}
+                className="text-gray-400 hover:text-gray-700 p-1 cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCustomQty} className="p-5 space-y-4">
+              {/* Large Manual Input */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                  Enter Quantity Manually
+                </label>
+                <div className="relative">
+                  <input
+                    ref={qtyInputRef}
+                    type="number"
+                    min="1"
+                    step="any"
+                    value={customQtyInput}
+                    onChange={(e) => setCustomQtyInput(e.target.value)}
+                    className="w-full text-center text-3xl font-extrabold text-gray-900 border-2 border-amber-400 focus:border-amber-600 rounded-xl py-3 focus:outline-none focus:ring-4 focus:ring-amber-100 shadow-inner"
+                    placeholder="e.g. 30"
+                    autoFocus
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-400">
+                    units
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Select Preset Buttons */}
+              <div>
+                <span className="block text-xs font-semibold text-gray-500 mb-2">Quick Presets:</span>
+                <div className="grid grid-cols-4 gap-2">
+                  {[5, 10, 15, 20, 30, 45, 60, 90].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setCustomQtyInput(String(preset))}
+                      className={`py-2 text-sm font-bold rounded-lg border transition-all cursor-pointer ${
+                        String(customQtyInput) === String(preset)
+                          ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-amber-50 hover:border-amber-300'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Live Calculation Preview */}
+              <div className="bg-amber-50/60 rounded-xl p-3 border border-amber-200 flex justify-between items-center text-sm">
+                <span className="text-gray-600 font-medium">Calculated Subtotal:</span>
+                <span className="text-lg font-extrabold text-amber-900 font-mono">
+                  ₹{((parseFloat(customQtyInput) || 0) * qtyModalItem.price).toFixed(2)}
+                </span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setQtyModalItem(null)}
+                  className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-milquu-blue text-white rounded-xl text-sm font-bold hover:bg-blue-800 transition-colors shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Check size={16} /> Apply Quantity
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
