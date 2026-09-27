@@ -8,12 +8,12 @@ import Product from '../models/Product.js';
 import Purchase from '../models/Purchase.js';
 import User from '../models/User.js';
 import DeliveryStaff from '../models/DeliveryStaff.js';
-import { protect, admin } from '../middleware/authMiddleware.js';
+import { protect, managerUp } from '../middleware/authMiddleware.js';
 import { istStartOfDay, istTomorrow, istStartOfMonth, istDayOfWeek } from '../utils/ist.js';
 
 const router = express.Router();
 
-router.get('/business-update', protect, admin, async (req, res) => {
+router.get('/business-update', protect, managerUp, async (req, res) => {
   try {
     // Today, as an Indian calendar day (the server runs in UTC)
     const today = istStartOfDay();
@@ -73,7 +73,7 @@ router.get('/business-update', protect, admin, async (req, res) => {
   }
 });
 
-router.post('/chat', protect, admin, async (req, res) => {
+router.post('/chat', protect, managerUp, async (req, res) => {
   try {
     const { query, messages } = req.body;
     

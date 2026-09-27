@@ -39,9 +39,12 @@ vi.mock('../models/Subscription.js', () => {
   MockSubscription.findByIdAndUpdate = vi.fn();
   return { default: MockSubscription, SLOT_WINDOWS: {} };
 });
-vi.mock('../middleware/authMiddleware.js', () => ({
+vi.mock('../middleware/authMiddleware.js', async (importOriginal) => ({
+  ...(await importOriginal()),
   protect: (req, res, next) => next(),
   admin: (req, res, next) => next(),
+  managerUp: (req, res, next) => next(),
+  staffUp: (req, res, next) => next(),
   optionalProtect: (req, res, next) => next()
 }));
 vi.mock('../middleware/rateLimiters.js', () => ({

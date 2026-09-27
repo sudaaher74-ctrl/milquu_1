@@ -28,6 +28,9 @@ const userSchema = new mongoose.Schema({
     area: { type: String, index: true }
   },
   role: { type: String, enum: ['user', 'admin', 'manager', 'staff', 'superadmin'], default: 'user' },
+  // Employees can be deactivated without deleting them (their name stays on
+  // the audit log and the orders they handled). Inactive accounts cannot sign in.
+  isActive: { type: Boolean, default: true },
   // Kept in step with PASSWORD_MIN in validations/userValidations.js — when the
   // two disagreed, a valid-looking password failed here as an unhandled 500.
   password: { type: String, required: true, minlength: 8 },

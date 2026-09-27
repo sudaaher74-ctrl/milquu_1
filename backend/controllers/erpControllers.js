@@ -9,9 +9,10 @@ import User from '../models/User.js';
 import Subscription from '../models/Subscription.js';
 import DeliveryStaff from '../models/DeliveryStaff.js';
 import crypto from 'crypto';
-import { exactCaseInsensitive } from '../utils/regex.js';
+import { exactCaseInsensitive, escapeRegex as escapeRegexText } from '../utils/regex.js';
 import { normalisePhone, isValidPhone } from '../utils/phone.js';
 import { istStartOfDay, istStartOfMonth, istStartOfYear, IST_TIMEZONE } from '../utils/ist.js';
+import { recordAudit } from '../utils/audit.js';
 
 // --- PURCHASES ---
 export const getPurchases = async (req, res) => {
@@ -194,6 +195,12 @@ export const updatePurchase = async (req, res) => {
 
     Object.assign(purchase, purchaseData, { quantity, rate, totalCost, paidAmount, balanceAmount, status });
     const updatedPurchase = await purchase.save();
+    await recordAudit(req, {
+      action: 'purchase.update',
+      entity: 'Purchase',
+      entityId: updatedPurchase._id,
+      summary: `Edited purchase ${updatedPurchase.poNumber} from ${updatedPurchase.supplierName}: ₹${totalCost} (${status})`
+    });
 
     res.json(updatedPurchase);
   } catch (error) {
@@ -221,6 +228,12 @@ export const deletePurchase = async (req, res) => {
     await VendorPayment.deleteMany({ purchaseId: purchase._id });
 
     await purchase.deleteOne();
+    await recordAudit(req, {
+      action: 'purchase.delete',
+      entity: 'Purchase',
+      entityId: purchase._id,
+      summary: `Deleted purchase ${purchase.poNumber} from ${purchase.supplierName} (₹${purchase.totalCost})`
+    });
 
     res.json({ message: 'Purchase deleted successfully' });
   } catch (error) {
@@ -304,6 +317,12 @@ export const recordVendorPayment = async (req, res) => {
       notes
     });
     await vendorPayment.save();
+    await recordAudit(req, {
+      action: 'vendor.payment',
+      entity: 'Vendor',
+      entityId: vendorPayment._id,
+      summary: `Recorded ₹${payAmount} paid to ${supplierName.trim()} (${paymentMode})`
+    });
 
     res.status(201).json({
       message: `Payment of ₹${payAmount} to ${supplierName} recorded successfully`,
@@ -557,6 +576,12 @@ export const createExpense = async (req, res) => {
   try {
     const expense = new Expense(req.body);
     const createdExpense = await expense.save();
+    await recordAudit(req, {
+      action: 'expense.create',
+      entity: 'Expense',
+      entityId: createdExpense._id,
+      summary: `Recorded expense ₹${createdExpense.amount} — ${createdExpense.category} (${createdExpense.paidTo})`
+    });
     res.status(201).json(createdExpense);
   } catch (error) {
     res.status(400).json({ message: 'Invalid expense data', error: error.message });
@@ -604,10 +629,68 @@ export const createWastage = async (req, res) => {
 };
 
 // --- ORDERS (POS) ---
+/**
+ * Orders for the admin list. With ?page it returns one page plus the total,
+ * filtered in the database — the list used to load every order ever placed
+ * into the browser. Without ?page it returns the full array, for the report
+ * exports that genuinely need everything.
+ *
+ * Filters: search (name, phone or order id), source (Website|App|POS),
+ * payment (paid|unpaid), delivery (pending|delivered|failed|unassigned),
+ * from/to (YYYY-MM-DD, IST, on the order date).
+ */
 export const getOrders = async (req, res) => {
   try {
-    const orders = await Order.find({}).sort({ createdAt: -1 });
-    res.json(orders);
+    if (req.query.page === undefined) {
+      const orders = await Order.find({}).sort({ createdAt: -1 });
+      return res.json(orders);
+    }
+
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 25));
+    const query = {};
+    const and = [];
+
+    const search = String(req.query.search || '').trim();
+    if (search) {
+      if (/^[0-9a-fA-F]{24}$/.test(search)) {
+        and.push({ _id: search });
+      } else {
+        const pattern = new RegExp(escapeRegexText(search), 'i');
+        const digits = search.replace(/\D/g, '');
+        and.push({ $or: [{ name: pattern }, ...(digits.length >= 4 ? [{ phone: new RegExp(digits) }] : [])] });
+      }
+    }
+    if (['Website', 'App', 'POS'].includes(req.query.source)) query.orderSource = req.query.source;
+    if (req.query.payment === 'paid') query.isPaid = true;
+    if (req.query.payment === 'unpaid') query.isPaid = false;
+    if (req.query.delivery === 'delivered') query.isDelivered = true;
+    if (req.query.delivery === 'pending') { query.isDelivered = false; query.deliveryStatus = { $ne: 'Failed' }; }
+    if (req.query.delivery === 'failed') query.deliveryStatus = 'Failed';
+    if (req.query.delivery === 'unassigned') {
+      query.isDelivered = false;
+      and.push({ $or: [{ deliveryStaff: null }, { deliveryStaff: { $exists: false } }] });
+    }
+    const range = {};
+    if (/^\d{4}-\d{2}-\d{2}$/.test(req.query.from || '')) range.$gte = istStartOfDay(new Date(`${req.query.from}T12:00:00+05:30`));
+    if (/^\d{4}-\d{2}-\d{2}$/.test(req.query.to || '')) {
+      range.$lt = new Date(istStartOfDay(new Date(`${req.query.to}T12:00:00+05:30`)).getTime() + 24 * 60 * 60 * 1000);
+    }
+    if (Object.keys(range).length) query.createdAt = range;
+    if (and.length) query.$and = and;
+
+    const [orders, total] = await Promise.all([
+      Order.find(query)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate('deliveryStaff', 'name phone')
+        .populate('user', 'name phone')
+        .lean(),
+      Order.countDocuments(query)
+    ]);
+
+    res.json({ orders, total, page, pages: Math.max(1, Math.ceil(total / limit)) });
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
   }
@@ -1056,7 +1139,8 @@ export const getDashboardAnalytics = async (req, res) => {
 
 export const getDeliveryStaff = async (req, res) => {
   try {
-    const staff = await DeliveryStaff.find({}).sort({ createdAt: -1 });
+    // The password hash used to be sent to the browser with every record.
+    const staff = await DeliveryStaff.find({}).select('-password').sort({ createdAt: -1 });
     res.json(staff);
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
@@ -1067,7 +1151,14 @@ export const createDeliveryStaff = async (req, res) => {
   try {
     const staff = new DeliveryStaff(req.body);
     const createdStaff = await staff.save();
-    res.status(201).json(createdStaff);
+    await recordAudit(req, {
+      action: 'delivery-staff.create',
+      entity: 'DeliveryStaff',
+      entityId: createdStaff._id,
+      summary: `Added delivery person ${createdStaff.name} (${createdStaff.area})`
+    });
+    const { password: _password, ...safe } = createdStaff.toObject();
+    res.status(201).json(safe);
   } catch (error) {
     res.status(400).json({ message: 'Invalid staff data', error: error.message });
   }
@@ -1076,7 +1167,15 @@ export const createDeliveryStaff = async (req, res) => {
 export const deleteDeliveryStaff = async (req, res) => {
   try {
     const { id } = req.params;
-    await DeliveryStaff.findOneAndDelete({ staffId: id });
+    const removed = await DeliveryStaff.findOneAndDelete({ staffId: id });
+    if (removed) {
+      await recordAudit(req, {
+        action: 'delivery-staff.delete',
+        entity: 'DeliveryStaff',
+        entityId: removed._id,
+        summary: `Removed delivery person ${removed.name} (${removed.staffId})`
+      });
+    }
     res.json({ message: 'Staff deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Server Error' });
@@ -1285,6 +1384,12 @@ export const settleCreditCustomer = async (req, res) => {
       order.creditSettledAt = new Date();
       order.creditSettledMethod = settledMethod;
       await order.save();
+      await recordAudit(req, {
+        action: 'khata.settle',
+        entity: 'Order',
+        entityId: order._id,
+        summary: `Marked credit bill ₹${order.totalPrice} for ${order.name || 'a customer'} paid (${settledMethod})`
+      });
       return res.json({ message: 'Bill marked as paid', order });
     }
 
@@ -1332,6 +1437,14 @@ export const settleCreditCustomer = async (req, res) => {
       }
     }
 
+    await recordAudit(req, {
+      action: 'khata.settle',
+      entity: 'Customer',
+      entityId: id,
+      summary: `Received ₹${payment} (${settledMethod}) against ${settledOrders.length} bill(s)${partiallyPaidOrders.length ? ' and a part-payment' : ''}`,
+      meta: { settledOrders, partiallyPaidOrders }
+    });
+
     res.json({
       message: 'Settlement processed successfully',
       settledOrdersCount: settledOrders.length,
@@ -1360,6 +1473,12 @@ export const markPOSOrderPaid = async (req, res) => {
     order.creditSettledAt = new Date();
     order.creditSettledMethod = paymentMethod;
     await order.save();
+    await recordAudit(req, {
+      action: 'order.mark-paid',
+      entity: 'Order',
+      entityId: order._id,
+      summary: `Marked order ₹${order.totalPrice} for ${order.name || 'a customer'} paid (${paymentMethod})`
+    });
 
     res.json({ message: 'Order marked as paid successfully', order });
   } catch (error) {

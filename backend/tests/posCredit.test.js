@@ -32,12 +32,16 @@ vi.mock('../models/Wastage.js');
 vi.mock('../models/Subscription.js');
 vi.mock('../models/DeliveryStaff.js');
 
-vi.mock('../middleware/authMiddleware.js', () => ({
+vi.mock('../middleware/authMiddleware.js', async (importOriginal) => ({
+  ...(await importOriginal()),
   protect: (req, res, next) => {
     req.user = { _id: 'admin1', role: 'admin' };
     next();
   },
-  admin: (req, res, next) => next()
+  admin: (req, res, next) => next(),
+  managerUp: (req, res, next) => next(),
+  staffUp: (req, res, next) => next(),
+  optionalProtect: (req, res, next) => next()
 }));
 
 vi.mock('../middleware/rateLimiters.js', () => ({

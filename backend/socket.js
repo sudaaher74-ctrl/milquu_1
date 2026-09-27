@@ -22,7 +22,7 @@ export const initSocket = (server) => {
     if (!token || !process.env.JWT_SECRET) return next(new Error('Not authorized'));
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      if (!['delivery', 'admin', 'manager', 'superadmin'].includes(decoded.role)) {
+      if (!['delivery', 'admin', 'manager', 'superadmin', 'staff'].includes(decoded.role)) {
         return next(new Error('Not authorized'));
       }
       socket.data.userId = String(decoded.id);
