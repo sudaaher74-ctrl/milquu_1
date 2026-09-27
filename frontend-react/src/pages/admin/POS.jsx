@@ -29,6 +29,25 @@ const POS = () => {
   const [customerList, setCustomerList] = useState([]);
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const customerDropdownRef = useRef(null);
+  const customerInputRef = useRef(null);
+  const [customerNameError, setCustomerNameError] = useState(false);
+
+  // Dedicated Daily Milk Register Modal State
+  const [showDailyRegisterModal, setShowDailyRegisterModal] = useState(false);
+  const [dailyRegisterData, setDailyRegisterData] = useState({
+    customerId: '',
+    customerName: '',
+    customerPhone: '',
+    productId: '',
+    productName: '',
+    unit: '1 Litre',
+    price: 54,
+    qty: 1,
+    shift: 'Morning',
+    date: new Date().toISOString().split('T')[0],
+    notes: 'Daily milk supply'
+  });
+  const [isSubmittingDailyRegister, setIsSubmittingDailyRegister] = useState(false);
 
   // Billing Cycle & Payment Mode State
   const [paymentMethod, setPaymentMethod] = useState('Cash'); // 'Cash' | 'Card' | 'UPI' | 'Credit'
@@ -107,10 +126,39 @@ const POS = () => {
 
   const fetchCustomers = async () => {
     try {
-      const { data } = await api.get('/api/admin/customers');
-      if (data?.topCustomers) {
-        setCustomerList(data.topCustomers);
+      const [adminRes, creditRes] = await Promise.allSettled([
+        api.get('/api/admin/customers'),
+        api.get('/api/erp/credit-customers')
+      ]);
+
+      const map = new Map();
+
+      if (adminRes.status === 'fulfilled' && adminRes.value?.data?.topCustomers) {
+        adminRes.value.data.topCustomers.forEach(c => {
+          const key = (c.phone || c.name || c._id || '').toString().trim();
+          if (key) {
+            map.set(key, { ...c, id: c._id });
+          }
+        });
       }
+
+      if (creditRes.status === 'fulfilled' && creditRes.value?.data?.customers) {
+        creditRes.value.data.customers.forEach(c => {
+          const key = (c.phone || c.name || c.customerId || c.userId || '').toString().trim();
+          if (key) {
+            const existing = map.get(key) || {};
+            map.set(key, {
+              ...existing,
+              ...c,
+              id: c.customerId || c.userId || c._id,
+              isCreditCustomer: true
+            });
+          }
+        });
+      }
+
+      const mergedList = Array.from(map.values());
+      setCustomerList(mergedList);
     } catch (err) {
       console.error('Error fetching customers:', err);
     }
@@ -327,8 +375,9 @@ const POS = () => {
   const selectCustomer = (c) => {
     setCustomerName(c.name || '');
     setCustomerPhone(c.phone || '');
-    setCustomerId(c._id || c.id || c.userId || null);
+    setCustomerId(c._id || c.id || c.customerId || c.userId || null);
     setSelectedCustomer(c);
+    setCustomerNameError(false);
     
     // Automatically inherit customer's billing cycle if configured
     if (c.billingCycle && c.billingCycle !== 'none') {
@@ -345,8 +394,73 @@ const POS = () => {
     setCustomerPhone('');
     setCustomerId(null);
     setSelectedCustomer(null);
+    setCustomerNameError(false);
     setPaymentMethod('Cash');
     setBillingCycle('15 Days');
+  };
+
+  // Rapid Daily Milk Register Submission to Khata
+  const handleDailyRegisterSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!dailyRegisterData.customerName.trim()) {
+      alert('Please select or enter customer name for daily milk entry.');
+      return;
+    }
+    const qty = parseFloat(dailyRegisterData.qty);
+    if (!qty || qty <= 0) {
+      alert('Please enter a valid quantity greater than 0.');
+      return;
+    }
+
+    setIsSubmittingDailyRegister(true);
+    try {
+      const selectedProd = products.find(p => p.id === dailyRegisterData.productId) || products.find(isMilkProduct) || products[0];
+      const prodName = dailyRegisterData.productName || selectedProd?.name || 'Cow Milk (Pouch)';
+      const unit = dailyRegisterData.unit || (prodName.includes('500') ? '500 ml' : '1 Litre');
+      const rate = Number(dailyRegisterData.price) || (selectedProd ? (unit.includes('500') ? Math.ceil(selectedProd.price / 2) : selectedProd.price) : 54);
+      const totalAmount = rate * qty;
+
+      const payload = {
+        user: dailyRegisterData.customerId || undefined,
+        name: dailyRegisterData.customerName.trim(),
+        phone: dailyRegisterData.customerPhone?.trim() || undefined,
+        orderItems: [{
+          product: selectedProd?.id || undefined,
+          name: `${prodName} (${unit})`,
+          price: rate,
+          unit: unit,
+          qty: qty,
+          image: selectedProd?.image || '/img/categories/logo.png'
+        }],
+        discount: 0,
+        totalPrice: totalAmount,
+        paymentMethod: 'Credit',
+        billingCycle: '15 Days',
+        orderSource: 'POS',
+        notes: `[Daily Milk Register - ${dailyRegisterData.shift}] Date: ${dailyRegisterData.date} | ${dailyRegisterData.notes || ''}`.trim()
+      };
+
+      await api.post('/api/erp/orders', payload);
+
+      // Refresh credit records & customer list
+      fetchCreditCustomers();
+      fetchCustomers();
+
+      alert(`✅ Recorded ${qty} ${unit} ${prodName} for ${dailyRegisterData.customerName} on Credit (₹${totalAmount}) successfully!`);
+
+      // Reset form
+      setDailyRegisterData(prev => ({
+        ...prev,
+        qty: 1,
+        notes: 'Daily milk supply'
+      }));
+      setShowDailyRegisterModal(false);
+    } catch (err) {
+      console.error('Error submitting daily milk register:', err);
+      alert(err.response?.data?.message || 'Failed to submit daily milk entry');
+    } finally {
+      setIsSubmittingDailyRegister(false);
+    }
   };
 
   // Switch from Credit tab directly into POS Cart for a given customer
@@ -407,9 +521,15 @@ const POS = () => {
 
     const isCredit = paymentMethod === 'Credit';
     if (isCredit && !customerName.trim()) {
-      alert('Please enter or select a customer name for Credit / Khata billing so the bill is recorded to their account.');
+      setCustomerNameError(true);
+      if (customerInputRef.current) {
+        customerInputRef.current.focus();
+        customerInputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      alert('Please enter or select a customer name for Credit / Khata billing so the milk entry is recorded to their account.');
       return;
     }
+    setCustomerNameError(false);
 
     setIsSubmitting(true);
     const finalCustomerName = customerName.trim() || 'Walk-in Customer';
@@ -712,6 +832,36 @@ const POS = () => {
             <UserPlus size={15} /> Add Regular Customer
           </button>
 
+          {/* Daily Milk Register Button */}
+          <button
+            onClick={() => {
+              if (selectedCustomer) {
+                setDailyRegisterData(prev => ({
+                  ...prev,
+                  customerId: selectedCustomer._id || selectedCustomer.id || selectedCustomer.customerId || selectedCustomer.userId || '',
+                  customerName: selectedCustomer.name || '',
+                  customerPhone: selectedCustomer.phone || ''
+                }));
+              }
+              const milkProd = products.find(isMilkProduct) || products[0];
+              if (milkProd) {
+                setDailyRegisterData(prev => ({
+                  ...prev,
+                  productId: milkProd.id,
+                  productName: milkProd.name,
+                  price: milkProd.price,
+                  unit: '1 Litre'
+                }));
+              }
+              setShowDailyRegisterModal(true);
+            }}
+            className="px-3.5 py-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm hover:from-amber-700 hover:to-amber-800 transition-all cursor-pointer"
+            title="Open Daily Milk Register for Credit Customers"
+          >
+            <span>🥛</span>
+            <span>Daily Milk Register</span>
+          </button>
+
           {activeTab === 'credit' && (
             <button
               onClick={fetchCreditCustomers}
@@ -845,436 +995,504 @@ const POS = () => {
           </div>
 
           {/* Right Side: Billing Cart with Customer Info & Khata Support */}
-          <div className="w-full lg:w-[420px] xl:w-[460px] bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden shrink-0">
+          <div className="w-full lg:w-[420px] xl:w-[460px] bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col overflow-hidden shrink-0 h-full">
             
             {/* Header */}
-            <div className="p-4 border-b border-gray-100 bg-milquu-dark text-white flex justify-between items-center">
-              <h2 className="text-lg font-bold flex items-center gap-2">
+            <div className="p-3.5 border-b border-gray-100 bg-milquu-dark text-white flex justify-between items-center shrink-0">
+              <h2 className="text-base font-bold flex items-center gap-2">
                 <FileText size={18} /> Current Bill
               </h2>
-              <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold">{cart.length} Items</span>
+              <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-xs font-bold">{cart.length} Items</span>
             </div>
 
-            {/* Customer Selection Section */}
-            <div className="p-3.5 bg-gray-50 border-b border-gray-200" ref={customerDropdownRef}>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                  <User size={14} className="text-milquu-blue" />
-                  Customer (Regular / Walk-in)
-                </span>
-                {customerName && (
-                  <button 
-                    type="button"
-                    onClick={handleClearCustomer}
-                    className="text-[11px] font-semibold text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    Reset to Walk-in
-                  </button>
-                )}
-              </div>
+            {/* Scrollable Middle Container: Customer + Cart Items + Payment Mode & Discounts */}
+            <div className="flex-1 overflow-y-auto min-h-0 divide-y divide-gray-100">
 
-              <div className="relative">
-                <div className="flex gap-1.5">
-                  <div className="relative flex-1">
-                    <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Search or enter customer name..." 
-                      value={customerName}
-                      onChange={(e) => {
-                        setCustomerName(e.target.value);
-                        setShowCustomerDropdown(true);
-                      }}
-                      onFocus={() => setShowCustomerDropdown(true)}
-                      className="w-full pl-9 pr-3 py-2.5 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-milquu-blue font-semibold text-gray-800 shadow-xs"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowAddCustomerModal(true)}
-                    title="Add New Regular Customer to System"
-                    className="px-3 bg-white border border-gray-200 hover:border-milquu-blue text-milquu-blue rounded-xl flex items-center gap-1 text-xs font-bold shadow-xs transition-colors cursor-pointer"
-                  >
-                    <UserPlus size={14} />
-                    <span>New</span>
-                  </button>
+              {/* Customer Selection Section */}
+              <div className="p-3.5 bg-gray-50/80" ref={customerDropdownRef}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                    <User size={14} className="text-milquu-blue" />
+                    Customer (Regular / Walk-in)
+                  </span>
+                  {customerName && (
+                    <button 
+                      type="button"
+                      onClick={handleClearCustomer}
+                      className="text-[11px] font-semibold text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      Reset to Walk-in
+                    </button>
+                  )}
                 </div>
 
-                {/* Autocomplete Suggestions for Fixed/Regular Customers */}
-                {showCustomerDropdown && (
-                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-30 max-h-56 overflow-y-auto divide-y divide-gray-100">
-                    <div className="px-3 py-1.5 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex justify-between items-center">
-                      <span>Regular / Registered Customers</span>
-                      <button 
-                        type="button" 
-                        onClick={() => setShowCustomerDropdown(false)}
-                        className="text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={12} />
-                      </button>
+                <div className="relative">
+                  <div className="flex gap-1.5">
+                    <div className="relative flex-1">
+                      <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input 
+                        ref={customerInputRef}
+                        type="text" 
+                        placeholder="Search or enter customer name..." 
+                        value={customerName}
+                        onChange={(e) => {
+                          setCustomerName(e.target.value);
+                          setCustomerNameError(false);
+                          setShowCustomerDropdown(true);
+                        }}
+                        onFocus={() => setShowCustomerDropdown(true)}
+                        className={`w-full pl-9 pr-3 py-2.5 text-xs bg-white border rounded-xl focus:outline-none font-semibold text-gray-800 shadow-xs transition-all ${
+                          customerNameError 
+                            ? 'border-red-500 ring-2 ring-red-200 bg-red-50/40 text-red-900 placeholder:text-red-400' 
+                            : 'border-gray-200 focus:border-milquu-blue'
+                        }`}
+                      />
                     </div>
-                    
-                    {matchingCustomers.length > 0 ? (
-                      matchingCustomers.map(c => (
-                        <button
-                          key={c._id || c.id}
-                          type="button"
-                          onClick={() => selectCustomer(c)}
-                          className="w-full px-3 py-2.5 text-left hover:bg-blue-50/70 flex items-center justify-between text-xs transition-colors group cursor-pointer"
+
+                    <button
+                      type="button"
+                      onClick={() => setShowAddCustomerModal(true)}
+                      title="Add New Regular Customer to System"
+                      className="px-3 bg-white border border-gray-200 hover:border-milquu-blue text-milquu-blue rounded-xl flex items-center gap-1 text-xs font-bold shadow-xs transition-colors cursor-pointer"
+                    >
+                      <UserPlus size={14} />
+                      <span>New</span>
+                    </button>
+                  </div>
+
+                  {/* Autocomplete Suggestions for Fixed/Regular Customers */}
+                  {showCustomerDropdown && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-30 max-h-56 overflow-y-auto divide-y divide-gray-100">
+                      <div className="px-3 py-1.5 bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex justify-between items-center">
+                        <span>Regular / Registered Customers</span>
+                        <button 
+                          type="button" 
+                          onClick={() => setShowCustomerDropdown(false)}
+                          className="text-gray-400 hover:text-gray-600"
                         >
-                          <div>
-                            <p className="font-bold text-gray-800 group-hover:text-milquu-blue">{c.name}</p>
-                            {c.phone && <p className="text-[11px] text-gray-500 font-mono mt-0.5">{c.phone}</p>}
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            {c.billingCycle && c.billingCycle !== 'none' && (
-                              <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full">
-                                {c.billingCycle} Cycle
-                              </span>
-                            )}
-                            {c.status && (
-                              <span className="text-[10px] font-semibold px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
-                                {c.status}
-                              </span>
-                            )}
-                          </div>
+                          <X size={12} />
                         </button>
-                      ))
-                    ) : (
-                      <div className="px-3 py-3 text-xs text-gray-400 text-center">
-                        No matching registered customer. Name will be used as a custom billing name.
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Optional Customer Phone */}
-              <div className="relative mt-2">
-                <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input 
-                  type="tel" 
-                  placeholder="Phone number (required for credit)..." 
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-milquu-blue font-medium font-mono shadow-xs"
-                />
-              </div>
-
-              {/* Selected Customer Billing Cycle Badge & Outstanding Details */}
-              {selectedCustomer && (
-                <div className="mt-2.5 p-2 bg-blue-50/80 border border-blue-200/70 rounded-xl flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-lg bg-milquu-blue text-white font-bold text-[10px] uppercase">
-                      {selectedCustomer.billingCycle || '15 Days'} System
-                    </span>
-                    {selectedCustomer.totalDue > 0 ? (
-                      <span className="text-amber-800 font-semibold text-[11px]">
-                        Khata Dues: <b>₹{selectedCustomer.totalDue}</b>
-                      </span>
-                    ) : (
-                      <span className="text-green-700 font-semibold text-[11px]">
-                        No Pending Dues
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedCreditCustomerForLedger(selectedCustomer);
-                      setShowLedgerModal(true);
-                    }}
-                    className="text-[10px] text-milquu-blue underline font-bold hover:text-blue-900"
-                  >
-                    View Ledger
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Cart Items */}
-            <div className="flex-1 overflow-y-auto p-2 bg-gray-50/30">
-              <AnimatePresence>
-                {cart.map((item) => (
-                  <motion.div 
-                    key={item.id}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="p-3 bg-white mb-2 rounded-xl border border-gray-100 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 pr-3">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="text-sm font-bold text-gray-800 leading-tight">{item.name}</h4>
-                          {item.unit && (
-                            <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow-2xs ${
-                              item.unit.includes('500') 
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                                : 'bg-blue-100 text-blue-800 border border-blue-300'
-                            }`}>
-                              {item.unit}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 font-medium mt-0.5">₹{item.price} / unit</p>
-
-                        {/* 1L / 500ml quick toggle in cart row for milk products */}
-                        {item.isMilk && (
-                          <div className="inline-flex rounded-lg border border-gray-200 mt-1 bg-gray-50 p-0.5 shadow-2xs">
-                            <button
-                              type="button"
-                              onClick={() => switchItemUnit(item.id, '1L')}
-                              className={`px-2 py-0.5 text-[10px] font-bold rounded-md cursor-pointer transition-colors ${
-                                !item.unit?.includes('500') 
-                                  ? 'bg-blue-600 text-white shadow-xs' 
-                                  : 'text-gray-600 hover:text-blue-700'
-                              }`}
-                              title="Switch to 1 Litre"
-                            >
-                              1L (₹{item.basePrice || item.price})
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => switchItemUnit(item.id, '500 ml')}
-                              className={`px-2 py-0.5 text-[10px] font-bold rounded-md cursor-pointer transition-colors ${
-                                item.unit?.includes('500') 
-                                  ? 'bg-emerald-600 text-white shadow-xs' 
-                                  : 'text-gray-600 hover:text-emerald-700'
-                              }`}
-                              title="Switch to 500 ml"
-                            >
-                              500ml (₹{Math.ceil((item.basePrice || item.price * 2) / 2)})
-                            </button>
-                          </div>
-                        )}
                       </div>
                       
-                      <div className="flex items-center space-x-2">
-                        {/* Qty Controls with direct manual numeric input */}
-                        <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-                          <button 
+                      {matchingCustomers.length > 0 ? (
+                        matchingCustomers.map(c => (
+                          <button
+                            key={c._id || c.id || c.customerId || c.userId}
                             type="button"
-                            onClick={() => updateQty(item.id, -1)} 
-                            className="p-1.5 hover:bg-gray-200 text-gray-600 transition-colors cursor-pointer"
-                            title="Decrease quantity by 1"
+                            onClick={() => selectCustomer(c)}
+                            className="w-full px-3 py-2.5 text-left hover:bg-blue-50/70 flex items-center justify-between text-xs transition-colors group cursor-pointer"
                           >
-                            <Minus size={14}/>
+                            <div>
+                              <p className="font-bold text-gray-800 group-hover:text-milquu-blue">{c.name}</p>
+                              {c.phone && <p className="text-[11px] text-gray-500 font-mono mt-0.5">{c.phone}</p>}
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              {c.billingCycle && c.billingCycle !== 'none' && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full">
+                                  {c.billingCycle} Cycle
+                                </span>
+                              )}
+                              {c.totalDue > 0 && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 bg-red-100 text-red-800 rounded-full">
+                                  Due: ₹{c.totalDue}
+                                </span>
+                              )}
+                              {c.status && (
+                                <span className="text-[10px] font-semibold px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
+                                  {c.status}
+                                </span>
+                              )}
+                            </div>
                           </button>
-                          <input
-                            type="number"
-                            min="1"
-                            step="any"
-                            value={item.qty}
-                            onChange={(e) => handleDirectQtyChange(item.id, e.target.value)}
-                            onBlur={(e) => handleDirectQtyBlur(item.id, e.target.value)}
-                            onFocus={(e) => e.target.select()}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') e.target.blur();
-                            }}
-                            className="w-12 text-center text-sm font-extrabold text-gray-900 bg-white border-x border-gray-200 focus:outline-none focus:bg-amber-50 focus:ring-1 focus:ring-amber-500 py-0.5"
-                            title="Click to type quantity directly"
-                          />
-                          <button 
-                            type="button"
-                            onClick={() => updateQty(item.id, 1)} 
-                            className="p-1.5 hover:bg-gray-200 text-gray-600 transition-colors cursor-pointer"
-                            title="Increase quantity by 1"
-                          >
-                            <Plus size={14}/>
-                          </button>
+                        ))
+                      ) : (
+                        <div className="px-3 py-3 text-xs text-gray-400 text-center">
+                          No matching customer. Type name to bill as custom/guest account.
                         </div>
-
-                        {/* Set / Manual Qty Button */}
-                        <button
-                          type="button"
-                          onClick={() => openQtyModal(item)}
-                          className="px-2 py-1 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
-                          title="Manually set quantity or choose presets"
-                        >
-                          <Edit3 size={11} />
-                          <span>Set</span>
-                        </button>
-
-                        <div className="w-16 text-right">
-                          <p className="text-sm font-bold text-milquu-dark font-mono">
-                            ₹{((item.price * (parseFloat(item.qty) || 0))).toFixed(2)}
-                          </p>
-                        </div>
-                        <button 
-                          type="button"
-                          onClick={() => removeItem(item.id)} 
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      )}
                     </div>
+                  )}
+                </div>
 
-                    {/* Quick Add Presets (+5, +10, +15, +30) */}
-                    <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-100">
-                      <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Quick Add:</span>
-                      {[5, 10, 15, 30].map(delta => (
-                        <button
-                          key={delta}
-                          type="button"
-                          onClick={() => addBulkQty(item.id, delta)}
-                          className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-50 hover:bg-amber-100 hover:text-amber-800 hover:border-amber-300 text-gray-600 border border-gray-200 transition-all cursor-pointer"
-                          title={`Add +${delta} to ${item.name}`}
-                        >
-                          +{delta}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                ))}
-                {cart.length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center text-gray-400 py-12">
-                    <Calculator size={48} className="mb-4 opacity-20" />
-                    <p className="font-medium">Cart is empty</p>
-                    <p className="text-xs">Select products from the catalog to build bill</p>
+                {/* Quick Select Customer Dropdown */}
+                <select
+                  onChange={(e) => {
+                    if (!e.target.value) {
+                      handleClearCustomer();
+                      return;
+                    }
+                    const found = customerList.find(c => (c._id || c.id || c.customerId || c.userId) === e.target.value);
+                    if (found) selectCustomer(found);
+                  }}
+                  value={selectedCustomer?._id || selectedCustomer?.id || selectedCustomer?.customerId || selectedCustomer?.userId || ''}
+                  className="w-full mt-2 text-xs bg-white border border-gray-200 rounded-xl px-2.5 py-1.5 font-medium text-gray-700 focus:outline-none focus:border-milquu-blue cursor-pointer"
+                >
+                  <option value="">-- Quick Select from Registered Customers --</option>
+                  {customerList.map((c) => (
+                    <option key={c._id || c.id || c.customerId || c.userId} value={c._id || c.id || c.customerId || c.userId}>
+                      {c.name} {c.phone ? `(${c.phone})` : ''} {c.totalDue > 0 ? `— Due: ₹${c.totalDue}` : ''}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Quick Frequent Customer Chips */}
+                {customerList.filter(c => c.isCreditCustomer || c.totalDue > 0).slice(0, 4).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2 items-center">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 mr-0.5">Frequent:</span>
+                    {customerList.filter(c => c.isCreditCustomer || c.totalDue > 0).slice(0, 4).map((c) => (
+                      <button
+                        key={c._id || c.id || c.customerId || c.userId}
+                        type="button"
+                        onClick={() => selectCustomer(c)}
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-colors cursor-pointer"
+                      >
+                        {c.name}
+                      </button>
+                    ))}
                   </div>
                 )}
-              </AnimatePresence>
-            </div>
 
-            {/* Billing Summary & Payment Methods */}
-            <div className="p-4 border-t border-gray-100 bg-white">
-              <div className="space-y-1.5 mb-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Subtotal</span>
-                  <span className="font-bold text-gray-800">₹{subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm items-center">
-                  <span className="text-gray-500">Discount (₹)</span>
+                {/* Optional Customer Phone */}
+                <div className="relative mt-2">
+                  <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input 
-                    type="number" 
-                    min="0"
-                    value={discount || ''} 
-                    onChange={(e) => setDiscount(Math.max(0, Number(e.target.value)))}
-                    placeholder="0"
-                    className="w-20 text-right text-sm border-b border-gray-200 focus:outline-none focus:border-milquu-blue font-bold text-red-500"
+                    type="tel" 
+                    placeholder="Phone number (required for credit)..." 
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-milquu-blue font-medium font-mono shadow-xs"
                   />
                 </div>
-                <div className="flex justify-between text-xl pt-2 border-t border-gray-100 mt-1">
-                  <span className="font-bold text-milquu-dark">Total</span>
-                  <span className={`font-bold ${paymentMethod === 'Credit' ? 'text-amber-600' : 'text-green-600'}`}>
+
+                {/* Selected Customer Billing Cycle Badge & Outstanding Details */}
+                {selectedCustomer && (
+                  <div className="mt-2.5 p-2 bg-blue-50/80 border border-blue-200/70 rounded-xl flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-lg bg-milquu-blue text-white font-bold text-[10px] uppercase">
+                        {selectedCustomer.billingCycle || '15 Days'} System
+                      </span>
+                      {selectedCustomer.totalDue > 0 ? (
+                        <span className="text-amber-800 font-semibold text-[11px]">
+                          Khata Dues: <b>₹{selectedCustomer.totalDue}</b>
+                        </span>
+                      ) : (
+                        <span className="text-green-700 font-semibold text-[11px]">
+                          No Pending Dues
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCreditCustomerForLedger(selectedCustomer);
+                        setShowLedgerModal(true);
+                      }}
+                      className="text-[10px] text-milquu-blue underline font-bold hover:text-blue-900"
+                    >
+                      View Ledger
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Cart Items */}
+              <div className="p-2 bg-gray-50/30">
+                <AnimatePresence>
+                  {cart.map((item) => (
+                    <motion.div 
+                      key={item.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="p-3 bg-white mb-2 rounded-xl border border-gray-100 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 pr-3">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-sm font-bold text-gray-800 leading-tight">{item.name}</h4>
+                            {item.unit && (
+                              <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded shadow-2xs ${
+                                item.unit.includes('500') 
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                                  : 'bg-blue-100 text-blue-800 border border-blue-300'
+                              }`}>
+                                {item.unit}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium mt-0.5">₹{item.price} / unit</p>
+
+                          {/* 1L / 500ml quick toggle in cart row for milk products */}
+                          {item.isMilk && (
+                            <div className="inline-flex rounded-lg border border-gray-200 mt-1 bg-gray-50 p-0.5 shadow-2xs">
+                              <button
+                                type="button"
+                                onClick={() => switchItemUnit(item.id, '1L')}
+                                className={`px-2 py-0.5 text-[10px] font-bold rounded-md cursor-pointer transition-colors ${
+                                  !item.unit?.includes('500') 
+                                    ? 'bg-blue-600 text-white shadow-xs' 
+                                    : 'text-gray-600 hover:text-blue-700'
+                                }`}
+                                title="Switch to 1 Litre"
+                              >
+                                1L (₹{item.basePrice || item.price})
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => switchItemUnit(item.id, '500 ml')}
+                                className={`px-2 py-0.5 text-[10px] font-bold rounded-md cursor-pointer transition-colors ${
+                                  item.unit?.includes('500') 
+                                    ? 'bg-emerald-600 text-white shadow-xs' 
+                                    : 'text-gray-600 hover:text-emerald-700'
+                                }`}
+                                title="Switch to 500 ml"
+                              >
+                                500ml (₹{Math.ceil((item.basePrice || item.price * 2) / 2)})
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          {/* Qty Controls with direct manual numeric input */}
+                          <div className="flex items-center bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                            <button 
+                              type="button"
+                              onClick={() => updateQty(item.id, -1)} 
+                              className="p-1.5 hover:bg-gray-200 text-gray-600 transition-colors cursor-pointer"
+                              title="Decrease quantity by 1"
+                            >
+                              <Minus size={14}/>
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              step="any"
+                              value={item.qty}
+                              onChange={(e) => handleDirectQtyChange(item.id, e.target.value)}
+                              onBlur={(e) => handleDirectQtyBlur(item.id, e.target.value)}
+                              onFocus={(e) => e.target.select()}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') e.target.blur();
+                              }}
+                              className="w-12 text-center text-sm font-extrabold text-gray-900 bg-white border-x border-gray-200 focus:outline-none focus:bg-amber-50 focus:ring-1 focus:ring-amber-500 py-0.5"
+                              title="Click to type quantity directly"
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => updateQty(item.id, 1)} 
+                              className="p-1.5 hover:bg-gray-200 text-gray-600 transition-colors cursor-pointer"
+                              title="Increase quantity by 1"
+                            >
+                              <Plus size={14}/>
+                            </button>
+                          </div>
+
+                          {/* Set / Manual Qty Button */}
+                          <button
+                            type="button"
+                            onClick={() => openQtyModal(item)}
+                            className="px-2 py-1 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                            title="Manually set quantity or choose presets"
+                          >
+                            <Edit3 size={11} />
+                            <span>Set</span>
+                          </button>
+
+                          <div className="w-16 text-right">
+                            <p className="text-sm font-bold text-milquu-dark font-mono">
+                              ₹{((item.price * (parseFloat(item.qty) || 0))).toFixed(2)}
+                            </p>
+                          </div>
+                          <button 
+                            type="button"
+                            onClick={() => removeItem(item.id)} 
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Quick Add Presets (+5, +10, +15, +30) */}
+                      <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-100">
+                        <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Quick Add:</span>
+                        {[5, 10, 15, 30].map(delta => (
+                          <button
+                            key={delta}
+                            type="button"
+                            onClick={() => addBulkQty(item.id, delta)}
+                            className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-gray-50 hover:bg-amber-100 hover:text-amber-800 hover:border-amber-300 text-gray-600 border border-gray-200 transition-all cursor-pointer"
+                            title={`Add +${delta} to ${item.name}`}
+                          >
+                            +{delta}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                  {cart.length === 0 && (
+                    <div className="h-full flex flex-col items-center justify-center text-gray-400 py-10">
+                      <Calculator size={44} className="mb-3 opacity-20" />
+                      <p className="font-semibold text-sm">Cart is empty</p>
+                      <p className="text-xs">Click milk or products on the left to add items</p>
+                    </div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Billing Summary & Payment Methods */}
+              <div className="p-3.5 bg-white space-y-3">
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-500 font-medium">Subtotal</span>
+                    <span className="font-bold text-gray-800">₹{subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs items-center">
+                    <span className="text-gray-500 font-medium">Discount (₹)</span>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={discount || ''} 
+                      onChange={(e) => setDiscount(Math.max(0, Number(e.target.value)))}
+                      placeholder="0"
+                      className="w-20 text-right text-xs border-b border-gray-200 focus:outline-none focus:border-milquu-blue font-bold text-red-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Payment Mode Selection (Cash, Card, UPI, Credit / Khata) */}
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Payment Method</label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    <button 
+                      type="button"
+                      onClick={() => setPaymentMethod('Cash')}
+                      className={`flex flex-col items-center justify-center py-2 rounded-xl border transition-all cursor-pointer ${
+                        paymentMethod === 'Cash' 
+                          ? 'bg-green-600 text-white border-green-600 shadow-sm font-bold' 
+                          : 'bg-green-50/60 border-green-200 text-green-700 hover:bg-green-100'
+                      }`}
+                    >
+                      <Banknote size={15} className="mb-1" />
+                      <span className="text-[10px] uppercase font-bold">Cash</span>
+                    </button>
+
+                    <button 
+                      type="button"
+                      onClick={() => setPaymentMethod('Card')}
+                      className={`flex flex-col items-center justify-center py-2 rounded-xl border transition-all cursor-pointer ${
+                        paymentMethod === 'Card' 
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-sm font-bold' 
+                          : 'bg-blue-50/60 border-blue-200 text-blue-700 hover:bg-blue-100'
+                      }`}
+                    >
+                      <CreditCard size={15} className="mb-1" />
+                      <span className="text-[10px] uppercase font-bold">Card</span>
+                    </button>
+
+                    <button 
+                      type="button"
+                      onClick={() => setPaymentMethod('UPI')}
+                      className={`flex flex-col items-center justify-center py-2 rounded-xl border transition-all cursor-pointer ${
+                        paymentMethod === 'UPI' 
+                          ? 'bg-purple-600 text-white border-purple-600 shadow-sm font-bold' 
+                          : 'bg-purple-50/60 border-purple-200 text-purple-700 hover:bg-purple-100'
+                      }`}
+                    >
+                      <Smartphone size={15} className="mb-1" />
+                      <span className="text-[10px] uppercase font-bold">UPI</span>
+                    </button>
+
+                    <button 
+                      type="button"
+                      onClick={() => setPaymentMethod('Credit')}
+                      className={`flex flex-col items-center justify-center py-2 rounded-xl border transition-all cursor-pointer ${
+                        paymentMethod === 'Credit' 
+                          ? 'bg-amber-600 text-white border-amber-600 shadow-sm font-bold ring-2 ring-amber-300' 
+                          : 'bg-amber-50/70 border-amber-200 text-amber-800 hover:bg-amber-100'
+                      }`}
+                    >
+                      <BookOpen size={15} className="mb-1" />
+                      <span className="text-[10px] uppercase font-bold">Credit</span>
+                    </button>
+                  </div>
+
+                  {/* Credit / Khata Billing Cycle System Options */}
+                  {paymentMethod === 'Credit' && (
+                    <div className="mt-2.5 p-2.5 bg-amber-50/90 border border-amber-200 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-950 flex items-center gap-1">
+                          <Clock size={13} className="text-amber-700" />
+                          Billing Cycle System
+                        </span>
+                        <span className="text-[10px] font-bold text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-full">
+                          Due in {billingCycle.includes('10') ? '10' : billingCycle.includes('30') ? '30' : '15'} Days
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {['10 Days', '15 Days', '30 Days'].map(cycle => (
+                          <button
+                            key={cycle}
+                            type="button"
+                            onClick={() => setBillingCycle(cycle)}
+                            className={`py-1.5 text-xs font-bold rounded-lg border text-center transition-all cursor-pointer ${
+                              billingCycle === cycle
+                                ? 'bg-amber-700 text-white border-amber-700 shadow-xs'
+                                : 'bg-white text-gray-700 border-amber-200 hover:bg-amber-100/60'
+                            }`}
+                          >
+                            {cycle}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="flex justify-between items-center text-[11px] text-amber-900 pt-1 border-t border-amber-200/70">
+                        <span>Expected Due Date:</span>
+                        <span className="font-bold font-mono">
+                          {new Date(Date.now() + (billingCycle.includes('10') ? 10 : billingCycle.includes('30') ? 30 : 15) * 86400000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+
+                      {!customerName.trim() && (
+                        <p className="text-[10px] text-red-600 font-bold bg-red-50 p-1.5 rounded-lg border border-red-200">
+                          ⚠️ Please select or enter customer name above to assign credit.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* Pinned Sticky Bottom Action Bar - NEVER CUT OFF */}
+            <div className="shrink-0 bg-white border-t border-gray-200 p-3 shadow-lg z-20 sticky bottom-0">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-gray-400 block tracking-wider">
+                    {paymentMethod === 'Credit' ? 'Khata Total (Pay Later)' : 'Bill Total'}
+                  </span>
+                  <span className="text-xs text-gray-500 font-medium">
+                    {cart.reduce((sum, item) => sum + (parseFloat(item.qty) || 0), 0)} items ({cart.length} unique)
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className={`text-2xl font-black font-mono tracking-tight ${paymentMethod === 'Credit' ? 'text-amber-600' : 'text-green-600'}`}>
                     ₹{total.toFixed(2)}
                   </span>
                 </div>
               </div>
 
-              {/* Payment Mode Selection (Cash, Card, UPI, Credit / Khata) */}
-              <div className="mb-3">
-                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Payment Method</label>
-                <div className="grid grid-cols-4 gap-1.5">
-                  <button 
-                    type="button"
-                    onClick={() => setPaymentMethod('Cash')}
-                    className={`flex flex-col items-center justify-center py-2 rounded-xl border transition-all cursor-pointer ${
-                      paymentMethod === 'Cash' 
-                        ? 'bg-green-600 text-white border-green-600 shadow-sm font-bold' 
-                        : 'bg-green-50/60 border-green-200 text-green-700 hover:bg-green-100'
-                    }`}
-                  >
-                    <Banknote size={16} className="mb-1" />
-                    <span className="text-[11px] uppercase font-bold">Cash</span>
-                  </button>
-
-                  <button 
-                    type="button"
-                    onClick={() => setPaymentMethod('Card')}
-                    className={`flex flex-col items-center justify-center py-2 rounded-xl border transition-all cursor-pointer ${
-                      paymentMethod === 'Card' 
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm font-bold' 
-                        : 'bg-blue-50/60 border-blue-200 text-blue-700 hover:bg-blue-100'
-                    }`}
-                  >
-                    <CreditCard size={16} className="mb-1" />
-                    <span className="text-[11px] uppercase font-bold">Card</span>
-                  </button>
-
-                  <button 
-                    type="button"
-                    onClick={() => setPaymentMethod('UPI')}
-                    className={`flex flex-col items-center justify-center py-2 rounded-xl border transition-all cursor-pointer ${
-                      paymentMethod === 'UPI' 
-                        ? 'bg-purple-600 text-white border-purple-600 shadow-sm font-bold' 
-                        : 'bg-purple-50/60 border-purple-200 text-purple-700 hover:bg-purple-100'
-                    }`}
-                  >
-                    <Smartphone size={16} className="mb-1" />
-                    <span className="text-[11px] uppercase font-bold">UPI</span>
-                  </button>
-
-                  <button 
-                    type="button"
-                    onClick={() => setPaymentMethod('Credit')}
-                    className={`flex flex-col items-center justify-center py-2 rounded-xl border transition-all cursor-pointer ${
-                      paymentMethod === 'Credit' 
-                        ? 'bg-amber-600 text-white border-amber-600 shadow-sm font-bold ring-2 ring-amber-300' 
-                        : 'bg-amber-50/70 border-amber-200 text-amber-800 hover:bg-amber-100'
-                    }`}
-                  >
-                    <BookOpen size={16} className="mb-1" />
-                    <span className="text-[11px] uppercase font-bold">Credit</span>
-                  </button>
-                </div>
-
-                {/* Credit / Khata Billing Cycle System Options */}
-                {paymentMethod === 'Credit' && (
-                  <div className="mt-2.5 p-2.5 bg-amber-50/90 border border-amber-200 rounded-xl space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-amber-950 flex items-center gap-1">
-                        <Clock size={13} className="text-amber-700" />
-                        Billing Cycle System
-                      </span>
-                      <span className="text-[10px] font-bold text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-full">
-                        Due in {billingCycle.includes('10') ? '10' : billingCycle.includes('30') ? '30' : '15'} Days
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {['10 Days', '15 Days', '30 Days'].map(cycle => (
-                        <button
-                          key={cycle}
-                          type="button"
-                          onClick={() => setBillingCycle(cycle)}
-                          className={`py-1.5 text-xs font-bold rounded-lg border text-center transition-all cursor-pointer ${
-                            billingCycle === cycle
-                              ? 'bg-amber-700 text-white border-amber-700 shadow-xs'
-                              : 'bg-white text-gray-700 border-amber-200 hover:bg-amber-100/60'
-                          }`}
-                        >
-                          {cycle}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex justify-between items-center text-[11px] text-amber-900 pt-1 border-t border-amber-200/70">
-                      <span>Expected Due Date:</span>
-                      <span className="font-bold font-mono">
-                        {new Date(Date.now() + (billingCycle.includes('10') ? 10 : billingCycle.includes('30') ? 30 : 15) * 86400000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </span>
-                    </div>
-
-                    {!customerName.trim() && (
-                      <p className="text-[10px] text-red-600 font-semibold">
-                        ⚠️ Please enter customer name above to assign credit.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-              
               <button 
                 onClick={handleCheckout}
                 disabled={cart.length === 0 || isSubmitting}
-                className={`w-full py-3.5 rounded-xl font-bold flex items-center justify-center shadow-md transition-all cursor-pointer ${
+                className={`w-full py-3 rounded-xl font-bold flex items-center justify-center shadow-md transition-all cursor-pointer text-sm ${
                   cart.length > 0 && !isSubmitting
                     ? paymentMethod === 'Credit' 
-                      ? 'bg-amber-700 text-white hover:bg-amber-800' 
+                      ? 'bg-amber-700 text-white hover:bg-amber-800 ring-2 ring-amber-400 ring-offset-1' 
                       : 'bg-milquu-dark text-white hover:bg-gray-800' 
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
@@ -1283,12 +1501,13 @@ const POS = () => {
                   <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                 ) : (
                   <>
-                    <Printer size={18} className="mr-2" /> 
-                    {paymentMethod === 'Credit' ? 'Record Credit Bill & Print' : 'Generate & Print Bill'}
+                    <Printer size={17} className="mr-2" /> 
+                    {paymentMethod === 'Credit' ? 'Record Credit Bill & Submit' : 'Generate & Print Bill'}
                   </>
                 )}
               </button>
             </div>
+
           </div>
 
         </div>
@@ -2196,6 +2415,316 @@ const POS = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* MODAL 6: QUICK DAILY MILK REGISTER (CREDIT / KHATA)          */}
+      {/* ============================================================ */}
+      {showDailyRegisterModal && (
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 my-auto z-10 max-h-[92vh] flex flex-col">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl p-2 bg-amber-50 rounded-2xl border border-amber-200">🥛</span>
+                <div>
+                  <h2 className="text-lg font-serif font-bold text-milquu-dark flex items-center gap-2">
+                    Daily Milk Register
+                    <span className="text-[10px] font-sans font-bold px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full">
+                      Credit / Khata
+                    </span>
+                  </h2>
+                  <p className="text-xs text-gray-500">Record daily milk delivery directly to customer's account</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDailyRegisterModal(false)}
+                className="text-gray-400 hover:text-gray-700 p-1 cursor-pointer rounded-lg hover:bg-gray-100"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleDailyRegisterSubmit} className="space-y-4 overflow-y-auto pr-1">
+              
+              {/* Customer Selection */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Customer (Select or Type Name) <span className="text-red-500">*</span>
+                </label>
+                <div className="space-y-1.5">
+                  <select
+                    value={dailyRegisterData.customerId}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      const c = customerList.find(item => (item._id || item.id || item.customerId || item.userId) === selectedId);
+                      if (c) {
+                        setDailyRegisterData(prev => ({
+                          ...prev,
+                          customerId: selectedId,
+                          customerName: c.name || '',
+                          customerPhone: c.phone || ''
+                        }));
+                      } else {
+                        setDailyRegisterData(prev => ({
+                          ...prev,
+                          customerId: '',
+                          customerName: '',
+                          customerPhone: ''
+                        }));
+                      }
+                    }}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-milquu-blue bg-white"
+                  >
+                    <option value="">-- Choose from Regular Customers --</option>
+                    {customerList.map((c) => (
+                      <option key={c._id || c.id || c.customerId || c.userId} value={c._id || c.id || c.customerId || c.userId}>
+                        {c.name} {c.phone ? `(${c.phone})` : ''} {c.totalDue > 0 ? `[Due: ₹${c.totalDue}]` : ''}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      required
+                      type="text"
+                      placeholder="Customer Name *"
+                      value={dailyRegisterData.customerName}
+                      onChange={(e) => setDailyRegisterData(prev => ({ ...prev, customerName: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-milquu-blue"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone (optional)"
+                      value={dailyRegisterData.customerPhone}
+                      onChange={(e) => setDailyRegisterData(prev => ({ ...prev, customerPhone: e.target.value }))}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:border-milquu-blue"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Date & Shift */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Date</label>
+                  <input
+                    required
+                    type="date"
+                    value={dailyRegisterData.date}
+                    onChange={(e) => setDailyRegisterData(prev => ({ ...prev, date: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-milquu-blue bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Delivery Shift</label>
+                  <div className="grid grid-cols-2 gap-1 bg-gray-100 p-1 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setDailyRegisterData(prev => ({ ...prev, shift: 'Morning' }))}
+                      className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        dailyRegisterData.shift === 'Morning'
+                          ? 'bg-white text-amber-900 shadow-xs'
+                          : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                    >
+                      🌅 Morning
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDailyRegisterData(prev => ({ ...prev, shift: 'Evening' }))}
+                      className={`py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        dailyRegisterData.shift === 'Evening'
+                          ? 'bg-white text-blue-900 shadow-xs'
+                          : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                    >
+                      🌇 Evening
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Milk Product & Size Selection */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Select Milk Variant</label>
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  {products.filter(isMilkProduct).slice(0, 4).map((p) => {
+                    const isSelected = dailyRegisterData.productId === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => {
+                          const unit = dailyRegisterData.unit;
+                          const effectiveRate = unit.includes('500') ? Math.ceil(p.price / 2) : p.price;
+                          setDailyRegisterData(prev => ({
+                            ...prev,
+                            productId: p.id,
+                            productName: p.name,
+                            price: effectiveRate
+                          }));
+                        }}
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? 'border-blue-600 bg-blue-50/70 ring-1 ring-blue-500'
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                      >
+                        <p className="text-xs font-bold text-gray-800 leading-tight">{p.name}</p>
+                        <p className="text-[11px] text-gray-500 font-mono mt-0.5">Base: ₹{p.price} / L</p>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* 1 Litre vs 500 ml Unit Toggle */}
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs font-semibold text-gray-600">Packaging Size:</span>
+                  <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const sel = products.find(p => p.id === dailyRegisterData.productId);
+                        const rate = sel ? sel.price : 54;
+                        setDailyRegisterData(prev => ({ ...prev, unit: '1 Litre', price: rate }));
+                      }}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        dailyRegisterData.unit === '1 Litre'
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'text-gray-600 hover:text-blue-700'
+                      }`}
+                    >
+                      1 Litre
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const sel = products.find(p => p.id === dailyRegisterData.productId);
+                        const rate = sel ? Math.ceil(sel.price / 2) : 27;
+                        setDailyRegisterData(prev => ({ ...prev, unit: '500 ml', price: rate }));
+                      }}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        dailyRegisterData.unit === '500 ml'
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : 'text-gray-600 hover:text-emerald-700'
+                      }`}
+                    >
+                      500 ml (Half Litre)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quantity & Rate */}
+              <div className="grid grid-cols-2 gap-3 bg-gray-50 p-3 rounded-2xl border border-gray-200">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Quantity ({dailyRegisterData.unit})
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setDailyRegisterData(prev => ({ ...prev, qty: Math.max(0.5, (parseFloat(prev.qty) || 1) - 1) }))}
+                      className="w-8 h-8 rounded-lg bg-white border border-gray-200 font-bold text-gray-600 hover:bg-gray-100 flex items-center justify-center cursor-pointer"
+                    >
+                      -
+                    </button>
+                    <input
+                      required
+                      type="number"
+                      step="any"
+                      min="0.25"
+                      value={dailyRegisterData.qty}
+                      onChange={(e) => setDailyRegisterData(prev => ({ ...prev, qty: e.target.value }))}
+                      className="w-16 text-center text-sm font-extrabold text-milquu-dark bg-white border border-gray-200 rounded-lg py-1 focus:outline-none focus:border-milquu-blue"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setDailyRegisterData(prev => ({ ...prev, qty: (parseFloat(prev.qty) || 1) + 1 }))}
+                      className="w-8 h-8 rounded-lg bg-white border border-gray-200 font-bold text-gray-600 hover:bg-gray-100 flex items-center justify-center cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Quick Qty Presets */}
+                  <div className="flex gap-1 mt-1.5">
+                    {[1, 2, 3, 5].map(q => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => setDailyRegisterData(prev => ({ ...prev, qty: q }))}
+                        className="px-2 py-0.5 text-[10px] font-bold rounded bg-white hover:bg-amber-100 hover:text-amber-900 border border-gray-200 cursor-pointer"
+                      >
+                        {q}L
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Rate / Unit (₹)</label>
+                  <input
+                    required
+                    type="number"
+                    step="any"
+                    value={dailyRegisterData.price}
+                    onChange={(e) => setDailyRegisterData(prev => ({ ...prev, price: e.target.value }))}
+                    className="w-full border border-gray-200 bg-white rounded-lg px-3 py-1.5 text-xs font-bold text-gray-800 focus:outline-none focus:border-milquu-blue"
+                  />
+                  <div className="mt-2 text-right">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block">Total Amount Due</span>
+                    <span className="text-lg font-black text-amber-700 font-mono">
+                      ₹{((Number(dailyRegisterData.price) || 0) * (parseFloat(dailyRegisterData.qty) || 0)).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Remarks / Notes */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Remarks (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Regular morning supply, 1 pouch left at door"
+                  value={dailyRegisterData.notes}
+                  onChange={(e) => setDailyRegisterData(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-milquu-blue"
+                />
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setShowDailyRegisterModal(false)}
+                  className="px-4 py-2 border border-gray-200 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingDailyRegister}
+                  className="px-6 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-xl text-xs font-bold hover:from-amber-700 hover:to-amber-800 shadow-md cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {isSubmittingDailyRegister ? (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  ) : (
+                    <>
+                      <span>🥛</span>
+                      <span>Record to Khata (Credit)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </form>
           </div>
         </div>
       )}

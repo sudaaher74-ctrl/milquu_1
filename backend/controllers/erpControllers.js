@@ -626,18 +626,43 @@ export const createOrder = async (req, res) => {
         if (typeof productId === 'string' && productId.includes('-')) {
           productId = productId.split('-')[0];
         }
-        const productDoc = await Product.findById(productId);
+        let productDoc = null;
+        try {
+          if (productId) {
+            productDoc = await Product.findById(productId);
+          }
+        } catch {
+          // If productId is not a valid ObjectId, search by name below
+        }
+        if (!productDoc && item.name) {
+          try {
+            const rawName = item.name.replace(/\s*\((500\s*ml|1L|1\s*Litre)\)/gi, '').trim();
+            productDoc = await Product.findOne({ name: { $regex: new RegExp(`^${rawName}$`, 'i') } });
+          } catch {}
+        }
+
         if (productDoc) {
           const isMilk = productDoc.category === 'milk' || (productDoc.name || '').toLowerCase().includes('milk');
-          const effectivePrice = (isMilk && isHalfLitre) ? Math.ceil(productDoc.price / 2) : productDoc.price;
+          const effectivePrice = (isMilk && isHalfLitre) ? Math.ceil(productDoc.price / 2) : (item.price || productDoc.price);
           secureItems.push({
             ...item,
-            product: productId,
+            product: productDoc._id,
             name: item.name || productDoc.name,
+            image: item.image || productDoc.image || '/img/categories/logo.png',
             unit: isHalfLitre ? '500 ml' : (item.unit || productDoc.unit || '1 Litre'),
             price: effectivePrice // Force secure price from DB
           });
           calculatedTotalPrice += effectivePrice * (item.qty || item.quantity || 1);
+        } else {
+          // Graceful fallback for custom items
+          secureItems.push({
+            ...item,
+            name: item.name || 'Dairy Item',
+            image: item.image || '/img/categories/logo.png',
+            unit: isHalfLitre ? '500 ml' : (item.unit || '1 Litre'),
+            price: Number(item.price) || 0
+          });
+          calculatedTotalPrice += (Number(item.price) || 0) * (item.qty || item.quantity || 1);
         }
       }
       orderData.orderItems = secureItems;
@@ -646,6 +671,41 @@ export const createOrder = async (req, res) => {
     }
 
     if (orderData.orderSource === 'POS') {
+      // Auto-link or auto-create User for POS customer so daily entries always attach to account
+      if (!orderData.user && (orderData.phone || orderData.name)) {
+        try {
+          let existingUser = null;
+          if (orderData.phone && String(orderData.phone).trim()) {
+            existingUser = await User.findOne({ phone: String(orderData.phone).trim() });
+          }
+          if (!existingUser && orderData.name && String(orderData.name).trim()) {
+            existingUser = await User.findOne({
+              name: { $regex: new RegExp(`^${String(orderData.name).trim()}$`, 'i') }
+            });
+          }
+          if (existingUser) {
+            orderData.user = existingUser._id;
+            if (!orderData.phone && existingUser.phone) {
+              orderData.phone = existingUser.phone;
+            }
+          } else if (orderData.paymentMethod === 'Credit' && orderData.name && String(orderData.name).trim()) {
+            // Auto-create customer so daily credit entries are persistently tracked in Khata
+            const cleanPhone = orderData.phone ? String(orderData.phone).trim() : undefined;
+            const newUser = new User({
+              name: String(orderData.name).trim(),
+              phone: cleanPhone,
+              isCreditCustomer: true,
+              billingCycle: orderData.billingCycle || '15 Days',
+              role: 'customer'
+            });
+            const savedUser = await newUser.save();
+            orderData.user = savedUser._id;
+          }
+        } catch (userErr) {
+          console.error('Error auto-linking customer in POS:', userErr);
+        }
+      }
+
       if (orderData.paymentMethod === 'Credit') {
         orderData.isPaid = false;
         orderData.paidAt = undefined;

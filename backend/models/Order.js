@@ -21,12 +21,12 @@ const orderSchema = new mongoose.Schema({
     {
       name: { type: String, required: true },
       qty: { type: Number, required: true },
-      image: { type: String, required: true },
+      image: { type: String, default: '/img/categories/logo.png' },
       price: { type: Number, required: true },
       cogs: { type: Number, default: 0 },
       product: {
         type: mongoose.Schema.Types.ObjectId,
-        required: true,
+        required: false,
         ref: 'Product',
       },
     }

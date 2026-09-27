@@ -1199,11 +1199,11 @@ const Purchases = () => {
       {/* MODAL 1: PRINTABLE & DOWNLOADABLE PURCHASE BILL / VOUCHER               */}
       {/* ========================================================================= */}
       {showBillModal && selectedPurchaseForBill && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm overflow-y-auto">
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col my-8">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/70 backdrop-blur-sm p-3 sm:p-6 flex justify-center items-start">
+          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
             
-            {/* Modal Control Header (hidden when printing) */}
-            <div className="p-4 bg-gray-100/80 border-b border-gray-200 flex justify-between items-center no-print">
+            {/* Modal Control Header (Sticky at top, always visible) */}
+            <div className="shrink-0 sticky top-0 z-20 p-4 bg-gray-100 border-b border-gray-200 flex justify-between items-center no-print shadow-xs">
               <div className="flex items-center gap-2">
                 <FileText size={18} className="text-milquu-dark" />
                 <span className="font-bold text-milquu-dark text-sm">Purchase Bill / Voucher</span>
@@ -1236,8 +1236,8 @@ const Purchases = () => {
               </div>
             </div>
 
-            {/* Printable Bill Area */}
-            <div id="purchase-bill-printable" className="p-8 bg-white text-gray-800 font-sans">
+            {/* Printable Bill Area (Scrollable within modal) */}
+            <div id="purchase-bill-printable" className="flex-1 overflow-y-auto p-6 sm:p-8 bg-white text-gray-800 font-sans">
               
               {/* Header */}
               <div className="border-b-2 border-gray-800 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
@@ -1367,6 +1367,25 @@ const Purchases = () => {
               </p>
             </div>
 
+            {/* Bottom Sticky Action Bar (Ensures actions are always visible) */}
+            <div className="shrink-0 p-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center no-print">
+              <span className="text-xs text-gray-500 font-medium">Voucher #{selectedPurchaseForBill.poNumber}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleDownloadBillPDF(selectedPurchaseForBill)}
+                  className="px-4 py-2 bg-milquu-dark text-white rounded-xl text-xs font-bold hover:bg-gray-800 flex items-center gap-1.5 shadow-md cursor-pointer"
+                >
+                  <Download size={14} /> Download PDF
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 flex items-center gap-1.5 shadow-md cursor-pointer"
+                >
+                  <Printer size={14} /> Print
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}
@@ -1375,11 +1394,11 @@ const Purchases = () => {
       {/* MODAL 2: VENDOR LEDGER STATEMENT MODAL (KHATA)                          */}
       {/* ========================================================================= */}
       {showLedgerModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm overflow-y-auto">
-          <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col my-6 max-h-[92vh]">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/70 backdrop-blur-sm p-3 sm:p-6 flex justify-center items-start">
+          <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
             
-            {/* Modal Control Header (hidden when printing) */}
-            <div className="p-4 bg-gray-100 border-b border-gray-200 flex flex-wrap justify-between items-center gap-3 no-print">
+            {/* Modal Control Header (Sticky at top, always visible) */}
+            <div className="shrink-0 sticky top-0 z-20 p-4 bg-gray-100 border-b border-gray-200 flex flex-wrap justify-between items-center gap-3 no-print shadow-xs">
               <div className="flex items-center gap-2">
                 <BookOpen size={18} className="text-milquu-dark" />
                 <span className="font-bold text-milquu-dark text-sm">
@@ -1709,9 +1728,9 @@ const Purchases = () => {
       {/* MODAL 4: ADD / EDIT PURCHASE ORDER                                       */}
       {/* ========================================================================= */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm overflow-y-auto">
-          <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl p-6 my-8 z-10">
-            <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-gray-900/60 backdrop-blur-sm overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl p-6 my-auto z-10 max-h-[92vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100 shrink-0">
               <h2 className="text-xl font-serif font-bold text-milquu-dark">
                 {editingId ? 'Edit Purchase Order' : 'Create New Purchase Order'}
               </h2>
@@ -1723,7 +1742,7 @@ const Purchases = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSavePurchase} className="space-y-4">
+            <form onSubmit={handleSavePurchase} className="space-y-4 overflow-y-auto pr-1">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">Date</label>
