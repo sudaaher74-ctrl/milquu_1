@@ -186,14 +186,44 @@ export const updatePurchase = async (req, res) => {
       await product.save();
     }
 
-    let paidAmount = purchaseData.paidAmount !== undefined ? Number(purchaseData.paidAmount) : (purchase.paidAmount || 0);
+    const previousPaidAmount = purchase.paidAmount || 0;
+    let paidAmount = purchaseData.paidAmount !== undefined ? Number(purchaseData.paidAmount) : previousPaidAmount;
     if (purchaseData.status === 'Paid') {
       paidAmount = totalCost;
     }
     const balanceAmount = Math.max(0, totalCost - paidAmount);
     let status = purchaseData.status || (balanceAmount === 0 ? 'Paid' : (paidAmount > 0 ? 'Partial' : 'Pending'));
 
-    Object.assign(purchase, purchaseData, { quantity, rate, totalCost, paidAmount, balanceAmount, status });
+    const payments = Array.isArray(purchase.payments) ? [...purchase.payments] : [];
+    if (paidAmount > previousPaidAmount) {
+      const diff = paidAmount - previousPaidAmount;
+      payments.push({
+        amount: diff,
+        date: purchaseData.date || new Date(),
+        paymentMode: purchaseData.paymentMode || 'Cash',
+        reference: purchaseData.reference || `Payment for ${purchase.poNumber}`,
+        notes: purchaseData.notes || 'Payment on Purchase Update'
+      });
+
+      try {
+        await VendorPayment.create({
+          paymentId: `VP-${Date.now().toString().slice(-6)}`,
+          supplierName: purchase.supplierName,
+          supplierPhone: purchase.supplierPhone || '',
+          purchaseId: purchase._id,
+          poNumber: purchase.poNumber,
+          amount: diff,
+          paymentMode: purchaseData.paymentMode || 'Cash',
+          reference: purchaseData.reference || 'On Purchase Update',
+          date: purchaseData.date || new Date(),
+          notes: `Payment for ${purchase.poNumber}`
+        });
+      } catch (err) {
+        console.error('Failed to record vendor payment on update:', err);
+      }
+    }
+
+    Object.assign(purchase, purchaseData, { quantity, rate, totalCost, paidAmount, balanceAmount, status, payments });
     const updatedPurchase = await purchase.save();
     await recordAudit(req, {
       action: 'purchase.update',
@@ -353,9 +383,9 @@ export const getVendorsSummary = async (req, res) => {
           supplierGst: p.supplierGst || '',
           totalPurchasesCount: 0,
           totalBilled: 0,
-          totalPaidFromPurchases: 0,
           products: {},
-          lastPurchaseDate: null
+          lastPurchaseDate: null,
+          purchases: []
         });
       }
 
@@ -366,7 +396,7 @@ export const getVendorsSummary = async (req, res) => {
 
       v.totalPurchasesCount += 1;
       v.totalBilled += p.totalCost || 0;
-      v.totalPaidFromPurchases += p.paidAmount || (p.status === 'Paid' ? p.totalCost : 0);
+      v.purchases.push(p);
 
       // Track product breakdown
       const prodName = p.productName || 'Unspecified Product';
@@ -388,21 +418,38 @@ export const getVendorsSummary = async (req, res) => {
       }
     });
 
-    // Process extra vendor payments
+    // Group vendor payments by vendor key
     const paymentsByVendor = new Map();
     vendorPayments.forEach((vp) => {
       const key = (vp.supplierName || '').trim().toLowerCase();
-      paymentsByVendor.set(key, (paymentsByVendor.get(key) || 0) + vp.amount);
+      if (!paymentsByVendor.has(key)) paymentsByVendor.set(key, []);
+      paymentsByVendor.get(key).push(vp);
     });
 
     const vendors = Array.from(vendorMap.values()).map((v) => {
       const key = v.supplierName.toLowerCase();
-      const standalonePaid = paymentsByVendor.get(key) || 0;
-      const totalPaid = Math.max(v.totalPaidFromPurchases, standalonePaid);
+      const vPayments = paymentsByVendor.get(key) || [];
+      const totalVpPaid = vPayments.reduce((sum, vp) => sum + (vp.amount || 0), 0);
+
+      // Account for legacy/unlinked purchase payments not in VendorPayment
+      let unrecordedPurchasePaid = 0;
+      v.purchases.forEach((p) => {
+        const vpForThisPO = vPayments
+          .filter((vp) => (vp.purchaseId && String(vp.purchaseId) === String(p._id)) || (vp.poNumber && vp.poNumber === p.poNumber))
+          .reduce((sum, vp) => sum + (vp.amount || 0), 0);
+        const pPaid = p.paidAmount !== undefined ? p.paidAmount : (p.status === 'Paid' ? (p.totalCost || 0) : 0);
+        if (pPaid > vpForThisPO) {
+          unrecordedPurchasePaid += (pPaid - vpForThisPO);
+        }
+      });
+
+      const totalPaid = totalVpPaid + unrecordedPurchasePaid;
       const balanceDue = Math.max(0, v.totalBilled - totalPaid);
 
+      const { purchases: _pList, ...vendorData } = v;
+
       return {
-        ...v,
+        ...vendorData,
         totalPaid,
         balanceDue,
         status: balanceDue <= 0 ? 'Settled' : 'Pending Dues',
@@ -445,6 +492,7 @@ export const getVendorLedger = async (req, res) => {
     // Collect transactions
     const transactions = [];
 
+    // 1. Add all Purchase Bills (Debits)
     purchases.forEach((p) => {
       if (p.supplierPhone) latestPhone = p.supplierPhone;
       if (p.supplierAddress) latestAddress = p.supplierAddress;
@@ -476,53 +524,55 @@ export const getVendorLedger = async (req, res) => {
         quantity: p.quantity,
         unit: p.unit || 'Litre',
         rate: p.rate,
-        debit: p.totalCost, // We owe vendor
+        debit: p.totalCost || 0, // We owe vendor
         credit: 0,
         notes: p.notes || ''
       });
-
-      // If purchase had internal payments not in VendorPayment collection
-      if (Array.isArray(p.payments) && p.payments.length > 0) {
-        p.payments.forEach((pm, idx) => {
-          transactions.push({
-            id: `${p._id}-pay-${idx}`,
-            date: pm.date || p.date,
-            type: 'PAYMENT',
-            refNo: pm.reference || `${p.poNumber}-PAY`,
-            category: 'Payment',
-            productName: `Payment for ${p.poNumber}`,
-            quantity: 0,
-            unit: '',
-            rate: 0,
-            debit: 0,
-            credit: pm.amount, // Payment made to vendor
-            paymentMode: pm.paymentMode || 'Cash',
-            notes: pm.notes || ''
-          });
-        });
-      }
     });
 
-    // Also include payments from VendorPayment collection (if not duplicating purchase payments)
+    // 2. Add all Vendor Payments from VendorPayment collection (Credits)
     payments.forEach((vp) => {
-      const alreadyAdded = transactions.some(
-        (t) => t.type === 'PAYMENT' && t.refNo && vp.poNumber && t.refNo.includes(vp.poNumber) && Math.abs(t.credit - vp.amount) < 0.01
-      );
-      if (!alreadyAdded) {
+      transactions.push({
+        id: vp._id,
+        date: vp.date,
+        type: 'PAYMENT',
+        refNo: vp.paymentId || vp.reference || 'PAY',
+        category: 'Payment',
+        productName: vp.poNumber ? `Payment for ${vp.poNumber}` : 'Account Payment',
+        quantity: 0,
+        unit: '',
+        rate: 0,
+        debit: 0,
+        credit: vp.amount || 0,
+        paymentMode: vp.paymentMode || 'Cash',
+        notes: vp.notes || ''
+      });
+    });
+
+    // 3. Fallback for unlinked/legacy purchase payments not captured in VendorPayment
+    purchases.forEach((p) => {
+      const vpPaidForThisPO = payments
+        .filter((vp) => (vp.purchaseId && String(vp.purchaseId) === String(p._id)) || (vp.poNumber && vp.poNumber === p.poNumber))
+        .reduce((sum, vp) => sum + (vp.amount || 0), 0);
+
+      const pPaidAmount = p.paidAmount !== undefined ? p.paidAmount : (p.status === 'Paid' ? (p.totalCost || 0) : 0);
+
+      if (pPaidAmount > vpPaidForThisPO) {
+        const unrecordedAmount = pPaidAmount - vpPaidForThisPO;
         transactions.push({
-          id: vp._id,
-          date: vp.date,
+          id: `${p._id}-settled`,
+          date: p.date || p.createdAt,
           type: 'PAYMENT',
-          refNo: vp.paymentId,
+          refNo: `${p.poNumber}-PAID`,
           category: 'Payment',
-          productName: vp.poNumber ? `Payment for ${vp.poNumber}` : 'Account Payment',
+          productName: `Payment for ${p.poNumber}`,
           quantity: 0,
           unit: '',
           rate: 0,
           debit: 0,
-          credit: vp.amount,
-          paymentMode: vp.paymentMode || 'Cash',
-          notes: vp.notes || ''
+          credit: unrecordedAmount,
+          paymentMode: p.paymentMode || 'Cash',
+          notes: 'Settled on purchase order'
         });
       }
     });
