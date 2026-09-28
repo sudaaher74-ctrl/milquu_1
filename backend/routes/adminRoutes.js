@@ -9,7 +9,8 @@ import {
   createWalletTransaction,
   triggerSubscriptionEngine,
   createCustomer,
-  updateCustomer
+  updateCustomer,
+  deleteCustomer
 } from '../controllers/adminControllers.js';
 import {
   getToday,
@@ -47,7 +48,8 @@ router.get('/orders', protect, managerUp, getOrders);
 router.get('/customers', protect, staffUp, getCustomers);
 router.get('/customers/insights', protect, managerUp, getCustomerInsights);
 router.post('/customers', protect, staffUp, createCustomer);
-router.put('/customers/:id', protect, managerUp, updateCustomer);
+router.put('/customers/:id', protect, staffUp, updateCustomer);
+router.delete('/customers/:id', protect, staffUp, deleteCustomer);
 router.get('/revenue-analytics', protect, managerUp, getRevenueAnalytics);
 
 // Business settings: everyone reads them (receipts print them), admins edit

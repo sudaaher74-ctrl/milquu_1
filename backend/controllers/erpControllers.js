@@ -1535,3 +1535,21 @@ export const markPOSOrderPaid = async (req, res) => {
     res.status(500).json({ message: 'Server Error', error: error.message });
   }
 };
+
+export const getCreditCustomerOrders = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let query = { orderSource: 'POS' };
+    if (id.startsWith('guest_')) {
+      const phoneOrName = id.replace('guest_', '');
+      query.$or = [{ phone: phoneOrName }, { name: phoneOrName }];
+    } else {
+      query.$or = [{ user: id }, { phone: id }];
+    }
+
+    const orders = await Order.find(query).sort({ createdAt: -1 }).lean();
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch customer orders', error: err.message });
+  }
+};

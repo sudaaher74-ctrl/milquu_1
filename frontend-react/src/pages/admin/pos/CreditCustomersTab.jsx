@@ -1,8 +1,28 @@
-import { AlertCircle, Banknote, BookOpen, Calendar, Clock, Edit3, FileText, Filter, MessageCircle, Phone, Plus, Search, User, UserPlus } from 'lucide-react';
+import { AlertCircle, Banknote, BookOpen, Calendar, Clock, Download, Edit3, FileText, Filter, MessageCircle, Phone, Plus, Search, Trash2, User, UserPlus } from 'lucide-react';
 
 // Extracted from POS.jsx. Receives the page state and
 // handlers it uses as props of the same name.
-const CreditCustomersTab = ({ activeTab, creditCycleFilter, creditSearch, creditSort, creditSummary, filteredCreditCustomers, handleOpenEditCycle, handleOpenSettleModal, handleSendWhatsAppReminder, handleStartBillForCustomer, setCreditCycleFilter, setCreditSearch, setCreditSort, setSelectedCreditCustomerForLedger, setShowAddCustomerModal, setShowLedgerModal }) => (
+const CreditCustomersTab = ({ 
+  activeTab, 
+  creditCycleFilter, 
+  creditSearch, 
+  creditSort, 
+  creditSummary, 
+  filteredCreditCustomers, 
+  handleOpenEditCycle, 
+  handleOpenEditCustomer,
+  handleDeleteCustomer,
+  handleOpenInvoiceModal,
+  handleOpenSettleModal, 
+  handleSendWhatsAppReminder, 
+  handleStartBillForCustomer, 
+  setCreditCycleFilter, 
+  setCreditSearch, 
+  setCreditSort, 
+  setSelectedCreditCustomerForLedger, 
+  setShowAddCustomerModal, 
+  setShowLedgerModal 
+}) => (
   <>
     {/* ============================================================ */}
     {/* TAB 2: CREDIT CUSTOMERS (KHATA / UDHAR) VIEW                 */}
@@ -139,26 +159,48 @@ const CreditCustomersTab = ({ activeTab, creditCycleFilter, creditSearch, credit
                     <div>
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-10 h-10 rounded-xl bg-milquu-blue/10 text-milquu-blue flex items-center justify-center font-bold font-serif text-base">
+                          <div className="w-10 h-10 rounded-xl bg-milquu-blue/10 text-milquu-blue flex items-center justify-center font-bold font-serif text-base shrink-0">
                             {customer.name?.charAt(0)?.toUpperCase() || 'C'}
                           </div>
                           <div>
-                            <h4 className="font-bold text-gray-900 text-sm">{customer.name}</h4>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="font-bold text-gray-900 text-sm">{customer.name}</h4>
+                              {handleOpenEditCustomer && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditCustomer(customer)}
+                                  className="p-1 text-gray-400 hover:text-milquu-blue hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
+                                  title="Edit Customer Details"
+                                >
+                                  <Edit3 size={12} />
+                                </button>
+                              )}
+                              {handleDeleteCustomer && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCustomer(customer)}
+                                  className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                                  title="Delete Customer"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              )}
+                            </div>
                             {customer.phone ? (
-                              <p className="text-xs text-gray-500 font-mono flex items-center gap-1">
-                                <Phone size={12} className="text-gray-400" /> {customer.phone}
+                              <p className="text-xs text-gray-500 font-mono flex items-center gap-1 mt-0.5">
+                                <Phone size={11} className="text-gray-400" /> {customer.phone}
                               </p>
                             ) : (
-                              <p className="text-[11px] text-gray-400 italic">No phone recorded</p>
+                              <p className="text-[11px] text-gray-400 italic mt-0.5">No phone recorded</p>
                             )}
                           </div>
                         </div>
 
                         {/* Billing Cycle Badge */}
                         <button
-                          onClick={() => handleOpenEditCycle(customer)}
+                          onClick={() => (handleOpenEditCustomer ? handleOpenEditCustomer(customer) : handleOpenEditCycle(customer))}
                           className="px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors flex items-center gap-1 cursor-pointer bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-                          title="Click to change billing system"
+                          title="Click to edit customer & billing system"
                         >
                           <Clock size={11} />
                           <span>{customer.billingCycle || '15 Days'}</span>
@@ -229,19 +271,32 @@ const CreditCustomersTab = ({ activeTab, creditCycleFilter, creditSearch, credit
                           setSelectedCreditCustomerForLedger(customer);
                           setShowLedgerModal(true);
                         }}
-                        className="py-1.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                        className="py-1.5 px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                         title="View all unpaid bills and items"
                       >
                         <FileText size={13} />
                         <span>Ledger</span>
                       </button>
 
+                      {/* Download Milk Bill / Invoice */}
+                      {handleOpenInvoiceModal && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenInvoiceModal(customer)}
+                          className="py-1.5 px-2.5 bg-blue-50 hover:bg-blue-100 text-milquu-blue border border-blue-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                          title="Generate, Print or Download Milk Invoice Bill (PDF)"
+                        >
+                          <Download size={13} />
+                          <span>Invoice</span>
+                        </button>
+                      )}
+
                       {/* Settle / Collect Payment */}
                       {hasDues && (
                         <button
                           type="button"
                           onClick={() => handleOpenSettleModal(customer)}
-                          className="py-1.5 px-3 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                          className="py-1.5 px-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                           title="Collect cash, UPI or card payment against Khata"
                         >
                           <Banknote size={13} />
@@ -254,7 +309,7 @@ const CreditCustomersTab = ({ activeTab, creditCycleFilter, creditSearch, credit
                         <button
                           type="button"
                           onClick={() => handleSendWhatsAppReminder(customer)}
-                          className="py-1.5 px-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                          className="py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                           title="Send WhatsApp payment reminder"
                         >
                           <MessageCircle size={13} />

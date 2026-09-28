@@ -10,6 +10,8 @@ import SettlementModal from './pos/SettlementModal';
 import BillingCycleModal from './pos/BillingCycleModal';
 import ReceiptModal from './pos/ReceiptModal';
 import DailyRegisterModal from './pos/DailyRegisterModal';
+import EditCustomerModal from './pos/EditCustomerModal';
+import MilkInvoiceModal from './pos/MilkInvoiceModal';
 import toast from '../../utils/toast';
 
 const POS = () => {
@@ -103,6 +105,15 @@ const POS = () => {
   const [editCycleValue, setEditCycleValue] = useState('15 Days');
   const [editCreditLimit, setEditCreditLimit] = useState('');
   const [isUpdatingCycle, setIsUpdatingCycle] = useState(false);
+
+  // Edit Customer Modal State
+  const [selectedCustomerForEdit, setSelectedCustomerForEdit] = useState(null);
+  const [showEditCustomerModal, setShowEditCustomerModal] = useState(false);
+  const [isSavingCustomerEdit, setIsSavingCustomerEdit] = useState(false);
+
+  // Milk Invoice Bill Modal State
+  const [selectedCustomerForInvoice, setSelectedCustomerForInvoice] = useState(null);
+  const [showMilkInvoiceModal, setShowMilkInvoiceModal] = useState(false);
 
   // Manual / Custom Quantity Modal State
   const [qtyModalItem, setQtyModalItem] = useState(null);
@@ -747,6 +758,68 @@ const POS = () => {
     } finally {
       setIsUpdatingCycle(false);
     }
+  };
+
+  // Open Edit Customer Modal
+  const handleOpenEditCustomer = (cust) => {
+    setSelectedCustomerForEdit(cust);
+    setShowEditCustomerModal(true);
+  };
+
+  // Submit Customer Edit (Name, Phone, Address, Cycle, Limit, Notes)
+  const handleSaveCustomerEdit = async (formData) => {
+    const custId = formData.id;
+    if (!custId) {
+      toast.error('Customer ID missing');
+      return;
+    }
+    setIsSavingCustomerEdit(true);
+    try {
+      await api.put(`/api/admin/customers/${custId}`, {
+        name: formData.name,
+        phone: formData.phone,
+        address: formData.address,
+        billingCycle: formData.billingCycle,
+        isCreditCustomer: formData.billingCycle !== 'none',
+        creditLimit: formData.creditLimit !== '' ? Number(formData.creditLimit) : 0,
+        creditNotes: formData.creditNotes
+      });
+      toast.success('Customer details updated successfully!');
+      setShowEditCustomerModal(false);
+      fetchCreditCustomers();
+      fetchCustomers();
+    } catch (err) {
+      console.error('Error updating customer:', err);
+      toast.error(err.response?.data?.message || 'Failed to update customer details');
+    } finally {
+      setIsSavingCustomerEdit(false);
+    }
+  };
+
+  // Delete Customer
+  const handleDeleteCustomer = async (cust) => {
+    const custId = cust.customerId || cust.userId || cust._id;
+    if (!custId) {
+      toast.error('Customer ID not found');
+      return;
+    }
+    try {
+      await api.delete(`/api/admin/customers/${custId}`);
+      toast.success(`Customer ${cust.name || ''} deleted successfully`);
+      setShowEditCustomerModal(false);
+      fetchCreditCustomers();
+      fetchCustomers();
+    } catch (err) {
+      console.error('Error deleting customer:', err);
+      toast.error(err.response?.data?.message || 'Failed to delete customer');
+      throw err;
+    }
+  };
+
+  // Open Milk Invoice Modal
+  const handleOpenInvoiceModal = (cust) => {
+    setSelectedCustomerForInvoice(cust);
+    setShowMilkInvoiceModal(true);
   };
 
   // Filter & Sort Credit Customers
@@ -1523,6 +1596,9 @@ const POS = () => {
         creditSummary={creditSummary}
         filteredCreditCustomers={filteredCreditCustomers}
         handleOpenEditCycle={handleOpenEditCycle}
+        handleOpenEditCustomer={handleOpenEditCustomer}
+        handleDeleteCustomer={handleDeleteCustomer}
+        handleOpenInvoiceModal={handleOpenInvoiceModal}
         handleOpenSettleModal={handleOpenSettleModal}
         handleSendWhatsAppReminder={handleSendWhatsAppReminder}
         handleStartBillForCustomer={handleStartBillForCustomer}
@@ -1555,6 +1631,7 @@ const POS = () => {
       <CustomerLedgerModal
         handleMarkOrderPaid={handleMarkOrderPaid}
         handleOpenSettleModal={handleOpenSettleModal}
+        handleOpenInvoiceModal={handleOpenInvoiceModal}
         selectedCreditCustomerForLedger={selectedCreditCustomerForLedger}
         setShowLedgerModal={setShowLedgerModal}
         showLedgerModal={showLedgerModal}
@@ -1601,6 +1678,21 @@ const POS = () => {
         setDailyRegisterData={setDailyRegisterData}
         setShowDailyRegisterModal={setShowDailyRegisterModal}
         showDailyRegisterModal={showDailyRegisterModal}
+      />
+
+      <EditCustomerModal
+        showEditModal={showEditCustomerModal}
+        setShowEditModal={setShowEditCustomerModal}
+        customer={selectedCustomerForEdit}
+        handleSaveCustomerEdit={handleSaveCustomerEdit}
+        handleDeleteCustomer={handleDeleteCustomer}
+        isSaving={isSavingCustomerEdit}
+      />
+
+      <MilkInvoiceModal
+        showInvoiceModal={showMilkInvoiceModal}
+        setShowInvoiceModal={setShowMilkInvoiceModal}
+        customer={selectedCustomerForInvoice}
       />
     </div>
   );

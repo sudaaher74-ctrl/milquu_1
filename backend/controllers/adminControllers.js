@@ -527,15 +527,24 @@ export const updateCustomer = async (req, res) => {
       return res.status(404).json({ message: 'Customer not found' });
     }
 
-    if (name) customer.name = name.trim();
+    if (name) {
+      customer.name = name.trim();
+      // Keep POS order customer names in sync
+      await Order.updateMany({ user: customer._id }, { $set: { name: customer.name } });
+    }
     if (phone !== undefined) {
       const normPhone = phone ? normalisePhone(phone) : undefined;
       customer.phone = normPhone || undefined;
+      if (normPhone) {
+        await Order.updateMany({ user: customer._id }, { $set: { phone: normPhone } });
+      }
     }
     if (email !== undefined) {
       customer.email = (email && typeof email === 'string' && email.trim()) ? email.trim().toLowerCase() : undefined;
     }
-    if (address !== undefined) customer.address = address?.trim() || '';
+    if (address !== undefined) {
+      customer.address = address?.trim() || '';
+    }
     if (billingCycle !== undefined) {
       customer.billingCycle = billingCycle;
       if (billingCycle && billingCycle !== 'none') {
@@ -564,6 +573,47 @@ export const updateCustomer = async (req, res) => {
       return res.status(400).json({ message: `A customer with this ${field} already exists` });
     }
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const deleteCustomer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const customer = await User.findById(id);
+    if (!customer) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+
+    if (customer.role === 'admin' || customer.role === 'manager' || customer.role === 'staff' || customer.role === 'superadmin') {
+      return res.status(400).json({ message: 'Staff and Admin accounts cannot be deleted here.' });
+    }
+
+    const customerName = customer.name;
+
+    // Delete or cancel any active subscriptions
+    await Subscription.deleteMany({ user: customer._id });
+
+    // Clean up unpaid POS credit orders so deleted customer doesn't leave ghost debt
+    await Order.deleteMany({ user: customer._id, orderSource: 'POS', isPaid: false });
+
+    // For any historical paid orders, unlink from user account while keeping history
+    await Order.updateMany(
+      { user: customer._id },
+      { $set: { user: null, guestName: `${customerName} (Archived)` } }
+    );
+
+    await customer.deleteOne();
+
+    await recordAudit(req, {
+      action: 'customer.delete',
+      entity: 'Customer',
+      entityId: id,
+      summary: `Deleted customer ${customerName}`
+    });
+
+    res.json({ message: `Customer ${customerName} deleted successfully` });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to delete customer', error: error.message });
   }
 };
 

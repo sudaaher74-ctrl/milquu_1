@@ -1,8 +1,8 @@
-import { BookOpen, CheckCircle2, X } from 'lucide-react';
+import { BookOpen, CheckCircle2, Download, FileText, X } from 'lucide-react';
 
 // Extracted from POS.jsx. Receives the page state and
 // handlers it uses as props of the same name.
-const CustomerLedgerModal = ({ handleMarkOrderPaid, handleOpenSettleModal, selectedCreditCustomerForLedger, setShowLedgerModal, showLedgerModal }) => (
+const CustomerLedgerModal = ({ handleMarkOrderPaid, handleOpenSettleModal, handleOpenInvoiceModal, selectedCreditCustomerForLedger, setShowLedgerModal, showLedgerModal }) => (
   <>
     {/* ============================================================ */}
     {/* MODAL 2: CUSTOMER KHATA / LEDGER BILLS MODAL                 */}
@@ -21,12 +21,25 @@ const CustomerLedgerModal = ({ handleMarkOrderPaid, handleOpenSettleModal, selec
                 {selectedCreditCustomerForLedger.phone || 'Walk-in'} • {selectedCreditCustomerForLedger.billingCycle || '15 Days'} Cycle
               </p>
             </div>
-            <button 
-              onClick={() => setShowLedgerModal(false)}
-              className="text-gray-400 hover:text-gray-700 p-1 cursor-pointer"
-            >
-              <X size={20} />
-            </button>
+            <div className="flex items-center gap-2">
+              {handleOpenInvoiceModal && (
+                <button
+                  type="button"
+                  onClick={() => handleOpenInvoiceModal(selectedCreditCustomerForLedger)}
+                  className="px-3 py-1.5 bg-blue-50 text-milquu-blue hover:bg-blue-100 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-blue-200 shadow-2xs transition-colors cursor-pointer"
+                  title="Generate, Print or Download Milk Invoice PDF"
+                >
+                  <Download size={13} />
+                  <span>Download Milk Bill</span>
+                </button>
+              )}
+              <button 
+                onClick={() => setShowLedgerModal(false)}
+                className="text-gray-400 hover:text-gray-700 p-1 cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           {/* Total Summary Banner */}
@@ -37,15 +50,26 @@ const CustomerLedgerModal = ({ handleMarkOrderPaid, handleOpenSettleModal, selec
                 ₹{selectedCreditCustomerForLedger.totalDue?.toFixed(2) || '0.00'}
               </span>
             </div>
-            <button
-              onClick={() => {
-                setShowLedgerModal(false);
-                handleOpenSettleModal(selectedCreditCustomerForLedger);
-              }}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
-            >
-              Settle Full / Partial Dues
-            </button>
+            <div className="flex items-center gap-2">
+              {handleOpenInvoiceModal && (
+                <button
+                  onClick={() => handleOpenInvoiceModal(selectedCreditCustomerForLedger)}
+                  className="px-3.5 py-2 bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 rounded-xl text-xs font-bold shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  <FileText size={14} className="text-milquu-blue" />
+                  View Invoice
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  setShowLedgerModal(false);
+                  handleOpenSettleModal(selectedCreditCustomerForLedger);
+                }}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+              >
+                Settle Full / Partial Dues
+              </button>
+            </div>
           </div>
 
           {/* Bills List */}

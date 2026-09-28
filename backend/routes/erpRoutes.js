@@ -11,6 +11,7 @@ import {
   updateStaffLocation,
   assignOrderToStaff,
   getCreditCustomers,
+  getCreditCustomerOrders,
   settleCreditCustomer,
   markPOSOrderPaid
 } from '../controllers/erpControllers.js';
@@ -43,6 +44,7 @@ router.route('/orders/:id/pay').put(protect, staffUp, markPOSOrderPaid);
 
 // Credit Customers & Khata
 router.route('/credit-customers').get(protect, staffUp, getCreditCustomers);
+router.route('/credit-customers/:id/orders').get(protect, staffUp, getCreditCustomerOrders);
 router.route('/credit-customers/:id/settle').post(protect, staffUp, settleCreditCustomer);
 
 router.get('/delivery-staff/live', protect, staffUp, getLiveTracking);
