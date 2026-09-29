@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import api from '../../utils/api.js';
@@ -15,6 +15,31 @@ const ChatbotLogin = () => {
   const location = useLocation();
 
   const from = location.state?.from?.pathname || '/chatbot';
+
+  useEffect(() => {
+    let manifestLink = document.querySelector('link[rel="manifest"]');
+    const originalHref = manifestLink?.getAttribute('href') || '/manifest.webmanifest';
+
+    if (manifestLink) {
+      manifestLink.setAttribute('href', '/chatbot-manifest.json');
+    } else {
+      manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = '/chatbot-manifest.json';
+      document.head.appendChild(manifestLink);
+    }
+
+    const prevTitle = document.title;
+    document.title = 'MilQuu AI Portal – Sign In';
+    const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if (appleTitle) appleTitle.setAttribute('content', 'MilQuu AI');
+
+    return () => {
+      if (manifestLink) manifestLink.setAttribute('href', originalHref);
+      document.title = prevTitle;
+      if (appleTitle) appleTitle.setAttribute('content', 'MilQuu');
+    };
+  }, []);
 
   const handleGoogleSuccess = async (credentialResponse) => {
     setError('');

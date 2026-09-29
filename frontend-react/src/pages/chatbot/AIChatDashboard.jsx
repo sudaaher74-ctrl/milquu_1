@@ -46,6 +46,33 @@ const AIChatDashboard = () => {
   const recognitionRef = useRef(null);
 
   useEffect(() => {
+    // Point PWA manifest to dedicated Chatbot manifest so "Add to Home Screen"
+    // installs an icon that opens directly into /chatbot instead of the main store.
+    let manifestLink = document.querySelector('link[rel="manifest"]');
+    const originalHref = manifestLink?.getAttribute('href') || '/manifest.webmanifest';
+
+    if (manifestLink) {
+      manifestLink.setAttribute('href', '/chatbot-manifest.json');
+    } else {
+      manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = '/chatbot-manifest.json';
+      document.head.appendChild(manifestLink);
+    }
+
+    const prevTitle = document.title;
+    document.title = 'MilQuu AI – Business Assistant';
+    const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if (appleTitle) appleTitle.setAttribute('content', 'MilQuu AI');
+
+    return () => {
+      if (manifestLink) manifestLink.setAttribute('href', originalHref);
+      document.title = prevTitle;
+      if (appleTitle) appleTitle.setAttribute('content', 'MilQuu');
+    };
+  }, []);
+
+  useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition && !recognitionRef.current) {
       const rec = new SpeechRecognition();

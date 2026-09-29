@@ -1,0 +1,33 @@
+{
+  "id": "/chatbot",
+  "name": "MilQuu AI – Business Assistant",
+  "short_name": "MilQuu AI",
+  "description": "MilQuu Fresh AI business analyst and assistant powered by Sarvam 105B.",
+  "theme_color": "#7c3aed",
+  "background_color": "#FDFBF7",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "/chatbot?source=pwa",
+  "scope": "/chatbot",
+  "categories": ["business", "productivity"],
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
