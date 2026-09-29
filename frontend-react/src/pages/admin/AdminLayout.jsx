@@ -8,7 +8,7 @@ import {
   Bell, Settings, Search, Plus, Menu, X, ChevronDown, Bike,
   Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart, MessageCircle, Wand2, Mic, Volume2, Loader2, Sparkles, Banknote, Gift,
   PanelLeft, PanelLeftClose, ShieldOff,
-  Download, WifiOff, Wifi, CheckCircle2
+  Download, WifiOff, Wifi, CheckCircle2, CloudUpload, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { canAccess, getAdminSession, ROLE_LABELS } from '../../utils/adminAccess.js';
@@ -16,14 +16,15 @@ import { ToastHost } from '../../components/admin/Toast.jsx';
 import { useToday } from '../../utils/useToday.js';
 import { buildAlerts, getReadAlerts } from '../../utils/adminAlerts.js';
 import { eventBus } from '../../utils/eventBus.js';
-import { useInstallPrompt, useNetworkStatus } from '../../utils/usePWA.js';
+import { useInstallPrompt, useNetworkStatus, useSyncQueue } from '../../utils/usePWA.js';
 
 const AdminLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // PWA: install prompt & network status
+  // PWA: install prompt, network status & offline sync queue
   const { canInstall, isInstalled, promptInstall } = useInstallPrompt();
   const { isOnline, wasOffline } = useNetworkStatus();
+  const { pendingCount, isSyncing, triggerSync } = useSyncQueue(api, isOnline);
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('adminSidebarOpen');
@@ -356,6 +357,21 @@ const AdminLayout = () => {
               </AnimatePresence>
             </div>
 
+            {/* Sync Queue Badge */}
+            {pendingCount > 0 && (
+              <button
+                onClick={triggerSync}
+                disabled={isSyncing || !isOnline}
+                className="relative p-2 text-amber-500 hover:text-amber-600 transition-colors rounded-full hover:bg-amber-50 disabled:opacity-50"
+                title={isSyncing ? 'Syncing…' : `${pendingCount} pending change${pendingCount > 1 ? 's' : ''} — click to sync`}
+              >
+                <CloudUpload size={22} className={isSyncing ? 'animate-pulse' : ''} />
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-amber-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white flex items-center justify-center">
+                  {isSyncing ? <RefreshCw size={10} className="animate-spin" /> : pendingCount}
+                </span>
+              </button>
+            )}
+
             {/* Notification */}
             <Link
               to="/admin/notifications"
@@ -382,7 +398,7 @@ const AdminLayout = () => {
           </div>
         </header>
         
-        {/* Offline / Reconnected Banner */}
+        {/* Offline / Reconnected / Syncing Banner */}
         <AnimatePresence>
           {!isOnline && (
             <motion.div
@@ -393,11 +409,27 @@ const AdminLayout = () => {
             >
               <div className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-amber-800 font-medium">
                 <WifiOff size={16} className="shrink-0" />
-                <span>You're offline — showing cached data. Changes will sync when reconnected.</span>
+                <span>
+                  You're offline — showing cached data.
+                  {pendingCount > 0 && ` ${pendingCount} change${pendingCount > 1 ? 's' : ''} queued for sync.`}
+                </span>
               </div>
             </motion.div>
           )}
-          {isOnline && wasOffline && (
+          {isOnline && isSyncing && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="bg-blue-50 border-b border-blue-200 overflow-hidden z-20"
+            >
+              <div className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-blue-800 font-medium">
+                <RefreshCw size={16} className="shrink-0 animate-spin" />
+                <span>Syncing {pendingCount} pending change{pendingCount > 1 ? 's' : ''}…</span>
+              </div>
+            </motion.div>
+          )}
+          {isOnline && wasOffline && !isSyncing && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
@@ -406,7 +438,7 @@ const AdminLayout = () => {
             >
               <div className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-green-800 font-medium">
                 <Wifi size={16} className="shrink-0" />
-                <span>Back online — data is now up to date.</span>
+                <span>Back online — all changes synced.</span>
               </div>
             </motion.div>
           )}
