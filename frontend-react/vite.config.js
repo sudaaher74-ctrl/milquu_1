@@ -121,6 +121,88 @@ export default defineConfig({
               },
             },
           },
+          // ── Admin Dashboard API caching (offline read access) ──────────
+          {
+            // /api/erp/* — analytics, orders, expenses, purchases, wastages,
+            // procurements, delivery-staff, inventory
+            urlPattern: /\/api\/erp\//i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-erp-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 15, // 15 minutes — operational data refreshes often
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // /api/admin/* — customers, withdrawals, settings, employees, audit-logs, wallets
+            urlPattern: /\/api\/admin\//i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-admin-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 40,
+                maxAgeSeconds: 60 * 60, // 1 hour — settings/employees change less often
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // /api/subscriptions — subscription list & management
+            urlPattern: /\/api\/subscriptions/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-subscriptions-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 15,
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // /api/free-sample/* — free sample campaigns
+            urlPattern: /\/api\/free-sample\//i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-free-sample-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 30, // 30 minutes
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // /api/service-areas — delivery area data (rarely changes)
+            urlPattern: /\/api\/service-areas/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-service-areas-cache',
+              networkTimeoutSeconds: 10,
+              expiration: {
+                maxEntries: 5,
+                maxAgeSeconds: 60 * 60 * 24, // 24 hours
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
         ],
       }
     })

@@ -7,7 +7,8 @@ import {
   Package, CalendarDays, Truck, BarChart3, Boxes, 
   Bell, Settings, Search, Plus, Menu, X, ChevronDown, Bike,
   Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart, MessageCircle, Wand2, Mic, Volume2, Loader2, Sparkles, Banknote, Gift,
-  PanelLeft, PanelLeftClose, ShieldOff
+  PanelLeft, PanelLeftClose, ShieldOff,
+  Download, WifiOff, Wifi, CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { canAccess, getAdminSession, ROLE_LABELS } from '../../utils/adminAccess.js';
@@ -15,9 +16,14 @@ import { ToastHost } from '../../components/admin/Toast.jsx';
 import { useToday } from '../../utils/useToday.js';
 import { buildAlerts, getReadAlerts } from '../../utils/adminAlerts.js';
 import { eventBus } from '../../utils/eventBus.js';
+import { useInstallPrompt, useNetworkStatus } from '../../utils/usePWA.js';
 
 const AdminLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // PWA: install prompt & network status
+  const { canInstall, isInstalled, promptInstall } = useInstallPrompt();
+  const { isOnline, wasOffline } = useNetworkStatus();
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('adminSidebarOpen');
@@ -246,6 +252,22 @@ const AdminLayout = () => {
         </nav>
 
         <div className="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0 whitespace-nowrap overflow-hidden">
+          {/* PWA Install Button */}
+          {canInstall && (
+            <button
+              onClick={promptInstall}
+              className="w-full flex items-center space-x-3 px-3 py-3 text-sm text-milquu-blue hover:bg-blue-50 rounded-xl transition-all mb-1 font-medium group"
+            >
+              <Download size={18} className="group-hover:animate-bounce" />
+              <span>Install App</span>
+            </button>
+          )}
+          {isInstalled && (
+            <div className="flex items-center space-x-3 px-3 py-2 text-xs text-green-600 mb-1">
+              <CheckCircle2 size={14} />
+              <span>App installed</span>
+            </div>
+          )}
           <NavLink to="/" className="flex items-center space-x-3 px-3 py-3 text-sm text-gray-500 hover:bg-white hover:text-milquu-dark hover:shadow-sm rounded-xl transition-all">
             <ArrowLeft size={18} className="text-gray-400" />
             <span>Back to Store</span>
@@ -293,6 +315,17 @@ const AdminLayout = () => {
           </div>
 
           <div className="flex items-center space-x-3 sm:space-x-5">
+            {/* PWA Install — compact header button for when sidebar is collapsed */}
+            {canInstall && !sidebarOpen && (
+              <button
+                onClick={promptInstall}
+                className="hidden lg:flex items-center space-x-2 bg-gradient-to-r from-milquu-blue to-blue-600 text-white px-3.5 py-2 rounded-full text-sm font-medium hover:shadow-lg hover:scale-[1.02] transition-all"
+                title="Install MilQuu as desktop app"
+              >
+                <Download size={16} />
+                <span>Install</span>
+              </button>
+            )}
             {/* Quick Add */}
             <div className="relative">
               <button 
@@ -349,6 +382,36 @@ const AdminLayout = () => {
           </div>
         </header>
         
+        {/* Offline / Reconnected Banner */}
+        <AnimatePresence>
+          {!isOnline && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="bg-amber-50 border-b border-amber-200 overflow-hidden z-20"
+            >
+              <div className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-amber-800 font-medium">
+                <WifiOff size={16} className="shrink-0" />
+                <span>You're offline — showing cached data. Changes will sync when reconnected.</span>
+              </div>
+            </motion.div>
+          )}
+          {isOnline && wasOffline && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="bg-green-50 border-b border-green-200 overflow-hidden z-20"
+            >
+              <div className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-green-800 font-medium">
+                <Wifi size={16} className="shrink-0" />
+                <span>Back online — data is now up to date.</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
           {pageAllowed ? <Outlet /> : (
