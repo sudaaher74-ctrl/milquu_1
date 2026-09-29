@@ -42,6 +42,16 @@ export const loginAdmin = async (req, res) => {
   }
 };
 
+const OWNER_EMAIL = 'sudaaher74@gmail.com';
+
+const getAllowedChatbotEmails = () => {
+  const envEmails = (process.env.CHATBOT_ALLOWED_EMAILS || '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return Array.from(new Set([OWNER_EMAIL, ...envEmails]));
+};
+
 export const googleLoginAdmin = async (req, res) => {
   const { token } = req.body;
   if (!token) {
@@ -63,25 +73,41 @@ export const googleLoginAdmin = async (req, res) => {
     }
 
     const normalisedEmail = payload.email.toLowerCase().trim();
-    const user = await User.findOne({ email: normalisedEmail });
-    const staffRoles = ['admin', 'manager', 'staff', 'superadmin'];
+    const allowedEmails = getAllowedChatbotEmails();
+
+    // Strictly enforce that only sudaaher74@gmail.com is authorized
+    if (!allowedEmails.includes(normalisedEmail)) {
+      return res.status(403).json({
+        message: `Access denied. Only ${OWNER_EMAIL} is authorized to sign in with Google to MilQuu AI.`
+      });
+    }
+
+    let user = await User.findOne({ email: normalisedEmail });
 
     if (!user) {
-      return res.status(403).json({
-        message: `No staff or admin account found for ${normalisedEmail}. Please contact the administrator.`
+      // Auto-provision sudaaher74@gmail.com as superadmin on first Google sign-in
+      const randomPassword = crypto.randomBytes(32).toString('hex');
+      user = await User.create({
+        name: payload.name || 'Sudarshan (Admin)',
+        email: normalisedEmail,
+        password: randomPassword,
+        role: 'superadmin',
+        isActive: true,
+        walletBalance: 0
       });
-    }
-
-    if (!staffRoles.includes(user.role)) {
-      return res.status(403).json({
-        message: 'This Google account does not have staff or administrator privileges.'
-      });
-    }
-
-    if (user.isActive === false) {
-      return res.status(403).json({
-        message: 'This account has been deactivated. Ask an admin to reactivate it.'
-      });
+    } else {
+      let needsSave = false;
+      if (user.role !== 'superadmin' && user.role !== 'admin') {
+        user.role = 'superadmin';
+        needsSave = true;
+      }
+      if (user.isActive === false) {
+        user.isActive = true;
+        needsSave = true;
+      }
+      if (needsSave) {
+        await user.save();
+      }
     }
 
     res.json({

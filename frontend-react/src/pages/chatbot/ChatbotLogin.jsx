@@ -91,7 +91,7 @@ const ChatbotLogin = () => {
         )}
 
         {/* Google 1-Click Sign In */}
-        <div className="mb-6 flex justify-center w-full">
+        <div className="mb-4 flex flex-col items-center justify-center w-full">
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
             onError={() => setError('Google sign-in was cancelled or failed.')}
@@ -102,6 +102,9 @@ const ChatbotLogin = () => {
             shape="pill"
             text="signin_with"
           />
+          <p className="text-[11px] text-gray-500 mt-2 text-center">
+            Authorized Owner Account: <span className="font-semibold text-violet-700">sudaaher74@gmail.com</span>
+          </p>
         </div>
 
         <div className="relative my-6">
