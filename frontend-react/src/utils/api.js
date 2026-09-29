@@ -30,7 +30,7 @@ const CUSTOMER_PATHS = ['/api/users', '/api/orders', '/api/payment'];
 /** Which stored session a request should carry, in order of preference. */
 const sessionKeysFor = (url = '') => {
   if (url.includes('/api/delivery')) return ['deliveryStaff'];
-  if (url.includes('/api/ai')) return ['chatbotToken'];
+  if (url.includes('/api/ai')) return ['chatbotToken', 'adminToken'];
   if (CUSTOMER_PATHS.some((p) => url.includes(p))) return ['userInfo'];
   return ['adminToken', 'userInfo', 'deliveryStaff'];
 };

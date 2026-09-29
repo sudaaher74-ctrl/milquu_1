@@ -116,7 +116,11 @@ const AIChatDashboard = () => {
     } catch (error) {
       console.error("Chat Error:", error);
       setIsTyping(false);
-      setMessages(prev => [...prev, { role: 'assistant', text: "Sorry, I am having trouble connecting to my servers right now." }]);
+      const isAuthError = error.response?.status === 401 || error.response?.status === 403;
+      const errorMsg = isAuthError 
+        ? "🔒 You are not signed in as an authorized admin or staff member. Please sign in via the Admin Portal to use MilQuu AI."
+        : (error.response?.data?.message || "Sorry, I am having trouble connecting to my servers right now.");
+      setMessages(prev => [...prev, { role: 'assistant', text: errorMsg }]);
     }
   };
 
@@ -193,14 +197,19 @@ const AIChatDashboard = () => {
           >
             <ArrowLeft size={20} />
           </button>
-          <div className="w-10 h-10 bg-gradient-to-r from-milquu-blue to-indigo-600 rounded-full flex items-center justify-center text-white shadow-md">
+          <div className="w-10 h-10 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-md">
             <Sparkles size={20} />
           </div>
           <div>
-            <h1 className="font-bold text-gray-800 text-lg">AI Business Assistant</h1>
-            <p className="text-xs text-green-500 flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-green-500"></span>
-              Online & Analyzing
+            <h1 className="font-bold text-gray-800 text-lg flex items-center gap-2">
+              MilQuu AI
+              <span className="text-[10px] uppercase tracking-wider font-semibold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full border border-violet-200">
+                Sarvam 105B
+              </span>
+            </h1>
+            <p className="text-xs text-emerald-600 font-medium flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Live Dairy & Business Intelligence
             </p>
           </div>
         </div>

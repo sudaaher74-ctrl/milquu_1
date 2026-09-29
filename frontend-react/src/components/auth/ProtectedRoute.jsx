@@ -28,9 +28,11 @@ const ProtectedRoute = ({ children, allowedRole }) => {
     }
   } else if (allowedRole === 'chatbot') {
     const chatbotData = localStorage.getItem('chatbotToken');
-    if (chatbotData && chatbotData !== 'undefined') {
+    const adminData = localStorage.getItem('adminToken');
+    const authData = chatbotData || adminData;
+    if (authData && authData !== 'undefined') {
       try {
-        const parsedData = JSON.parse(chatbotData);
+        const parsedData = JSON.parse(authData);
         if (parsedData.token) {
           user = { role: 'chatbot' };
         }

@@ -70,6 +70,7 @@ const AdminLayout = () => {
       items: [
         { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={20} /> },
         { name: "Today's Orders", path: '/admin/today-orders', icon: <ShoppingCart size={20} /> },
+        { name: 'MilQuu AI', path: '/chatbot', icon: <Sparkles size={20} className="text-violet-500" /> },
         { name: 'Live Tracking', path: '/admin/deliveries', icon: <Truck size={20} /> },
         { name: 'Alerts', path: '/admin/notifications', icon: <Bell size={20} /> },
       ]
@@ -371,6 +372,16 @@ const AdminLayout = () => {
                 </span>
               </button>
             )}
+
+            {/* MilQuu AI Shortcut */}
+            <Link
+              to="/chatbot"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 hover:from-violet-500/20 hover:to-indigo-500/20 border border-violet-200/60 text-xs font-semibold transition-all hover:scale-[1.02]"
+              title="Open MilQuu AI Assistant (Powered by Sarvam 105B)"
+            >
+              <Sparkles size={15} className="text-violet-600 animate-pulse" />
+              <span className="hidden md:inline">MilQuu AI</span>
+            </Link>
 
             {/* Notification */}
             <Link

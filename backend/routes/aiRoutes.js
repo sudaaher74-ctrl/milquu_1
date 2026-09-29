@@ -8,12 +8,14 @@ import Product from '../models/Product.js';
 import Purchase from '../models/Purchase.js';
 import User from '../models/User.js';
 import DeliveryStaff from '../models/DeliveryStaff.js';
-import { protect, managerUp } from '../middleware/authMiddleware.js';
+import { protect, staffUp } from '../middleware/authMiddleware.js';
 import { istStartOfDay, istTomorrow, istStartOfMonth, istDayOfWeek } from '../utils/ist.js';
+import { isSarvamConfigured, callSarvamChat } from '../services/sarvamService.js';
+import logger from '../utils/logger.js';
 
 const router = express.Router();
 
-router.get('/business-update', protect, managerUp, async (req, res) => {
+router.get('/business-update', protect, staffUp, async (req, res) => {
   try {
     // Today, as an Indian calendar day (the server runs in UTC)
     const today = istStartOfDay();
@@ -38,7 +40,24 @@ router.get('/business-update', protect, managerUp, async (req, res) => {
     // Generate fallback template string
     const fallbackText = `Here is your business update for today. You have received ${ordersToday} new orders, generating a total revenue of ${revenueToday} rupees. You currently have ${activeSubscriptions} active subscriptions. Keep up the good work!`;
 
-    // Check if Gemini API key is available
+    // 1. Check if Sarvam 105B is configured (India sovereign LLM, works globally without region blocks)
+    if (isSarvamConfigured()) {
+      try {
+        const prompt = `You are MilQuu Fresh's AI business voice assistant. Generate a brief, conversational, and energetic voice update (max 3 sentences) for the store admin based on these metrics: Today's Orders: ${ordersToday}, Today's Revenue: ₹${revenueToday}, Active Subscriptions: ${activeSubscriptions}. Make it sound natural when spoken out loud.`;
+        const result = await callSarvamChat({
+          systemPrompt: 'You are an energetic, friendly voice assistant for a dairy and grocery business.',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.5,
+          maxTokens: 200
+        });
+        return res.json({ success: true, text: result.text, provider: 'sarvam' });
+      } catch (sarvamErr) {
+        logger.error(`[AI] Sarvam business update error: ${sarvamErr.message}`);
+        // Fall through to Gemini or fallback
+      }
+    }
+
+    // 2. Check if Gemini API key is available
     if (process.env.GEMINI_API_KEY) {
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -49,31 +68,23 @@ router.get('/business-update', protect, managerUp, async (req, res) => {
           contents: prompt,
         });
         
-        return res.json({ success: true, text: response.text });
+        return res.json({ success: true, text: response.text, provider: 'gemini' });
       } catch (aiError) {
-        console.error('AI Generation Error Details:', {
-          message: aiError.message,
-          status: aiError.status
-        });
-        
-        if (aiError.message && aiError.message.includes('User location is not supported')) {
-          console.warn("WARN: Gemini API is restricted in the server's current deployment region. Falling back to rule-based responses.");
-        }
-        
+        logger.error('AI Generation Error Details:', aiError.message);
         return res.json({ success: true, text: fallbackText });
       }
-    } else {
-      // Return fallback text if no API key
-      return res.json({ success: true, text: fallbackText });
     }
 
+    // Return fallback text if no AI provider configured
+    return res.json({ success: true, text: fallbackText });
+
   } catch (error) {
-    console.error('Business Update Error:', error);
+    logger.error('Business Update Error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
-router.post('/chat', protect, managerUp, async (req, res) => {
+router.post('/chat', protect, staffUp, async (req, res) => {
   try {
     const { query, messages } = req.body;
     
@@ -194,13 +205,24 @@ router.post('/chat', protect, managerUp, async (req, res) => {
       action: "none"
     };
 
-    if (process.env.GEMINI_API_KEY) {
+    // Helper to safely extract JSON reply & action from AI output
+    const parseAiResponse = (rawText) => {
+      let cleaned = String(rawText || '').trim();
+      cleaned = cleaned.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
       try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-        
-        // Greet whoever is signed in, not a name baked into the prompt.
-        const adminFirstName = String(req.user?.name || 'there').trim().split(/\s+/)[0];
-        const systemPrompt = `You are MilQuu Fresh's AI female voice assistant and advanced business analyst.
+        const parsed = JSON.parse(cleaned);
+        return {
+          reply: parsed.reply || rawText,
+          action: parsed.action === 'download_delivery_report' ? 'download_delivery_report' : 'none'
+        };
+      } catch {
+        return { reply: rawText, action: 'none' };
+      }
+    };
+
+    // Greet whoever is signed in, not a name baked into the prompt.
+    const adminFirstName = String(req.user?.name || 'there').trim().split(/\s+/)[0];
+    const systemPrompt = `You are MilQuu Fresh's AI female voice assistant and advanced business analyst.
 Context Data:
 - Customers: Total ${totalCustomers} | New this month ${newCustomersThisMonth}
 - Delivery Staff: Total ${totalDeliveryStaff} (${activeDeliveryStaff} Active). List: ${deliveryStaffList}
@@ -225,10 +247,36 @@ Rules:
 6. CRITICAL: NEVER invent or hallucinate internal business data. For internal metrics, use ONLY the Context Data above. You have no live internet access: for external topics (competitor pricing, market trends), say so and offer general guidance only, clearly labelled as such.
 7. ALWAYS start your reply with "Hi ${adminFirstName}".`;
 
-        // Call Gemini from the server — the API key must never be sent to the browser
+    // 1. Primary AI Provider: Sarvam 105B (India Sovereign LLM)
+    if (isSarvamConfigured()) {
+      try {
+        const result = await callSarvamChat({
+          systemPrompt,
+          messages: chatHistory,
+          temperature: 0.3,
+          maxTokens: 1024
+        });
+
+        const parsed = parseAiResponse(result.text);
+        return res.json({
+          success: true,
+          reply: parsed.reply,
+          action: parsed.action,
+          provider: `sarvam (${result.modelUsed})`
+        });
+      } catch (sarvamError) {
+        logger.error(`[AI] Sarvam 105B failed: ${sarvamError.message}. Attempting fallback...`);
+        // Fall through to Gemini or rule-based fallback
+      }
+    }
+
+    // 2. Secondary AI Provider: Google Gemini
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const contents = chatHistory.map((m) => ({
           role: m.role === 'user' ? 'user' : 'model',
-          parts: [{ text: String(m.text || '') }]
+          parts: [{ text: String(m.text || m.content || '') }]
         }));
 
         const response = await ai.models.generateContent({
@@ -238,63 +286,44 @@ Rules:
         });
 
         const rawText = (response.text || '').trim();
-        let parsed;
-        try {
-          parsed = JSON.parse(rawText.replace(/^```(json)?/i, '').replace(/```$/, '').trim());
-        } catch {
-          parsed = { reply: rawText, action: 'none' };
-        }
+        const parsed = parseAiResponse(rawText);
 
         return res.json({
           success: true,
           reply: parsed.reply || rawText,
-          action: parsed.action === 'download_delivery_report' ? 'download_delivery_report' : 'none'
+          action: parsed.action,
+          provider: 'gemini'
         });
 
       } catch (error) {
-        console.error('Gemini Context Error Details:', {
-          message: error.message,
-          status: error.status,
-          name: error.name
-        });
-
+        logger.error('Gemini Context Error Details:', error.message);
         if (error.message && error.message.includes('User location is not supported')) {
-          console.warn("WARN: Gemini API is restricted in the server's current deployment region (e.g., Render EU region). Returning fallback response.");
-          return res.json({ 
-            success: true, 
-            reply: "I am having trouble connecting to my AI brain. The server is deployed in a region where the Gemini API is currently restricted. To fix this, change your hosting region (e.g., Render) to a supported region like US Oregon.", 
-            action: "none" 
-          });
+          logger.warn("Gemini API is restricted in this region. Falling back to rule-based responses.");
         }
-
-        return res.status(500).json({
-          success: false,
-          message: 'Failed to communicate with AI provider'
-        });
       }
-    } else {
-      // Basic rule-based fallback if no Gemini
-      let action = 'none';
-      let reply = "I heard you, but I need Gemini API to understand properly.";
-      const lastMsg = chatHistory[chatHistory.length - 1];
-      const q = (lastMsg?.text || '').toLowerCase();
-      
-      if (q.includes('download') || q.includes('report') || q.includes('delivery')) {
-        action = 'download_delivery_report';
-        reply = "Downloading today's delivery report for you right away.";
-      } else if (q.includes('today') && q.includes('sale')) {
-        reply = `Today's sales are ${revenueToday} rupees from ${totalOrdersTodayCount} orders.`;
-      } else if (q.includes('month') && q.includes('sale')) {
-        reply = `This month's sales are ${revenueMonth} rupees.`;
-      } else if (q.includes('dashboard') || q.includes('overview') || q.includes('error')) {
-         reply = `**Business Overview:**\n- Revenue Today: ₹${revenueToday}\n- Unassigned Deliveries: ${unassignedSubs}\n- Low Stock: ${lowStockList}`;
-      }
-      
-      return res.json({ success: true, reply, action });
     }
 
+    // 3. Rule-based fallback if AI providers are unavailable
+    let action = 'none';
+    let reply = "I heard you, but I need an active AI model (Sarvam 105B or Gemini) to understand complex queries.";
+    const lastMsg = chatHistory[chatHistory.length - 1];
+    const q = (lastMsg?.text || lastMsg?.content || '').toLowerCase();
+    
+    if (q.includes('download') || q.includes('report') || q.includes('delivery')) {
+      action = 'download_delivery_report';
+      reply = "Downloading today's delivery report for you right away.";
+    } else if (q.includes('today') && q.includes('sale')) {
+      reply = `Today's sales are ₹${revenueToday} from ${totalOrdersTodayCount} orders.`;
+    } else if (q.includes('month') && q.includes('sale')) {
+      reply = `This month's sales are ₹${revenueMonth} from ${totalOrdersMonthCount} orders.`;
+    } else if (q.includes('dashboard') || q.includes('overview') || q.includes('error')) {
+      reply = `**Business Overview:**\n- Revenue Today: ₹${revenueToday}\n- Unassigned Deliveries: ${unassignedSubs}\n- Low Stock: ${lowStockList}`;
+    }
+    
+    return res.json({ success: true, reply, action, provider: 'fallback' });
+
   } catch (error) {
-    console.error('AI Chat Error:', error);
+    logger.error('AI Chat Error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
