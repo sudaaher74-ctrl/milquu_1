@@ -56,6 +56,22 @@ export default defineConfig({
             type: 'image/png',
             purpose: 'maskable'
           }
+        ],
+        shortcuts: [
+          {
+            name: 'MilQuu AI Chatbot',
+            short_name: 'AI Chatbot',
+            description: 'AI business analyst powered by Sarvam 105B',
+            url: '/chatbot?source=pwa',
+            icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Shop POS',
+            short_name: 'POS',
+            description: 'Dairy counter billing and Khata',
+            url: '/admin/pos?source=pwa',
+            icons: [{ src: '/pwa-192x192.png', sizes: '192x192' }]
+          }
         ]
       },
       workbox: {

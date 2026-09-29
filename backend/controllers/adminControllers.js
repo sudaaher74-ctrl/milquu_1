@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import Subscription from '../models/Subscription.js';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
@@ -9,6 +10,10 @@ import { istDateKey, istStartOfDay, istTomorrow, istStartOfYear, istStartOfMonth
 import { normalisePhone } from '../utils/phone.js';
 import { escapeRegex } from '../utils/regex.js';
 import { recordAudit } from '../utils/audit.js';
+
+const DEFAULT_GOOGLE_CLIENT_ID = '493263183371-900jeus48uso6k3fs997one5diooao35.apps.googleusercontent.com';
+const googleClientId = () => process.env.GOOGLE_CLIENT_ID || DEFAULT_GOOGLE_CLIENT_ID;
+const googleAuthClient = new OAuth2Client(googleClientId());
 
 export const loginAdmin = async (req, res) => {
   const { email, password } = req.body;
@@ -34,6 +39,60 @@ export const loginAdmin = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const googleLoginAdmin = async (req, res) => {
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json({ message: 'Google token is required' });
+  }
+
+  try {
+    const ticket = await googleAuthClient.verifyIdToken({
+      idToken: token,
+      audience: googleClientId(),
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.email) {
+      return res.status(400).json({ message: 'Invalid Google token' });
+    }
+    if (payload.email_verified === false) {
+      return res.status(401).json({ message: 'Your Google email address is not verified' });
+    }
+
+    const normalisedEmail = payload.email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalisedEmail });
+    const staffRoles = ['admin', 'manager', 'staff', 'superadmin'];
+
+    if (!user) {
+      return res.status(403).json({
+        message: `No staff or admin account found for ${normalisedEmail}. Please contact the administrator.`
+      });
+    }
+
+    if (!staffRoles.includes(user.role)) {
+      return res.status(403).json({
+        message: 'This Google account does not have staff or administrator privileges.'
+      });
+    }
+
+    if (user.isActive === false) {
+      return res.status(403).json({
+        message: 'This account has been deactivated. Ask an admin to reactivate it.'
+      });
+    }
+
+    res.json({
+      token: generateToken(user._id, user.role),
+      role: user.role,
+      name: user.name,
+      email: user.email
+    });
+  } catch (error) {
+    console.error('Google Admin Login Error:', error);
+    res.status(401).json({ message: 'Google authentication failed' });
   }
 };
 

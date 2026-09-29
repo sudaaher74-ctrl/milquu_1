@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import api from '../../utils/api.js';
 import { Mail, Lock, LogIn, Bot, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -15,6 +16,28 @@ const ChatbotLogin = () => {
 
   const from = location.state?.from?.pathname || '/chatbot';
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError('');
+    setIsLoading(true);
+    try {
+      const { data } = await api.post('/api/admin/google-login', {
+        token: credentialResponse.credential
+      });
+
+      localStorage.setItem('chatbotToken', JSON.stringify(data));
+      localStorage.setItem('adminToken', JSON.stringify(data));
+      navigate(from, { replace: true });
+    } catch (err) {
+      console.error('Google Login Error:', err);
+      setError(
+        err.response?.data?.message || 
+        'Google Login failed. Make sure your account has admin or staff privileges.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
@@ -29,6 +52,7 @@ const ChatbotLogin = () => {
       });
 
       localStorage.setItem('chatbotToken', JSON.stringify(data));
+      localStorage.setItem('adminToken', JSON.stringify(data));
       navigate(from, { replace: true });
     } catch (err) {
       console.error('Login error:', err);
@@ -65,6 +89,31 @@ const ChatbotLogin = () => {
             {error}
           </div>
         )}
+
+        {/* Google 1-Click Sign In */}
+        <div className="mb-6 flex justify-center w-full">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError('Google sign-in was cancelled or failed.')}
+            useOneTap
+            theme="outline"
+            size="large"
+            width="100%"
+            shape="pill"
+            text="signin_with"
+          />
+        </div>
+
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white/80 px-3 text-gray-400 font-semibold tracking-wider">
+              Or sign in with email
+            </span>
+          </div>
+        </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>

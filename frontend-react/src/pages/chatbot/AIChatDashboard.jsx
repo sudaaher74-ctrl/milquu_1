@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import { Send, Mic, Sparkles, AlertCircle, RefreshCw, Loader2, Download, Bot, User, ArrowLeft, Volume2, VolumeX } from 'lucide-react';
+import { Send, Mic, Sparkles, AlertCircle, RefreshCw, Loader2, Download, Bot, User, ArrowLeft, Volume2, VolumeX, FileDown, CheckCircle2, X } from 'lucide-react';
 import api from '../../utils/api';
 import { generateDeliveryReportPDF } from '../../utils/reportUtils';
+import { useInstallPrompt } from '../../utils/usePWA.js';
 
 const AIChatDashboard = () => {
   const [messages, setMessages] = useState([
@@ -13,8 +14,33 @@ const AIChatDashboard = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const { canInstall, isInstalled, promptInstall } = useInstallPrompt();
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
+
+  const handleDownloadApp = () => {
+    if (canInstall) {
+      promptInstall();
+    } else {
+      setShowInstallGuide(true);
+    }
+  };
+
+  const handleExportChat = () => {
+    const textContent = messages
+      .map((m) => `[${m.role.toUpperCase()}]\n${m.text}\n`)
+      .join('\n---\n\n');
+    const blob = new Blob([textContent], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `MilQuu_AI_Analysis_${new Date().toISOString().slice(0, 10)}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
   
   const synth = window.speechSynthesis;
   const recognitionRef = useRef(null);
@@ -214,16 +240,47 @@ const AIChatDashboard = () => {
           </div>
         </div>
         
-        <button
-          onClick={() => {
-            if (voiceEnabled && synth.speaking) synth.cancel();
-            setVoiceEnabled(!voiceEnabled);
-          }}
-          className={`p-2 rounded-full transition-colors ${voiceEnabled ? 'text-milquu-blue bg-blue-50' : 'text-gray-400 hover:bg-gray-100'}`}
-          title={voiceEnabled ? 'Disable Voice' : 'Enable Voice'}
-        >
-          {voiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
-        </button>
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Download / Install App */}
+          {!isInstalled ? (
+            <button
+              onClick={handleDownloadApp}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-semibold shadow-xs hover:shadow-md hover:scale-[1.02] transition-all cursor-pointer"
+              title="Download / Install MilQuu AI as desktop or mobile app"
+            >
+              <Download size={14} />
+              <span className="hidden sm:inline">Download App</span>
+              <span className="sm:hidden">Install</span>
+            </button>
+          ) : (
+            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold">
+              <CheckCircle2 size={12} /> App Installed
+            </span>
+          )}
+
+          {/* Export Chat Transcript */}
+          {messages.length > 1 && (
+            <button
+              onClick={handleExportChat}
+              className="p-2 text-gray-500 hover:text-violet-600 hover:bg-violet-50 rounded-full transition-colors cursor-pointer"
+              title="Download chat conversation as markdown file"
+            >
+              <FileDown size={18} />
+            </button>
+          )}
+
+          {/* Voice Toggle */}
+          <button
+            onClick={() => {
+              if (voiceEnabled && synth.speaking) synth.cancel();
+              setVoiceEnabled(!voiceEnabled);
+            }}
+            className={`p-2 rounded-full transition-colors cursor-pointer ${voiceEnabled ? 'text-milquu-blue bg-blue-50' : 'text-gray-400 hover:bg-gray-100'}`}
+            title={voiceEnabled ? 'Disable Voice' : 'Enable Voice'}
+          >
+            {voiceEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+          </button>
+        </div>
       </div>
 
       {/* Chat History Area */}
@@ -323,6 +380,45 @@ const AIChatDashboard = () => {
           AI can make mistakes. Verify important business metrics from your reports.
         </p>
       </div>
+
+      {/* Install / Download Guide Modal */}
+      {showInstallGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 relative animate-in fade-in zoom-in-95">
+            <button
+              onClick={() => setShowInstallGuide(false)}
+              className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            <div className="w-12 h-12 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center mb-4">
+              <Download size={24} />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">Download MilQuu AI</h3>
+            <p className="text-xs text-gray-500 mb-4">Install the AI Chatbot directly on your computer or phone as a dedicated desktop/mobile app.</p>
+            <div className="space-y-3 text-xs text-gray-600 bg-gray-50 p-4 rounded-2xl border border-gray-200/60">
+              <div className="flex gap-2">
+                <span className="font-bold text-violet-600 shrink-0">🖥️ Desktop:</span>
+                <span>Click the <strong>Install</strong> icon in the right corner of your browser URL bar.</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="font-bold text-violet-600 shrink-0">📱 Android:</span>
+                <span>Tap Chrome menu (⋮) and select <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>.</span>
+              </div>
+              <div className="flex gap-2">
+                <span className="font-bold text-violet-600 shrink-0">🍎 iPhone:</span>
+                <span>Tap the <strong>Share</strong> button in Safari and tap <strong>"Add to Home Screen"</strong>.</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowInstallGuide(false)}
+              className="mt-5 w-full py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl font-semibold text-xs transition-colors cursor-pointer"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

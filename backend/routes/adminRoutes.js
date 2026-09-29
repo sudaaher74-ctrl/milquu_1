@@ -1,6 +1,7 @@
 import express from 'express';
 import { 
   loginAdmin, 
+  googleLoginAdmin,
   getOverview, 
   getOrders, 
   getCustomers, 
@@ -38,6 +39,7 @@ const router = express.Router();
 //   admin     — admins only: money out, staff accounts, settings, audit log
 
 router.post('/login', loginAdmin);
+router.post('/google-login', googleLoginAdmin);
 
 // The morning summary
 router.get('/today', protect, staffUp, getToday);
