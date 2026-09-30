@@ -136,9 +136,17 @@ const MilkInvoiceModal = ({
       const contentWidth = pageWidth - (margin * 2);
       const totalPdfHeight = (canvas.height * contentWidth) / canvas.width;
 
-      if (totalPdfHeight <= pageHeight - (margin * 2)) {
+      const maxContentHeight = pageHeight - (margin * 2);
+      // Shrink a slightly-too-tall bill to fit one page; only very long
+      // statements (fit scale below MIN_FIT_SCALE) still spill onto more pages.
+      const MIN_FIT_SCALE = 0.6;
+      const fitScale = Math.min(1, maxContentHeight / totalPdfHeight);
+
+      if (fitScale >= MIN_FIT_SCALE) {
+        const imgW = contentWidth * fitScale;
+        const imgH = totalPdfHeight * fitScale;
         const imgData = canvas.toDataURL('image/png', 1.0);
-        pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, totalPdfHeight, '', 'FAST');
+        pdf.addImage(imgData, 'PNG', margin + (contentWidth - imgW) / 2, margin, imgW, imgH, '', 'FAST');
       } else {
         let currentY = 0;
         const pagePixelHeight = (canvas.width * (pageHeight - (margin * 2))) / contentWidth;
