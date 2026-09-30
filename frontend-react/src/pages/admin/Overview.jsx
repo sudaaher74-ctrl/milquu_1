@@ -43,31 +43,34 @@ const StatCard = ({ title, value, icon, trend, colorClass, subtitle }) => (
 
 const DATE_RANGES = ['Today', 'Last 7 Days', 'Last 30 Days', 'This Month', 'This Year', 'All Time'];
 
+const EMPTY_METRICS = {
+  revenue: 0,
+  cogs: 0,
+  grossProfit: 0,
+  expenses: 0,
+  netProfit: 0,
+  inventoryValue: 0,
+  orders: 0,
+  revenueData: [],
+  customerData: [],
+  topPerformers: [],
+  actionRequired: [],
+  operationsLive: {
+    pendingDeliveries: 0,
+    completedDeliveries: 0,
+    totalDeliveries: 0,
+    recentExpenses: []
+  }
+};
+
 const Overview = () => {
   const role = getAdminSession()?.role || 'staff';
   // Business figures are for managers and admins; counter staff get the day's work.
   const showBusiness = isManagerRole(role);
   const [dateRange, setDateRange] = useState('This Month');
   const [loading, setLoading] = useState(true);
-  const [metrics, setMetrics] = useState({
-    revenue: 0,
-    cogs: 0,
-    grossProfit: 0,
-    expenses: 0,
-    netProfit: 0,
-    inventoryValue: 0,
-    orders: 0,
-    revenueData: [],
-    customerData: [],
-    topPerformers: [],
-    actionRequired: [],
-    operationsLive: {
-      pendingDeliveries: 0,
-      completedDeliveries: 0,
-      totalDeliveries: 0,
-      recentExpenses: []
-    }
-  });
+  const [metrics, setMetrics] = useState(EMPTY_METRICS);
+
 
   const reportData = [
     { Metric: 'Total Revenue', Value: metrics.revenue },
@@ -86,7 +89,8 @@ const Overview = () => {
         setLoading(true);
         const query = dateRange === 'All Time' ? '' : `?dateRange=${encodeURIComponent(dateRange)}`;
         const res = await api.get(`/api/erp/analytics${query}`);
-        setMetrics(res.data);
+        // Merge over the defaults so a partial response can't leave fields undefined
+        setMetrics({ ...EMPTY_METRICS, ...(res.data || {}) });
       } catch (error) {
         console.error("Failed to fetch analytics", error);
       } finally {
@@ -131,8 +135,8 @@ const Overview = () => {
       <div>
         <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Primary Metrics</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <StatCard title="Total Revenue" value={`₹${metrics.revenue.toLocaleString()}`} icon={<IndianRupee size={22} className="text-blue-600" />} colorClass="from-blue-400 to-blue-600" />
-          <StatCard title="Net Profit" value={`₹${metrics.netProfit.toLocaleString()}`} icon={<TrendingUp size={22} className="text-green-600" />} colorClass="from-green-400 to-green-600" />
+          <StatCard title="Total Revenue" value={`₹${(metrics.revenue || 0).toLocaleString()}`} icon={<IndianRupee size={22} className="text-blue-600" />} colorClass="from-blue-400 to-blue-600" />
+          <StatCard title="Net Profit" value={`₹${(metrics.netProfit || 0).toLocaleString()}`} icon={<TrendingUp size={22} className="text-green-600" />} colorClass="from-green-400 to-green-600" />
           <StatCard title="Total Orders" value={metrics.orders || 0} icon={<ShoppingBag size={22} className="text-purple-600" />} colorClass="from-purple-400 to-purple-600" />
           <StatCard title="Active Subscribers" value={metrics.activeSubscribers || 0} icon={<CalendarDays size={22} className="text-orange-600" />} colorClass="from-orange-400 to-orange-600" />
           <StatCard title="Inventory Value" value={`₹${(metrics.inventoryValue || 0).toLocaleString()}`} icon={<Package size={22} className="text-teal-600" />} colorClass="from-teal-400 to-teal-600" />
