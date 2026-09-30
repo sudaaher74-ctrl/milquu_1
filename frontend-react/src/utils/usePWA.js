@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { eventBus } from './eventBus.js';
 
 /**
  * Hook to manage the PWA "Add to Home Screen" install prompt.
@@ -11,16 +12,17 @@ import { useState, useEffect, useCallback } from 'react';
  */
 export function useInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true
+      );
+    }
+    return false;
+  });
 
   useEffect(() => {
-    // Check if already running as installed PWA
-    if (window.matchMedia('(display-mode: standalone)').matches ||
-        window.navigator.standalone === true) {
-      setIsInstalled(true);
-      return;
-    }
-
     const handleBeforeInstall = (e) => {
       // Prevent the browser's default mini-infobar
       e.preventDefault();
@@ -136,7 +138,10 @@ export function useSyncQueue(axiosInstance, isOnline) {
   // Auto-trigger sync when going online
   useEffect(() => {
     if (isOnline && pendingCount > 0 && !isSyncing) {
-      triggerSync();
+      const timer = setTimeout(() => {
+        triggerSync();
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [isOnline, pendingCount, isSyncing, triggerSync]);
 
