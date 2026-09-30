@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Printer, Download, Share2, FileText, CheckCircle2, Clock, MapPin, Phone, User, Calendar, IndianRupee, Copy, QrCode } from 'lucide-react';
+import { X, Printer, Download, Share2, FileText, CheckCircle2, Clock, MapPin, Phone, User, Calendar, IndianRupee, Copy, QrCode, Filter } from 'lucide-react';
 import { useBusinessSettings } from '../../../utils/useBusinessSettings';
 import { DAIRY_KHATA_BANK_DETAILS } from '../../../utils/khataPaymentConfig';
 import jsPDF from 'jspdf';
@@ -17,6 +17,9 @@ const MilkInvoiceModal = ({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [allOrders, setAllOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [filterMode, setFilterMode] = useState('unpaid'); // 'unpaid' | '10days' | '15days' | 'thisMonth' | 'all' | 'custom'
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
 
   useEffect(() => {
     if (showInvoiceModal && customer) {
@@ -47,8 +50,50 @@ const MilkInvoiceModal = ({
 
   if (!showInvoiceModal || !customer) return null;
 
-  // Calculate totals from orders
-  const displayOrders = allOrders.length > 0 ? allOrders : (customer.orders || []);
+  // Calculate totals from orders with cycle/date filtering
+  const rawOrders = allOrders.length > 0 ? allOrders : (customer.orders || []);
+  
+  const displayOrders = rawOrders.filter((ord) => {
+    const rawDate = ord.createdAt || ord.date;
+    const oDate = new Date(rawDate);
+    const dateStr = !isNaN(oDate.getTime()) ? oDate.toISOString().slice(0, 10) : '';
+
+    if (filterMode === 'unpaid') {
+      return ord.isPaid !== true;
+    }
+    if (filterMode === '10days') {
+      const tenDaysAgo = new Date();
+      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+      tenDaysAgo.setHours(0, 0, 0, 0);
+      return oDate >= tenDaysAgo;
+    }
+    if (filterMode === '15days') {
+      const fifteenDaysAgo = new Date();
+      fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+      fifteenDaysAgo.setHours(0, 0, 0, 0);
+      return oDate >= fifteenDaysAgo;
+    }
+    if (filterMode === 'thisMonth') {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      return oDate >= startOfMonth;
+    }
+    if (filterMode === 'custom') {
+      if (customStartDate && dateStr < customStartDate) return false;
+      if (customEndDate && dateStr > customEndDate) return false;
+      return true;
+    }
+    return true; // 'all'
+  });
+
+  const filterLabel = 
+    filterMode === 'unpaid' ? 'Active Unpaid Dues' :
+    filterMode === '10days' ? 'Last 10 Days Cycle' :
+    filterMode === '15days' ? 'Last 15 Days Cycle' :
+    filterMode === 'thisMonth' ? 'Current Month Cycle' :
+    filterMode === 'custom' ? `Custom Period (${customStartDate || 'Start'} to ${customEndDate || 'End'})` :
+    'Complete Order History';
   
   let totalLitres = 0;
   let totalBilled = 0;
@@ -107,7 +152,9 @@ const MilkInvoiceModal = ({
     }
   });
 
-  const balanceDue = Math.max(0, customer.totalDue !== undefined ? customer.totalDue : (totalBilled - totalPaid));
+  const balanceDue = filterMode === 'all' && customer.totalDue !== undefined 
+    ? Math.max(0, customer.totalDue) 
+    : Math.max(0, totalBilled - totalPaid);
   const invoiceNumber = `MILK-INV-${(customer.phone || customer.customerId || customer.name).toString().replace(/[^0-9a-zA-Z]/g, '').slice(-6).toUpperCase()}-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`;
 
   // Print Handler
@@ -193,7 +240,7 @@ const MilkInvoiceModal = ({
       `Here is your consolidated milk supply invoice statement:\n\n` +
       `📄 *Invoice No:* ${invoiceNumber}\n` +
       `📅 *Date:* ${new Date().toLocaleDateString('en-IN')}\n` +
-      `🗓️ *Billing Cycle:* ${customer.billingCycle || '15 Days'}\n` +
+      `🗓️ *Billing Period:* ${filterLabel} (${customer.billingCycle || '10 Days'} Cycle)\n` +
       `📦 *Total Deliveries:* ${displayOrders.length} bills\n` +
       `💰 *Total Billed:* ₹${totalBilled.toFixed(2)}\n` +
       `💳 *Paid / Settled:* ₹${totalPaid.toFixed(2)}\n` +
@@ -256,6 +303,87 @@ const MilkInvoiceModal = ({
           </div>
         </div>
 
+        {/* Cycle & Date Filter Toolbar (hidden when printing) */}
+        <div className="shrink-0 px-4 py-2.5 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-2 print:hidden shadow-2xs">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-gray-500 flex items-center gap-1 mr-1">
+              <Filter size={12} className="text-amber-600" /> Cycle:
+            </span>
+            <button
+              type="button"
+              onClick={() => setFilterMode('10days')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                filterMode === '10days' ? 'bg-amber-600 text-white shadow-2xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Last 10 Days
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMode('unpaid')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                filterMode === 'unpaid' ? 'bg-amber-600 text-white shadow-2xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              All Unpaid Dues
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMode('15days')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                filterMode === '15days' ? 'bg-amber-600 text-white shadow-2xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Last 15 Days
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMode('thisMonth')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                filterMode === 'thisMonth' ? 'bg-amber-600 text-white shadow-2xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              This Month
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMode('all')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                filterMode === 'all' ? 'bg-gray-800 text-white shadow-2xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              All History
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMode('custom')}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                filterMode === 'custom' ? 'bg-blue-600 text-white shadow-2xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              Custom Dates
+            </button>
+          </div>
+
+          {filterMode === 'custom' && (
+            <div className="flex items-center gap-1.5 text-xs">
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                className="px-2 py-1 border border-gray-300 rounded-lg text-xs font-mono"
+              />
+              <span className="text-gray-400">to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                className="px-2 py-1 border border-gray-300 rounded-lg text-xs font-mono"
+              />
+            </div>
+          )}
+        </div>
+
         {/* Scrollable Printable Paper Sheet */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-50/50 print:p-0 print:bg-white">
           <div 
@@ -287,7 +415,7 @@ const MilkInvoiceModal = ({
                 </span>
                 <p className="text-xs font-mono font-bold text-gray-700">{invoiceNumber}</p>
                 <p className="text-[11px] text-gray-400">Date: {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                <p className="text-[11px] text-blue-700 font-bold mt-0.5">{customer.billingCycle || '15 Days'} Billing Cycle</p>
+                <p className="text-[11px] text-blue-700 font-bold mt-0.5">{filterLabel}</p>
               </div>
             </div>
 
