@@ -4,7 +4,7 @@ import { ShoppingCart, Plus, Download, IndianRupee, BookOpen } from 'lucide-reac
 import { exportToExcel } from '../../utils/exportUtils.js';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import PurchaseOrdersTab from './purchases/PurchaseOrdersTab';
 import { useBusinessSettings } from '../../utils/useBusinessSettings';
 import VendorLedgerTab from './purchases/VendorLedgerTab';

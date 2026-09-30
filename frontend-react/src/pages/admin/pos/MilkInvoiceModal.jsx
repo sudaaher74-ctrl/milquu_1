@@ -3,7 +3,7 @@ import { X, Printer, Download, Share2, FileText, CheckCircle2, Clock, MapPin, Ph
 import { useBusinessSettings } from '../../../utils/useBusinessSettings';
 import { DAIRY_KHATA_BANK_DETAILS } from '../../../utils/khataPaymentConfig';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import api from '../../../utils/api';
 import toast from '../../../utils/toast';
 
