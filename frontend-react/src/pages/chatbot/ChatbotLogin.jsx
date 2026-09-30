@@ -14,7 +14,9 @@ const ChatbotLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/chatbot';
+  const from = location.state?.from
+    ? (location.state.from.pathname + (location.state.from.search || ''))
+    : '/chatbot';
 
   useEffect(() => {
     let manifestLink = document.querySelector('link[rel="manifest"]');
@@ -128,7 +130,7 @@ const ChatbotLogin = () => {
             text="signin_with"
           />
           <p className="text-[11px] text-gray-500 mt-2 text-center">
-            Authorized Owner Account: <span className="font-semibold text-violet-700">sudaaher74@gmail.com</span>
+            Authorized Accounts: <span className="font-semibold text-violet-700">sudarshanforextrading@gmail.com</span> / <span className="font-semibold text-violet-700">sudaaher74@gmail.com</span>
           </p>
         </div>
 

@@ -32,13 +32,18 @@ const ProtectedRoute = ({ children, allowedRole }) => {
     const authData = chatbotData || adminData;
     if (authData && authData !== 'undefined') {
       try {
-        const parsedData = JSON.parse(authData);
-        if (parsedData.token) {
+        const parsedData = typeof authData === 'string' ? JSON.parse(authData) : authData;
+        if (parsedData && (parsedData.token || typeof parsedData === 'string')) {
           user = { role: 'chatbot' };
         }
       } catch (e) {
-        console.error(e);
-        localStorage.removeItem('chatbotToken');
+        // If it is a raw JWT string (not JSON)
+        if (typeof authData === 'string' && authData.length > 20) {
+          user = { role: 'chatbot' };
+        } else {
+          console.error('Invalid chatbot auth data', e);
+          localStorage.removeItem('chatbotToken');
+        }
       }
     }
   }

@@ -42,7 +42,7 @@ const AIChatDashboard = () => {
     URL.revokeObjectURL(url);
   };
   
-  const synth = window.speechSynthesis;
+  const synth = typeof window !== 'undefined' ? window.speechSynthesis : null;
   const recognitionRef = useRef(null);
 
   useEffect(() => {
@@ -73,13 +73,17 @@ const AIChatDashboard = () => {
   }, []);
 
   useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRecognition && !recognitionRef.current) {
-      const rec = new SpeechRecognition();
-      rec.continuous = true;
-      rec.interimResults = true;
-      rec.lang = 'en-US';
-      recognitionRef.current = rec;
+    try {
+      const SpeechRecognition = typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
+      if (SpeechRecognition && !recognitionRef.current) {
+        const rec = new SpeechRecognition();
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.lang = 'en-US';
+        recognitionRef.current = rec;
+      }
+    } catch (e) {
+      console.warn('SpeechRecognition initialization skipped:', e);
     }
   }, []);
 
@@ -92,10 +96,12 @@ const AIChatDashboard = () => {
   }, [messages, isTyping]);
 
   const speakText = (text) => {
-    if (synth.speaking) {
-      synth.cancel();
-    }
-    const utterance = new SpeechSynthesisUtterance(text);
+    if (!synth) return;
+    try {
+      if (synth.speaking) {
+        synth.cancel();
+      }
+      const utterance = new SpeechSynthesisUtterance(text);
     
     // Some browsers load voices asynchronously, so we fetch them exactly when needed
     let voices = synth.getVoices();
@@ -124,6 +130,9 @@ const AIChatDashboard = () => {
     utterance.rate = 1.0;
     utterance.pitch = 1.2; // Slightly higher pitch often sounds more female
     synth.speak(utterance);
+    } catch (e) {
+      console.warn('Speech synthesis error:', e);
+    }
   };
 
   const handleAction = async (action) => {
@@ -191,7 +200,7 @@ const AIChatDashboard = () => {
       // We don't automatically send here to allow them to edit, 
       // but if they hit Send, it will send normally.
     } else {
-      if (synth.speaking) synth.cancel();
+      if (synth?.speaking) synth.cancel();
       if (recognition) {
         let finalTranscript = '';
         recognition.onstart = () => {
@@ -299,7 +308,7 @@ const AIChatDashboard = () => {
           {/* Voice Toggle */}
           <button
             onClick={() => {
-              if (voiceEnabled && synth.speaking) synth.cancel();
+              if (voiceEnabled && synth?.speaking) synth.cancel();
               setVoiceEnabled(!voiceEnabled);
             }}
             className={`p-2 rounded-full transition-colors cursor-pointer ${voiceEnabled ? 'text-milquu-blue bg-blue-50' : 'text-gray-400 hover:bg-gray-100'}`}

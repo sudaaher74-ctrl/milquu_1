@@ -8,7 +8,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "start_url": "/chatbot?source=pwa",
-  "scope": "/chatbot",
+  "scope": "/",
   "categories": ["business", "productivity"],
   "icons": [
     {

@@ -42,14 +42,17 @@ export const loginAdmin = async (req, res) => {
   }
 };
 
-const OWNER_EMAIL = 'sudaaher74@gmail.com';
+const OWNER_EMAILS = [
+  'sudaaher74@gmail.com',
+  'sudarshanforextrading@gmail.com'
+];
 
 const getAllowedChatbotEmails = () => {
   const envEmails = (process.env.CHATBOT_ALLOWED_EMAILS || '')
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  return Array.from(new Set([OWNER_EMAIL, ...envEmails]));
+  return Array.from(new Set([...OWNER_EMAILS, ...envEmails]));
 };
 
 export const googleLoginAdmin = async (req, res) => {
@@ -73,19 +76,33 @@ export const googleLoginAdmin = async (req, res) => {
     }
 
     const normalisedEmail = payload.email.toLowerCase().trim();
-    const allowedEmails = getAllowedChatbotEmails();
-
-    // Strictly enforce that only sudaaher74@gmail.com is authorized
-    if (!allowedEmails.includes(normalisedEmail)) {
-      return res.status(403).json({
-        message: `Access denied. Only ${OWNER_EMAIL} is authorized to sign in with Google to MilQuu AI.`
-      });
-    }
+    const ownerEmails = getAllowedChatbotEmails();
+    const isOwner = ownerEmails.includes(normalisedEmail);
 
     let user = await User.findOne({ email: normalisedEmail });
+    const staffRoles = ['admin', 'manager', 'staff', 'superadmin'];
+
+    // If not owner, verify account is registered as staff/admin in database
+    if (!isOwner) {
+      if (!user) {
+        return res.status(403).json({
+          message: `Access denied. ${normalisedEmail} is not registered as an administrator or staff member. Please use an authorized account.`
+        });
+      }
+      if (!staffRoles.includes(user.role)) {
+        return res.status(403).json({
+          message: 'This Google account does not have administrator or staff privileges.'
+        });
+      }
+      if (user.isActive === false) {
+        return res.status(403).json({
+          message: 'This account has been deactivated. Ask an admin to reactivate it.'
+        });
+      }
+    }
 
     if (!user) {
-      // Auto-provision sudaaher74@gmail.com as superadmin on first Google sign-in
+      // Auto-provision owner account as superadmin on first Google sign-in
       const randomPassword = crypto.randomBytes(32).toString('hex');
       user = await User.create({
         name: payload.name || 'Sudarshan (Admin)',
@@ -97,7 +114,7 @@ export const googleLoginAdmin = async (req, res) => {
       });
     } else {
       let needsSave = false;
-      if (user.role !== 'superadmin' && user.role !== 'admin') {
+      if (isOwner && user.role !== 'superadmin') {
         user.role = 'superadmin';
         needsSave = true;
       }
