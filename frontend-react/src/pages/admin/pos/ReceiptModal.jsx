@@ -1,4 +1,5 @@
 import { useBusinessSettings } from '../../../utils/useBusinessSettings';
+import { DAIRY_KHATA_BANK_DETAILS } from '../../../utils/khataPaymentConfig';
 import { Printer, X } from 'lucide-react';
 
 // Extracted from POS.jsx. Receives the page state and
@@ -111,6 +112,43 @@ const ReceiptModal = ({ completedOrder, handlePrint, setShowReceiptModal, showRe
                 </span>
               </div>
             </div>
+
+            {/* QR Code & Bank Details for Khata / UPI Payments */}
+            {(completedOrder.isCredit || completedOrder.paymentMethod === 'UPI') && (
+              <div className="py-3 border-b border-dashed border-gray-400 text-center">
+                <p className="text-[10px] font-bold text-gray-900 uppercase tracking-wider mb-1">
+                  {completedOrder.isCredit ? 'Scan & Pay Khata Bill' : 'Scan to Pay via UPI'}
+                </p>
+                <div className="flex justify-center my-1.5">
+                  <img
+                    src={DAIRY_KHATA_BANK_DETAILS.qrCodeUrl}
+                    alt="Payment QR Code"
+                    className="w-28 h-28 object-contain rounded-lg border border-gray-300 bg-white p-1"
+                  />
+                </div>
+                <p className="text-[10px] font-mono font-bold text-gray-900">
+                  UPI: {DAIRY_KHATA_BANK_DETAILS.upiId}
+                </p>
+                <div className="mt-2 pt-2 border-t border-dotted border-gray-300 text-[10px] text-left space-y-0.5 font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-sans">A/C Holder:</span>
+                    <span className="font-bold text-gray-900 font-sans">{DAIRY_KHATA_BANK_DETAILS.accountHolder}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-sans">Bank:</span>
+                    <span className="text-gray-800">{DAIRY_KHATA_BANK_DETAILS.bankName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-sans">A/C No:</span>
+                    <span className="font-bold text-gray-900">{DAIRY_KHATA_BANK_DETAILS.accountNumber}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 font-sans">IFSC:</span>
+                    <span className="font-bold text-gray-900">{DAIRY_KHATA_BANK_DETAILS.ifscCode}</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Footer */}
             <div className="text-center pt-3 text-[10px] text-gray-500">

@@ -12,6 +12,7 @@ import ReceiptModal from './pos/ReceiptModal';
 import DailyRegisterModal from './pos/DailyRegisterModal';
 import EditCustomerModal from './pos/EditCustomerModal';
 import MilkInvoiceModal from './pos/MilkInvoiceModal';
+import { DAIRY_KHATA_BANK_DETAILS } from '../../utils/khataPaymentConfig';
 import toast from '../../utils/toast';
 
 const POS = () => {
@@ -658,7 +659,19 @@ const POS = () => {
       : 'the scheduled due date';
     const totalDueFormatted = cust.totalDue?.toFixed(2) || '0.00';
 
-    const message = `Namaste ${cust.name || 'Sir/Madam'}, greetings from MilQuu Fresh! 🥛\n\nThis is a friendly reminder that your milk & dairy credit bill for the ${cycleText} billing cycle is ₹${totalDueFormatted}.\nPayment Due Date: ${dueText}.\n\nKindly clear at your convenience via Cash or UPI at the store. Thank you for choosing pure & fresh MilQuu Fresh!`;
+    const message = `Namaste ${cust.name || 'Sir/Madam'}, greetings from MilQuu Fresh! 🥛\n\n` +
+      `This is a friendly reminder that your milk & dairy credit bill for the ${cycleText} billing cycle is *₹${totalDueFormatted}*.\n` +
+      `Payment Due Date: ${dueText}.\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `💳 *PAYMENT DETAILS (UPI & BANK)*\n` +
+      `📲 *UPI ID:* ${DAIRY_KHATA_BANK_DETAILS.upiId}\n` +
+      `🏦 *Bank:* ${DAIRY_KHATA_BANK_DETAILS.bankName}\n` +
+      `👤 *Account Holder:* ${DAIRY_KHATA_BANK_DETAILS.accountHolder}\n` +
+      `🔢 *Account Number:* ${DAIRY_KHATA_BANK_DETAILS.accountNumber}\n` +
+      `🏛️ *Branch IFSC:* ${DAIRY_KHATA_BANK_DETAILS.ifscCode}\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `Kindly clear at your convenience via UPI, Bank Transfer, or Cash. Please share payment screenshot once paid.\n` +
+      `Thank you for choosing pure & fresh MilQuu Fresh! 🙏`;
     const url = `https://wa.me/91${phone}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };

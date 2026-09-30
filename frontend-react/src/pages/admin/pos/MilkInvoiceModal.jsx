@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Printer, Download, Share2, FileText, CheckCircle2, Clock, MapPin, Phone, User, Calendar, IndianRupee } from 'lucide-react';
+import { X, Printer, Download, Share2, FileText, CheckCircle2, Clock, MapPin, Phone, User, Calendar, IndianRupee, Copy, QrCode } from 'lucide-react';
 import { useBusinessSettings } from '../../../utils/useBusinessSettings';
+import { DAIRY_KHATA_BANK_DETAILS } from '../../../utils/khataPaymentConfig';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import api from '../../../utils/api';
@@ -190,7 +191,15 @@ const MilkInvoiceModal = ({
       `💳 *Paid / Settled:* ₹${totalPaid.toFixed(2)}\n` +
       `🔴 *Net Balance Due: ₹${balanceDue.toFixed(2)}*\n` +
       (customer.nextDueDate ? `⏰ *Due Date:* ${new Date(customer.nextDueDate).toLocaleDateString('en-IN')}\n\n` : `\n`) +
-      `Please clear your pending dues at your earliest convenience via cash or UPI.\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `💳 *BANK & UPI PAYMENT DETAILS*\n` +
+      `📲 *UPI ID:* ${DAIRY_KHATA_BANK_DETAILS.upiId}\n` +
+      `🏦 *Bank:* ${DAIRY_KHATA_BANK_DETAILS.bankName}\n` +
+      `👤 *Account Holder:* ${DAIRY_KHATA_BANK_DETAILS.accountHolder}\n` +
+      `🔢 *Account Number:* ${DAIRY_KHATA_BANK_DETAILS.accountNumber}\n` +
+      `🏛️ *Branch IFSC:* ${DAIRY_KHATA_BANK_DETAILS.ifscCode}\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `Please scan the QR code on the invoice or pay via the bank/UPI details above. Kindly share payment screenshot once completed.\n` +
       `Thank you for being our valued dairy customer! 🙏`;
 
     window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -388,19 +397,132 @@ const MilkInvoiceModal = ({
               </div>
             </div>
 
-            {/* Payment & Signatures Footer */}
-            <div className="mt-8 pt-6 border-t border-dashed border-gray-300 grid grid-cols-1 sm:grid-cols-2 gap-4 text-[11px] text-gray-500">
-              <div>
-                <p className="font-bold text-gray-700 mb-1">Payment Instructions:</p>
-                <p>Please pay via Cash or UPI using your registered mobile number.</p>
-                <p className="font-mono text-gray-700 font-bold mt-1">UPI: milquufresh@upi</p>
-                <p className="text-[10px] text-gray-400 mt-2">Questions? Call {business.supportPhone || '+91 87670 67884'}</p>
-              </div>
+            {/* Payment (QR Code + Bank Transfer Details) & Signatures Footer */}
+            <div className="mt-7 pt-5 border-t-2 border-gray-200">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
+                
+                {/* QR Code Column */}
+                <div className="sm:col-span-5 flex flex-col items-center justify-center p-3 bg-gradient-to-b from-gray-50 to-white rounded-2xl border border-gray-200 text-center shadow-2xs">
+                  <div className="bg-white p-1.5 rounded-xl border border-gray-200 shadow-2xs">
+                    <img 
+                      src={DAIRY_KHATA_BANK_DETAILS.qrCodeUrl} 
+                      alt="Kotak Mahindra Bank & PhonePe UPI QR Code" 
+                      className="w-32 h-32 sm:w-36 sm:h-36 object-contain rounded-lg"
+                      crossOrigin="anonymous"
+                    />
+                  </div>
+                  <div className="mt-2 text-center w-full">
+                    <p className="text-[10px] font-black text-gray-900 uppercase tracking-wider">Scan & Pay via Any UPI App</p>
+                    <p className="text-[9px] text-gray-500 font-medium">PhonePe • Google Pay • Paytm • BHIM</p>
+                    <div className="mt-1.5 flex items-center justify-center gap-1">
+                      <span className="font-mono text-[10px] font-bold text-milquu-blue bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                        {DAIRY_KHATA_BANK_DETAILS.upiId}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard?.writeText(DAIRY_KHATA_BANK_DETAILS.upiId);
+                          toast.success('UPI ID copied!');
+                        }}
+                        className="p-1 text-gray-400 hover:text-milquu-blue cursor-pointer print:hidden transition-colors"
+                        title="Copy UPI ID"
+                      >
+                        <Copy size={12} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="text-right flex flex-col justify-end items-end">
-                <div className="w-36 border-b border-gray-400 pb-8 mb-1"></div>
-                <p className="font-bold text-gray-700">For MilQuu Fresh</p>
-                <p className="text-[10px] text-gray-400">Authorized Signature</p>
+                {/* Bank Account Details & Signatures Column */}
+                <div className="sm:col-span-7 flex flex-col justify-between h-full space-y-3">
+                  <div className="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-100 text-xs">
+                    <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-blue-200/60">
+                      <span className="text-[10px] font-black text-blue-950 uppercase tracking-wider flex items-center gap-1">
+                        <QrCode size={12} className="text-milquu-blue" /> Direct Bank Transfer Details
+                      </span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                        Dairy Khata
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 text-[11px]">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-[10px] uppercase font-bold">Account Holder:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-bold text-gray-900 text-right">{DAIRY_KHATA_BANK_DETAILS.accountHolder}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard?.writeText(DAIRY_KHATA_BANK_DETAILS.accountHolder);
+                              toast.success('Account Holder copied!');
+                            }}
+                            className="p-0.5 text-gray-400 hover:text-milquu-blue cursor-pointer print:hidden"
+                            title="Copy Account Holder"
+                          >
+                            <Copy size={10} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-[10px] uppercase font-bold">Bank Name:</span>
+                        <span className="font-semibold text-gray-800">{DAIRY_KHATA_BANK_DETAILS.bankName}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-[10px] uppercase font-bold">Account Number:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono font-black text-gray-950 tracking-wider text-xs">{DAIRY_KHATA_BANK_DETAILS.accountNumber}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard?.writeText(DAIRY_KHATA_BANK_DETAILS.accountNumber);
+                              toast.success('Account Number copied!');
+                            }}
+                            className="p-0.5 text-gray-400 hover:text-milquu-blue cursor-pointer print:hidden"
+                            title="Copy Account Number"
+                          >
+                            <Copy size={11} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 text-[10px] uppercase font-bold">Branch IFSC:</span>
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono font-black text-milquu-blue tracking-wide text-xs">{DAIRY_KHATA_BANK_DETAILS.ifscCode}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard?.writeText(DAIRY_KHATA_BANK_DETAILS.ifscCode);
+                              toast.success('IFSC Code copied!');
+                            }}
+                            className="p-0.5 text-gray-400 hover:text-milquu-blue cursor-pointer print:hidden"
+                            title="Copy IFSC Code"
+                          >
+                            <Copy size={11} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-[9px] text-gray-500 mt-2 italic pt-1.5 border-t border-blue-100">
+                      * Please share payment confirmation screenshot on WhatsApp after clearing your bill.
+                    </p>
+                  </div>
+
+                  {/* Signatures & Support Helpline */}
+                  <div className="pt-2 flex justify-between items-end text-[10px] text-gray-500">
+                    <div>
+                      <p className="font-bold text-gray-700">MilQuu Fresh Helpline</p>
+                      <p>{business.supportPhone || '+91 87670 67884'}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="w-28 border-b border-gray-400 pb-4 mb-1"></div>
+                      <p className="font-bold text-gray-800 text-[11px]">Authorized Signatory</p>
+                      <p className="text-[9px] text-gray-400">MilQuu Fresh</p>
+                    </div>
+                  </div>
+
+                </div>
+
               </div>
             </div>
 
