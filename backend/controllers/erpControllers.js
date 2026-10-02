@@ -747,10 +747,45 @@ export const getOrders = async (req, res) => {
   }
 };
 
+// A daily-milk-register entry carries its delivery day as "Date: YYYY-MM-DD" in
+// the notes. That day, not the moment the entry was typed in, decides which
+// calendar cell / bill period the order belongs to.
+const ENTRY_DATE_RE = /Date:\s*(\d{4}-\d{2}-\d{2})/i;
+
+// Noon UTC keeps the calendar day stable in every timezone from UTC-12 to UTC+11.
+const entryDateToTimestamp = (dateKey) => {
+  if (typeof dateKey !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return null;
+  const d = new Date(`${dateKey}T12:00:00.000Z`);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+const pad2 = (n) => String(n).padStart(2, '0');
+const localDateKey = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
+// Calendar day an order belongs to: notes date first, then createdAt.
+const orderEntryDateKey = (order) => {
+  const m = typeof order.notes === 'string' ? order.notes.match(ENTRY_DATE_RE) : null;
+  if (m) return m[1];
+  const raw = order.createdAt || order.scheduledDeliveryDate;
+  const d = raw ? new Date(raw) : null;
+  return d && !isNaN(d.getTime()) ? localDateKey(d) : '';
+};
+
 export const createOrder = async (req, res) => {
   try {
     const orderData = { ...req.body };
-    
+
+    if (orderData.orderSource === 'POS') {
+      const entryDate = entryDateToTimestamp(
+        orderData.entryDate || (typeof orderData.notes === 'string' ? orderData.notes.match(ENTRY_DATE_RE)?.[1] : '')
+      );
+      if (entryDate) {
+        orderData.createdAt = entryDate;
+        orderData.scheduledDeliveryDate = entryDate;
+      }
+    }
+    delete orderData.entryDate;
+
     // Clean up product IDs from frontend if they include appended units (e.g. "64ac4...-1Litre" or "64ac4...-500ml")
     if (orderData.orderItems && Array.isArray(orderData.orderItems)) {
       let calculatedTotalPrice = 0;
@@ -970,19 +1005,24 @@ export const updateOrder = async (req, res) => {
       order.deliverySlot = shift;
     }
 
-    if (date) {
-      const d = new Date(date);
-      if (!isNaN(d.getTime())) {
-        order.scheduledDeliveryDate = d;
-        order.createdAt = d;
-      }
+    const dateKey = typeof date === 'string' ? date.slice(0, 10) : '';
+    const entryTimestamp = entryDateToTimestamp(dateKey);
+    if (entryTimestamp) {
+      order.scheduledDeliveryDate = entryTimestamp;
     }
 
     const shiftStr = shift || order.deliverySlot || (order.notes?.includes('Evening') ? 'Evening' : 'Morning');
-    const dateStr = date || (order.notes?.match(/\d{4}-\d{2}-\d{2}/) ? order.notes.match(/\d{4}-\d{2}-\d{2}/)[0] : new Date(order.createdAt).toISOString().slice(0, 10));
+    const dateStr = entryTimestamp ? dateKey : orderEntryDateKey(order);
     order.notes = notes || `[Daily Milk Register - ${shiftStr}] Date: ${dateStr} | Logged from Khata Calendar`;
 
     const updated = await order.save();
+
+    // createdAt is immutable in Mongoose, so moving an entry to another day has
+    // to bypass the model; bills are matched on this timestamp.
+    if (entryTimestamp) {
+      await Order.collection.updateOne({ _id: order._id }, { $set: { createdAt: entryTimestamp } });
+      updated.createdAt = entryTimestamp;
+    }
     res.json(updated);
   } catch (error) {
     console.error('Error updating order:', error);
@@ -1815,17 +1855,24 @@ export const createCreditCustomerBill = async (req, res) => {
     }
 
     // Find orders in date range
-    let orderQuery = {
-      orderSource: 'POS',
-      createdAt: { $gte: start, $lte: end }
-    };
+    let orderQuery = { orderSource: 'POS' };
     if (isGuest) {
       orderQuery.$or = [{ phone: customerName }, { name: customerName }];
     } else {
       orderQuery.$or = [{ user: id }, { phone: customerPhone || id }];
     }
 
-    const matchedOrders = await Order.find(orderQuery).sort({ createdAt: 1 });
+    // Match on the calendar day of each entry (notes date first) so entries
+    // saved before this fix, whose createdAt is the typing day, still land in
+    // the right billing period.
+    const startKey = String(startDate).slice(0, 10);
+    const endKey = String(endDate).slice(0, 10);
+    const matchedOrders = (await Order.find(orderQuery))
+      .filter((o) => {
+        const k = orderEntryDateKey(o);
+        return k && k >= startKey && k <= endKey;
+      })
+      .sort((a, b) => orderEntryDateKey(a).localeCompare(orderEntryDateKey(b)));
 
     // Build daily deliveries list
     const dailyDeliveries = [];
@@ -1848,7 +1895,7 @@ export const createCreditCustomerBill = async (req, res) => {
       }
     } else {
       for (const o of matchedOrders) {
-        const oDateStr = new Date(o.createdAt).toISOString().slice(0, 10);
+        const oDateStr = orderEntryDateKey(o);
         let orderLitres = 0;
         let pName = 'Cow Milk';
         if (Array.isArray(o.orderItems) && o.orderItems.length > 0) {
@@ -1973,17 +2020,22 @@ export const settleCreditBill = async (req, res) => {
     }
 
     // Also mark any orders matching date range for this customer as paid
-    let orderQuery = {
-      orderSource: 'POS',
-      createdAt: { $gte: bill.startDate, $lte: bill.endDate }
-    };
+    let orderQuery = { orderSource: 'POS' };
     if (bill.user) {
       orderQuery.user = bill.user;
     } else if (bill.guestId) {
       const gName = bill.guestId.replace('guest_', '');
       orderQuery.$or = [{ phone: gName }, { name: gName }];
     }
-    await Order.updateMany(orderQuery, {
+    const billStartKey = localDateKey(new Date(bill.startDate));
+    const billEndKey = localDateKey(new Date(bill.endDate));
+    const rangeOrderIds = (await Order.find(orderQuery).select('notes createdAt scheduledDeliveryDate').lean())
+      .filter((o) => {
+        const k = orderEntryDateKey(o);
+        return k && k >= billStartKey && k <= billEndKey;
+      })
+      .map((o) => o._id);
+    await Order.updateMany({ _id: { $in: rangeOrderIds } }, {
       $set: {
         isPaid: true,
         paidAt: now,

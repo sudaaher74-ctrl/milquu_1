@@ -520,6 +520,7 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
           paymentMethod: 'Credit',
           billingCycle: customer?.billingCycle || '15 Days',
           orderSource: 'POS',
+          entryDate,
           notes: `[Daily Milk Register - ${entryShift}] Date: ${entryDate} | Logged from Khata Calendar`
         };
 
@@ -707,8 +708,12 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
             <button
               type="button"
               onClick={() => {
+                // Open a date inside the month being viewed, never today's date
+                // from a different month, or the entry lands in the wrong month.
                 const todayStr = getDateKey(new Date());
-                handleOpenDay(todayStr, deliveriesByDate[todayStr]);
+                const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+                const targetStr = todayStr.startsWith(monthPrefix) ? todayStr : `${monthPrefix}-01`;
+                handleOpenDay(targetStr, deliveriesByDate[targetStr]);
               }}
               className="px-3 py-2 bg-milquu-blue hover:bg-blue-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
             >
@@ -1159,6 +1164,7 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                               </div>
                               <div className="text-[10px] text-gray-500 font-medium truncate">
                                 {delivery.shifts.join(', ')}
+                                {delivery.orders.length > 1 ? ` · ${delivery.orders.length} entries` : ''}
                               </div>
                             </div>
                           ) : (
@@ -1709,6 +1715,11 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                 <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 px-1">
                   Entries on this date ({entryOrdersForDate.length}):
                 </div>
+                {entryOrdersForDate.length > 1 && (
+                  <div className="text-[11px] font-bold text-amber-800 px-1 mb-1.5">
+                    Day total: ₹{entryOrdersForDate.reduce((s, o) => s + (Number(o.totalPrice) || 0), 0)} (all entries — the form below edits one entry)
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-1.5">
                   {entryOrdersForDate.map((ord, idx) => {
                     const isSelected = entryMode === 'edit' && selectedOrderIndex === idx;
