@@ -559,6 +559,31 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     }
   };
 
+  // Handler: Delete every entry on a calendar day straight from the cell
+  const handleDeleteDay = async (dateStr, delivery) => {
+    const dayOrders = delivery?.orders || [];
+    if (dayOrders.length === 0) return;
+    const count = dayOrders.length;
+    const msg = count === 1
+      ? `Delete the ${delivery.totalLitres} L entry (₹${delivery.totalAmount}) on ${formatKhataDate(dateStr, { includeYear: true })}?`
+      : `Delete ALL ${count} entries (${delivery.totalLitres} L, ₹${delivery.totalAmount}) on ${formatKhataDate(dateStr, { includeYear: true })}?\n\nTo delete just one entry, click the day and use Delete there.`;
+    if (!window.confirm(msg)) return;
+
+    try {
+      const results = await Promise.allSettled(
+        dayOrders.map((o) => api.delete(`/api/erp/orders/${o._id}`))
+      );
+      const failed = results.filter((r) => r.status === 'rejected').length;
+      if (failed > 0) {
+        toast.error(`Deleted ${count - failed} of ${count} entries. ${failed} failed.`);
+      } else {
+        toast(`🗑️ Deleted ${count} ${count === 1 ? 'entry' : 'entries'} on ${formatKhataDate(dateStr)}`);
+      }
+    } finally {
+      await fetchCustomerDetails();
+    }
+  };
+
   // Send Bill Details via WhatsApp with 1-Click UPI Payment Link
   const handleSendBillWhatsApp = (bill) => {
     if (!customer?.phone) {
@@ -1135,6 +1160,17 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                                 className="sm:opacity-0 sm:group-hover:opacity-100 opacity-90 p-1 hover:bg-amber-100 rounded text-amber-700 transition-all cursor-pointer"
                               >
                                 <Edit3 size={11} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteDay(dateStr, delivery);
+                                }}
+                                title="Delete entries on this date"
+                                className="sm:opacity-0 sm:group-hover:opacity-100 opacity-90 p-1 hover:bg-red-100 rounded text-red-600 transition-all cursor-pointer"
+                              >
+                                <Trash2 size={11} />
                               </button>
                             </div>
                           ) : (
