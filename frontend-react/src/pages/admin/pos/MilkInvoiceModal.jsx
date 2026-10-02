@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Printer, Download, Share2, FileText, CheckCircle2, Clock, MapPin, Phone, User, Calendar, IndianRupee, Copy, QrCode, Filter } from 'lucide-react';
 import { useBusinessSettings } from '../../../utils/useBusinessSettings';
-import { DAIRY_KHATA_BANK_DETAILS } from '../../../utils/khataPaymentConfig';
+import { DAIRY_KHATA_BANK_DETAILS, getOrderDateKey, formatKhataDate } from '../../../utils/khataPaymentConfig';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas-pro';
 import api from '../../../utils/api';
@@ -54,9 +54,8 @@ const MilkInvoiceModal = ({
   const rawOrders = allOrders.length > 0 ? allOrders : (customer.orders || []);
   
   const displayOrders = rawOrders.filter((ord) => {
-    const rawDate = ord.createdAt || ord.date;
-    const oDate = new Date(rawDate);
-    const dateStr = !isNaN(oDate.getTime()) ? oDate.toISOString().slice(0, 10) : '';
+    const dateStr = getOrderDateKey(ord);
+    const oDate = new Date(dateStr + 'T00:00:00');
 
     if (filterMode === 'unpaid') {
       return ord.isPaid !== true;
@@ -85,6 +84,10 @@ const MilkInvoiceModal = ({
       return true;
     }
     return true; // 'all'
+  }).sort((a, b) => {
+    const dA = getOrderDateKey(a);
+    const dB = getOrderDateKey(b);
+    return dB.localeCompare(dA); // Newest first
   });
 
   const filterLabel = 
@@ -101,7 +104,7 @@ const MilkInvoiceModal = ({
 
   const lineItems = [];
   displayOrders.forEach((ord, oIdx) => {
-    const oDate = ord.createdAt || ord.date;
+    const oDateStr = getOrderDateKey(ord);
     const oId = ord.orderId || ord._id || `PO-${oIdx + 1}`;
     const billRef = oId.toString().slice(-6).toUpperCase();
     const isOrderPaid = ord.isPaid === true;
@@ -115,7 +118,7 @@ const MilkInvoiceModal = ({
         const price = Number(it.price || 0);
         totalLitres += qty;
         lineItems.push({
-          date: oDate,
+          date: oDateStr,
           billNo: `#${billRef}`,
           productName: it.name || 'Pure Cow Milk',
           qty: qty,
@@ -130,7 +133,7 @@ const MilkInvoiceModal = ({
         const price = Number(it.price || 0);
         totalLitres += qty;
         lineItems.push({
-          date: oDate,
+          date: oDateStr,
           billNo: `#${billRef}`,
           productName: it.name || 'Pure Cow Milk',
           qty: qty,
@@ -141,7 +144,7 @@ const MilkInvoiceModal = ({
       });
     } else {
       lineItems.push({
-        date: oDate,
+        date: oDateStr,
         billNo: `#${billRef}`,
         productName: 'Dairy Milk Supply',
         qty: 1,
@@ -501,7 +504,7 @@ const MilkInvoiceModal = ({
                     lineItems.map((item, idx) => (
                       <tr key={idx} className="hover:bg-gray-50/50">
                         <td className="py-2.5 px-3 text-gray-700 whitespace-nowrap">
-                          {new Date(item.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                          {formatKhataDate(item.date)}
                         </td>
                         <td className="py-2.5 px-2 text-gray-500 font-bold">{item.billNo}</td>
                         <td className="py-2.5 px-3 font-sans font-medium text-gray-900">{item.productName}</td>

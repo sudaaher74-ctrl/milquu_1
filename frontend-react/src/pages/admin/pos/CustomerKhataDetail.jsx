@@ -8,7 +8,14 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../../utils/api';
 import toast from '../../../utils/toast';
-import { DAIRY_KHATA_BANK_DETAILS } from '../../../utils/khataPaymentConfig';
+import { 
+  DAIRY_KHATA_BANK_DETAILS, 
+  getOrderDateKey, 
+  getDateKey, 
+  formatKhataDate, 
+  getDatesInRange, 
+  buildCalendarGridCells 
+} from '../../../utils/khataPaymentConfig';
 import MilkInvoiceModal from './MilkInvoiceModal';
 
 const MONTH_NAMES = [
@@ -108,25 +115,16 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     return new Date(year, month, 1).getDay();
   }, [year, month]);
 
-  // Map deliveries/orders by date: "YYYY-MM-DD"
+  // Continuous calendar grid cells including leading and trailing adjacent days
+  const calendarGridCells = useMemo(() => {
+    return buildCalendarGridCells(year, month);
+  }, [year, month]);
+
+  // Map deliveries/orders by date: "YYYY-MM-DD" using unified getOrderDateKey
   const deliveriesByDate = useMemo(() => {
     const map = {};
     for (const ord of orders) {
-      // Extract date string
-      let dateKey = '';
-      if (ord.notes && ord.notes.includes('Date:')) {
-        const match = ord.notes.match(/Date:\s*(\d{4}-\d{2}-\d{2})/);
-        if (match && match[1]) {
-          dateKey = match[1];
-        }
-      }
-      if (!dateKey) {
-        const rawDate = ord.createdAt || ord.scheduledDeliveryDate;
-        if (rawDate) {
-          dateKey = new Date(rawDate).toISOString().slice(0, 10);
-        }
-      }
-
+      const dateKey = getOrderDateKey(ord);
       if (!dateKey) continue;
 
       if (!map[dateKey]) {
@@ -172,20 +170,36 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     return map;
   }, [orders]);
 
-  // Match which bills cover which dates
+  // Auto-initialize range to active unpaid orders if present
+  useEffect(() => {
+    if (orders.length > 0 && !rangeStart && !rangeEnd) {
+      const unpaidOrders = orders.filter(o => !o.isPaid);
+      const unpaidDateKeys = unpaidOrders.map(getOrderDateKey).filter(Boolean).sort();
+      if (unpaidDateKeys.length > 0) {
+        setRangeStart(unpaidDateKeys[0]);
+        setRangeEnd(unpaidDateKeys[unpaidDateKeys.length - 1]);
+        const [uY, uM] = unpaidDateKeys[unpaidDateKeys.length - 1].split('-').map(Number);
+        setCurrentDate(new Date(uY, uM - 1, 1));
+      } else {
+        const yStr = String(year);
+        const mStr = String(month + 1).padStart(2, '0');
+        setRangeStart(`${yStr}-${mStr}-01`);
+        setRangeEnd(`${yStr}-${mStr}-${String(daysInMonth).padStart(2, '0')}`);
+      }
+    }
+  }, [orders]);
+
+  // Match which bills cover which dates using getDatesInRange
   const billByDate = useMemo(() => {
     const map = {};
     for (const bill of bills) {
-      const bStart = new Date(bill.startDate).toISOString().slice(0, 10);
-      const bEnd = new Date(bill.endDate).toISOString().slice(0, 10);
+      const bStart = getDateKey(bill.startDate);
+      const bEnd = getDateKey(bill.endDate);
+      if (!bStart || !bEnd) continue;
 
-      // Iterate through the days of the bill
-      const cur = new Date(bill.startDate);
-      const end = new Date(bill.endDate);
-      while (cur <= end) {
-        const dStr = cur.toISOString().slice(0, 10);
+      const coveredDates = getDatesInRange(bStart, bEnd);
+      for (const dStr of coveredDates) {
         map[dStr] = bill;
-        cur.setDate(cur.getDate() + 1);
       }
     }
     return map;
@@ -214,6 +228,23 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
   const handleSetPresetRange = (preset) => {
     const yStr = String(year);
     const mStr = String(month + 1).padStart(2, '0');
+
+    if (preset === 'active-dues') {
+      const unpaidOrders = orders.filter(o => !o.isPaid);
+      const unpaidDateKeys = unpaidOrders.map(getOrderDateKey).filter(Boolean).sort();
+      if (unpaidDateKeys.length > 0) {
+        const firstDate = unpaidDateKeys[0];
+        const lastDate = unpaidDateKeys[unpaidDateKeys.length - 1];
+        setRangeStart(firstDate);
+        setRangeEnd(lastDate);
+        const [uY, uM] = lastDate.split('-').map(Number);
+        setCurrentDate(new Date(uY, uM - 1, 1));
+      } else {
+        toast('No active unpaid dues found');
+      }
+      return;
+    }
+
     if (preset === '1st-15th') {
       setRangeStart(`${yStr}-${mStr}-01`);
       setRangeEnd(`${yStr}-${mStr}-15`);
@@ -227,39 +258,35 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
       const today = new Date();
       const tenAgo = new Date();
       tenAgo.setDate(today.getDate() - 10);
-      setRangeStart(tenAgo.toISOString().slice(0, 10));
-      setRangeEnd(today.toISOString().slice(0, 10));
+      setRangeStart(getDateKey(tenAgo));
+      setRangeEnd(getDateKey(today));
     }
   };
 
-  // Compute live calculations for the selected range
+  // Compute live calculations for the selected range without timezone shift
   const rangeCalculation = useMemo(() => {
     if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) {
       return { daysCount: 0, deliveryCount: 0, totalLitres: 0, totalAmount: 0 };
     }
 
-    let daysCount = 0;
+    const coveredDates = getDatesInRange(rangeStart, rangeEnd);
+    let daysCount = coveredDates.length;
     let deliveryCount = 0;
     let totalLitres = 0;
     let totalAmount = 0;
 
-    const cur = new Date(rangeStart);
-    const end = new Date(rangeEnd);
-
-    while (cur <= end) {
-      daysCount += 1;
-      const dStr = cur.toISOString().slice(0, 10);
+    for (const dStr of coveredDates) {
       const delivery = deliveriesByDate[dStr];
       if (delivery) {
         deliveryCount += 1;
         totalLitres += delivery.totalLitres;
         totalAmount += delivery.totalAmount;
       }
-      cur.setDate(cur.getDate() + 1);
     }
 
     return { daysCount, deliveryCount, totalLitres, totalAmount };
   }, [rangeStart, rangeEnd, deliveriesByDate]);
+
 
   // Handler: Create and save bill for selected date range
   const handleCreateBill = async () => {
@@ -383,17 +410,9 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     const rPrice = Number(item.price) || (ord.totalPrice && itemLitres ? Math.round(ord.totalPrice / itemLitres) : 54);
     const shift = (ord.notes || '').includes('Evening') ? 'Evening' : 'Morning';
 
-    const dateMatch = (ord.notes || '').match(/\d{4}-\d{2}-\d{2}/);
-    let resolvedDate = fallbackDate;
-    if (dateMatch && dateMatch[0]) {
-      resolvedDate = dateMatch[0];
-    } else if (ord.createdAt) {
-      try {
-        resolvedDate = new Date(ord.createdAt).toISOString().slice(0, 10);
-      } catch {}
-    }
+    const resolvedDate = getOrderDateKey(ord) || fallbackDate || getDateKey(new Date());
 
-    setEntryDate(resolvedDate || new Date().toISOString().slice(0, 10));
+    setEntryDate(resolvedDate);
     setEntryProduct(pName);
     setEntryQty(itemLitres);
     setEntryPrice(rPrice);
@@ -608,7 +627,7 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
             <button
               type="button"
               onClick={() => {
-                const todayStr = new Date().toISOString().slice(0, 10);
+                const todayStr = getDateKey(new Date());
                 handleOpenDay(todayStr, deliveriesByDate[todayStr]);
               }}
               className="px-3 py-2 bg-milquu-blue hover:bg-blue-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
@@ -869,7 +888,16 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                   </div>
 
                   {/* Presets */}
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handleSetPresetRange('active-dues')}
+                      className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold cursor-pointer flex items-center gap-1 shadow-2xs"
+                      title="Select all dates with unpaid dues"
+                    >
+                      <Clock size={11} />
+                      Active Dues Period
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleSetPresetRange('1st-15th')}
@@ -890,6 +918,13 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                       className="px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-lg text-[11px] font-bold cursor-pointer"
                     >
                       Full Month
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSetPresetRange('last-10-days')}
+                      className="px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-lg text-[11px] font-bold cursor-pointer"
+                    >
+                      Last 10 Days
                     </button>
                   </div>
                 </div>
@@ -915,7 +950,7 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                 </div>
               </div>
 
-              {/* 7-DAY CALENDAR GRID */}
+              {/* 7-DAY CALENDAR GRID (Continuous full weeks) */}
               <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
                 {/* Header row */}
                 <div className="grid grid-cols-7 bg-gray-100/80 border-b border-gray-200 text-center py-2.5">
@@ -933,22 +968,14 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
 
                 {/* Days grid */}
                 <div className="grid grid-cols-7 bg-gray-200 gap-[1px]">
-                  {/* Empty cells before month starts */}
-                  {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                    <div key={`empty-${i}`} className="bg-gray-50/50 min-h-[95px] p-2" />
-                  ))}
-
-                  {/* Month days */}
-                  {Array.from({ length: daysInMonth }).map((_, i) => {
-                    const dayNum = i + 1;
-                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                  {calendarGridCells.map((cell) => {
+                    const { dateStr, dayNum, monthName, isCurrentMonth } = cell;
                     const delivery = deliveriesByDate[dateStr];
                     const bill = billByDate[dateStr];
-                    const isToday = new Date().toISOString().slice(0, 10) === dateStr;
+                    const isToday = getDateKey(new Date()) === dateStr;
                     const isSelected = isDateInSelectedRange(dateStr);
 
                     // Determine day billing & settlement status
-                    let statusColor = 'text-gray-400';
                     let statusBadge = null;
 
                     if (bill) {
@@ -988,22 +1015,31 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                       <div
                         key={dateStr}
                         onClick={() => handleOpenDay(dateStr, delivery)}
-                        className={`min-h-[100px] p-2 transition-all flex flex-col justify-between cursor-pointer group relative rounded-xl ${
+                        className={`min-h-[105px] p-2 transition-all flex flex-col justify-between cursor-pointer group relative rounded-xl ${
                           isSelected
                             ? 'bg-amber-50/90 ring-2 ring-inset ring-amber-500'
-                            : 'bg-white hover:bg-amber-50/30 hover:shadow-xs'
+                            : isCurrentMonth
+                              ? 'bg-white hover:bg-amber-50/30 hover:shadow-xs'
+                              : 'bg-gray-50/80 hover:bg-amber-50/40 text-gray-500'
                         }`}
                       >
                         {/* Day Number and Today Indicator */}
                         <div className="flex items-center justify-between">
                           <span
-                            className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold font-mono ${
+                            className={`px-1.5 py-0.5 flex items-center justify-center rounded-full text-xs font-bold font-mono ${
                               isToday
                                 ? 'bg-milquu-blue text-white shadow-2xs'
-                                : 'text-gray-700 group-hover:text-milquu-blue'
+                                : isCurrentMonth
+                                  ? 'text-gray-800 group-hover:text-milquu-blue'
+                                  : 'text-gray-500 font-semibold'
                             }`}
                           >
                             {dayNum}
+                            {!isCurrentMonth && (
+                              <span className="text-[9px] uppercase font-bold text-gray-400 ml-1">
+                                {monthName}
+                              </span>
+                            )}
                           </span>
                           
                           {delivery ? (
@@ -1125,10 +1161,10 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                             </td>
                             <td className="p-3">
                               <span className="font-semibold text-gray-800 block">
-                                {bill.dateRangeStr || `${new Date(bill.startDate).toLocaleDateString('en-IN')} – ${new Date(bill.endDate).toLocaleDateString('en-IN')}`}
+                                {bill.dateRangeStr || `${formatKhataDate(bill.startDate, { includeYear: true })} – ${formatKhataDate(bill.endDate, { includeYear: true })}`}
                               </span>
                               <span className="text-[10px] text-gray-400">
-                                Created: {new Date(bill.createdAt).toLocaleDateString('en-IN')}
+                                Created: {formatKhataDate(bill.createdAt, { includeYear: true })}
                               </span>
                             </td>
                             <td className="p-3 font-bold text-milquu-blue">
@@ -1169,7 +1205,7 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                                   <span className="font-bold text-gray-800">{bill.settledMethod || 'Cash'}</span>
                                   {bill.settledAt && (
                                     <span className="text-gray-400 block text-[10px]">
-                                      {new Date(bill.settledAt).toLocaleDateString('en-IN')}
+                                      {formatKhataDate(bill.settledAt, { includeYear: true })}
                                     </span>
                                   )}
                                 </div>
@@ -1261,9 +1297,10 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                             </span>
                           </div>
                           <span className="text-[11px] text-gray-500 block">
-                            {new Date(ord.createdAt).toLocaleDateString('en-IN', {
-                              day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
-                            })}
+                            {formatKhataDate(getOrderDateKey(ord), { includeYear: true })}
+                            {ord.notes && (
+                              <span className="ml-1 text-gray-400">· {ord.notes.split('|')[0].replace(/\[|\]/g, '').trim()}</span>
+                            )}
                           </span>
                         </div>
                       </div>
@@ -1517,7 +1554,7 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                   )}
                 </div>
                 <p className="text-xs text-gray-500 font-medium mt-0.5">
-                  {entryDate ? new Date(entryDate + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : 'Select Date'}
+                  {entryDate ? formatKhataDate(entryDate, { includeYear: true }) : 'Select Date'}
                 </p>
               </div>
             </div>
