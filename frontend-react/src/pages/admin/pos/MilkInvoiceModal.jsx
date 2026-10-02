@@ -360,7 +360,8 @@ const MilkInvoiceModal = ({
       `🔢 *Account Number:* ${DAIRY_KHATA_BANK_DETAILS.accountNumber}\n` +
       `🏛️ *Branch IFSC:* ${DAIRY_KHATA_BANK_DETAILS.ifscCode}\n` +
       `━━━━━━━━━━━━━━━━━━━━\n\n` +
-      `Please scan the QR code on the invoice or pay via the bank/UPI details above. Kindly share payment screenshot once completed.\n` +
+      (balanceDue > 0 ? `📲 *1-Click UPI Payment Link:* upi://pay?pa=${DAIRY_KHATA_BANK_DETAILS.upiId}&pn=${encodeURIComponent(DAIRY_KHATA_BANK_DETAILS.accountHolder)}&am=${balanceDue.toFixed(2)}&cu=INR&tn=${encodeURIComponent(`MilQuu ${invoiceNumber}`)}\n\n` : '') +
+      `Please scan the QR code on the invoice or pay via the UPI/Bank details above. Kindly share payment screenshot once completed.\n` +
       `Thank you for being our valued dairy customer! 🙏`;
 
     window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');

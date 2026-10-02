@@ -52,6 +52,8 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
   const [billNotes, setBillNotes] = useState('');
   const [isCreatingBill, setIsCreatingBill] = useState(false);
   const [showCreateBillModal, setShowCreateBillModal] = useState(false);
+  const [sendWhatsAppOnCreate, setSendWhatsAppOnCreate] = useState(true);
+  const [sendWhatsAppOnSettle, setSendWhatsAppOnSettle] = useState(true);
 
   // Settlement Modal State
   const [settleTargetBill, setSettleTargetBill] = useState(null); // null means full customer balance
@@ -307,11 +309,16 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
         notes: billNotes
       });
 
-      toast(`✅ Bill ${res.data.bill?.billNumber || ''} created & saved successfully!`);
+      const newBill = res.data.bill;
+      toast(`✅ Bill ${newBill?.billNumber || ''} created & saved successfully!`);
       setShowCreateBillModal(false);
       setBillNotes('');
       // Refresh customer data so calendar immediately reflects the bill!
       await fetchCustomerDetails();
+
+      if (sendWhatsAppOnCreate && newBill && customer?.phone) {
+        handleSendBillWhatsApp(newBill);
+      }
     } catch (err) {
       console.error('Error creating bill:', err);
       toast.error(err.response?.data?.message || 'Failed to create bill');
@@ -360,9 +367,14 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
         toast(`✅ Payment of ₹${amt} recorded successfully!`);
       }
 
+      const settledBillRef = settleTargetBill;
       setShowSettleModal(false);
       // Immediately refresh customer data so calendar updates automatically!
       await fetchCustomerDetails();
+
+      if (sendWhatsAppOnSettle && customer?.phone) {
+        handleSendReceiptWhatsApp(settledBillRef, settlePaymentMethod, amt);
+      }
     } catch (err) {
       console.error('Settlement error:', err);
       toast.error(err.response?.data?.message || 'Failed to process settlement');
@@ -544,6 +556,74 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     } finally {
       setIsDeletingEntry(false);
     }
+  };
+
+  // Send Bill Details via WhatsApp with 1-Click UPI Payment Link
+  const handleSendBillWhatsApp = (bill) => {
+    if (!customer?.phone) {
+      toast.error('Customer phone number is missing');
+      return;
+    }
+    const cleanPhone = customer.phone.replace(/[^0-9]/g, '');
+    const phoneWithCountry = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const bNumber = bill?.billNumber || 'BILL';
+    const bPeriod = bill?.dateRangeStr || `${formatKhataDate(bill?.startDate)} – ${formatKhataDate(bill?.endDate)}`;
+    const bLitres = bill?.totalLitres || 0;
+    const bAmount = Number(bill?.totalAmount || 0).toFixed(2);
+    const bPaid = Number(bill?.paidAmount || (bill?.status === 'Settled' ? bill?.totalAmount : 0)).toFixed(2);
+    const bDue = Math.max(0, Number(bill?.totalAmount || 0) - Number(bPaid)).toFixed(2);
+    const bStatus = bill?.status === 'Settled' ? '✅ SETTLED / PAID' : (Number(bDue) > 0 ? '⚠️ PAYMENT PENDING' : '✅ PAID');
+    const dueDateStr = bill?.dueDate ? formatKhataDate(bill.dueDate) : 'On receipt';
+
+    const upiPayLink = `upi://pay?pa=${DAIRY_KHATA_BANK_DETAILS.upiId}&pn=${encodeURIComponent(DAIRY_KHATA_BANK_DETAILS.accountHolder)}&am=${bDue}&cu=INR&tn=${encodeURIComponent(`MilQuu ${bNumber}`)}`;
+
+    const msg = 
+      `*MILQUU FRESH - DAIRY MILK BILL* 🥛\n\n` +
+      `Hello *${customer.name}*,\n` +
+      `Here is your milk supply bill statement:\n\n` +
+      `📄 *Bill Number:* ${bNumber}\n` +
+      `🗓️ *Billing Period:* ${bPeriod}\n` +
+      `🥛 *Total Milk Supplied:* ${bLitres} Litres\n` +
+      `💰 *Total Billed:* ₹${bAmount}\n` +
+      `💳 *Paid Amount:* ₹${bPaid}\n` +
+      `🔴 *Net Balance Due: ₹${bDue}*\n` +
+      `⏰ *Status:* ${bStatus}\n` +
+      (bill?.status !== 'Settled' && bill?.dueDate ? `📅 *Due Date:* ${dueDateStr}\n\n` : `\n`) +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `💳 *BANK & UPI PAYMENT DETAILS*\n` +
+      `📲 *UPI ID:* ${DAIRY_KHATA_BANK_DETAILS.upiId}\n` +
+      `🏦 *Bank:* ${DAIRY_KHATA_BANK_DETAILS.bankName}\n` +
+      `👤 *A/C Name:* ${DAIRY_KHATA_BANK_DETAILS.accountHolder}\n` +
+      `🔢 *A/C No:* ${DAIRY_KHATA_BANK_DETAILS.accountNumber}\n` +
+      `🏛️ *IFSC Code:* ${DAIRY_KHATA_BANK_DETAILS.ifscCode}\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n\n` +
+      (Number(bDue) > 0 ? `📲 *1-Click UPI Pay Link:* ${upiPayLink}\n\n` : '') +
+      `Kindly pay via UPI or Bank Transfer and share the payment screenshot once completed.\n` +
+      `Thank you for choosing MilQuu Fresh! 🙏`;
+
+    window.open(`https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
+  // Send Settlement Confirmation Receipt via WhatsApp
+  const handleSendReceiptWhatsApp = (bill, paymentMethod, amountPaid) => {
+    if (!customer?.phone) return;
+    const cleanPhone = customer.phone.replace(/[^0-9]/g, '');
+    const phoneWithCountry = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const amtStr = Number(amountPaid).toFixed(2);
+    const bNumber = bill?.billNumber ? `for Bill #${bill.billNumber}` : 'for your dairy khata dues';
+
+    const msg = 
+      `*MILQUU FRESH - PAYMENT RECEIVED RECEIPT* 🧾\n\n` +
+      `Hello *${customer.name}*,\n` +
+      `We have successfully received your payment of *₹${amtStr}* ${bNumber}.\n\n` +
+      `💳 *Payment Mode:* ${paymentMethod || 'Cash'}\n` +
+      `📅 *Date:* ${new Date().toLocaleDateString('en-IN')}\n` +
+      (bill ? `📄 *Bill:* ${bill.billNumber} (${bill.dateRangeStr || ''})\n` : '') +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `Remaining Account Outstanding: ₹${Math.max(0, (stats.totalDue || 0) - Number(amountPaid)).toFixed(2)}\n\n` +
+      `Thank you for your prompt payment! 🙏\n*MilQuu Fresh*`;
+
+    window.open(`https://wa.me/${phoneWithCountry}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   // WhatsApp Reminder
@@ -1235,6 +1315,17 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                                   <Printer size={13} />
                                 </button>
 
+                                {customer?.phone && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSendBillWhatsApp(bill)}
+                                    className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg transition-colors cursor-pointer"
+                                    title="Send Bill via WhatsApp"
+                                  >
+                                    <Share2 size={13} />
+                                  </button>
+                                )}
+
                                 {!isSettled && (
                                   <button
                                     type="button"
@@ -1393,6 +1484,26 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                 />
               </div>
 
+              {customer?.phone && (
+                <label className="flex items-center gap-2.5 p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-xl cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sendWhatsAppOnCreate}
+                    onChange={(e) => setSendWhatsAppOnCreate(e.target.checked)}
+                    className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <div className="text-xs">
+                    <span className="font-bold text-emerald-950 flex items-center gap-1">
+                      <Share2 size={12} className="text-emerald-700" />
+                      Send Bill & Payment Details via WhatsApp
+                    </span>
+                    <span className="text-[10px] text-emerald-700 block">
+                      To {customer.name} ({customer.phone})
+                    </span>
+                  </div>
+                </label>
+              )}
+
               <div className="flex items-center gap-2 pt-2">
                 <button
                   type="button"
@@ -1407,7 +1518,16 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                   disabled={isCreatingBill || rangeCalculation.totalAmount <= 0}
                   className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  {isCreatingBill ? 'Saving Bill...' : 'Create & Save Bill'}
+                  {isCreatingBill ? (
+                    'Saving Bill...'
+                  ) : sendWhatsAppOnCreate && customer?.phone ? (
+                    <>
+                      <Share2 size={13} />
+                      <span>Save & Send WhatsApp</span>
+                    </>
+                  ) : (
+                    <span>Create & Save Bill</span>
+                  )}
                 </button>
               </div>
             </div>
@@ -1496,6 +1616,26 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                 </div>
               )}
 
+              {customer?.phone && (
+                <label className="flex items-center gap-2.5 p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-xl cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sendWhatsAppOnSettle}
+                    onChange={(e) => setSendWhatsAppOnSettle(e.target.checked)}
+                    className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <div className="text-xs">
+                    <span className="font-bold text-emerald-950 flex items-center gap-1">
+                      <Share2 size={12} className="text-emerald-700" />
+                      Send Payment Receipt via WhatsApp
+                    </span>
+                    <span className="text-[10px] text-emerald-700 block">
+                      To {customer.name} ({customer.phone})
+                    </span>
+                  </div>
+                </label>
+              )}
+
               <div className="flex items-center gap-2 pt-2">
                 <button
                   type="button"
@@ -1507,9 +1647,18 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                 <button
                   type="submit"
                   disabled={isSubmittingSettle}
-                  className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+                  className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  {isSubmittingSettle ? 'Recording...' : 'Confirm Settle'}
+                  {isSubmittingSettle ? (
+                    'Recording...'
+                  ) : sendWhatsAppOnSettle && customer?.phone ? (
+                    <>
+                      <Share2 size={13} />
+                      <span>Settle & Send Receipt</span>
+                    </>
+                  ) : (
+                    <span>Confirm Settle</span>
+                  )}
                 </button>
               </div>
             </form>
