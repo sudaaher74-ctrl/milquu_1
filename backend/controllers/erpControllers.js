@@ -933,6 +933,89 @@ export const createOrder = async (req, res) => {
   }
 };
 
+export const updateOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    const { qty, quantity, price, unit, productName, shift, date, notes, orderItems, totalPrice } = req.body;
+
+    if (orderItems && Array.isArray(orderItems) && orderItems.length > 0) {
+      order.orderItems = orderItems;
+    } else if (qty !== undefined || price !== undefined || productName || unit) {
+      const existingItem = (order.orderItems && order.orderItems[0]) || {};
+      const newQty = Number(qty ?? quantity ?? existingItem.qty ?? 1);
+      const newPrice = Number(price ?? existingItem.price ?? 54);
+      const newUnit = unit || (productName?.includes('500') ? '500 ml' : '1 Litre');
+      const newName = productName ? `${productName} (${newUnit})` : (existingItem.name || 'Milk');
+
+      order.orderItems = [{
+        ...existingItem._doc,
+        name: newName,
+        qty: newQty,
+        price: newPrice,
+        unit: newUnit,
+        image: existingItem.image || '/img/products/cowmilkplasticbag.png'
+      }];
+      order.totalPrice = Math.round(newQty * newPrice * 100) / 100;
+    }
+
+    if (totalPrice !== undefined && totalPrice !== null) {
+      order.totalPrice = Number(totalPrice);
+    }
+
+    if (shift) {
+      order.deliverySlot = shift;
+    }
+
+    if (date) {
+      const d = new Date(date);
+      if (!isNaN(d.getTime())) {
+        order.scheduledDeliveryDate = d;
+        order.createdAt = d;
+      }
+    }
+
+    const shiftStr = shift || order.deliverySlot || (order.notes?.includes('Evening') ? 'Evening' : 'Morning');
+    const dateStr = date || (order.notes?.match(/\d{4}-\d{2}-\d{2}/) ? order.notes.match(/\d{4}-\d{2}-\d{2}/)[0] : new Date(order.createdAt).toISOString().slice(0, 10));
+    order.notes = notes || `[Daily Milk Register - ${shiftStr}] Date: ${dateStr} | Logged from Khata Calendar`;
+
+    const updated = await order.save();
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ message: 'Failed to update order', error: error.message });
+  }
+};
+
+export const deleteOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+
+    if (order.khataBill) {
+      try {
+        const KhataBill = mongoose.model('KhataBill');
+        await KhataBill.findByIdAndUpdate(order.khataBill, {
+          $pull: { orders: order._id }
+        });
+      } catch (billErr) {
+        console.warn('Could not unlink order from KhataBill:', billErr.message);
+      }
+    }
+
+    await Order.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Order deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({ message: 'Failed to delete order', error: error.message });
+  }
+};
+
 export const assignOrderToStaff = async (req, res) => {
   try {
     const { id } = req.params;

@@ -9,6 +9,8 @@ import {
   getDashboardAnalytics,
   getDeliveryStaff, createDeliveryStaff, deleteDeliveryStaff,
   updateStaffLocation,
+  updateOrder,
+  deleteOrder,
   assignOrderToStaff,
   getCreditCustomers,
   getCreditCustomerOrders,
@@ -44,6 +46,7 @@ router.route('/wastages').get(protect, staffUp, getWastages).post(protect, staff
 // Orders. POS is the only creator here. It was public, which let anyone
 // create orders already marked paid, at any price, against any customer.
 router.route('/orders').get(protect, staffUp, getOrders).post(protect, staffUp, createOrder);
+router.route('/orders/:id').put(protect, staffUp, updateOrder).delete(protect, staffUp, deleteOrder);
 router.route('/orders/:id/assign').put(protect, staffUp, assignOrderToStaff);
 router.route('/orders/:id/pay').put(protect, staffUp, markPOSOrderPaid);
 

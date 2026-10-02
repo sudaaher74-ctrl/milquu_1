@@ -3,7 +3,7 @@ import {
   ArrowLeft, Calendar as CalendarIcon, ChevronLeft, ChevronRight, 
   CheckCircle2, Clock, AlertCircle, Banknote, Download, FileText, 
   Plus, Phone, MapPin, User, IndianRupee, QrCode, Trash2, Printer, 
-  Share2, RefreshCw, Sparkles, MessageCircle, X
+  Share2, RefreshCw, Sparkles, MessageCircle, X, Edit3
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../../utils/api';
@@ -54,14 +54,20 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
   const [settlePaymentMethod, setSettlePaymentMethod] = useState('Cash');
   const [isSubmittingSettle, setIsSubmittingSettle] = useState(false);
 
-  // Quick Daily Entry Modal
-  const [showQuickAddModal, setShowQuickAddModal] = useState(false);
-  const [quickAddDate, setQuickAddDate] = useState('');
-  const [quickAddQty, setQuickAddQty] = useState(1);
-  const [quickAddPrice, setQuickAddPrice] = useState(54);
-  const [quickAddProduct, setQuickAddProduct] = useState('Cow Milk (Pouch)');
-  const [quickAddShift, setQuickAddShift] = useState('Morning');
-  const [isSubmittingQuickAdd, setIsSubmittingQuickAdd] = useState(false);
+  // Daily Entry Modal State (Supports both Edit & Add)
+  const [showEntryModal, setShowEntryModal] = useState(false);
+  const [entryMode, setEntryMode] = useState('add'); // 'add' | 'edit'
+  const [entryOrdersForDate, setEntryOrdersForDate] = useState([]);
+  const [selectedOrderIndex, setSelectedOrderIndex] = useState(0);
+  const [editingOrderId, setEditingOrderId] = useState(null);
+  const [entryDate, setEntryDate] = useState('');
+  const [entryQty, setEntryQty] = useState(1);
+  const [entryPrice, setEntryPrice] = useState(54);
+  const [entryProduct, setEntryProduct] = useState('Cow Milk (Pouch)');
+  const [entryShift, setEntryShift] = useState('Morning');
+  const [entryIsPaid, setEntryIsPaid] = useState(false);
+  const [isSubmittingEntry, setIsSubmittingEntry] = useState(false);
+  const [isDeletingEntry, setIsDeletingEntry] = useState(false);
 
   // Milk Invoice PDF Modal State
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -352,52 +358,172 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     }
   };
 
-  // Handler: Quick add delivery on a date
-  const handleQuickAddDelivery = async (e) => {
+  // Helper to extract and load an existing order into entry form
+  const loadOrderIntoForm = (ord, fallbackDate) => {
+    if (!ord) return;
+    setEntryMode('edit');
+    setEditingOrderId(ord._id);
+
+    const item = (ord.orderItems && ord.orderItems[0]) || {};
+    const itemLitres = (() => {
+      const q = Number(item.qty) || 1;
+      const u = (item.unit || '').toLowerCase();
+      const n = (item.name || '').toLowerCase();
+      if (u.includes('500') || n.includes('500')) return q * 0.5;
+      return q;
+    })();
+
+    const pName = (() => {
+      const n = item.name || '';
+      if (n.includes('Buffalo')) return 'Buffalo Milk (Pouch)';
+      if (n.includes('A2')) return 'A2 Cow Milk';
+      return 'Cow Milk (Pouch)';
+    })();
+
+    const rPrice = Number(item.price) || (ord.totalPrice && itemLitres ? Math.round(ord.totalPrice / itemLitres) : 54);
+    const shift = (ord.notes || '').includes('Evening') ? 'Evening' : 'Morning';
+
+    const dateMatch = (ord.notes || '').match(/\d{4}-\d{2}-\d{2}/);
+    let resolvedDate = fallbackDate;
+    if (dateMatch && dateMatch[0]) {
+      resolvedDate = dateMatch[0];
+    } else if (ord.createdAt) {
+      try {
+        resolvedDate = new Date(ord.createdAt).toISOString().slice(0, 10);
+      } catch {}
+    }
+
+    setEntryDate(resolvedDate || new Date().toISOString().slice(0, 10));
+    setEntryProduct(pName);
+    setEntryQty(itemLitres);
+    setEntryPrice(rPrice);
+    setEntryShift(shift);
+    setEntryIsPaid(Boolean(ord.isPaid));
+  };
+
+  // Open Daily Entry Modal (Edit or Add)
+  const handleOpenDay = (dateStr, delivery) => {
+    setEntryDate(dateStr);
+    if (delivery && Array.isArray(delivery.orders) && delivery.orders.length > 0) {
+      setEntryOrdersForDate(delivery.orders);
+      setSelectedOrderIndex(0);
+      loadOrderIntoForm(delivery.orders[0], dateStr);
+    } else {
+      setEntryOrdersForDate([]);
+      setSelectedOrderIndex(0);
+      setEntryMode('add');
+      setEditingOrderId(null);
+      setEntryQty(1);
+      setEntryPrice(54);
+      setEntryProduct('Cow Milk (Pouch)');
+      setEntryShift('Morning');
+      setEntryIsPaid(false);
+    }
+    setShowEntryModal(true);
+  };
+
+  const handleSelectOrderTab = (idx) => {
+    setSelectedOrderIndex(idx);
+    const ord = entryOrdersForDate[idx];
+    if (ord) {
+      loadOrderIntoForm(ord, entryDate);
+    }
+  };
+
+  const handleSwitchToNewEntryOnDate = () => {
+    setEntryMode('add');
+    setEditingOrderId(null);
+    setEntryQty(1);
+    setEntryPrice(54);
+    setEntryProduct('Cow Milk (Pouch)');
+    setEntryShift(entryShift === 'Morning' ? 'Evening' : 'Morning');
+    setEntryIsPaid(false);
+  };
+
+  // Handler: Save entry (updates existing if in edit mode, creates new if in add mode)
+  const handleSaveEntry = async (e) => {
     if (e) e.preventDefault();
-    if (!quickAddDate) {
-      toast.error('Select a date');
+    if (!entryDate) {
+      toast.error('Please select a date');
       return;
     }
-    const qty = Number(quickAddQty);
+    const qty = Number(entryQty);
     if (!qty || qty <= 0) {
-      toast.error('Enter a valid quantity');
+      toast.error('Please enter a valid milk quantity in litres');
       return;
     }
 
-    setIsSubmittingQuickAdd(true);
+    setIsSubmittingEntry(true);
     try {
-      const rate = Number(quickAddPrice) || 54;
+      const rate = Number(entryPrice) || 54;
       const totalAmount = rate * qty;
-      const unit = quickAddProduct.includes('500') ? '500 ml' : '1 Litre';
+      const unit = entryProduct.includes('500') ? '500 ml' : '1 Litre';
 
-      const payload = {
-        user: customer?.userId || undefined,
-        name: customer?.name || 'Customer',
-        phone: customer?.phone || undefined,
-        orderItems: [{
-          name: `${quickAddProduct} (${unit})`,
+      if (entryMode === 'edit' && editingOrderId) {
+        // Update existing order via PUT /api/erp/orders/:id
+        await api.put(`/api/erp/orders/${editingOrderId}`, {
+          qty,
           price: rate,
-          unit: unit,
-          qty: qty,
-          image: '/img/products/cowmilkplasticbag.png'
-        }],
-        discount: 0,
-        totalPrice: totalAmount,
-        paymentMethod: 'Credit',
-        billingCycle: customer?.billingCycle || '15 Days',
-        orderSource: 'POS',
-        notes: `[Daily Milk Register - ${quickAddShift}] Date: ${quickAddDate} | Logged from Khata Calendar`
-      };
+          unit,
+          productName: entryProduct,
+          shift: entryShift,
+          date: entryDate,
+          totalPrice: totalAmount
+        });
+        toast(`✅ Updated entry: ${qty} L on ${entryDate}`);
+      } else {
+        // Add new order via POST /api/erp/orders
+        const payload = {
+          user: customer?.userId || undefined,
+          name: customer?.name || 'Customer',
+          phone: customer?.phone || undefined,
+          orderItems: [{
+            name: `${entryProduct} (${unit})`,
+            price: rate,
+            unit: unit,
+            qty: qty,
+            image: '/img/products/cowmilkplasticbag.png'
+          }],
+          discount: 0,
+          totalPrice: totalAmount,
+          paymentMethod: 'Credit',
+          billingCycle: customer?.billingCycle || '15 Days',
+          orderSource: 'POS',
+          notes: `[Daily Milk Register - ${entryShift}] Date: ${entryDate} | Logged from Khata Calendar`
+        };
 
-      await api.post('/api/erp/orders', payload);
-      toast(`✅ Added ${qty} L on ${quickAddDate} for ${customer?.name}`);
-      setShowQuickAddModal(false);
+        await api.post('/api/erp/orders', payload);
+        toast(`✅ Added ${qty} L on ${entryDate} for ${customer?.name}`);
+      }
+
+      setShowEntryModal(false);
       await fetchCustomerDetails();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to add milk delivery');
+      console.error('Failed to save milk entry:', err);
+      toast.error(err.response?.data?.message || 'Failed to save milk delivery');
     } finally {
-      setIsSubmittingQuickAdd(false);
+      setIsSubmittingEntry(false);
+    }
+  };
+
+  // Handler: Delete an entry
+  const handleDeleteEntry = async () => {
+    if (!editingOrderId) return;
+    if (!window.confirm(`Are you sure you want to delete this ${entryQty} L entry on ${entryDate}?`)) {
+      return;
+    }
+
+    setIsDeletingEntry(true);
+    try {
+      await api.delete(`/api/erp/orders/${editingOrderId}`);
+      toast(`🗑️ Entry deleted successfully`);
+      setShowEntryModal(false);
+      await fetchCustomerDetails();
+    } catch (err) {
+      console.error('Failed to delete milk entry:', err);
+      toast.error(err.response?.data?.message || 'Failed to delete milk entry');
+    } finally {
+      setIsDeletingEntry(false);
     }
   };
 
@@ -482,13 +608,13 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
             <button
               type="button"
               onClick={() => {
-                setQuickAddDate(new Date().toISOString().slice(0, 10));
-                setShowQuickAddModal(true);
+                const todayStr = new Date().toISOString().slice(0, 10);
+                handleOpenDay(todayStr, deliveriesByDate[todayStr]);
               }}
               className="px-3 py-2 bg-milquu-blue hover:bg-blue-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
             >
               <Plus size={14} />
-              <span>Add Milk Entry</span>
+              <span>Add / Edit Daily Entry</span>
             </button>
 
             {stats.totalDue > 0 && (
@@ -861,15 +987,11 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                     return (
                       <div
                         key={dateStr}
-                        onClick={() => {
-                          // Quick add delivery for this day
-                          setQuickAddDate(dateStr);
-                          setShowQuickAddModal(true);
-                        }}
-                        className={`min-h-[95px] p-2 transition-all flex flex-col justify-between cursor-pointer group ${
+                        onClick={() => handleOpenDay(dateStr, delivery)}
+                        className={`min-h-[100px] p-2 transition-all flex flex-col justify-between cursor-pointer group relative rounded-xl ${
                           isSelected
                             ? 'bg-amber-50/90 ring-2 ring-inset ring-amber-500'
-                            : 'bg-white hover:bg-blue-50/40'
+                            : 'bg-white hover:bg-amber-50/30 hover:shadow-xs'
                         }`}
                       >
                         {/* Day Number and Today Indicator */}
@@ -884,10 +1006,35 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                             {dayNum}
                           </span>
                           
-                          {delivery && (
-                            <span className="text-[11px] font-black text-gray-900 font-mono">
-                              ₹{delivery.totalAmount}
-                            </span>
+                          {delivery ? (
+                            <div className="flex items-center gap-1">
+                              <span className="text-[11px] font-black text-gray-900 font-mono">
+                                ₹{delivery.totalAmount}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenDay(dateStr, delivery);
+                                }}
+                                title="Edit entry for this date"
+                                className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-amber-100 rounded text-amber-700 transition-all cursor-pointer"
+                              >
+                                <Edit3 size={12} />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDay(dateStr, null);
+                              }}
+                              title="Add milk on this date"
+                              className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-blue-100 rounded text-milquu-blue transition-all cursor-pointer"
+                            >
+                              <Plus size={12} />
+                            </button>
                           )}
                         </div>
 
@@ -895,17 +1042,22 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                         <div className="my-1">
                           {delivery ? (
                             <div className="space-y-0.5">
-                              <div className="flex items-center gap-1 text-xs font-bold text-gray-800">
-                                <span>🥛</span>
-                                <span>{delivery.totalLitres} L</span>
+                              <div className="flex items-center justify-between text-xs font-bold text-gray-800">
+                                <span className="flex items-center gap-1">
+                                  <span>🥛</span>
+                                  <span>{delivery.totalLitres} L</span>
+                                </span>
+                                <span className="text-[10px] text-amber-700 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
+                                  Edit ✏️
+                                </span>
                               </div>
-                              <div className="text-[10px] text-gray-500 font-medium">
+                              <div className="text-[10px] text-gray-500 font-medium truncate">
                                 {delivery.shifts.join(', ')}
                               </div>
                             </div>
                           ) : (
-                            <div className="text-[10px] text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                              + Add milk
+                            <div className="text-[10px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                              <Plus size={10} /> Add entry
                             </div>
                           )}
                         </div>
@@ -1333,123 +1485,259 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
         </div>
       )}
 
-      {/* ── MODAL: QUICK ADD DAILY ENTRY FROM CALENDAR ── */}
-      {showQuickAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 relative">
+      {/* ── MODAL: EDIT OR ADD DAILY ENTRY FROM CALENDAR ── */}
+      {showEntryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 relative border border-gray-100 max-h-[92vh] overflow-y-auto">
             <button
-              onClick={() => setShowQuickAddModal(false)}
-              className="absolute right-4 top-4 text-gray-400 hover:text-gray-700 p-1 cursor-pointer"
+              onClick={() => setShowEntryModal(false)}
+              className="absolute right-4 top-4 text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <X size={20} />
             </button>
 
-            <div className="flex items-center gap-2.5 mb-4">
-              <span className="text-2xl p-2 bg-blue-50 rounded-2xl border border-blue-200">🥛</span>
+            {/* Modal Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <span className={`text-2xl p-2.5 rounded-2xl border ${
+                entryMode === 'edit'
+                  ? 'bg-amber-50 border-amber-200 text-amber-700'
+                  : 'bg-blue-50 border-blue-200 text-blue-700'
+              }`}>
+                {entryMode === 'edit' ? '✏️' : '🥛'}
+              </span>
               <div>
-                <h3 className="text-lg font-bold text-gray-900 font-serif">Add Daily Milk</h3>
-                <p className="text-xs text-gray-500">{new Date(quickAddDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-gray-900 font-serif">
+                    {entryMode === 'edit' ? 'Edit Milk Entry' : 'Add Daily Milk Entry'}
+                  </h3>
+                  {entryIsPaid && (
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-100 text-green-800 border border-green-200">
+                      Settled / Paid
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 font-medium mt-0.5">
+                  {entryDate ? new Date(entryDate + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' }) : 'Select Date'}
+                </p>
               </div>
             </div>
 
-            <form onSubmit={handleQuickAddDelivery} className="space-y-4">
+            {/* If there are multiple entries on this date, show switcher tabs */}
+            {entryOrdersForDate.length > 0 && (
+              <div className="mb-4 p-2 bg-gray-50 rounded-2xl border border-gray-200/80">
+                <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 px-1">
+                  Entries on this date ({entryOrdersForDate.length}):
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {entryOrdersForDate.map((ord, idx) => {
+                    const isSelected = entryMode === 'edit' && selectedOrderIndex === idx;
+                    const shift = (ord.notes || '').includes('Evening') ? 'Evening' : 'Morning';
+                    const ordAmt = ord.totalPrice || 0;
+                    return (
+                      <button
+                        key={ord._id || idx}
+                        type="button"
+                        onClick={() => handleSelectOrderTab(idx)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-600 text-white shadow-xs'
+                            : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        <span>{shift === 'Morning' ? '🌅' : '🌇'}</span>
+                        <span>{shift}</span>
+                        <span className="opacity-80">· ₹{ordAmt}</span>
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={handleSwitchToNewEntryOnDate}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                      entryMode === 'add'
+                        ? 'bg-milquu-blue text-white shadow-xs'
+                        : 'bg-white text-milquu-blue border border-dashed border-blue-300 hover:bg-blue-50'
+                    }`}
+                  >
+                    <Plus size={13} />
+                    <span>Add Another</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveEntry} className="space-y-4">
+              {/* Date Input */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Date</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  Delivery Date
+                </label>
                 <input
                   type="date"
                   required
-                  value={quickAddDate}
-                  onChange={(e) => setQuickAddDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold text-gray-800"
+                  value={entryDate}
+                  onChange={(e) => setEntryDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 focus:outline-none focus:border-amber-500 shadow-2xs bg-white"
                 />
               </div>
 
+              {/* Shift Selector */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Milk Product</label>
-                <select
-                  value={quickAddProduct}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setQuickAddProduct(val);
-                    if (val.includes('Buffalo')) setQuickAddPrice(75);
-                    else if (val.includes('A2')) setQuickAddPrice(90);
-                    else setQuickAddPrice(54);
-                  }}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs font-medium text-gray-800"
-                >
-                  <option value="Cow Milk (Pouch)">Cow Milk (Pouch) - ₹54/L</option>
-                  <option value="Buffalo Milk (Pouch)">Buffalo Milk (Pouch) - ₹75/L</option>
-                  <option value="A2 Cow Milk">A2 Cow Milk - ₹90/L</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Quantity (Litres)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    min="0.5"
-                    max="50"
-                    required
-                    value={quickAddQty}
-                    onChange={(e) => setQuickAddQty(e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold font-mono text-gray-800"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Rate (₹/L)</label>
-                  <input
-                    type="number"
-                    required
-                    value={quickAddPrice}
-                    onChange={(e) => setQuickAddPrice(e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold font-mono text-gray-800"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">Shift</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">Delivery Shift</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {['Morning', 'Evening'].map((s) => (
+                  {[
+                    { id: 'Morning', label: 'Morning Shift', icon: '🌅' },
+                    { id: 'Evening', label: 'Evening Shift', icon: '🌇' }
+                  ].map((s) => (
                     <button
-                      key={s}
+                      key={s.id}
                       type="button"
-                      onClick={() => setQuickAddShift(s)}
-                      className={`py-2 text-xs font-bold rounded-xl border text-center transition-all cursor-pointer ${
-                        quickAddShift === s
-                          ? 'bg-milquu-blue text-white border-milquu-blue'
-                          : 'bg-gray-50 text-gray-700 border-gray-200'
+                      onClick={() => setEntryShift(s.id)}
+                      className={`py-2 px-3 text-xs font-bold rounded-xl border flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        entryShift === s.id
+                          ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
                       }`}
                     >
-                      {s}
+                      <span>{s.icon}</span>
+                      <span>{s.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="p-2.5 bg-gray-50 rounded-xl flex justify-between items-center text-xs">
-                <span className="text-gray-500">Total Entry Amount:</span>
-                <span className="text-base font-bold font-mono text-gray-900">
-                  ₹{(Number(quickAddQty) * Number(quickAddPrice)).toFixed(2)}
-                </span>
+              {/* Milk Product Selection */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Milk Variety</label>
+                <select
+                  value={entryProduct}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setEntryProduct(val);
+                    if (val.includes('Buffalo')) setEntryPrice(75);
+                    else if (val.includes('A2')) setEntryPrice(90);
+                    else setEntryPrice(54);
+                  }}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 focus:outline-none focus:border-amber-500 shadow-2xs bg-white"
+                >
+                  <option value="Cow Milk (Pouch)">Cow Milk (Pouch) — ₹54/L</option>
+                  <option value="Buffalo Milk (Pouch)">Buffalo Milk (Pouch) — ₹75/L</option>
+                  <option value="A2 Cow Milk">A2 Cow Milk — ₹90/L</option>
+                </select>
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
+              {/* Quantity (Litres) & Rate (₹/L) */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Quantity (Litres)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0.5"
+                    max="100"
+                    required
+                    value={entryQty}
+                    onChange={(e) => setEntryQty(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold font-mono text-gray-900 focus:outline-none focus:border-amber-500 shadow-2xs"
+                  />
+                  {/* Quick Quantity Buttons */}
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {[1, 1.5, 2, 3, 5, 7].map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => setEntryQty(q)}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer ${
+                          Number(entryQty) === q
+                            ? 'bg-amber-100 text-amber-900 border-amber-300'
+                            : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                        }`}
+                      >
+                        {q} L
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Rate (₹/Litre)
+                  </label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="1"
+                    required
+                    value={entryPrice}
+                    onChange={(e) => setEntryPrice(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold font-mono text-gray-900 focus:outline-none focus:border-amber-500 shadow-2xs"
+                  />
+                  <div className="text-[10px] text-gray-400 mt-1.5">
+                    Shop POS price
+                  </div>
+                </div>
+              </div>
+
+              {/* Calculated Total Card */}
+              <div className="p-3 bg-gradient-to-r from-amber-50 to-orange-50/50 rounded-2xl border border-amber-200/80 flex justify-between items-center text-xs">
+                <div>
+                  <span className="text-gray-600 font-medium block">Total Entry Value</span>
+                  <span className="text-[11px] text-amber-800">
+                    {entryQty} L × ₹{entryPrice}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-xl font-bold font-mono text-amber-900">
+                    ₹{(Number(entryQty || 0) * Number(entryPrice || 0)).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                {entryMode === 'edit' && (
+                  <button
+                    type="button"
+                    onClick={handleDeleteEntry}
+                    disabled={isDeletingEntry || isSubmittingEntry}
+                    className="px-3.5 py-2.5 border border-red-200 hover:bg-red-50 text-red-600 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                    title="Delete this entry"
+                  >
+                    <Trash2 size={14} />
+                    <span>{isDeletingEntry ? 'Deleting...' : 'Delete'}</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
-                  onClick={() => setShowQuickAddModal(false)}
-                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => setShowEntryModal(false)}
+                  className="flex-1 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
+
                 <button
                   type="submit"
-                  disabled={isSubmittingQuickAdd}
-                  className="flex-1 py-2.5 bg-milquu-blue hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer"
+                  disabled={isSubmittingEntry || isDeletingEntry}
+                  className={`flex-1 py-2.5 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 ${
+                    entryMode === 'edit'
+                      ? 'bg-amber-600 hover:bg-amber-700'
+                      : 'bg-milquu-blue hover:bg-blue-800'
+                  }`}
                 >
-                  {isSubmittingQuickAdd ? 'Saving...' : 'Add to Khata'}
+                  {isSubmittingEntry ? (
+                    'Saving...'
+                  ) : entryMode === 'edit' ? (
+                    <>
+                      <span>Save Changes</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Add to Khata</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
