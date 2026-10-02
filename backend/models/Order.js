@@ -78,7 +78,8 @@ const orderSchema = new mongoose.Schema({
   creditSettledAt: { type: Date },
   // Part-payments received against a credit bill before it is fully settled
   creditPaidAmount: { type: Number, default: 0 },
-  creditSettledMethod: { type: String }
+  creditSettledMethod: { type: String },
+  khataBill: { type: mongoose.Schema.Types.ObjectId, ref: 'KhataBill', index: true }
 }, {
   timestamps: true
 });

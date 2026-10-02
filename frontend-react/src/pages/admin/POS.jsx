@@ -12,12 +12,14 @@ import ReceiptModal from './pos/ReceiptModal';
 import DailyRegisterModal from './pos/DailyRegisterModal';
 import EditCustomerModal from './pos/EditCustomerModal';
 import MilkInvoiceModal from './pos/MilkInvoiceModal';
+import CustomerKhataDetail from './pos/CustomerKhataDetail';
 import { DAIRY_KHATA_BANK_DETAILS } from '../../utils/khataPaymentConfig';
 import toast from '../../utils/toast';
 
 const POS = () => {
   // Navigation Tab State
   const [activeTab, setActiveTab] = useState('terminal'); // 'terminal' | 'credit'
+  const [selectedKhataCustomerForDetail, setSelectedKhataCustomerForDetail] = useState(null);
 
   // Products & Cart State
   const [products, setProducts] = useState([]);
@@ -878,24 +880,28 @@ const POS = () => {
           {/* Main POS / Credit Tab Switcher */}
           <div className="bg-gray-100/90 p-1 rounded-2xl flex items-center border border-gray-200 shadow-xs">
             <button
-              onClick={() => setActiveTab('terminal')}
+              onClick={() => {
+                setActiveTab('terminal');
+                setSelectedKhataCustomerForDetail(null);
+              }}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'terminal'
+                activeTab === 'terminal' && !selectedKhataCustomerForDetail
                   ? 'bg-white text-milquu-dark shadow-sm'
                   : 'text-gray-500 hover:text-milquu-dark'
               }`}
             >
-              <Store size={15} className={activeTab === 'terminal' ? 'text-milquu-blue' : ''} />
+              <Store size={15} className={activeTab === 'terminal' && !selectedKhataCustomerForDetail ? 'text-milquu-blue' : ''} />
               <span>POS Billing</span>
             </button>
 
             <button
               onClick={() => {
                 setActiveTab('credit');
+                setSelectedKhataCustomerForDetail(null);
                 fetchCreditCustomers();
               }}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'credit'
+                activeTab === 'credit' && !selectedKhataCustomerForDetail
                   ? 'bg-amber-600 text-white shadow-sm'
                   : 'text-gray-600 hover:text-amber-800'
               }`}
@@ -964,10 +970,23 @@ const POS = () => {
       </div>
 
       {/* ============================================================ */}
-      {/* TAB 1: POS TERMINAL BILLING                                 */}
+      {/* CONDITIONAL: KHATA CUSTOMER DETAIL & CALENDAR VIEW           */}
       {/* ============================================================ */}
-      {activeTab === 'terminal' && (
-        <div className="flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden">
+      {selectedKhataCustomerForDetail ? (
+        <CustomerKhataDetail
+          customerId={selectedKhataCustomerForDetail.customerId || selectedKhataCustomerForDetail.userId || selectedKhataCustomerForDetail._id || selectedKhataCustomerForDetail.id}
+          onBack={() => {
+            setSelectedKhataCustomerForDetail(null);
+            fetchCreditCustomers();
+          }}
+        />
+      ) : (
+        <>
+          {/* ============================================================ */}
+          {/* TAB 1: POS TERMINAL BILLING                                 */}
+          {/* ============================================================ */}
+          {activeTab === 'terminal' && (
+            <div className="flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden">
           
           {/* Left Side: Products Catalog & Scanner */}
           <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -1621,7 +1640,10 @@ const POS = () => {
         setSelectedCreditCustomerForLedger={setSelectedCreditCustomerForLedger}
         setShowAddCustomerModal={setShowAddCustomerModal}
         setShowLedgerModal={setShowLedgerModal}
+        handleOpenCustomerDetail={(customer) => setSelectedKhataCustomerForDetail(customer)}
       />
+      </>
+    )}
 
       <QuantityModal
         customQtyInput={customQtyInput}

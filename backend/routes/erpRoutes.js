@@ -13,7 +13,12 @@ import {
   getCreditCustomers,
   getCreditCustomerOrders,
   settleCreditCustomer,
-  markPOSOrderPaid
+  markPOSOrderPaid,
+  getCreditCustomerDetails,
+  createCreditCustomerBill,
+  settleCreditBill,
+  getCreditCustomerBills,
+  deleteCreditBill
 } from '../controllers/erpControllers.js';
 import { getLiveTracking, assignStaffToArea } from '../controllers/adminPanelControllers.js';
 import { protect, managerUp, staffUp } from '../middleware/authMiddleware.js';
@@ -44,8 +49,12 @@ router.route('/orders/:id/pay').put(protect, staffUp, markPOSOrderPaid);
 
 // Credit Customers & Khata
 router.route('/credit-customers').get(protect, staffUp, getCreditCustomers);
+router.route('/credit-customers/:id/details').get(protect, staffUp, getCreditCustomerDetails);
 router.route('/credit-customers/:id/orders').get(protect, staffUp, getCreditCustomerOrders);
+router.route('/credit-customers/:id/bills').get(protect, staffUp, getCreditCustomerBills).post(protect, staffUp, createCreditCustomerBill);
 router.route('/credit-customers/:id/settle').post(protect, staffUp, settleCreditCustomer);
+router.route('/credit-bills/:billId/settle').post(protect, staffUp, settleCreditBill);
+router.route('/credit-bills/:billId').delete(protect, staffUp, deleteCreditBill);
 
 router.get('/delivery-staff/live', protect, staffUp, getLiveTracking);
 router.route('/delivery-staff').get(protect, staffUp, getDeliveryStaff).post(protect, managerUp, createDeliveryStaff);

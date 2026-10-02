@@ -32,6 +32,7 @@ const Settings = lazy(() => import('./pages/admin/Settings'));
 const DeliveryBoys = lazy(() => import('./pages/admin/DeliveryBoys'));
 const AdminWithdrawals = lazy(() => import('./pages/admin/AdminWithdrawals'));
 const POS = lazy(() => import('./pages/admin/POS'));
+const CustomerKhataDetail = lazy(() => import('./pages/admin/pos/CustomerKhataDetail'));
 const Purchases = lazy(() => import('./pages/admin/Purchases'));
 const Expenses = lazy(() => import('./pages/admin/Expenses'));
 const ProfitAnalytics = lazy(() => import('./pages/admin/ProfitAnalytics'));
@@ -185,6 +186,7 @@ export const router = createBrowserRouter([
           { path: "revenue", element: <Revenue /> },
           { path: "inventory", element: <Inventory /> },
           { path: "pos", element: <POS /> },
+          { path: "pos/customer/:id", element: <CustomerKhataDetail /> },
           { path: "purchases", element: <Purchases /> },
           { path: "expenses", element: <Expenses /> },
           { path: "profit", element: <ProfitAnalytics /> },

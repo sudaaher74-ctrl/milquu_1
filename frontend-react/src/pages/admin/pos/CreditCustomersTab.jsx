@@ -21,7 +21,8 @@ const CreditCustomersTab = ({
   setCreditSort, 
   setSelectedCreditCustomerForLedger, 
   setShowAddCustomerModal, 
-  setShowLedgerModal 
+  setShowLedgerModal,
+  handleOpenCustomerDetail
 }) => (
   <>
     {/* ============================================================ */}
@@ -153,22 +154,26 @@ const CreditCustomersTab = ({
                 return (
                   <div 
                     key={customer.customerId}
-                    className="bg-white rounded-2xl border border-gray-200 p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                    onClick={() => handleOpenCustomerDetail && handleOpenCustomerDetail(customer)}
+                    className="bg-white rounded-2xl border border-gray-200 p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between cursor-pointer group hover:border-amber-400"
                   >
                     {/* Top Info */}
                     <div>
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-10 h-10 rounded-xl bg-milquu-blue/10 text-milquu-blue flex items-center justify-center font-bold font-serif text-base shrink-0">
+                          <div className="w-10 h-10 rounded-xl bg-milquu-blue/10 text-milquu-blue group-hover:bg-amber-100 group-hover:text-amber-800 flex items-center justify-center font-bold font-serif text-base shrink-0 transition-colors">
                             {customer.name?.charAt(0)?.toUpperCase() || 'C'}
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <h4 className="font-bold text-gray-900 text-sm">{customer.name}</h4>
+                              <h4 className="font-bold text-gray-900 text-sm group-hover:text-amber-800 transition-colors">{customer.name}</h4>
                               {handleOpenEditCustomer && (
                                 <button
                                   type="button"
-                                  onClick={() => handleOpenEditCustomer(customer)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenEditCustomer(customer);
+                                  }}
                                   className="p-1 text-gray-400 hover:text-milquu-blue hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
                                   title="Edit Customer Details"
                                 >
@@ -178,7 +183,10 @@ const CreditCustomersTab = ({
                               {handleDeleteCustomer && (
                                 <button
                                   type="button"
-                                  onClick={() => handleDeleteCustomer(customer)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteCustomer(customer);
+                                  }}
                                   className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
                                   title="Delete Customer"
                                 >
@@ -198,7 +206,11 @@ const CreditCustomersTab = ({
 
                         {/* Billing Cycle Badge */}
                         <button
-                          onClick={() => (handleOpenEditCustomer ? handleOpenEditCustomer(customer) : handleOpenEditCycle(customer))}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (handleOpenEditCustomer) handleOpenEditCustomer(customer);
+                            else handleOpenEditCycle(customer);
+                          }}
                           className="px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors flex items-center gap-1 cursor-pointer bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
                           title="Click to edit customer & billing system"
                         >
@@ -209,7 +221,7 @@ const CreditCustomersTab = ({
                       </div>
 
                       {/* Financial Metrics */}
-                      <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 my-3 flex justify-between items-center">
+                      <div className="p-3 bg-gray-50 group-hover:bg-amber-50/40 rounded-xl border border-gray-100 group-hover:border-amber-100 my-3 flex justify-between items-center transition-colors">
                         <div>
                           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Outstanding Balance</span>
                           <span className={`text-xl font-bold font-mono ${hasDues ? 'text-amber-700' : 'text-green-600'}`}>
@@ -253,10 +265,27 @@ const CreditCustomersTab = ({
 
                     {/* Action Buttons Bar */}
                     <div className="pt-3 border-t border-gray-100 flex flex-wrap gap-1.5">
+                      {/* Customer Details & Calendar Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (handleOpenCustomerDetail) handleOpenCustomerDetail(customer);
+                        }}
+                        className="py-1.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                        title="Open customer profile, milk calendar and create bill"
+                      >
+                        <Calendar size={13} className="text-amber-600" />
+                        <span>Calendar</span>
+                      </button>
+
                       {/* New Bill Button */}
                       <button
                         type="button"
-                        onClick={() => handleStartBillForCustomer(customer)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartBillForCustomer(customer);
+                        }}
                         className="flex-1 py-1.5 px-2 bg-milquu-blue text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 hover:bg-blue-800 transition-colors cursor-pointer"
                         title="Open POS Terminal with this customer selected"
                       >
@@ -267,7 +296,8 @@ const CreditCustomersTab = ({
                       {/* View Ledger / Bills */}
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setSelectedCreditCustomerForLedger(customer);
                           setShowLedgerModal(true);
                         }}
@@ -282,7 +312,10 @@ const CreditCustomersTab = ({
                       {handleOpenInvoiceModal && (
                         <button
                           type="button"
-                          onClick={() => handleOpenInvoiceModal(customer)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenInvoiceModal(customer);
+                          }}
                           className="py-1.5 px-2.5 bg-blue-50 hover:bg-blue-100 text-milquu-blue border border-blue-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                           title="Generate, Print or Download Milk Invoice Bill (PDF)"
                         >
@@ -295,7 +328,10 @@ const CreditCustomersTab = ({
                       {hasDues && (
                         <button
                           type="button"
-                          onClick={() => handleOpenSettleModal(customer)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenSettleModal(customer);
+                          }}
                           className="py-1.5 px-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                           title="Collect cash, UPI or card payment against Khata"
                         >
@@ -308,7 +344,10 @@ const CreditCustomersTab = ({
                       {hasDues && customer.phone && (
                         <button
                           type="button"
-                          onClick={() => handleSendWhatsAppReminder(customer)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSendWhatsAppReminder(customer);
+                          }}
                           className="py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                           title="Send WhatsApp payment reminder"
                         >

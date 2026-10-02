@@ -8,6 +8,7 @@ import Product from '../models/Product.js';
 import User from '../models/User.js';
 import Subscription from '../models/Subscription.js';
 import DeliveryStaff from '../models/DeliveryStaff.js';
+import KhataBill from '../models/KhataBill.js';
 import crypto from 'crypto';
 import { exactCaseInsensitive, escapeRegex as escapeRegexText } from '../utils/regex.js';
 import { normalisePhone, isValidPhone } from '../utils/phone.js';
@@ -1487,6 +1488,22 @@ export const settleCreditCustomer = async (req, res) => {
       }
     }
 
+    // Also update any KhataBill for this customer where underlying orders are now all paid
+    let billQ = id.startsWith('guest_') ? { guestId: id, status: { $ne: 'Settled' } } : { user: id, status: { $ne: 'Settled' } };
+    const unpaidBills = await KhataBill.find(billQ);
+    for (const b of unpaidBills) {
+      if (b.orders && b.orders.length > 0) {
+        const stillUnpaidOrders = await Order.countDocuments({ _id: { $in: b.orders }, isPaid: false });
+        if (stillUnpaidOrders === 0) {
+          b.status = 'Settled';
+          b.paidAmount = b.totalAmount;
+          b.settledAt = new Date();
+          b.settledMethod = settledMethod;
+          await b.save();
+        }
+      }
+    }
+
     await recordAudit(req, {
       action: 'khata.settle',
       entity: 'Customer',
@@ -1551,5 +1568,401 @@ export const getCreditCustomerOrders = async (req, res) => {
     res.json(orders);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch customer orders', error: err.message });
+  }
+};
+
+export const getCreditCustomerDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let customer = null;
+    let orderQuery = { orderSource: 'POS' };
+    let billQuery = {};
+
+    if (id.startsWith('guest_')) {
+      const phoneOrName = id.replace('guest_', '');
+      orderQuery.$or = [{ phone: phoneOrName }, { name: phoneOrName }];
+      billQuery = { guestId: id };
+      customer = {
+        customerId: id,
+        userId: null,
+        name: phoneOrName,
+        phone: isValidPhone(phoneOrName) ? phoneOrName : '',
+        email: '',
+        address: '',
+        billingCycle: '15 Days',
+        isCreditCustomer: true,
+        creditLimit: 0,
+        status: 'Active'
+      };
+    } else {
+      orderQuery.$or = [{ user: id }, { phone: id }];
+      billQuery = { user: id };
+      const u = await User.findById(id).lean();
+      if (u) {
+        customer = {
+          customerId: u._id.toString(),
+          userId: u._id.toString(),
+          name: u.name,
+          phone: u.phone || '',
+          email: u.email || '',
+          address: u.address || (u.deliveryAddress ? `${u.deliveryAddress.line || ''} ${u.deliveryAddress.area || ''}`.trim() : ''),
+          billingCycle: u.billingCycle && u.billingCycle !== 'none' ? u.billingCycle : '15 Days',
+          isCreditCustomer: u.isCreditCustomer ?? true,
+          creditLimit: u.creditLimit || 0,
+          creditNotes: u.creditNotes || '',
+          status: 'Active'
+        };
+      } else {
+        customer = {
+          customerId: id,
+          userId: id,
+          name: 'Customer',
+          phone: '',
+          email: '',
+          address: '',
+          billingCycle: '15 Days',
+          isCreditCustomer: true,
+          creditLimit: 0,
+          status: 'Active'
+        };
+      }
+    }
+
+    // Fetch all POS orders (both paid and unpaid)
+    const orders = await Order.find(orderQuery).sort({ createdAt: -1 }).lean();
+
+    // Fetch all saved KhataBills
+    const bills = await KhataBill.find(billQuery).sort({ startDate: -1 }).lean();
+
+    // Calculate detailed stats
+    let totalMilkLitres = 0;
+    let totalBilledAmount = 0;
+    let totalPaidAmount = 0;
+    let totalDue = 0;
+    let unpaidOrdersCount = 0;
+
+    for (const ord of orders) {
+      const ordTotal = Number(ord.totalPrice) || 0;
+      const ordPaid = ord.isPaid ? ordTotal : (Number(ord.creditPaidAmount) || 0);
+      const ordDue = ord.isPaid ? 0 : Math.max(0, ordTotal - ordPaid);
+
+      totalBilledAmount += ordTotal;
+      totalPaidAmount += ordPaid;
+      totalDue += ordDue;
+      if (!ord.isPaid) unpaidOrdersCount += 1;
+
+      // Extract milk litres from items
+      if (Array.isArray(ord.orderItems)) {
+        for (const item of ord.orderItems) {
+          const itemName = (item.name || '').toLowerCase();
+          const itemUnit = (item.unit || '').toLowerCase();
+          const qty = Number(item.qty) || 0;
+          if (itemName.includes('milk') || itemUnit.includes('litre') || itemUnit.includes('liter') || itemUnit.includes('l')) {
+            if (itemUnit.includes('500') || itemName.includes('500')) {
+              totalMilkLitres += (qty * 0.5);
+            } else {
+              totalMilkLitres += qty;
+            }
+          }
+        }
+      }
+    }
+
+    const unpaidBillsCount = bills.filter(b => b.status !== 'Settled').length;
+
+    customer.totalDue = totalDue;
+    customer.unpaidCount = unpaidOrdersCount;
+    customer.status = totalDue === 0 ? 'Settled' : 'Active';
+
+    res.json({
+      customer,
+      stats: {
+        totalMilkLitres: Math.round(totalMilkLitres * 100) / 100,
+        totalBilledAmount: Math.round(totalBilledAmount * 100) / 100,
+        totalPaidAmount: Math.round(totalPaidAmount * 100) / 100,
+        totalDue: Math.round(totalDue * 100) / 100,
+        unpaidOrdersCount,
+        unpaidBillsCount,
+        totalOrdersCount: orders.length,
+        totalBillsCount: bills.length
+      },
+      orders,
+      bills
+    });
+  } catch (err) {
+    console.error('Error in getCreditCustomerDetails:', err);
+    res.status(500).json({ message: 'Failed to fetch customer details', error: err.message });
+  }
+};
+
+export const createCreditCustomerBill = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate, notes, dueDate, customDeliveries } = req.body;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: 'Start date and end date are required' });
+    }
+
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    if (start > end) {
+      return res.status(400).json({ message: 'Start date cannot be after end date' });
+    }
+
+    let customerName = 'Customer';
+    let customerPhone = '';
+    let customerAddress = '';
+    let billingCycle = '15 Days';
+    let isGuest = id.startsWith('guest_');
+
+    if (isGuest) {
+      customerName = id.replace('guest_', '');
+    } else {
+      const u = await User.findById(id).lean();
+      if (u) {
+        customerName = u.name;
+        customerPhone = u.phone || '';
+        customerAddress = u.address || '';
+        billingCycle = u.billingCycle && u.billingCycle !== 'none' ? u.billingCycle : '15 Days';
+      }
+    }
+
+    // Find orders in date range
+    let orderQuery = {
+      orderSource: 'POS',
+      createdAt: { $gte: start, $lte: end }
+    };
+    if (isGuest) {
+      orderQuery.$or = [{ phone: customerName }, { name: customerName }];
+    } else {
+      orderQuery.$or = [{ user: id }, { phone: customerPhone || id }];
+    }
+
+    const matchedOrders = await Order.find(orderQuery).sort({ createdAt: 1 });
+
+    // Build daily deliveries list
+    const dailyDeliveries = [];
+    let totalLitres = 0;
+    let totalAmount = 0;
+
+    if (Array.isArray(customDeliveries) && customDeliveries.length > 0) {
+      for (const d of customDeliveries) {
+        dailyDeliveries.push({
+          date: d.date,
+          litres: Number(d.litres) || 0,
+          rate: Number(d.rate) || 0,
+          amount: Number(d.amount) || 0,
+          productName: d.productName || 'Milk',
+          shift: d.shift || 'Morning',
+          orderId: d.orderId || undefined
+        });
+        totalLitres += Number(d.litres) || 0;
+        totalAmount += Number(d.amount) || 0;
+      }
+    } else {
+      for (const o of matchedOrders) {
+        const oDateStr = new Date(o.createdAt).toISOString().slice(0, 10);
+        let orderLitres = 0;
+        let pName = 'Cow Milk';
+        if (Array.isArray(o.orderItems) && o.orderItems.length > 0) {
+          for (const it of o.orderItems) {
+            const itName = it.name || 'Milk';
+            pName = itName;
+            const itQty = Number(it.qty) || 1;
+            if (itName.includes('500')) {
+              orderLitres += (itQty * 0.5);
+            } else {
+              orderLitres += itQty;
+            }
+          }
+        } else {
+          orderLitres = 1;
+        }
+
+        const amt = Number(o.totalPrice) || 0;
+        totalLitres += orderLitres;
+        totalAmount += amt;
+
+        dailyDeliveries.push({
+          date: oDateStr,
+          litres: orderLitres,
+          rate: orderLitres > 0 ? Math.round(amt / orderLitres) : amt,
+          amount: amt,
+          productName: pName,
+          shift: (o.notes || '').includes('Evening') ? 'Evening' : 'Morning',
+          orderId: o._id
+        });
+      }
+    }
+
+    // Generate unique sequential bill number
+    const count = await KhataBill.countDocuments();
+    const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const billNumber = `BILL-${datePrefix}-${String(count + 1).padStart(4, '0')}`;
+
+    const dateRangeStr = `${start.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} – ${end.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+
+    const newBill = await KhataBill.create({
+      billNumber,
+      user: isGuest ? undefined : id,
+      guestId: isGuest ? id : undefined,
+      customerName,
+      customerPhone,
+      customerAddress,
+      billingCycle,
+      startDate: start,
+      endDate: end,
+      dateRangeStr,
+      orders: matchedOrders.map(o => o._id),
+      dailyDeliveries,
+      totalLitres: Math.round(totalLitres * 100) / 100,
+      subtotal: totalAmount,
+      totalAmount: totalAmount,
+      paidAmount: 0,
+      status: 'Unpaid',
+      dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      notes: notes || '',
+      createdBy: req.user?._id
+    });
+
+    // Tag orders with khataBill
+    if (matchedOrders.length > 0) {
+      await Order.updateMany(
+        { _id: { $in: matchedOrders.map(o => o._id) } },
+        { $set: { khataBill: newBill._id } }
+      );
+    }
+
+    await recordAudit(req, {
+      action: 'khata.create-bill',
+      entity: 'KhataBill',
+      entityId: newBill._id,
+      summary: `Generated bill ${newBill.billNumber} for ${customerName} (₹${totalAmount}, ${dateRangeStr})`
+    });
+
+    res.status(201).json({
+      message: 'Bill created successfully',
+      bill: newBill
+    });
+  } catch (err) {
+    console.error('Error creating khata bill:', err);
+    res.status(500).json({ message: 'Failed to create bill', error: err.message });
+  }
+};
+
+export const settleCreditBill = async (req, res) => {
+  try {
+    const { billId } = req.params;
+    const { paymentMethod = 'Cash', amount } = req.body;
+
+    const bill = await KhataBill.findById(billId);
+    if (!bill) {
+      return res.status(404).json({ message: 'Bill not found' });
+    }
+
+    const settleAmt = amount !== undefined ? Number(amount) : (bill.totalAmount - bill.paidAmount);
+    bill.paidAmount = Math.min(bill.totalAmount, (bill.paidAmount || 0) + settleAmt);
+    bill.status = bill.paidAmount >= bill.totalAmount ? 'Settled' : 'Partially Paid';
+    bill.settledAt = new Date();
+    bill.settledMethod = paymentMethod;
+    await bill.save();
+
+    // Settle associated orders
+    const now = new Date();
+    if (bill.orders && bill.orders.length > 0) {
+      await Order.updateMany(
+        { _id: { $in: bill.orders } },
+        {
+          $set: {
+            isPaid: true,
+            paidAt: now,
+            paymentStatus: 'PAID',
+            creditSettledAt: now,
+            creditSettledMethod: paymentMethod,
+            creditPaidAmount: bill.totalAmount
+          }
+        }
+      );
+    }
+
+    // Also mark any orders matching date range for this customer as paid
+    let orderQuery = {
+      orderSource: 'POS',
+      createdAt: { $gte: bill.startDate, $lte: bill.endDate }
+    };
+    if (bill.user) {
+      orderQuery.user = bill.user;
+    } else if (bill.guestId) {
+      const gName = bill.guestId.replace('guest_', '');
+      orderQuery.$or = [{ phone: gName }, { name: gName }];
+    }
+    await Order.updateMany(orderQuery, {
+      $set: {
+        isPaid: true,
+        paidAt: now,
+        paymentStatus: 'PAID',
+        creditSettledAt: now,
+        creditSettledMethod: paymentMethod
+      }
+    });
+
+    await recordAudit(req, {
+      action: 'khata.settle-bill',
+      entity: 'KhataBill',
+      entityId: bill._id,
+      summary: `Settled bill ${bill.billNumber} for ₹${settleAmt} (${paymentMethod})`
+    });
+
+    res.json({
+      message: `Bill ${bill.billNumber} settled successfully`,
+      bill
+    });
+  } catch (err) {
+    console.error('Error settling bill:', err);
+    res.status(500).json({ message: 'Failed to settle bill', error: err.message });
+  }
+};
+
+export const getCreditCustomerBills = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let query = {};
+    if (id.startsWith('guest_')) {
+      query.guestId = id;
+    } else {
+      query.user = id;
+    }
+    const bills = await KhataBill.find(query).sort({ startDate: -1 }).lean();
+    res.json(bills);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to fetch customer bills', error: err.message });
+  }
+};
+
+export const deleteCreditBill = async (req, res) => {
+  try {
+    const { billId } = req.params;
+    const bill = await KhataBill.findById(billId);
+    if (!bill) {
+      return res.status(404).json({ message: 'Bill not found' });
+    }
+    // Unlink orders
+    await Order.updateMany({ khataBill: bill._id }, { $unset: { khataBill: '' } });
+    await KhataBill.findByIdAndDelete(billId);
+
+    await recordAudit(req, {
+      action: 'khata.delete-bill',
+      entity: 'KhataBill',
+      entityId: billId,
+      summary: `Deleted bill ${bill.billNumber}`
+    });
+
+    res.json({ message: 'Bill deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete bill', error: err.message });
   }
 };
