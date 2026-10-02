@@ -54,17 +54,21 @@ export default function Plan() {
   const offCount = week.filter((d) => !d.on).length;
 
   const handleSelectPlan = (planItem) => {
-    setSelectedPlanId(planItem.id);
-    const targetProductId = planItem.productId || planItem.id;
-    const targetQty = planQuantities[planItem.id] || 1;
+    try {
+      setSelectedPlanId(planItem.id);
+      const targetProductId = planItem.productId || planItem.id;
+      const targetQty = planQuantities[planItem.id] || 1;
 
-    // Save milk & quantity directly into the draft crate
-    patch({
-      crate: { [targetProductId]: targetQty },
-      selectedPlan: planItem.id,
-    });
+      // Save milk & quantity directly into the draft crate
+      patch({
+        crate: { [targetProductId]: targetQty },
+        selectedPlan: planItem.id,
+      });
 
-    flash(`Selected ${planItem.name} (${targetQty} L/day)`);
+      flash(`Selected ${planItem.name} (${targetQty} L/day)`);
+    } catch (err) {
+      console.warn('Draft patch warning:', err);
+    }
     navigate('/app/start/rhythm');
   };
 
@@ -337,7 +341,13 @@ export default function Plan() {
               return (
                 <div
                   key={plan.id}
-                  className={`mq-plan-card ${isPopular ? 'mq-plan-card-popular' : ''}`}
+                  className={`mq-plan-card ${isPopular ? 'mq-plan-card-popular' : ''} ${isSelected ? 'mq-plan-card-selected' : ''}`}
+                  onClick={() => handleSelectPlan(plan)}
+                  style={{
+                    cursor: 'pointer',
+                    touchAction: 'manipulation',
+                    WebkitTapHighlightColor: 'transparent',
+                  }}
                 >
                   {/* Most Popular Crown Badge */}
                   {isPopular && (
@@ -480,27 +490,25 @@ export default function Plan() {
 
                   {/* CTA Button */}
                   <div style={{ marginTop: 'auto' }}>
-                    {isPopular ? (
-                      <button
-                        type="button"
-                        className="mq-btn-gold"
-                        style={{ width: '100%', padding: '9px 0', fontSize: 13.5 }}
-                        onClick={() => handleSelectPlan(plan)}
-                      >
-                        <span>Select plan ({planQuantities[plan.id] || 1} L)</span>
-                        <span>→</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className="mq-btn-outline-gold"
-                        style={{ width: '100%', padding: '8px 0', fontSize: 13.5 }}
-                        onClick={() => handleSelectPlan(plan)}
-                      >
-                        <span>Select plan ({planQuantities[plan.id] || 1} L)</span>
-                        <span>→</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className={isPopular ? 'mq-btn-gold' : 'mq-btn-outline-gold'}
+                      style={{
+                        width: '100%',
+                        padding: isPopular ? '10px 0' : '9px 0',
+                        fontSize: 13.5,
+                        touchAction: 'manipulation',
+                        WebkitTapHighlightColor: 'transparent',
+                        cursor: 'pointer',
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectPlan(plan);
+                      }}
+                    >
+                      <span style={{ pointerEvents: 'none' }}>Select plan ({planQuantities[plan.id] || 1} L)</span>
+                      <span style={{ pointerEvents: 'none' }}>→</span>
+                    </button>
                   </div>
                 </div>
               );

@@ -1190,6 +1190,8 @@ textarea.mq-input {
   font-weight: 600;
   border: 0;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   box-shadow: 0 3px 10px rgba(133, 98, 20, 0.25);
   transition: all 0.2s ease;
   text-decoration: none;
@@ -1217,12 +1219,18 @@ textarea.mq-input {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition: all 0.2s ease;
   text-decoration: none;
 }
 
 .mq-btn-outline-gold:hover {
   background: #faf5eb;
+}
+
+.mq-btn-outline-gold:active {
+  background: #f3ebd8;
 }
 
 .mq-btn-soldout {
@@ -1434,6 +1442,7 @@ textarea.mq-input {
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   padding: 10px 4px;
+  touch-action: pan-x pan-y;
 }
 
 .mq-plan-scroll::-webkit-scrollbar {
@@ -1450,10 +1459,25 @@ textarea.mq-input {
   flex-direction: column;
   position: relative;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.mq-plan-card:active {
+  transform: scale(0.985);
 }
 
 .mq-plan-card-popular {
   border-color: #856214;
+}
+
+.mq-plan-card-selected {
+  border-color: #856214;
+  box-shadow: 0 0 0 2px rgba(133, 98, 20, 0.2);
 }
 
 .mq-popular-badge {

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { DailyProvider, useDaily } from './DailyContext';
 import { Toast } from './ui';
@@ -9,7 +10,13 @@ function Shell() {
   const { toast, loading } = useDaily();
   return (
     <div className="mq-shell">
-      {loading ? <Loading /> : <Outlet />}
+      {loading ? (
+        <Loading />
+      ) : (
+        <Suspense fallback={<Loading />}>
+          <Outlet />
+        </Suspense>
+      )}
       <Toast message={toast} />
       <InstallPwaPrompt />
     </div>

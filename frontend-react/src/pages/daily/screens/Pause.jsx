@@ -43,7 +43,7 @@ export default function Pause() {
   const nights = spanDays(from, to);
   /* Only the mornings the rhythm would actually have delivered are held back. */
   const mornings = Array.from({ length: nights }, (_, i) => addDays(from, i))
-    .filter((d) => rhythmDef.days.includes((d.getDay() + 6) % 7)).length;
+    .filter((d) => rhythmDef?.days ? rhythmDef.days.includes((d.getDay() + 6) % 7) : true).length;
   const held = mornings * planDaily;
 
   const confirm = () => {

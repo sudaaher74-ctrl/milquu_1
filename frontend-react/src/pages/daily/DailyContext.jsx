@@ -411,6 +411,11 @@ export function DailyProvider({ children }) {
     // The draft has become a real plan; there is nothing left to keep locally.
     setDraft((d) => ({ ...EMPTY_DRAFT, cart: d.cart }));
     flash('Your plan starts tomorrow morning');
+    try {
+      await refresh();
+    } catch {
+      /* non-blocking */
+    }
     return data;
   };
 

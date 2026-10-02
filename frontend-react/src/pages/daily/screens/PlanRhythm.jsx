@@ -52,9 +52,9 @@ export default function PlanRhythm() {
             ))}
           </div>
           {/* The week strip reads out the rhythm rather than being set directly. */}
-          <div className="mq-row" style={{ gap: 7, marginTop: 4 }} aria-label={`Delivering ${rhythmDef.long}`}>
+          <div className="mq-row" style={{ gap: 7, marginTop: 4 }} aria-label={`Delivering ${rhythmDef?.long || 'plan'}`}>
             {WEEKDAY_INITIALS.map((initial, i) => {
-              const on = rhythmDef.days.includes(i);
+              const on = rhythmDef?.days ? rhythmDef.days.includes(i) : (rhythm === 'alternate' ? i % 2 === 0 : true);
               return (
                 <span
                   key={`${initial}-${i}`}
@@ -103,7 +103,7 @@ export default function PlanRhythm() {
 
       <div className="mq-fill" />
 
-      <ActionBar summary={{ title: rhythmDef.long, note: slotDef.label }}>
+      <ActionBar summary={{ title: rhythmDef?.long || 'Your rhythm', note: slotDef?.label || 'Morning' }}>
         {planActive ? (
           <button type="button" className="mq-btn mq-btn-md" onClick={() => navigate('/app/plan')}>
             Done

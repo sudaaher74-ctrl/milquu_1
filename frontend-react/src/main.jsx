@@ -36,8 +36,12 @@ import { registerSW } from 'virtual:pwa-register'
 const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    console.log('[PWA] New version detected, updating cache...');
-    updateSW(true);
+    console.log('[PWA] New version detected, updating cache and refreshing...');
+    updateSW(true).then(() => {
+      window.location.reload();
+    }).catch(() => {
+      window.location.reload();
+    });
   },
   onOfflineReady() {
     console.log('[PWA] MilQuu is ready for offline usage.');
