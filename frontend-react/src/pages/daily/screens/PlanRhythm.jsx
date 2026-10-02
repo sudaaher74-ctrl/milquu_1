@@ -6,7 +6,20 @@ import { useDaily } from '../DailyContext';
 
 export default function PlanRhythm() {
   const navigate = useNavigate();
-  const { rhythm, setRhythm, rhythmDef, slot, setSlot, slotDef, planActive } = useDaily();
+  const { rhythm, setRhythm, rhythmDef, slot, setSlot, slotDef, planActive, address } = useDaily();
+
+  const handleContinue = () => {
+    if (planActive) {
+      navigate('/app/plan');
+      return;
+    }
+    const hasAddress = Boolean(address?.line1 && address?.area);
+    if (!hasAddress) {
+      navigate('/app/start/address', { state: { from: '/app/start/review' } });
+    } else {
+      navigate('/app/start/review');
+    }
+  };
 
   // Editing an existing plan saves each change immediately (setRhythm/setSlot
   // PUT straight to the server) — there is no draft left to confirm, so this
@@ -16,7 +29,7 @@ export default function PlanRhythm() {
       {planActive ? (
         <TopBar title="Rhythm and slot" to="/app/plan" />
       ) : (
-        <StepBar step={2} to="/app/start/milk" />
+        <StepBar step={2} to="/app/plan" />
       )}
 
       <div className="mq-body" style={{ paddingTop: 22, gap: 20 }}>
@@ -96,8 +109,8 @@ export default function PlanRhythm() {
             Done
           </button>
         ) : (
-          <button type="button" className="mq-btn mq-btn-md" onClick={() => navigate('/app/start/review')}>
-            Review
+          <button type="button" className="mq-btn mq-btn-md" onClick={handleContinue}>
+            Continue
           </button>
         )}
       </ActionBar>

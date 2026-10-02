@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, StepBar, ActionBar, Icon } from '../ui';
 import { rupees } from '../catalogue';
@@ -11,8 +11,10 @@ export default function PlanReview() {
   const {
     crate, rhythmDef, slotDef, tomorrow, planDaily, planMonthly,
     savingsMonthly, savingsPercent, startPlan, itemRows, priceOf, wallet,
-    refresh, user,
+    refresh, user, address, areaName, ensurePlanMilk,
   } = useDaily();
+
+  const hasAddress = Boolean(address?.line1 && address?.area);
 
   /* The plan is charged nightly out of the wallet — starting it without
      enough for even the first crate would just mean a silent pause from day
@@ -26,27 +28,36 @@ export default function PlanReview() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const topUp = async () => {
-    setError('');
-    setSaving(true);
-    try {
-      const result = await rechargeWallet({ amount: short, user });
-      if (result) await refresh();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
+  // Make sure crate has a milk if empty
+  useEffect(() => {
+    if (!Object.keys(crate || {}).length) {
+      ensurePlanMilk();
     }
-  };
+  }, [crate, ensurePlanMilk]);
 
-  const confirm = async () => {
-    setSaving(true);
+  const handleStartPlan = async () => {
+    if (!hasAddress) {
+      navigate('/app/start/address', { state: { from: '/app/start/review' } });
+      return;
+    }
+
     setError('');
+    setSaving(true);
     try {
+      if (short > 0) {
+        const topUpResult = await rechargeWallet({ amount: short, user });
+        if (!topUpResult) {
+          // Payment sheet was dismissed
+          setSaving(false);
+          return;
+        }
+        await refresh();
+      }
+
       await startPlan();
       navigate('/app/start/done');
     } catch (err) {
-      setError(err.response?.data?.message || 'We could not start your plan just now.');
+      setError(err?.response?.data?.message || err?.message || 'We could not start your plan just now.');
     } finally {
       setSaving(false);
     }
@@ -87,6 +98,77 @@ export default function PlanReview() {
           </div>
         </div>
 
+        {/* Delivering To Section */}
+        <div className="mq-col" style={{ gap: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span className="mq-label">Delivering to</span>
+            <button
+              type="button"
+              style={{
+                background: 'transparent',
+                border: 0,
+                color: '#856214',
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+              onClick={() => navigate('/app/start/address', { state: { from: '/app/start/review' } })}
+            >
+              {hasAddress ? 'Change' : 'Add address'}
+            </button>
+          </div>
+
+          <div
+            className="mq-card mq-card-flat mq-card-pad"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              cursor: 'pointer',
+              border: !hasAddress ? '1.5px dashed #b45309' : '1px solid #e2e8f0',
+              background: !hasAddress ? '#fffbeb' : '#ffffff',
+            }}
+            onClick={() => navigate('/app/start/address', { state: { from: '/app/start/review' } })}
+          >
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 999,
+                background: !hasAddress ? '#fef3c7' : '#f1f5f9',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Icon name="pin" size={17} color={!hasAddress ? '#b45309' : '#1f2937'} strokeWidth={2.2} />
+            </div>
+
+            {hasAddress ? (
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#1e293b' }}>
+                  {address.line1}
+                </span>
+                <span style={{ display: 'block', fontSize: 12, color: '#64748b', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {[address.line2, areaName].filter(Boolean).join(', ')}
+                </span>
+              </div>
+            ) : (
+              <div style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: '#b45309' }}>
+                  Add your delivery address
+                </span>
+                <span style={{ display: 'block', fontSize: 11.5, color: '#92400e', marginTop: 2 }}>
+                  Required so we know where to drop your milk
+                </span>
+              </div>
+            )}
+
+            <Icon name="right" size={14} color="#94a3b8" />
+          </div>
+        </div>
+
         <div className="mq-dark mq-col" style={{ gap: 6 }}>
           <span className="mq-num" style={{ fontSize: 20, lineHeight: 1.15 }}>
             You save ₹{rupees(savingsMonthly)} a month
@@ -117,23 +199,33 @@ export default function PlanReview() {
       <ActionBar>
         <div className="mq-col" style={{ flex: 1, gap: 8 }}>
           {error && (
-            <span role="alert" style={{ fontSize: 13, color: 'var(--mq-clay-700, #a4423a)' }}>{error}</span>
+            <span role="alert" style={{ fontSize: 13, color: 'var(--mq-clay-700, #a4423a)', fontWeight: 500 }}>
+              {error}
+            </span>
           )}
-          {short > 0 ? (
+          {!hasAddress ? (
             <button
               type="button"
               className="mq-btn mq-btn-block"
-              onClick={topUp}
+              onClick={() => navigate('/app/start/address', { state: { from: '/app/start/review' } })}
+            >
+              Add delivery address to continue
+            </button>
+          ) : short > 0 ? (
+            <button
+              type="button"
+              className="mq-btn mq-btn-block"
+              onClick={handleStartPlan}
               disabled={saving}
               style={saving ? { opacity: 0.6, cursor: 'progress' } : undefined}
             >
-              {saving ? 'Opening…' : `Add ₹${rupees(short)} to start`}
+              {saving ? 'Opening payment…' : `Pay ₹${rupees(short)} & Start Plan`}
             </button>
           ) : (
             <button
               type="button"
               className="mq-btn mq-btn-block"
-              onClick={confirm}
+              onClick={handleStartPlan}
               disabled={saving}
               style={saving ? { opacity: 0.6, cursor: 'progress' } : undefined}
             >

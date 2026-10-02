@@ -1,11 +1,18 @@
 import axios from 'axios';
 import { eventBus } from './eventBus';
 
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (import.meta.env.MODE === 'development') {
+    // In browser development, relative URL allows Vite proxy to forward to local backend (port 5001)
+    // smoothly across both desktop localhost and mobile devices on local WiFi LAN
+    return '';
+  }
+  return 'https://milquu-backend.onrender.com';
+};
+
 const api = axios.create({
-  // VITE_API_URL points a build at a different backend (set it in Vercel or
-  // render.yaml); local development talks to the local backend.
-  baseURL: import.meta.env.VITE_API_URL
-    || (import.meta.env.MODE === 'development' ? 'http://localhost:5001' : 'https://milquu-backend.onrender.com')
+  baseURL: getBaseURL()
 });
 
 // Helper to safely parse token from localStorage

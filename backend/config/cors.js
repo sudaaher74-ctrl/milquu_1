@@ -22,5 +22,12 @@ export const allowedOrigins = () => {
   return list;
 };
 
-export const isAllowedOrigin = (origin) =>
-  allowedOrigins().includes(stripTrailingSlash(origin)) || VERCEL_PREVIEW_ORIGIN.test(origin);
+// Allow LAN/local development origins (e.g. mobile device testing on local WiFi)
+const LAN_DEV_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/;
+
+export const isAllowedOrigin = (origin) => {
+  if (process.env.NODE_ENV !== 'production' && LAN_DEV_ORIGIN.test(origin)) {
+    return true;
+  }
+  return allowedOrigins().includes(stripTrailingSlash(origin)) || VERCEL_PREVIEW_ORIGIN.test(origin);
+};

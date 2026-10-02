@@ -36,7 +36,7 @@ export default function AppRegister() {
     try {
       const { data } = await api.post('/api/users/register', form);
       login(data);
-      navigate(from, { replace: true });
+      navigate(from, { replace: true, state: location.state?.returnState });
     } catch (err) {
       setErrors({ password: err.response?.data?.message || err.message || 'Could not create your account.' });
     } finally {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Screen, TopBar, ActionBar, Icon } from '../ui';
 import { useDaily } from '../DailyContext';
 
@@ -7,6 +7,7 @@ const LABELS = ['Home', 'Office', 'Other'];
 
 export default function Address() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { address, saveAddress, areas, slotDef, planActive, flash } = useDaily();
   const [draft, setDraft] = useState(address);
   const [errors, setErrors] = useState({});
@@ -25,15 +26,16 @@ export default function Address() {
 
   const save = async () => {
     const next = {};
-    if (!draft.line1.trim()) next.line1 = 'We need a flat or house number.';
-    if (!draft.area) next.area = 'Pick the area you want deliveries in.';
+    if (!draft?.line1?.trim()) next.line1 = 'We need a flat or house number.';
+    if (!draft?.area) next.area = 'Pick the area you want deliveries in.';
     setErrors(next);
     if (Object.keys(next).length) return;
 
     setSaving(true);
     try {
       await saveAddress(draft);
-      navigate(planActive ? '/app' : '/app/start/milk');
+      const nextPath = location.state?.from || (planActive ? '/app' : '/app/start/review');
+      navigate(nextPath);
     } catch (err) {
       const message = err?.response?.data?.message ?? 'Could not save that address. Try again.';
       setErrors({ area: message });
@@ -45,7 +47,7 @@ export default function Address() {
 
   return (
     <Screen>
-      <TopBar title="Where to deliver" to={planActive ? '/app/account' : '/app/start'} />
+      <TopBar title="Where to deliver" to={location.state?.from || (planActive ? '/app/account' : '/app/start/rhythm')} />
 
       <div className="mq-body" style={{ gap: 18 }}>
         <h2 style={{ fontSize: 32 }}>Where should the<br />bottles go?</h2>
