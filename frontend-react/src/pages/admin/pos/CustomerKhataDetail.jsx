@@ -321,7 +321,8 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
       }
     } catch (err) {
       console.error('Error creating bill:', err);
-      toast.error(err.response?.data?.message || 'Failed to create bill');
+      const d = err.response?.data;
+      toast.error(d?.error ? `${d.message || 'Failed to create bill'}: ${d.error}` : (d?.message || 'Failed to create bill'));
     } finally {
       setIsCreatingBill(false);
     }
