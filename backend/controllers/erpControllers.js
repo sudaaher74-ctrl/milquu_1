@@ -1929,15 +1929,20 @@ export const createCreditCustomerBill = async (req, res) => {
       }
     }
 
-    // Generate unique sequential bill number
-    const count = await KhataBill.countDocuments();
+    // Generate unique sequential bill number. Counting documents repeats a
+    // number once any bill has been deleted, so continue from the highest
+    // number issued today and retry if another request grabs it first.
     const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const billNumber = `BILL-${datePrefix}-${String(count + 1).padStart(4, '0')}`;
+    const billPrefix = `BILL-${datePrefix}-`;
+    const lastToday = await KhataBill.findOne({ billNumber: new RegExp(`^${billPrefix}\\d+$`) })
+      .sort({ billNumber: -1 })
+      .select('billNumber')
+      .lean();
+    let nextSeq = lastToday ? parseInt(lastToday.billNumber.slice(billPrefix.length), 10) + 1 : 1;
 
     const dateRangeStr = `${start.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} – ${end.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`;
 
-    const newBill = await KhataBill.create({
-      billNumber,
+    const billFields = {
       user: isGuest ? undefined : id,
       guestId: isGuest ? id : undefined,
       customerName,
@@ -1957,7 +1962,20 @@ export const createCreditCustomerBill = async (req, res) => {
       dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
       notes: notes || '',
       createdBy: req.user?._id
-    });
+    };
+
+    let newBill = null;
+    for (let attempt = 0; attempt < 10 && !newBill; attempt++) {
+      try {
+        newBill = await KhataBill.create({
+          ...billFields,
+          billNumber: `${billPrefix}${String(nextSeq).padStart(4, '0')}`
+        });
+      } catch (createErr) {
+        if (createErr?.code !== 11000 || attempt === 9) throw createErr;
+        nextSeq += 1;
+      }
+    }
 
     // Tag orders with khataBill
     if (matchedOrders.length > 0) {
