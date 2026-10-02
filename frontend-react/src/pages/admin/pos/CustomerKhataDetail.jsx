@@ -13,8 +13,7 @@ import {
   getOrderDateKey, 
   getDateKey, 
   formatKhataDate, 
-  getDatesInRange, 
-  buildCalendarGridCells 
+  getDatesInRange 
 } from '../../../utils/khataPaymentConfig';
 import MilkInvoiceModal from './MilkInvoiceModal';
 
@@ -115,11 +114,6 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     return new Date(year, month, 1).getDay();
   }, [year, month]);
 
-  // Continuous calendar grid cells including leading and trailing adjacent days
-  const calendarGridCells = useMemo(() => {
-    return buildCalendarGridCells(year, month);
-  }, [year, month]);
-
   // Map deliveries/orders by date: "YYYY-MM-DD" using unified getOrderDateKey
   const deliveriesByDate = useMemo(() => {
     const map = {};
@@ -170,24 +164,13 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     return map;
   }, [orders]);
 
-  // Auto-initialize range to active unpaid orders if present
+  // Synchronize range to current viewed month so no other month data is included
   useEffect(() => {
-    if (orders.length > 0 && !rangeStart && !rangeEnd) {
-      const unpaidOrders = orders.filter(o => !o.isPaid);
-      const unpaidDateKeys = unpaidOrders.map(getOrderDateKey).filter(Boolean).sort();
-      if (unpaidDateKeys.length > 0) {
-        setRangeStart(unpaidDateKeys[0]);
-        setRangeEnd(unpaidDateKeys[unpaidDateKeys.length - 1]);
-        const [uY, uM] = unpaidDateKeys[unpaidDateKeys.length - 1].split('-').map(Number);
-        setCurrentDate(new Date(uY, uM - 1, 1));
-      } else {
-        const yStr = String(year);
-        const mStr = String(month + 1).padStart(2, '0');
-        setRangeStart(`${yStr}-${mStr}-01`);
-        setRangeEnd(`${yStr}-${mStr}-${String(daysInMonth).padStart(2, '0')}`);
-      }
-    }
-  }, [orders]);
+    const yStr = String(year);
+    const mStr = String(month + 1).padStart(2, '0');
+    setRangeStart(`${yStr}-${mStr}-01`);
+    setRangeEnd(`${yStr}-${mStr}-${String(daysInMonth).padStart(2, '0')}`);
+  }, [year, month, daysInMonth]);
 
   // Match which bills cover which dates using getDatesInRange
   const billByDate = useMemo(() => {
@@ -205,17 +188,35 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     return map;
   }, [bills]);
 
-  // Month navigation handlers
+  // Month navigation handlers - always align range with the active month
   const handlePrevMonth = () => {
-    setCurrentDate(new Date(year, month - 1, 1));
+    const prev = new Date(year, month - 1, 1);
+    setCurrentDate(prev);
+    const pY = prev.getFullYear();
+    const pM = String(prev.getMonth() + 1).padStart(2, '0');
+    const pDays = new Date(pY, prev.getMonth() + 1, 0).getDate();
+    setRangeStart(`${pY}-${pM}-01`);
+    setRangeEnd(`${pY}-${pM}-${String(pDays).padStart(2, '0')}`);
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(new Date(year, month + 1, 1));
+    const next = new Date(year, month + 1, 1);
+    setCurrentDate(next);
+    const nY = next.getFullYear();
+    const nM = String(next.getMonth() + 1).padStart(2, '0');
+    const nDays = new Date(nY, next.getMonth() + 1, 0).getDate();
+    setRangeStart(`${nY}-${nM}-01`);
+    setRangeEnd(`${nY}-${nM}-${String(nDays).padStart(2, '0')}`);
   };
 
   const handleTodayMonth = () => {
-    setCurrentDate(new Date());
+    const today = new Date();
+    setCurrentDate(today);
+    const tY = today.getFullYear();
+    const tM = String(today.getMonth() + 1).padStart(2, '0');
+    const tDays = new Date(tY, today.getMonth() + 1, 0).getDate();
+    setRangeStart(`${tY}-${tM}-01`);
+    setRangeEnd(`${tY}-${tM}-${String(tDays).padStart(2, '0')}`);
   };
 
   // Helper: check if a date string is inside the selected date range
@@ -224,26 +225,10 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     return dateStr >= rangeStart && dateStr <= rangeEnd;
   };
 
-  // Set date range presets
+  // Set date range presets (strictly for the current viewed month)
   const handleSetPresetRange = (preset) => {
     const yStr = String(year);
     const mStr = String(month + 1).padStart(2, '0');
-
-    if (preset === 'active-dues') {
-      const unpaidOrders = orders.filter(o => !o.isPaid);
-      const unpaidDateKeys = unpaidOrders.map(getOrderDateKey).filter(Boolean).sort();
-      if (unpaidDateKeys.length > 0) {
-        const firstDate = unpaidDateKeys[0];
-        const lastDate = unpaidDateKeys[unpaidDateKeys.length - 1];
-        setRangeStart(firstDate);
-        setRangeEnd(lastDate);
-        const [uY, uM] = lastDate.split('-').map(Number);
-        setCurrentDate(new Date(uY, uM - 1, 1));
-      } else {
-        toast('No active unpaid dues found');
-      }
-      return;
-    }
 
     if (preset === '1st-15th') {
       setRangeStart(`${yStr}-${mStr}-01`);
@@ -254,12 +239,6 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     } else if (preset === 'full-month') {
       setRangeStart(`${yStr}-${mStr}-01`);
       setRangeEnd(`${yStr}-${mStr}-${String(daysInMonth).padStart(2, '0')}`);
-    } else if (preset === 'last-10-days') {
-      const today = new Date();
-      const tenAgo = new Date();
-      tenAgo.setDate(today.getDate() - 10);
-      setRangeStart(getDateKey(tenAgo));
-      setRangeEnd(getDateKey(today));
     }
   };
 
@@ -888,16 +867,7 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                   </div>
 
                   {/* Presets */}
-                  <div className="flex items-center gap-1 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => handleSetPresetRange('active-dues')}
-                      className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold cursor-pointer flex items-center gap-1 shadow-2xs"
-                      title="Select all dates with unpaid dues"
-                    >
-                      <Clock size={11} />
-                      Active Dues Period
-                    </button>
+                  <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => handleSetPresetRange('1st-15th')}
@@ -918,13 +888,6 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                       className="px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-lg text-[11px] font-bold cursor-pointer"
                     >
                       Full Month
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSetPresetRange('last-10-days')}
-                      className="px-2.5 py-1 bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-lg text-[11px] font-bold cursor-pointer"
-                    >
-                      Last 10 Days
                     </button>
                   </div>
                 </div>
@@ -950,7 +913,7 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                 </div>
               </div>
 
-              {/* 7-DAY CALENDAR GRID (Continuous full weeks) */}
+              {/* 7-DAY CALENDAR GRID - Only current month days */}
               <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
                 {/* Header row */}
                 <div className="grid grid-cols-7 bg-gray-100/80 border-b border-gray-200 text-center py-2.5">
@@ -968,8 +931,15 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
 
                 {/* Days grid */}
                 <div className="grid grid-cols-7 bg-gray-200 gap-[1px]">
-                  {calendarGridCells.map((cell) => {
-                    const { dateStr, dayNum, monthName, isCurrentMonth } = cell;
+                  {/* Empty spacer cells before month starts */}
+                  {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                    <div key={`empty-prev-${i}`} className="bg-gray-50/50 min-h-[105px] p-2" />
+                  ))}
+
+                  {/* Current month days only */}
+                  {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const dayNum = i + 1;
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
                     const delivery = deliveriesByDate[dateStr];
                     const bill = billByDate[dateStr];
                     const isToday = getDateKey(new Date()) === dateStr;
@@ -1018,28 +988,19 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                         className={`min-h-[105px] p-2 transition-all flex flex-col justify-between cursor-pointer group relative rounded-xl ${
                           isSelected
                             ? 'bg-amber-50/90 ring-2 ring-inset ring-amber-500'
-                            : isCurrentMonth
-                              ? 'bg-white hover:bg-amber-50/30 hover:shadow-xs'
-                              : 'bg-gray-50/80 hover:bg-amber-50/40 text-gray-500'
+                            : 'bg-white hover:bg-amber-50/30 hover:shadow-xs'
                         }`}
                       >
                         {/* Day Number and Today Indicator */}
                         <div className="flex items-center justify-between">
                           <span
-                            className={`px-1.5 py-0.5 flex items-center justify-center rounded-full text-xs font-bold font-mono ${
+                            className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold font-mono ${
                               isToday
                                 ? 'bg-milquu-blue text-white shadow-2xs'
-                                : isCurrentMonth
-                                  ? 'text-gray-800 group-hover:text-milquu-blue'
-                                  : 'text-gray-500 font-semibold'
+                                : 'text-gray-800 group-hover:text-milquu-blue'
                             }`}
                           >
                             {dayNum}
-                            {!isCurrentMonth && (
-                              <span className="text-[9px] uppercase font-bold text-gray-400 ml-1">
-                                {monthName}
-                              </span>
-                            )}
                           </span>
                           
                           {delivery ? (
@@ -1105,6 +1066,11 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                       </div>
                     );
                   })}
+
+                  {/* Empty spacer cells after month ends to complete the 7-day row */}
+                  {Array.from({ length: (7 - ((firstDayOfWeek + daysInMonth) % 7)) % 7 }).map((_, i) => (
+                    <div key={`empty-next-${i}`} className="bg-gray-50/50 min-h-[105px] p-2" />
+                  ))}
                 </div>
               </div>
 
