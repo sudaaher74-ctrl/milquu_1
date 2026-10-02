@@ -24,6 +24,17 @@ const MONTH_NAMES = [
 
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// Only used if the product catalogue cannot be loaded; normally prices come
+// from /api/products so they always match the Shop POS.
+const FALLBACK_MILK_PRODUCTS = [
+  { name: 'Cow Milk (Pouch)', price: 64 },
+  { name: 'Buffalo Milk (Pouch)', price: 72 }
+];
+
+// Strip the packaging suffix added to order item names, e.g. "Cow Milk (Pouch) (1 Litre)".
+const stripUnitSuffix = (name = '') =>
+  name.replace(/\s*\((500\s*ml|1\s*l(itre)?)\)\s*$/i, '').trim();
+
 export default function CustomerKhataDetail({ customerId: propCustomerId, onBack }) {
   const navigate = useNavigate();
   const params = useParams();
@@ -70,8 +81,9 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
   const [editingOrderId, setEditingOrderId] = useState(null);
   const [entryDate, setEntryDate] = useState('');
   const [entryQty, setEntryQty] = useState(1);
-  const [entryPrice, setEntryPrice] = useState(54);
-  const [entryProduct, setEntryProduct] = useState('Cow Milk (Pouch)');
+  const [entryPrice, setEntryPrice] = useState(FALLBACK_MILK_PRODUCTS[0].price);
+  const [entryProduct, setEntryProduct] = useState(FALLBACK_MILK_PRODUCTS[0].name);
+  const [catalogMilk, setCatalogMilk] = useState([]);
   const [entryShift, setEntryShift] = useState('Morning');
   const [entryIsPaid, setEntryIsPaid] = useState(false);
   const [isSubmittingEntry, setIsSubmittingEntry] = useState(false);
@@ -124,6 +136,28 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
   useEffect(() => {
     fetchCustomerDetails();
   }, [customerId]);
+
+  // Live milk products + prices, same source as the Shop POS
+  useEffect(() => {
+    let cancelled = false;
+    api.get('/api/products')
+      .then(({ data }) => {
+        if (cancelled || !Array.isArray(data)) return;
+        const milk = data
+          .filter((p) => (p.category || '').toLowerCase() === 'milk' || (p.name || '').toLowerCase().includes('milk'))
+          .map((p) => ({ name: p.name, price: Number(p.price) || 0 }));
+        setCatalogMilk(milk);
+      })
+      .catch((err) => console.error('Failed to load milk prices:', err));
+    return () => { cancelled = true; };
+  }, []);
+
+  const milkOptions = catalogMilk.length > 0 ? catalogMilk : FALLBACK_MILK_PRODUCTS;
+  const getMilkPrice = (name) => {
+    const found = milkOptions.find((p) => p.name === name);
+    return found ? found.price : milkOptions[0].price;
+  };
+  const defaultMilkName = milkOptions.find((p) => p.name === 'Cow Milk (Pouch)')?.name || milkOptions[0].name;
 
   // Calendar calculations
   const year = currentDate.getFullYear();
@@ -414,13 +448,13 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     })();
 
     const pName = (() => {
-      const n = item.name || '';
-      if (n.includes('Buffalo')) return 'Buffalo Milk (Pouch)';
-      if (n.includes('A2')) return 'A2 Cow Milk';
-      return 'Cow Milk (Pouch)';
+      const n = stripUnitSuffix(item.name || '');
+      if (milkOptions.some((p) => p.name === n)) return n;
+      if (n.includes('Buffalo')) return milkOptions.find((p) => p.name.includes('Buffalo'))?.name || n || defaultMilkName;
+      return n || defaultMilkName;
     })();
 
-    const rPrice = Number(item.price) || (ord.totalPrice && itemLitres ? Math.round(ord.totalPrice / itemLitres) : 54);
+    const rPrice = Number(item.price) || (ord.totalPrice && itemLitres ? Math.round(ord.totalPrice / itemLitres) : getMilkPrice(pName));
     const shift = (ord.notes || '').includes('Evening') ? 'Evening' : 'Morning';
 
     const resolvedDate = getOrderDateKey(ord) || fallbackDate || getDateKey(new Date());
@@ -446,8 +480,8 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
       setEntryMode('add');
       setEditingOrderId(null);
       setEntryQty(1);
-      setEntryPrice(54);
-      setEntryProduct('Cow Milk (Pouch)');
+      setEntryPrice(getMilkPrice(defaultMilkName));
+      setEntryProduct(defaultMilkName);
       setEntryShift('Morning');
       setEntryIsPaid(false);
     }
@@ -466,8 +500,8 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     setEntryMode('add');
     setEditingOrderId(null);
     setEntryQty(1);
-    setEntryPrice(54);
-    setEntryProduct('Cow Milk (Pouch)');
+    setEntryPrice(getMilkPrice(defaultMilkName));
+    setEntryProduct(defaultMilkName);
     setEntryShift(entryShift === 'Morning' ? 'Evening' : 'Morning');
     setEntryIsPaid(false);
   };
@@ -487,7 +521,7 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
 
     setIsSubmittingEntry(true);
     try {
-      const rate = Number(entryPrice) || 54;
+      const rate = Number(entryPrice) || getMilkPrice(entryProduct);
       const totalAmount = rate * qty;
       const unit = entryProduct.includes('500') ? '500 ml' : '1 Litre';
 
@@ -1843,15 +1877,13 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                   onChange={(e) => {
                     const val = e.target.value;
                     setEntryProduct(val);
-                    if (val.includes('Buffalo')) setEntryPrice(75);
-                    else if (val.includes('A2')) setEntryPrice(90);
-                    else setEntryPrice(54);
+                    setEntryPrice(getMilkPrice(val));
                   }}
                   className="w-full border border-gray-300 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 focus:outline-none focus:border-amber-500 shadow-2xs bg-white"
                 >
-                  <option value="Cow Milk (Pouch)">Cow Milk (Pouch) — ₹54/L</option>
-                  <option value="Buffalo Milk (Pouch)">Buffalo Milk (Pouch) — ₹75/L</option>
-                  <option value="A2 Cow Milk">A2 Cow Milk — ₹90/L</option>
+                  {[...milkOptions, ...(milkOptions.some((p) => p.name === entryProduct) ? [] : [{ name: entryProduct, price: Number(entryPrice) || 0 }])].map((p) => (
+                    <option key={p.name} value={p.name}>{p.name} — ₹{p.price}/L</option>
+                  ))}
                 </select>
               </div>
 
