@@ -77,6 +77,21 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
 
   // Milk Invoice PDF Modal State
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [selectedBillForInvoice, setSelectedBillForInvoice] = useState(null);
+  const [invoiceDateRange, setInvoiceDateRange] = useState(null);
+
+  const handleOpenInvoice = (bill = null) => {
+    if (bill) {
+      setSelectedBillForInvoice(bill);
+      const bStart = getDateKey(bill.startDate);
+      const bEnd = getDateKey(bill.endDate);
+      setInvoiceDateRange({ startDate: bStart, endDate: bEnd });
+    } else {
+      setSelectedBillForInvoice(null);
+      setInvoiceDateRange({ startDate: rangeStart, endDate: rangeEnd });
+    }
+    setShowInvoiceModal(true);
+  };
 
   // Fetch full details
   const fetchCustomerDetails = async () => {
@@ -628,7 +643,7 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
 
             <button
               type="button"
-              onClick={() => setShowInvoiceModal(true)}
+              onClick={() => handleOpenInvoice(null)}
               className="px-3 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
             >
               <FileText size={14} className="text-blue-600" />
@@ -1199,7 +1214,7 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
 
                                 <button
                                   type="button"
-                                  onClick={() => setShowInvoiceModal(true)}
+                                  onClick={() => handleOpenInvoice(bill)}
                                   className="p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors cursor-pointer"
                                   title="View Invoice PDF"
                                 >
@@ -1752,12 +1767,20 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
       {showInvoiceModal && (
         <MilkInvoiceModal
           showInvoiceModal={showInvoiceModal}
-          setShowInvoiceModal={setShowInvoiceModal}
+          setShowInvoiceModal={(val) => {
+            setShowInvoiceModal(val);
+            if (!val) {
+              setSelectedBillForInvoice(null);
+              setInvoiceDateRange(null);
+            }
+          }}
           customer={{
             ...customer,
             totalDue: stats.totalDue,
             orders: orders
           }}
+          targetBill={selectedBillForInvoice}
+          initialDateRange={invoiceDateRange}
         />
       )}
 
