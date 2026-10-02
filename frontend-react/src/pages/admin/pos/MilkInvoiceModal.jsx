@@ -246,14 +246,16 @@ const MilkInvoiceModal = ({
     ? targetBill.billNumber
     : `MILK-INV-${(customer.phone || customer.customerId || customer.name).toString().replace(/[^0-9a-zA-Z]/g, '').slice(-6).toUpperCase()}-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}`;
 
+  const isSingleDay = Boolean(customStartDate && customEndDate && customStartDate === customEndDate);
+
   const filterLabel = 
     filterMode === 'bill' && targetBill ? (targetBill.dateRangeStr || `${formatKhataDate(targetBill.startDate)} – ${formatKhataDate(targetBill.endDate)}`) :
-    filterMode === 'period' ? `Selected Period (${formatKhataDate(customStartDate)} – ${formatKhataDate(customEndDate)})` :
+    filterMode === 'period' ? (isSingleDay ? `Daily Bill: ${formatKhataDate(customStartDate)}` : `Selected Period (${formatKhataDate(customStartDate)} – ${formatKhataDate(customEndDate)})`) :
     filterMode === 'unpaid' ? 'Active Unpaid Dues' :
     filterMode === '10days' ? 'Last 10 Days Cycle' :
     filterMode === '15days' ? 'Last 15 Days Cycle' :
     filterMode === 'thisMonth' ? 'Current Month Cycle' :
-    filterMode === 'custom' ? `Custom Period (${customStartDate || 'Start'} to ${customEndDate || 'End'})` :
+    filterMode === 'custom' ? (isSingleDay ? `Daily Bill (${formatKhataDate(customStartDate)})` : `Custom Period (${customStartDate || 'Start'} to ${customEndDate || 'End'})`) :
     'Complete Order History';
 
   // Print Handler
@@ -320,7 +322,7 @@ const MilkInvoiceModal = ({
       const billSuffix = (filterMode === 'bill' && targetBill?.billNumber)
         ? `_${targetBill.billNumber}`
         : (filterMode === 'period' && customStartDate && customEndDate
-            ? `_${customStartDate}_to_${customEndDate}`
+            ? (customStartDate === customEndDate ? `_${customStartDate}` : `_${customStartDate}_to_${customEndDate}`)
             : '');
       pdf.save(`MilQuu_Milk_Invoice_${safeName}${billSuffix}.pdf`);
       toast.success('Milk Invoice downloaded successfully!');
@@ -454,7 +456,11 @@ const MilkInvoiceModal = ({
                 }`}
               >
                 <Calendar size={12} />
-                <span>Selected Period ({formatKhataDate(initialDateRange.startDate)} – {formatKhataDate(initialDateRange.endDate)})</span>
+                <span>
+                  {initialDateRange.startDate === initialDateRange.endDate
+                    ? `Daily Bill: ${formatKhataDate(initialDateRange.startDate)}`
+                    : `Selected Period (${formatKhataDate(initialDateRange.startDate)} – ${formatKhataDate(initialDateRange.endDate)})`}
+                </span>
               </button>
             )}
 

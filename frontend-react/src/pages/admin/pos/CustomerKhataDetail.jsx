@@ -93,6 +93,12 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
     setShowInvoiceModal(true);
   };
 
+  const handleOpenSingleDayInvoice = (dateStr, delivery = null) => {
+    setSelectedBillForInvoice(null);
+    setInvoiceDateRange({ startDate: dateStr, endDate: dateStr });
+    setShowInvoiceModal(true);
+  };
+
   // Fetch full details
   const fetchCustomerDetails = async () => {
     if (!customerId) return;
@@ -1027,12 +1033,23 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  handleOpenSingleDayInvoice(dateStr, delivery);
+                                }}
+                                title="Download 1-Day Bill"
+                                className="sm:opacity-0 sm:group-hover:opacity-100 opacity-90 p-1 hover:bg-blue-100 rounded text-blue-700 transition-all cursor-pointer"
+                              >
+                                <Download size={11} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   handleOpenDay(dateStr, delivery);
                                 }}
                                 title="Edit entry for this date"
-                                className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-amber-100 rounded text-amber-700 transition-all cursor-pointer"
+                                className="sm:opacity-0 sm:group-hover:opacity-100 opacity-90 p-1 hover:bg-amber-100 rounded text-amber-700 transition-all cursor-pointer"
                               >
-                                <Edit3 size={12} />
+                                <Edit3 size={11} />
                               </button>
                             </div>
                           ) : (
@@ -1058,9 +1075,6 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
                                 <span className="flex items-center gap-1">
                                   <span>🥛</span>
                                   <span>{delivery.totalLitres} L</span>
-                                </span>
-                                <span className="text-[10px] text-amber-700 font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                                  Edit ✏️
                                 </span>
                               </div>
                               <div className="text-[10px] text-gray-500 font-medium truncate">
@@ -1716,16 +1730,31 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
               {/* Action Buttons */}
               <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
                 {entryMode === 'edit' && (
-                  <button
-                    type="button"
-                    onClick={handleDeleteEntry}
-                    disabled={isDeletingEntry || isSubmittingEntry}
-                    className="px-3.5 py-2.5 border border-red-200 hover:bg-red-50 text-red-600 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
-                    title="Delete this entry"
-                  >
-                    <Trash2 size={14} />
-                    <span>{isDeletingEntry ? 'Deleting...' : 'Delete'}</span>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowEntryModal(false);
+                        handleOpenSingleDayInvoice(entryDate);
+                      }}
+                      className="px-3 py-2.5 border border-blue-200 hover:bg-blue-50 text-blue-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                      title="Download 1-Day Bill Statement"
+                    >
+                      <Download size={13} />
+                      <span>1-Day Bill</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleDeleteEntry}
+                      disabled={isDeletingEntry || isSubmittingEntry}
+                      className="px-3.5 py-2.5 border border-red-200 hover:bg-red-50 text-red-600 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                      title="Delete this entry"
+                    >
+                      <Trash2 size={14} />
+                      <span>{isDeletingEntry ? 'Deleting...' : 'Delete'}</span>
+                    </button>
+                  </>
                 )}
 
                 <button
