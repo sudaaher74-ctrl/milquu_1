@@ -316,63 +316,6 @@ export default function Shop() {
           </div>
         </div>
 
-        {/* ── Bottom Promo Banner (Vegetables) ──────────────────────── */}
-        <div
-          style={{
-            position: 'relative',
-            borderRadius: 22,
-            overflow: 'hidden',
-            background: 'linear-gradient(135deg, #f7f9f4 0%, #ecf4e8 100%)',
-            border: '1px solid #dce8d6',
-            display: 'flex',
-            alignItems: 'center',
-            minHeight: 125,
-          }}
-        >
-          {/* Left Vegetables Image */}
-          <div
-            style={{
-              width: '38%',
-              height: '100%',
-              minHeight: 125,
-              backgroundImage: 'url(/img/custom/veggies_crate.jpg)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              flexShrink: 0,
-            }}
-          />
-
-          {/* Right Text & CTA */}
-          <div style={{ flex: 1, padding: '14px 14px 14px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <h4
-              style={{
-                fontFamily: "'Playfair Display', Georgia, serif",
-                fontSize: 15.5,
-                fontWeight: 800,
-                color: '#132819',
-                lineHeight: 1.2,
-                margin: 0,
-              }}
-            >
-              Farm fresh vegetables too, at your doorstep.
-            </h4>
-            <p style={{ fontSize: 11.5, color: '#475569', margin: 0 }}>
-              Fresh. Local. Healthy.
-            </p>
-            <div style={{ marginTop: 4 }}>
-              <button
-                type="button"
-                className="mq-btn-outline-gold"
-                style={{ padding: '6px 14px', fontSize: 12 }}
-                onClick={() => setCat('vegetables')}
-              >
-                <span>Explore vegetables</span>
-                <span style={{ fontSize: 13 }}>→</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
       </div>
 
       <div style={{ height: 16 }} />

@@ -10,7 +10,7 @@ export const LocalBusinessSchema = {
   '@context': 'https://schema.org',
   '@type': ['LocalBusiness', 'FoodEstablishment'],
   name: 'MilQuu Fresh',
-  description: 'Fresh milk and vegetables delivered to your doorstep in Navi Mumbai, sourced through trusted processing and supply partners.',
+  description: 'Fresh milk and dairy essentials delivered to your doorstep in Navi Mumbai, sourced through trusted processing and supply partners.',
   url: BASE_URL,
   telephone: PHONE,
   email: 'milquufresh@gmail.com',

@@ -140,7 +140,12 @@ export function DailyProvider({ children }) {
     const productsRes = await api.get('/api/products').catch(() => null);
     if (productsRes && productsRes.data?.length) {
       // Prices, names and units are the server's. The app only adds copy.
-      const list = (productsRes.data ?? []).map(decorate);
+      const list = (productsRes.data ?? [])
+        .filter((p) => {
+          const cat = `${p.category || ''} ${p.name || ''}`.toLowerCase();
+          return !cat.includes('vegetable') && !cat.includes('veggie');
+        })
+        .map(decorate);
       setProductList(list);
       setProducts(Object.fromEntries(list.map((p) => [p.id, p])));
     } else {

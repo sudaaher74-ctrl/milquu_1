@@ -46,7 +46,6 @@ const PATHS = {
   'cat-curd': <><path d="M4 11a8 8 0 0 0 16 0H4z" /><path d="m14 5 5 5" /><path d="M6 19h12" /></>,
   'cat-paneer': <><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3z" /><path d="M12 12 4 7.5M12 12l8-4.5M12 12v9" /></>,
   'cat-lassi': <><path d="M6 3h12l-2 17a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2L6 3z" /><path d="M13 2v6" /><line x1="7" y1="9" x2="17" y2="9" /></>,
-  'cat-vegetables': <><path d="M11 20A7 7 0 0 1 4 13c0-4.5 3-8 9-9 4.5 0 7 3.5 7 8 0 4.5-3.5 8-9 8Z" /><path d="M11 20v-7" /></>,
   'cat-all': <><rect x="3" y="3" width="7" height="7" rx="2" /><rect x="14" y="3" width="7" height="7" rx="2" /><rect x="14" y="14" width="7" height="7" rx="2" /><rect x="3" y="14" width="7" height="7" rx="2" /></>,
 };
 

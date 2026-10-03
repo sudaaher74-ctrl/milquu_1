@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, ShoppingCart, Search, Mic, ShieldCheck, Leaf, FlaskConical, Truck, Plus, Home, ShoppingBag, CalendarCheck, Package, User, Wallet, Store, Carrot } from 'lucide-react';
+import { Bell, ShoppingCart, Search, Mic, ShieldCheck, Leaf, FlaskConical, Truck, Plus, Home, ShoppingBag, CalendarCheck, Package, User, Wallet, Store } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -79,7 +79,7 @@ const MobileHome = () => {
     if (n.includes('dahi') || n.includes('curd')) return 'fresh-dahi';
     if (n.includes('lassi')) return 'sweet-lassi';
     if (n.includes('milk')) return 'farm-fresh-cow-milk';
-    // No dedicated SEO page for this product yet (e.g. a vegetable) — slugify
+    // No dedicated SEO page for this product yet (e.g. a new dairy item) — slugify
     // its name rather than silently pointing at the cow-milk page. ProductPage
     // redirects to /products when a slug has no matching entry.
     return n.trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -114,8 +114,6 @@ const MobileHome = () => {
     { name: 'Paneer', image: '/img/products/panner.webp' },
     { name: 'Curd', image: '/img/products/Dahi.webp' },
     { name: 'Butter', image: '/img/categories/categoris1.webp' },
-    // No product photo yet — swap `icon` for an `image` path once one's uploaded.
-    { name: 'Vegetables', icon: Carrot, category: 'vegetables' },
   ];
 
   const features = [

@@ -22,7 +22,7 @@ const OurProcess = () => {
       <SEOHead
         title="Our Process | MilQuu Fresh"
         description="See how MilQuu Fresh takes an order from trusted suppliers to your doorstep — choose, order, prepare, deliver."
-        keywords="milk delivery process, fresh vegetable delivery process, MilQuu Fresh how it works"
+        keywords="milk delivery process, dairy delivery process, MilQuu Fresh how it works"
         canonical="https://milquufresh.in/our-process"
         schema={schema}
       />
@@ -45,7 +45,7 @@ const OurProcess = () => {
 
           <h3>Choose → Order → Prepare → Deliver</h3>
           <ol>
-            <li><strong>Choose:</strong> Browse fresh milk, vegetables and other available essentials.</li>
+            <li><strong>Choose:</strong> Browse fresh milk, dairy products and other available essentials.</li>
             <li><strong>Order:</strong> Select the products and quantities you need.</li>
             <li><strong>We Prepare:</strong> Your order is picked, checked and packed for delivery.</li>
             <li><strong>Delivered:</strong> Get your fresh essentials delivered to your doorstep, on schedule.</li>

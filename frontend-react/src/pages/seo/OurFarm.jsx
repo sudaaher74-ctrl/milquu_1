@@ -21,8 +21,8 @@ const OurFarm = () => {
       </div>
       <SEOHead
         title="Our Sourcing | MilQuu Fresh"
-        description="MilQuu Fresh works with trusted milk-processing partners and vegetable suppliers to bring everyday fresh essentials to your doorstep."
-        keywords="trusted milk suppliers, fresh vegetable suppliers, MilQuu Fresh sourcing"
+        description="MilQuu Fresh works with trusted milk-processing partners and dairy suppliers to bring everyday fresh essentials to your doorstep."
+        keywords="trusted milk suppliers, fresh dairy suppliers, MilQuu Fresh sourcing"
         canonical="https://milquufresh.in/our-farm"
         schema={schema}
       />
@@ -40,17 +40,12 @@ const OurFarm = () => {
         <div className="max-w-4xl mx-auto bg-white/80 backdrop-blur-2xl rounded-[32px] p-8 md:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/60 prose prose-lg prose-green">
           <h2>Trusted Suppliers, Not a Middleman-Free Story</h2>
           <p>
-            MilQuu Fresh does not run its own dairy farm or vegetable farm. We work with trusted milk-processing partners and vegetable suppliers, and focus on what we do best: convenient ordering, careful handling, and reliable doorstep delivery.
+            MilQuu Fresh does not run its own dairy farm. We work with trusted milk-processing partners and suppliers, and focus on what we do best: convenient ordering, careful handling, and reliable doorstep delivery.
           </p>
 
-          <h3>Milk Supply</h3>
+          <h3>Milk & Dairy Supply</h3>
           <p>
-            Our milk comes from established milk-processing partners. Once it reaches us, we manage inventory and order preparation so your daily crate is ready and delivered on schedule.
-          </p>
-
-          <h3>Vegetable Supply</h3>
-          <p>
-            Vegetables are sourced from trusted local suppliers. Our team sorts, packs, and prepares each order before it heads out for delivery.
+            Our milk and dairy products come from established milk-processing partners. Once they reach us, we manage inventory and order preparation so your daily crate is ready and delivered on schedule.
           </p>
 
           <h3>Quality Checks Before Delivery</h3>
@@ -60,7 +55,7 @@ const OurFarm = () => {
 
           <h3>Where This Is Headed</h3>
           <p>
-            Milk was our starting point. We're building MilQuu Fresh into a platform for everyday fresh essentials — starting with vegetables, and expanding over time.
+            Milk was our starting point. We're building MilQuu Fresh into a comprehensive platform for everyday fresh essentials — expanding our fresh dairy delights and more over time.
           </p>
         </div>
       </section>

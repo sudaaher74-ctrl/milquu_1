@@ -15,12 +15,6 @@ const categoryMeta = {
     bgLight: 'bg-milquu-green/5',
     blobColor: 'bg-milquu-green/20',
   },
-  'vegetables': {
-    title: 'Fresh Vegetables',
-    description: 'Seasonal vegetables from trusted suppliers, delivered conveniently to your door.',
-    bgLight: 'bg-emerald-500/5',
-    blobColor: 'bg-emerald-500/20',
-  },
   'by-products': {
     title: 'Dairy Delights',
     description: 'Traditional dairy products made from quality-sourced milk.',
@@ -163,7 +157,7 @@ const CategoryListing = () => {
     if (n.includes('dahi') || n.includes('curd')) return 'fresh-dahi';
     if (n.includes('lassi')) return 'sweet-lassi';
     if (n.includes('milk')) return 'farm-fresh-cow-milk';
-    // No dedicated SEO page for this product yet (e.g. a vegetable) — slugify
+    // No dedicated SEO page for this product yet (e.g. a new dairy item) — slugify
     // its name rather than silently pointing at the cow-milk page. ProductPage
     // redirects to /products when a slug has no matching entry.
     return n.trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -174,21 +168,19 @@ const CategoryListing = () => {
       try {
         const { data } = await api.get('/api/products');
         
-        // Group by category — anything that isn't milk or vegetables falls
-        // back to "by-products" so existing dairy items (ghee, paneer, curd)
-        // don't need their own bucket.
+        // Group by category — milk in "milk", other dairy in "by-products"
         const grouped = {
           'milk': { ...categoryMeta['milk'], products: [] },
-          'vegetables': { ...categoryMeta['vegetables'], products: [] },
           'by-products': { ...categoryMeta['by-products'], products: [] }
         };
 
         data.forEach(p => {
           const cat = (p.category || '').toLowerCase().trim();
+          if (cat === 'vegetables' || cat.includes('vegetable') || cat.includes('veggie')) {
+            return;
+          }
           if (cat === 'milk' || cat.includes('milk')) {
             grouped['milk'].products.push(p);
-          } else if (cat === 'vegetables' || cat.includes('vegetable') || cat.includes('veggie')) {
-            grouped['vegetables'].products.push(p);
           } else {
             grouped['by-products'].products.push(p);
           }

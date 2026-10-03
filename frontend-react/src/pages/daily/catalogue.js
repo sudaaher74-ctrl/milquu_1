@@ -111,7 +111,6 @@ const categoryOf = (product) => {
   if (raw.includes('paneer')) return 'paneer';
   if (raw.includes('dahi') || raw.includes('curd') || raw.includes('lassi')) return 'curd';
   if (raw.includes('milk')) return 'milk';
-  if (raw.includes('vegetable') || raw.includes('veggie')) return 'vegetables';
   return 'other';
 };
 
@@ -155,7 +154,6 @@ export const CATEGORIES = [
   ['curd', 'Curd'],
   ['paneer', 'Paneer'],
   ['lassi', 'Lassi'],
-  ['vegetables', 'Vegetables'],
 ];
 
 export const HOME_CATEGORIES = [
@@ -164,7 +162,6 @@ export const HOME_CATEGORIES = [
   ['curd', 'Curd'],
   ['paneer', 'Paneer'],
   ['lassi', 'Lassi'],
-  ['vegetables', 'Vegetables'],
 ];
 
 export const DEFAULT_POPULAR_PRODUCTS = [

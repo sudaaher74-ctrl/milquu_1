@@ -1,13 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Carrot } from 'lucide-react';
 
 const categories = [
   { id: 'milk', image: '/img/categories/categoris1.webp', title: "Pure Milk" },
   { id: 'by-products', image: '/img/categories/categorie2.webp', title: "Dairy Delights" },
-  // No product photo yet — swap `icon` for an `image` path once one's uploaded.
-  { id: 'vegetables', icon: Carrot, title: "Farm Vegetables" },
 ];
 
 const Products = () => {

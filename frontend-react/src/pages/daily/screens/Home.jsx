@@ -223,7 +223,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ── 3. Promo Card ("More than just milk") ─────────────────── */}
+        {/* ── 3. Promo Card ("Artisanal Dairy Delights") ─────────────── */}
         <div
           className="mq-promo-card"
           style={{
@@ -234,13 +234,13 @@ export default function Home() {
             overflow: 'hidden',
           }}
         >
-          {/* Left Crate Image */}
+          {/* Left Dairy Image */}
           <div
             style={{
               width: '45%',
               height: '100%',
               minHeight: 145,
-              backgroundImage: 'url(/img/custom/veggies_crate.jpg)',
+              backgroundImage: 'url(/img/categories/categorie2.webp)',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               flexShrink: 0,
@@ -259,10 +259,10 @@ export default function Home() {
                 margin: 0,
               }}
             >
-              More than just milk
+              Artisanal Dairy Delights
             </h3>
             <p style={{ fontSize: 11.5, color: '#4b5563', lineHeight: 1.35, margin: 0 }}>
-              Fresh vegetables, fruits and dairy essentials – all in one place.
+              Pure desi cow ghee, fresh paneer, dahi and curd – crafted with care.
             </p>
             <div style={{ marginTop: 4 }}>
               <button

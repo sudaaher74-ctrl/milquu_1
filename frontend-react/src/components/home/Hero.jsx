@@ -67,7 +67,7 @@ const Hero = () => {
             </h1>
 
             <p className="text-base sm:text-lg text-gray-600 font-sans mb-8 lg:mb-10 max-w-xl leading-relaxed">
-              Fresh milk and vegetables sourced from trusted partners, delivered to your doorstep with the convenience your everyday routine deserves.
+              Fresh milk and dairy essentials sourced from trusted partners, delivered to your doorstep with the convenience your everyday routine deserves.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-4">

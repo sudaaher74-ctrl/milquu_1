@@ -31,8 +31,8 @@ const AboutUs = () => {
     <div className="bg-gradient-to-br from-[#FDFBF7] to-white min-h-screen pb-16 md:pb-0 relative overflow-hidden">
       <SEOHead
         title="About MilQuu Fresh | Fresh Essentials Delivered Daily"
-        description="MilQuu Fresh is building a convenient platform for ordering milk, vegetables and other everyday fresh essentials, delivered to your doorstep in Navi Mumbai."
-        keywords="about milquu fresh, fresh essentials delivery navi mumbai, milk and vegetable delivery"
+        description="MilQuu Fresh is building a convenient platform for ordering milk, dairy products and other everyday fresh essentials, delivered to your doorstep in Navi Mumbai."
+        keywords="about milquu fresh, fresh essentials delivery navi mumbai, milk and dairy delivery"
         canonical="https://milquufresh.in/about-us"
         schema={schema}
       />
@@ -83,10 +83,10 @@ const AboutUs = () => {
           <h2 className="text-3xl md:text-4xl font-serif font-bold text-milquu-blue mb-6">Our Story</h2>
           <div className="prose prose-lg prose-blue max-w-none text-gray-700 leading-loose">
             <p className="text-lg md:text-xl">
-              MilQuu Fresh is building a convenient platform for ordering milk, vegetables and other everyday fresh essentials. We work with trusted suppliers and milk-processing partners and bring their products closer to customers through a simple digital ordering and doorstep delivery experience.
+              MilQuu Fresh is building a convenient platform for ordering milk, dairy products and other everyday fresh essentials. We work with trusted suppliers and milk-processing partners and bring their products closer to customers through a simple digital ordering and doorstep delivery experience.
             </p>
             <p className="text-lg md:text-xl">
-              Our goal is simple: make everyday fresh shopping easier, more convenient and more reliable. Milk was where we started — we're building toward vegetables and more everyday essentials over time.
+              Our goal is simple: make everyday fresh shopping easier, more convenient and more reliable. Milk was where we started — we're building toward dairy delights and more everyday essentials over time.
             </p>
           </div>
         </motion.div>
@@ -152,7 +152,7 @@ const AboutUs = () => {
               </div>
               <div>
                 <h3 className="font-bold text-2xl text-gray-900 mb-3 font-serif">One Convenient Platform</h3>
-                <p className="text-gray-600 text-lg leading-relaxed">Milk, vegetables and more everyday essentials in one place, growing over time.</p>
+                <p className="text-gray-600 text-lg leading-relaxed">Milk, dairy products and more everyday essentials in one place, growing over time.</p>
               </div>
             </motion.div>
           </motion.div>
@@ -177,7 +177,7 @@ const AboutUs = () => {
           <div>
             <h2 className="text-2xl md:text-3xl font-serif font-bold text-gray-900 mb-4">Our Vision</h2>
             <p className="text-lg text-gray-700 leading-relaxed">
-              To become a trusted everyday fresh-essentials platform for households — starting with milk and vegetables, and growing from there.
+              To become a trusted everyday fresh-essentials platform for households — starting with milk and dairy products, and growing from there.
             </p>
           </div>
         </motion.div>
