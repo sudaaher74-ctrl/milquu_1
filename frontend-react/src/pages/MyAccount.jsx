@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -218,8 +219,7 @@ const MyAccount = () => {
     navigate('/login');
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-28 pb-20 font-sans relative overflow-hidden">
+  return (<>{<div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-28 pb-20 font-sans relative overflow-hidden">
       {/* Background Orbs */}
       <div className="absolute top-0 left-0 w-full h-[40vh] pointer-events-none bg-milquu-gold/5 rounded-b-[120px]"></div>
       <div className="absolute top-40 -right-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-green/10 opacity-40 pointer-events-none"></div>
@@ -764,8 +764,7 @@ const MyAccount = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>}<Helmet><title>{"Your Account | MilQuu Fresh"}</title></Helmet></>);
 };
 
 export default MyAccount;

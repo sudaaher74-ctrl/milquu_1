@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
@@ -46,8 +47,7 @@ const Register = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FDFBF7] to-white flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans pt-32 pb-24 relative overflow-hidden">
+  return (<>{<div className="min-h-screen bg-gradient-to-br from-[#FDFBF7] to-white flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans pt-32 pb-24 relative overflow-hidden">
       
       {/* Background Orbs */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
@@ -196,8 +196,7 @@ const Register = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>}<Helmet><title>{"Create an Account | MilQuu Fresh"}</title></Helmet></>);
 };
 
 export default Register;

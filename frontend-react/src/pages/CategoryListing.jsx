@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async';
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -203,8 +204,7 @@ const CategoryListing = () => {
     fetchProducts();
   }, []);
   
-  return (
-    <div className="min-h-screen bg-milquu-cream pt-24 pb-20 relative overflow-hidden">
+  return (<>{<div className="min-h-screen bg-milquu-cream pt-24 pb-20 relative overflow-hidden">
       
       {/* Background Decorative Blur */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[120px] bg-milquu-blue/10 pointer-events-none"></div>
@@ -265,8 +265,7 @@ const CategoryListing = () => {
         )}
 
       </div>
-    </div>
-  );
+    </div>}<Helmet><title>{(categoryMeta[categoryFilter]?.title || 'Products') + ' | MilQuu Fresh'}</title></Helmet></>);
 };
 
 export default CategoryListing;

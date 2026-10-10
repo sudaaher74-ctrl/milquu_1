@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api.js';
@@ -159,8 +160,7 @@ const Subscription = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  return (
-    <div className="min-h-screen bg-white pt-32 pb-24 relative overflow-hidden">
+  return (<>{<div className="min-h-screen bg-white pt-32 pb-24 relative overflow-hidden">
       
       {/* Background Ambience */}
       <div className="absolute top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-green/20 opacity-30 mix-blend-multiply pointer-events-none"></div>
@@ -547,8 +547,7 @@ const Subscription = () => {
         </motion.div>
 
       </div>
-    </div>
-  );
+    </div>}<Helmet><title>{"Milk Subscriptions | MilQuu Fresh"}</title></Helmet></>);
 };
 
 export default Subscription;
