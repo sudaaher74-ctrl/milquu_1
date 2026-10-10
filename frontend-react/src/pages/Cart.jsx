@@ -227,7 +227,7 @@ const Cart = () => {
             </Link>
           </div>
         </motion.div>
-      </div>}<Helmet><title>{"Cart - MilQuu Fresh"}</title></Helmet></>);
+      </div>}<Helmet><title>{"Your Cart | MilQuu Fresh"}</title></Helmet></>);
   }
 
   return (<>{<div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-28 pb-12 relative overflow-hidden">
@@ -591,7 +591,7 @@ const Cart = () => {
           </div>
         )}
       </div>
-    </div>}<Helmet><title>{"Cart - MilQuu Fresh"}</title></Helmet></>);
+    </div>}<Helmet><title>{"Your Cart | MilQuu Fresh"}</title></Helmet></>);
 };
 
 export default Cart;

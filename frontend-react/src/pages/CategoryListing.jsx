@@ -265,7 +265,7 @@ const CategoryListing = () => {
         )}
 
       </div>
-    </div>}<Helmet><title>{"Fresh Dairy Delivery Service | MilQuu Fresh"}</title></Helmet></>);
+    </div>}<Helmet><title>{(categoryMeta[categoryFilter]?.title || 'Products') + ' | MilQuu Fresh'}</title></Helmet></>);
 };
 
 export default CategoryListing;

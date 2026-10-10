@@ -764,7 +764,7 @@ const MyAccount = () => {
           </div>
         </div>
       </div>
-    </div>}<Helmet><title>{"Milk Delivery & Dairy Products | MilQuu Fresh"}</title></Helmet></>);
+    </div>}<Helmet><title>{"Your Account | MilQuu Fresh"}</title></Helmet></>);
 };
 
 export default MyAccount;

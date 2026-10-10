@@ -164,7 +164,7 @@ const Login = () => {
           </div>
         </div>
       </div>
-    </div>}<Helmet><title>{"Premium Dairy Delivery Service | MilQuu Fresh"}</title></Helmet></>);
+    </div>}<Helmet><title>{"Sign In | MilQuu Fresh"}</title></Helmet></>);
 };
 
 export default Login;

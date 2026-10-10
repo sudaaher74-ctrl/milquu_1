@@ -91,7 +91,7 @@ const ContactUs = () => {
         </motion.div>
 
       </div>
-    </div>}<Helmet><title>{"Milk Delivery Service in India – MilQuu Fresh"}</title></Helmet></>);
+    </div>}<Helmet><title>{"Contact Us | MilQuu Fresh"}</title></Helmet></>);
 };
 
 export default ContactUs;

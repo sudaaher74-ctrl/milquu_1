@@ -547,7 +547,7 @@ const Subscription = () => {
         </motion.div>
 
       </div>
-    </div>}<Helmet><title>{"Fresh Milk Delivery & Dairy Subscriptions | MilQuu Fresh"}</title></Helmet></>);
+    </div>}<Helmet><title>{"Milk Subscriptions | MilQuu Fresh"}</title></Helmet></>);
 };
 
 export default Subscription;

@@ -196,7 +196,7 @@ const Register = () => {
           </div>
         </div>
       </div>
-    </div>}<Helmet><title>{"Fresh Milk Delivery in India | MilQuu Fresh"}</title></Helmet></>);
+    </div>}<Helmet><title>{"Create an Account | MilQuu Fresh"}</title></Helmet></>);
 };
 
 export default Register;
