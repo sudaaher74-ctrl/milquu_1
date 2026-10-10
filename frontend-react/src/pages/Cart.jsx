@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
@@ -186,8 +187,7 @@ const Cart = () => {
   };
 
   if (step === 3) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-24 pb-12 flex items-center justify-center relative overflow-hidden">
+    return (<>{<div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-24 pb-12 flex items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] mix-blend-overlay pointer-events-none"></div>
         <motion.div 
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -227,12 +227,10 @@ const Cart = () => {
             </Link>
           </div>
         </motion.div>
-      </div>
-    );
+      </div>}<Helmet><title>{"Cart - MilQuu Fresh"}</title></Helmet></>);
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-28 pb-12 relative overflow-hidden">
+  return (<>{<div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-28 pb-12 relative overflow-hidden">
       {/* Background Orbs */}
       <div className="absolute top-0 left-0 w-full h-[40vh] pointer-events-none bg-milquu-gold/5 rounded-b-[120px]"></div>
       <div className="absolute top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-green/10 opacity-40 pointer-events-none"></div>
@@ -593,8 +591,7 @@ const Cart = () => {
           </div>
         )}
       </div>
-    </div>
-  );
+    </div>}<Helmet><title>{"Cart - MilQuu Fresh"}</title></Helmet></>);
 };
 
 export default Cart;

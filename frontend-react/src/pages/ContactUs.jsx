@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async';
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
@@ -8,8 +9,7 @@ const ContactUs = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-32 pb-24 relative overflow-hidden flex items-center justify-center">
+  return (<>{<div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-32 pb-24 relative overflow-hidden flex items-center justify-center">
       
       {/* Background Ambience */}
       <div className="absolute top-0 left-0 w-full h-[60vh] pointer-events-none bg-milquu-gold/5 rounded-b-[120px]"></div>
@@ -91,8 +91,7 @@ const ContactUs = () => {
         </motion.div>
 
       </div>
-    </div>
-  );
+    </div>}<Helmet><title>{"Milk Delivery Service in India – MilQuu Fresh"}</title></Helmet></>);
 };
 
 export default ContactUs;
