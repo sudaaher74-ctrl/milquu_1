@@ -1,51 +1,48 @@
-import process from 'node:process';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { sitemapEntries } from '../src/data/seo-routes.js';
 
-const SITE_URL = 'https://milquufresh.in';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = path.resolve(__dirname, '..');
+const PUBLIC_SITEMAP = path.join(ROOT_DIR, 'public', 'sitemap.xml');
 
-const staticRoutes = [
-  '/',
-  '/products',
-  '/contact',
-  '/subscribe',
-  '/login',
-  '/register',
-  '/about-us',
-  '/our-farm',
-  '/our-process',
-  '/quality-assurance',
-  '/milk-delivery-navi-mumbai',
-  '/milk-delivery-panvel',
-  '/milk-delivery-new-panvel',
-  '/milk-delivery-karanjade',
-  '/organic-milk-kharghar',
-  '/fresh-cow-milk-belapur',
-  '/farm-fresh-milk-nerul',
-  '/product/farm-fresh-cow-milk',
-  '/product/pure-buffalo-milk',
-  '/product/desi-cow-ghee',
-  '/product/fresh-paneer',
-  '/blog',
-  '/blog/benefits-of-farm-fresh-milk',
-  '/blog/a2-milk-vs-regular-milk',
-  '/blog/why-fresh-dairy-matters',
-  '/blog/best-milk-delivery-navi-mumbai',
-  '/blog/health-benefits-desi-cow-ghee',
-  '/blog/how-to-choose-pure-milk',
-  '/blog/cow-vs-buffalo-milk'
-];
+const calculatePriority = (path) => {
+  if (path === '/') return '1.0';
+  if (['/products', '/milk-delivery-navi-mumbai', '/glass-bottle-milk-delivery', '/subscribe'].includes(path)) return '0.9';
+  if (path.startsWith('/product/')) return '0.85';
+  if (path.includes('delivery') || path.includes('panvel') || path.includes('kharghar') || path.includes('belapur') || path.includes('nerul') || path.includes('karanjade')) return '0.85';
+  if (path.startsWith('/blog/')) return '0.7';
+  return '0.7';
+};
 
-const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+const calculateChangeFreq = (path) => {
+  if (path === '/' || path === '/products') return 'daily';
+  if (path.startsWith('/product/')) return 'weekly';
+  if (path.startsWith('/blog/')) return 'monthly';
+  return 'weekly';
+};
+
+const entries = sitemapEntries();
+
+const xmlUrls = entries.map((entry) => {
+  const priority = calculatePriority(entry.path);
+  const changefreq = calculateChangeFreq(entry.path);
+  const lastmod = entry.lastmod || '2026-10-12';
+
+  return `  <url>
+    <loc>${entry.canonical}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+  </url>`;
+}).join('\n');
+
+const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${staticRoutes.map(route => `  <url>
-    <loc>${SITE_URL}${route}</loc>
-    <lastmod>${new Date().toISOString()}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>${route === '/' ? '1.0' : route.startsWith('/product') || route.includes('delivery') ? '0.9' : '0.8'}</priority>
-  </url>`).join('\n')}
-</urlset>`;
+${xmlUrls}
+</urlset>
+`;
 
-const outputPath = path.join(process.cwd(), 'public', 'sitemap.xml');
-fs.writeFileSync(outputPath, sitemap);
-console.log(`✅ Sitemap generated at ${outputPath}`);
+fs.writeFileSync(PUBLIC_SITEMAP, sitemapXml, 'utf-8');
+console.log(`✅ Generated valid sitemap with ${entries.length} indexable URLs at: ${PUBLIC_SITEMAP}`);

@@ -1,15 +1,40 @@
-import { Helmet } from 'react-helmet-async';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import SEOHead from '../components/seo/SEOHead';
+import { buildWhatsAppUrl } from '../utils/whatsapp';
+import { trackContact, trackGenerateLead } from '../utils/analytics';
+import { PHONE_NUMBER, CONTACT_EMAIL } from '../data/schemas';
 
 const ContactUs = () => {
+  const [f, setF] = useState({ name: '', email: '', phone: '', message: '' });
+  const set = (k) => (e) => setF((prev) => ({ ...prev, [k]: e.target.value }));
+
+  // The form used to do nothing (its button was type="button" with no handler),
+  // so every enquiry was silently lost. It now opens WhatsApp with the enquiry
+  // pre-filled — the channel the business already answers on. The text goes to
+  // WhatsApp only; analytics receives just the event, never the content.
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const text = [
+      `Hi MilQuuFresh, I'd like to get in touch.`,
+      `Name: ${f.name}`,
+      f.phone ? `Phone: ${f.phone}` : '',
+      f.email ? `Email: ${f.email}` : '',
+      f.message ? `Message: ${f.message}` : '',
+    ].filter(Boolean).join('\n');
+    trackGenerateLead('contact_form_whatsapp');
+    trackContact('form', 'contact_page');
+    window.open(buildWhatsAppUrl(text), '_blank', 'noopener,noreferrer');
+  };
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  return (<>{<div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-32 pb-24 relative overflow-hidden flex items-center justify-center">
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-32 pb-24 relative overflow-hidden flex items-center justify-center">
+      <SEOHead path="/contact" />
       
       {/* Background Ambience */}
       <div className="absolute top-0 left-0 w-full h-[60vh] pointer-events-none bg-milquu-gold/5 rounded-b-[120px]"></div>
@@ -26,14 +51,19 @@ const ContactUs = () => {
           <div className="bg-white/80 backdrop-blur-2xl rounded-[40px] p-8 md:p-12 border border-white/60 shadow-[0_8px_30px_rgb(0,0,0,0.06)] relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-milquu-gold/20 to-transparent opacity-50 rounded-bl-[100px] pointer-events-none"></div>
             
-            <form className="space-y-6">
+            <h1 className="text-3xl md:text-4xl font-serif font-bold text-milquu-dark mb-3 relative z-10">Contact MilQuuFresh</h1>
+            <p className="text-gray-600 font-sans mb-8 relative z-10">
+              Questions about milk delivery, subscriptions or our products? Call <a href={`tel:${PHONE_NUMBER}`} onClick={() => trackContact('phone', 'contact_page')} className="font-semibold text-milquu-blue hover:underline">+91 87670 67884</a>, email <a href={`mailto:${CONTACT_EMAIL}`} onClick={() => trackContact('email', 'contact_page')} className="font-semibold text-milquu-blue hover:underline">{CONTACT_EMAIL}</a>, or send your message below and we will continue on WhatsApp.
+            </p>
+
+            <form className="space-y-6" onSubmit={handleSubmit}>
               
               {/* Name */}
               <div>
                 <label htmlFor="name" className="block text-sm font-sans font-semibold text-gray-700 mb-2">Full Name</label>
                 <input 
                   type="text" 
-                  id="name" 
+                  id="name" required value={f.name} onChange={set('name')} 
                   placeholder="John Doe"
                   className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans"
                 />
@@ -45,7 +75,7 @@ const ContactUs = () => {
                   <label htmlFor="email" className="block text-sm font-sans font-semibold text-gray-700 mb-2">Email Address</label>
                   <input 
                     type="email" 
-                    id="email" 
+                    id="email" value={f.email} onChange={set('email')} 
                     placeholder="john@example.com"
                     className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans"
                   />
@@ -54,7 +84,7 @@ const ContactUs = () => {
                   <label htmlFor="phone" className="block text-sm font-sans font-semibold text-gray-700 mb-2">Phone Number</label>
                   <input 
                     type="tel" 
-                    id="phone" 
+                    id="phone" value={f.phone} onChange={set('phone')} 
                     placeholder="+91 87670 67884"
                     className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans"
                   />
@@ -65,7 +95,7 @@ const ContactUs = () => {
               <div>
                 <label htmlFor="message" className="block text-sm font-sans font-semibold text-gray-700 mb-2">Your Message</label>
                 <textarea 
-                  id="message" 
+                  id="message" value={f.message} onChange={set('message')} 
                   rows="4" 
                   placeholder="How can we help you?"
                   className="w-full bg-gray-50/50 border border-gray-200 rounded-2xl px-6 py-4 outline-none focus:bg-white focus:border-milquu-gold focus:ring-2 focus:ring-milquu-gold/20 transition-all font-sans resize-none"
@@ -74,7 +104,7 @@ const ContactUs = () => {
 
               {/* Submit Button */}
               <button 
-                type="button" 
+                type="submit" 
                 className="w-full relative group/btn overflow-hidden rounded-full p-[1px] mt-4"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-milquu-cream via-milquu-gold/40 to-milquu-cream rounded-full opacity-80 group-hover/btn:opacity-100 transition-opacity duration-300"></span>
@@ -91,7 +121,8 @@ const ContactUs = () => {
         </motion.div>
 
       </div>
-    </div>}<Helmet><title>{"Contact Us | MilQuu Fresh"}</title></Helmet></>);
+    </div>
+  );
 };
 
 export default ContactUs;

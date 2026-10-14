@@ -8,7 +8,9 @@
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
-      gtag('config', 'G-9S1HY0WW38');
+      // send_page_view is off: the SPA sends page_view itself on every route
+      // change (src/utils/analytics.js), so each page is counted once.
+      gtag('config', 'G-9S1HY0WW38', { send_page_view: false });
     </script>
 
     <meta charset="UTF-8" />

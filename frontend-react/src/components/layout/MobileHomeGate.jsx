@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
+import { isCrawler } from '../../utils/seo';
 
 /** Tailwind's `md` breakpoint, which the rest of the layout already switches on. */
 const PHONE_MAX = 767;
@@ -31,7 +32,10 @@ export default function MobileHomeGate({ children }) {
   const [params] = useSearchParams();
   const [isPhone] = useState(isPhoneViewport);
 
-  if (isPhone && params.get('site') !== 'web') {
+  // Search and social crawlers use phone-sized viewports (mobile-first indexing).
+  // Redirecting them into /app would make Google index a private, noindex app
+  // screen in place of the homepage, so they always get the public page.
+  if (isPhone && params.get('site') !== 'web' && !isCrawler()) {
     return <Navigate to="/app" replace />;
   }
   return children;

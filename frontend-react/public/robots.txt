@@ -1,14 +1,11 @@
 User-agent: *
 Allow: /
 
-# Block admin and delivery portals
+# Private areas, administrative and delivery portals
 Disallow: /admin/
 Disallow: /delivery/
+Disallow: /chatbot/
 Disallow: /api/
 
 # Sitemap
 Sitemap: https://milquufresh.in/sitemap.xml
-
-# Crawl-delay
-Crawl-delay: 1
-

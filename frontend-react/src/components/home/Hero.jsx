@@ -62,8 +62,8 @@ const Hero = () => {
             </motion.span>
 
             <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-serif font-bold text-gray-900 leading-[1.1] mb-4 lg:mb-6 tracking-tight">
-              Fresh Essentials. <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-milquu-gold to-yellow-600 italic font-medium">Delivered Daily.</span>
+              Fresh Milk Delivery <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-milquu-gold to-yellow-600 italic font-medium">in Navi Mumbai</span>
             </h1>
 
             <p className="text-base sm:text-lg text-gray-600 font-sans mb-8 lg:mb-10 max-w-xl leading-relaxed">

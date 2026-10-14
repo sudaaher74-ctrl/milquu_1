@@ -1,4 +1,3 @@
-import { Helmet } from 'react-helmet-async';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../context/CartContext';
@@ -6,6 +5,8 @@ import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2, ArrowLeft, CheckCircle, ArrowRight, ShoppingCart, Lock } from 'lucide-react';
 import DeliverySlotSelector from '../components/cart/DeliverySlotSelector';
 import api from '../utils/api';
+import SEOHead from '../components/seo/SEOHead';
+import { trackBeginCheckout, trackPurchase } from '../utils/analytics';
 
 const Cart = () => {
   const { cartItems, updateQuantity, removeFromCart, clearCart, addToCart } = useCart();
@@ -170,6 +171,12 @@ const Cart = () => {
       // /api/users/orders, which needs a login and a different payload, so
       // the customer was charged and the order was then rejected.
       await api.post('/api/orders/checkout', orderData);
+      trackPurchase({
+        transaction_id: razorpayDetails.razorpay_payment_id || `COD-${Date.now()}`,
+        value: total,
+        currency: 'INR',
+        items: cartItems,
+      });
       setStep(3); // Success page
       clearCart();
     } catch (err) {
@@ -187,7 +194,14 @@ const Cart = () => {
   };
 
   if (step === 3) {
-    return (<>{<div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-24 pb-12 flex items-center justify-center relative overflow-hidden">
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-24 pb-12 flex items-center justify-center relative overflow-hidden">
+        <SEOHead
+          title="Order Confirmed | MilQuuFresh"
+          description="Your fresh dairy order has been confirmed."
+          robots="noindex, nofollow"
+          canonical="https://milquufresh.in/cart"
+        />
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] mix-blend-overlay pointer-events-none"></div>
         <motion.div 
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -227,10 +241,18 @@ const Cart = () => {
             </Link>
           </div>
         </motion.div>
-      </div>}<Helmet><title>{"Your Cart | MilQuu Fresh"}</title></Helmet></>);
+      </div>
+    );
   }
 
-  return (<>{<div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-28 pb-12 relative overflow-hidden">
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#FDFBF7] to-white pt-28 pb-12 relative overflow-hidden">
+      <SEOHead
+        title="Your Shopping Cart | MilQuuFresh"
+        description="Review your fresh dairy order and checkout."
+        robots="noindex, nofollow"
+        canonical="https://milquufresh.in/cart"
+      />
       {/* Background Orbs */}
       <div className="absolute top-0 left-0 w-full h-[40vh] pointer-events-none bg-milquu-gold/5 rounded-b-[120px]"></div>
       <div className="absolute top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-green/10 opacity-40 pointer-events-none"></div>
@@ -377,7 +399,10 @@ const Cart = () => {
                   </div>
 
                   <button 
-                    onClick={() => setStep(2)}
+                    onClick={() => {
+                      trackBeginCheckout(cartItems);
+                      setStep(2);
+                    }}
                     className="w-full bg-milquu-dark hover:bg-milquu-gold text-white px-4 py-3.5 rounded-full font-sans font-bold text-sm transition-colors shadow-md flex items-center justify-center"
                   >
                     Proceed to Checkout <ArrowRight size={16} className="ml-2" />
@@ -591,7 +616,8 @@ const Cart = () => {
           </div>
         )}
       </div>
-    </div>}<Helmet><title>{"Your Cart | MilQuu Fresh"}</title></Helmet></>);
+    </div>
+  );
 };
 
 export default Cart;

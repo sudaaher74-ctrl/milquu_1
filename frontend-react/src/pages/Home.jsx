@@ -6,15 +6,11 @@ import About from '../components/home/About';
 import Products from '../components/home/Products';
 import Process from '../components/home/Process';
 import SEOHead from '../components/seo/SEOHead';
-import { LocalBusinessSchema, buildBreadcrumbSchema } from '../data/schemas';
+import { isCrawler } from '../utils/seo';
 import MobileHome from '../components/home/MobileHome';
 
 const Home = () => {
-  const schema = [
-    LocalBusinessSchema,
-    buildBreadcrumbSchema([{ name: 'Home', url: '/' }])
-  ];
-
+  const crawler = isCrawler();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
 
@@ -28,11 +24,11 @@ const Home = () => {
 
   return (
     <>
-      <SEOHead 
-        schema={schema}
-      />
-      <MobileHome />
-      <div className="hidden md:block">
+      <SEOHead path="/" />
+      {/* Crawlers get the full marketing page at every viewport (the phone layout
+          hides it and, in the browser, redirects to the logged-in app). */}
+      {!crawler && <MobileHome />}
+      <div className={crawler ? 'block' : 'hidden md:block'}>
         <Hero />
         <Products />
         <About />

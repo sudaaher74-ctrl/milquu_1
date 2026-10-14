@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import { rechargeWallet, RechargeError } from '../utils/razorpay';
 import { motion } from 'framer-motion';
 import { ArrowRight, CheckCircle2, CalendarDays, Milk, Clock } from 'lucide-react';
+import SEOHead from '../components/seo/SEOHead';
+import { trackSubscribe } from '../utils/analytics';
 
 const DEFAULT_PRODUCTS = [
   { id: 'a2', name: 'A2 Cow Milk', basePrice: 90, image: '/img/products/A2milk.webp' },
@@ -116,6 +118,13 @@ const Subscription = () => {
         weekdays: rhythm.weekdays
       });
 
+      trackSubscribe({
+        value: upfront,
+        currency: 'INR',
+        plan: rhythm.frequency,
+        product: serverProduct.name,
+      });
+
       alert('Your subscription is active! Deliveries start tomorrow morning and are paid from your wallet.');
       setFormData({ name: '', phone: '', address: '', city: '', pincode: '' });
       navigate('/account');
@@ -191,9 +200,20 @@ const Subscription = () => {
         <img src="/img/products/A2milk.webp" alt="A2 Milk Background" className="w-full h-auto object-contain" />
       </motion.div>
 
+      <SEOHead path="/subscribe" />
+
       <div className="max-w-4xl mx-auto px-6 lg:px-12 relative z-10">
         
-        {/* Header text removed as requested */}
+        {/* Header Section */}
+        <div className="text-center mb-10 pt-4">
+          <span className="text-milquu-gold font-bold tracking-widest text-xs uppercase mb-2 block">Fresh Morning Rounds</span>
+          <h1 className="text-3xl md:text-5xl font-serif font-bold text-gray-900 tracking-tight">
+            Daily Milk Subscription in Navi Mumbai
+          </h1>
+          <p className="mt-3 text-sm md:text-base text-gray-600 max-w-xl mx-auto">
+            Choose your pure milk, quantity, and delivery days. Delivered fresh in sterilized glass bottles before 7:00 AM across Navi Mumbai.
+          </p>
+        </div>
 
         {/* Subscription Form Wrapper */}
         <motion.div

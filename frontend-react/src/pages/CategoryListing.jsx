@@ -1,17 +1,17 @@
-import { Helmet } from 'react-helmet-async';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ShoppingCart } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { useEffect, useState } from 'react';
 import api from '../utils/api.js';
+import SEOHead from '../components/seo/SEOHead';
+import { trackSelectItem, trackAddToCart } from '../utils/analytics';
 
 // Product category metadata
 const categoryMeta = {
   'milk': {
     title: 'Fresh Milk',
-    description: 'Quality-checked milk from trusted processing partners, delivered within hours.',
+    description: 'Quality-checked milk from trusted processing partners, delivered within hours in Navi Mumbai.',
     bgLight: 'bg-milquu-green/5',
     blobColor: 'bg-milquu-green/20',
   },
@@ -45,6 +45,16 @@ const ProductCard = ({ product, index, category, getProductSlug, addToCart }) =>
       name: isMilk ? `${product.name} (${selectedUnit})` : product.name
     };
     addToCart(productToAdd);
+    trackAddToCart(productToAdd);
+  };
+
+  const handleProductClick = () => {
+    trackSelectItem({
+      id: product._id || product.id,
+      name: product.name,
+      price: currentPrice,
+      category: category.title,
+    });
   };
 
   return (
@@ -62,7 +72,11 @@ const ProductCard = ({ product, index, category, getProductSlug, addToCart }) =>
         <div className={`absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 rounded-full blur-[40px] sm:blur-[50px] ${category.blobColor} opacity-20 group-hover:opacity-60 transition-opacity duration-500 -z-10`}></div>
 
         {/* Floating Image */}
-        <Link to={`/product/${getProductSlug(product.name || '')}`} className="relative h-[110px] sm:h-[180px] lg:h-[240px] w-full flex justify-center items-center mb-4 sm:mb-6 cursor-pointer">
+        <Link 
+          to={`/product/${getProductSlug(product.name || '')}`} 
+          onClick={handleProductClick}
+          className="relative h-[110px] sm:h-[180px] lg:h-[240px] w-full flex justify-center items-center mb-4 sm:mb-6 cursor-pointer"
+        >
           {/* Out of Stock Badge */}
           {isOutOfStock && (
             <div className="absolute top-2 right-2 z-30 bg-red-500/90 backdrop-blur-sm text-white text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border border-red-400/50">
@@ -85,7 +99,10 @@ const ProductCard = ({ product, index, category, getProductSlug, addToCart }) =>
 
         {/* Product Info */}
         <div className="flex flex-col items-center text-center w-full z-20">
-          <Link to={`/product/${getProductSlug(product.name || '')}`}>
+          <Link 
+            to={`/product/${getProductSlug(product.name || '')}`}
+            onClick={handleProductClick}
+          >
             <h3 className="text-base sm:text-2xl font-serif font-bold text-gray-900 mb-2 sm:mb-3 leading-tight group-hover:text-milquu-blue transition-colors cursor-pointer line-clamp-2">
               {product.name}
             </h3>
@@ -156,10 +173,7 @@ const CategoryListing = () => {
     if (n.includes('ghee')) return 'desi-cow-ghee';
     if (n.includes('dahi') || n.includes('curd')) return 'fresh-dahi';
     if (n.includes('lassi')) return 'sweet-lassi';
-    if (n.includes('milk')) return 'farm-fresh-cow-milk';
-    // No dedicated SEO page for this product yet (e.g. a new dairy item) — slugify
-    // its name rather than silently pointing at the cow-milk page. ProductPage
-    // redirects to /products when a slug has no matching entry.
+    if (n.includes('a2') || n.includes('gir') || n.includes('cow') || n.includes('milk')) return 'farm-fresh-cow-milk';
     return n.trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   };
 
@@ -196,7 +210,12 @@ const CategoryListing = () => {
     fetchProducts();
   }, []);
   
-  return (<>{<div className="min-h-screen bg-milquu-cream pt-24 pb-20 relative overflow-hidden">
+  return (
+    <div className="min-h-screen bg-milquu-cream pt-24 pb-20 relative overflow-hidden">
+      <SEOHead 
+        path="/products" 
+        title={categoryFilter && categoryMeta[categoryFilter] ? `${categoryMeta[categoryFilter].title} | MilQuuFresh` : undefined}
+      />
       
       {/* Background Decorative Blur */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[120px] bg-milquu-blue/10 pointer-events-none"></div>
@@ -216,10 +235,13 @@ const CategoryListing = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <span className="text-milquu-gold font-bold tracking-widest text-sm uppercase mb-3 block">Store</span>
-            <h1 className="text-4xl md:text-6xl font-serif font-bold text-gray-900 tracking-tight">
-              Fresh <span className="text-transparent bg-clip-text bg-gradient-to-r from-milquu-blue to-indigo-600 italic">Essentials</span>
+            <span className="text-milquu-gold font-bold tracking-widest text-sm uppercase mb-3 block">MilQuuFresh Store</span>
+            <h1 className="text-3xl md:text-5xl font-serif font-bold text-gray-900 tracking-tight">
+              Fresh Milk & Dairy Products in Navi Mumbai
             </h1>
+            <p className="mt-3 text-sm md:text-base text-gray-600 max-w-xl mx-auto">
+              Pure Gir cow milk, buffalo milk, bilona desi ghee, and fresh malai paneer delivered in Navi Mumbai every morning before 7:00 AM.
+            </p>
           </motion.div>
         </div>
 
@@ -257,7 +279,8 @@ const CategoryListing = () => {
         )}
 
       </div>
-    </div>}<Helmet><title>{(categoryMeta[categoryFilter]?.title || 'Products') + ' | MilQuu Fresh'}</title></Helmet></>);
+    </div>
+  );
 };
 
 export default CategoryListing;

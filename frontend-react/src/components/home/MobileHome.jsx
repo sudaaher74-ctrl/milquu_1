@@ -132,9 +132,9 @@ const MobileHome = () => {
       <div className="px-5 pt-6 pb-2">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-[22px] font-bold text-milquu-dark leading-tight">
+            <p className="text-[22px] font-bold text-milquu-dark leading-tight">
               Good Morning{userName ? `, ${userName}` : ''} <span className="inline-block origin-bottom-right hover:animate-waving-hand">👋</span>
-            </h1>
+            </p>
             <p className="text-[13px] text-gray-500 mt-1 font-medium">Fresh dairy delivered daily</p>
           </div>
           <div className="flex items-center space-x-3 mt-1">

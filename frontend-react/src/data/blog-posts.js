@@ -1,4 +1,4 @@
-export const blogPosts = [
+const ALL_POSTS = [
   {
     id: 1,
     slug: 'benefits-of-farm-fresh-milk',
@@ -6,7 +6,7 @@ export const blogPosts = [
     excerpt: 'Why making the switch from packaged supermarket milk to farm-fresh daily delivery can transform your family\'s health.',
     date: '2026-05-10',
     readTime: '4 min read',
-    image: '/img/products/a2-cow-milk.png',
+    image: '/img/products/A2milk.webp',
     keywords: 'benefits of farm fresh milk, raw milk vs pasteurized, pure milk navi mumbai',
     content: `
       <h2>Why Farm Fresh Milk?</h2>
@@ -33,7 +33,7 @@ export const blogPosts = [
     excerpt: 'What exactly is A2 milk, and why is everyone talking about it? Let\'s break down the science behind the A1 and A2 proteins.',
     date: '2026-05-15',
     readTime: '5 min read',
-    image: '/img/products/a2-cow-milk.png',
+    image: '/img/products/A2milk.webp',
     keywords: 'A2 milk vs regular milk, what is A2 milk, A1 beta casein, Gir cow milk',
     content: `
       <h2>The Protein Puzzle</h2>
@@ -59,7 +59,7 @@ export const blogPosts = [
     excerpt: 'Explore the journey of dairy from farm to table and why freshness should be your top priority.',
     date: '2026-05-20',
     readTime: '3 min read',
-    image: '/img/products/paneer.png',
+    image: '/img/products/panner.webp',
     keywords: 'fresh dairy products, farm fresh dairy, organic dairy navi mumbai',
     content: `
       <h2>The True Taste of Dairy</h2>
@@ -75,7 +75,7 @@ export const blogPosts = [
     excerpt: 'A comprehensive guide to choosing a reliable, pure, and hassle-free daily milk subscription in Navi Mumbai.',
     date: '2026-05-22',
     readTime: '6 min read',
-    image: '/img/products/a2-cow-milk.png',
+    image: '/img/products/A2milk.webp',
     keywords: 'best milk delivery navi mumbai, daily milk subscription, reliable milk delivery',
     content: `
       <h2>The Challenge of Urban Dairy</h2>
@@ -97,7 +97,7 @@ export const blogPosts = [
     excerpt: 'Why this ancient superfood is making a major comeback in modern diets.',
     date: '2026-05-25',
     readTime: '5 min read',
-    image: '/img/products/desi-ghee.png',
+    image: '/img/products/A2ghee.webp',
     keywords: 'benefits of desi ghee, bilona cow ghee, healthy fats, A2 ghee benefits',
     content: `
       <h2>More Than Just Cooking Oil</h2>
@@ -114,7 +114,7 @@ export const blogPosts = [
     excerpt: 'Learn how to test your milk for adulteration at home and what to look for when choosing a dairy brand.',
     date: '2026-05-27',
     readTime: '4 min read',
-    image: '/img/products/a2-cow-milk.png',
+    image: '/img/products/A2milk.webp',
     keywords: 'how to test pure milk, milk adulteration, pure milk guide',
     content: `
       <h2>The Adulteration Epidemic</h2>
@@ -131,7 +131,7 @@ export const blogPosts = [
     excerpt: 'Breaking down the nutritional differences between cow and buffalo milk to help you make an informed choice.',
     date: '2026-05-28',
     readTime: '5 min read',
-    image: '/img/products/buffalo-milk.png',
+    image: '/img/products/buffalomilk.webp',
     keywords: 'cow vs buffalo milk, difference between cow and buffalo milk, high fat milk',
     content: `
       <h2>Different Milks for Different Needs</h2>
@@ -145,3 +145,34 @@ export const blogPosts = [
     faqs: []
   }
 ];
+
+// ─── Editorial workflow ──────────────────────────────────────────────────────
+// status: 'draft'     → not routable, not in sitemap (use for unreviewed copy;
+//                       generated drafts live in docs/seo/blog-drafts.md instead)
+//         'review'    → reachable by URL but noindex, hidden from the blog
+//                       index, related lists and the sitemap until fact-checked
+//         'published' → live, indexable, in sitemap
+//
+// To publish a post after review: change its status below, bump `modified`
+// when the content changes. Nothing is published automatically.
+//
+// The three posts below are 'review' because they make health / safety claims
+// (raw-milk benefits, A1-protein effects, ghee and inflammation) that have not
+// been verified. See docs/seo/CONTENT_ROADMAP.md for the exact claims.
+const STATUS_BY_SLUG = {
+  'benefits-of-farm-fresh-milk': 'review',
+  'a2-milk-vs-regular-milk': 'review',
+  'health-benefits-desi-cow-ghee': 'review',
+};
+
+export const allBlogPosts = ALL_POSTS.map((p) => ({
+  ...p,
+  modified: p.modified || p.date,
+  status: STATUS_BY_SLUG[p.slug] || 'published',
+}));
+
+export const blogPosts = allBlogPosts.filter((p) => p.status === 'published');
+
+/** Any post that has a live URL (published or in review). */
+export const getBlogPost = (slug) =>
+  allBlogPosts.find((p) => p.slug === slug && (p.status === 'published' || p.status === 'review')) || null;

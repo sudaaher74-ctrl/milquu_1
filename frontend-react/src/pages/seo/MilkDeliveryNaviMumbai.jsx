@@ -26,13 +26,7 @@ const MilkDeliveryNaviMumbai = () => {
 
   return (
     <div className="bg-white min-h-screen pb-16 md:pb-0">
-      <SEOHead
-        title="Milk Delivery in Navi Mumbai | MilQuu Fresh"
-        description="MilQuu Fresh delivers A2 cow milk, buffalo milk, paneer, and ghee to Panvel, Kharghar, Nerul & more in Navi Mumbai, sourced from trusted partners."
-        keywords="milk delivery navi mumbai, daily milk subscription navi mumbai, fresh dairy products navi mumbai, A2 milk navi mumbai"
-        canonical="https://milquufresh.in/milk-delivery-navi-mumbai"
-        schema={schema}
-      />
+      <SEOHead path="/milk-delivery-navi-mumbai" />
 
       <section className="bg-milquu-blue text-white py-24 px-4 relative">
         <div className="max-w-5xl mx-auto text-center relative z-10">
@@ -40,11 +34,16 @@ const MilkDeliveryNaviMumbai = () => {
             Navi Mumbai's <br className="hidden md:block"/> <span className="text-yellow-400">Fresh Milk Delivery</span>
           </h1>
           <p className="text-xl md:text-2xl opacity-90 mb-10 max-w-3xl mx-auto font-light">
-            Milk sourced from trusted partners, delivered to your doorstep every morning before 8 AM.
+            Pure Gir cow milk and buffalo milk delivered in returnable glass bottles before 7:00 AM across Navi Mumbai.
           </p>
-          <Link to="/subscribe" className="bg-white text-milquu-blue px-10 py-4 rounded-xl font-bold text-lg hover:bg-gray-100 transition-all shadow-lg transform hover:-translate-y-1 inline-block">
-            Start Your Free Trial
-          </Link>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Link to="/subscribe" className="bg-white text-milquu-blue px-8 py-3.5 rounded-xl font-bold text-base hover:bg-gray-100 transition-all shadow-lg transform hover:-translate-y-0.5 inline-block">
+              Start Milk Subscription
+            </Link>
+            <Link to="/glass-bottle-milk-delivery" className="bg-white/15 backdrop-blur-md text-white border border-white/30 px-8 py-3.5 rounded-xl font-bold text-base hover:bg-white hover:text-milquu-blue transition-all inline-block">
+              Glass Bottle Delivery
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -72,6 +71,16 @@ const MilkDeliveryNaviMumbai = () => {
                 </div>
               </Link>
             ))}
+          </div>
+
+          <div className="mt-10 bg-blue-50/70 border border-blue-100 rounded-2xl p-6 text-center max-w-2xl mx-auto">
+            <h3 className="text-lg font-serif font-bold text-gray-900 mb-2">Also Delivering in Kamothe & Taloja</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              MilQuuFresh serves Kamothe and Taloja with fresh morning milk delivery before 7:00 AM.
+            </p>
+            <Link to="/subscribe" className="inline-flex items-center text-milquu-blue font-bold text-sm hover:underline">
+              Start Subscription for Kamothe or Taloja &rarr;
+            </Link>
           </div>
         </div>
       </section>

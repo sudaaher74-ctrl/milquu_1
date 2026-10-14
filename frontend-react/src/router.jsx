@@ -54,6 +54,7 @@ const OurFarm = lazy(() => import('./pages/seo/OurFarm'));
 const OurProcess = lazy(() => import('./pages/seo/OurProcess'));
 const QualityAssurance = lazy(() => import('./pages/seo/QualityAssurance'));
 const ProductPage = lazy(() => import('./pages/seo/ProductPage'));
+const GlassBottleDelivery = lazy(() => import('./pages/seo/GlassBottleDelivery'));
 
 // Blog Pages
 const BlogIndex = lazy(() => import('./pages/blog/BlogIndex'));
@@ -125,6 +126,7 @@ export const router = createBrowserRouter([
       { path: "blog", element: <BlogIndex /> },
       { path: "blog/:slug", element: <BlogPost /> },
       { path: "product/:slug", element: <ProductPage /> },
+      { path: "glass-bottle-milk-delivery", element: <GlassBottleDelivery /> },
       
       { path: "offline", element: <OfflineFallback /> },
       
