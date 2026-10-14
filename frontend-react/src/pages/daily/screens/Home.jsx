@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Screen, TabBar, MobileHeader, Icon } from '../ui';
 import { HOME_CATEGORIES } from '../catalogue';
+import WelcomeOfferCard from '../WelcomeOfferCard';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -194,6 +195,9 @@ export default function Home() {
             </span>
           </div>
         </div>
+
+        {/* ── Welcome First-Subscriber Credit & Offer ────────────────── */}
+        <WelcomeOfferCard />
 
         {/* ── 2. Category Horizontal Scroll ─────────────────────────── */}
         <div>
