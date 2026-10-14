@@ -115,33 +115,6 @@ export default function Cart() {
             <span style={{ color: 'var(--mq-neutral-700)' }}>Delivery</span>
             <span className="mq-strong" style={{ color: 'var(--mq-sage-800)' }}>Free on plans</span>
           </div>
-
-          {!planActive && (
-            <div
-              onClick={() => navigate('/app/plan')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: '#fbf7ee',
-                border: '1px dashed #cca859',
-                borderRadius: 14,
-                padding: '10px 14px',
-                cursor: 'pointer',
-                marginTop: 4,
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 16 }}>🎉</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#785a15' }}>
-                  Save 12% + ₹100 welcome credit on daily plans!
-                </span>
-              </div>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#856214' }}>
-                View →
-              </span>
-            </div>
-          )}
         </div>
       </div>
 

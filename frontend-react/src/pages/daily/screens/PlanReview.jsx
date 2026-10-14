@@ -179,58 +179,6 @@ export default function PlanReview() {
           </span>
         </div>
 
-        {/* First-Subscriber Welcome Credit Banner */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            background: 'linear-gradient(135deg, #fffcf5 0%, #fef8eb 100%)',
-            border: '1.5px dashed #d5b369',
-            borderRadius: 18,
-            padding: '13px 16px',
-            boxShadow: '0 2px 8px rgba(133, 98, 20, 0.04)',
-          }}
-        >
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 999,
-              background: '#856214',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Icon name="gift" size={16} color="#ffffff" strokeWidth={2.2} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 13.5, fontWeight: 800, color: '#132819' }}>
-                ₹100 Welcome Credit Auto-Applied
-              </span>
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 800,
-                  color: '#2d4a22',
-                  background: '#eef7ed',
-                  padding: '1px 6px',
-                  borderRadius: 4,
-                  letterSpacing: '0.04em',
-                }}
-              >
-                MILQUU100
-              </span>
-            </div>
-            <span style={{ display: 'block', fontSize: 11.5, color: '#64748b', marginTop: 2 }}>
-              ₹100 bonus will be credited to your wallet on subscription confirmation
-            </span>
-          </div>
-        </div>
-
         <div className="mq-col" style={{ gap: 8 }}>
           <span className="mq-label">Pay from</span>
           <div className="mq-card mq-card-flat mq-card-pad" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
