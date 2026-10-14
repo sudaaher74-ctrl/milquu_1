@@ -40,7 +40,7 @@ export const SAVINGS_PERCENT = 12;
 const GUEST = 'guest';
 const draftKey = (userId) => `milquu.app.draft.${userId ?? GUEST}`;
 
-const EMPTY_DRAFT = { crate: {}, cart: {}, rhythm: 'daily', slot: 'early' };
+const EMPTY_DRAFT = { crate: {}, cart: {}, wishlist: {}, rhythm: 'daily', slot: 'early' };
 
 const readDraft = (key) => {
   if (typeof localStorage === 'undefined') return null;
@@ -414,7 +414,7 @@ export function DailyProvider({ children }) {
 
     setSubscriptions((subs) => [...subs, data]);
     // The draft has become a real plan; there is nothing left to keep locally.
-    setDraft((d) => ({ ...EMPTY_DRAFT, cart: d.cart }));
+    setDraft((d) => ({ ...EMPTY_DRAFT, cart: d.cart, wishlist: d.wishlist }));
     flash('Your plan starts tomorrow morning');
     try {
       await refresh();
@@ -425,6 +425,21 @@ export function DailyProvider({ children }) {
   };
 
   const clearCart = () => patch({ cart: {} });
+
+  const wishlist = draft.wishlist || {};
+  const savedCount = Object.values(wishlist).filter(Boolean).length;
+
+  const toggleWishlist = (id) => {
+    const nextVal = !wishlist[id];
+    const nextWishlist = { ...wishlist };
+    if (nextVal) {
+      nextWishlist[id] = true;
+    } else {
+      delete nextWishlist[id];
+    }
+    patch({ wishlist: nextWishlist });
+    flash(nextVal ? 'Saved to your favourites' : 'Removed from favourites');
+  };
 
   /**
    * Place the one-off extras in the cart as a real order for tomorrow, paid
@@ -446,6 +461,7 @@ export function DailyProvider({ children }) {
     loading,
     areas,
     areaName,
+    patch,
 
     products,
     productList,
@@ -480,6 +496,10 @@ export function DailyProvider({ children }) {
     addToCart,
     clearCart,
     placeOrder,
+
+    wishlist,
+    savedCount,
+    toggleWishlist,
 
     wallet,
     ledger,

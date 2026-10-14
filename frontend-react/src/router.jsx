@@ -93,6 +93,7 @@ const AppPause = lazy(() => import('./pages/daily/screens/Pause'));
 const AppCancelPlan = lazy(() => import('./pages/daily/screens/CancelPlan'));
 const AppWallet = lazy(() => import('./pages/daily/screens/Wallet'));
 const AppAccount = lazy(() => import('./pages/daily/screens/Account'));
+const AppHelpRefunds = lazy(() => import('./pages/daily/screens/HelpRefunds'));
 const AppLogin = lazy(() => import('./pages/daily/screens/Login'));
 const AppRegister = lazy(() => import('./pages/daily/screens/Register'));
 
@@ -106,17 +107,17 @@ export const router = createBrowserRouter([
     path: "/",
     element: <AppLayout />,
     children: [
-      { index: true, element: <MobileHomeGate><Home /></MobileHomeGate> },
-      { path: "products", element: <CategoryListing /> },
-      { path: "contact", element: <ContactUs /> },
-      { path: "subscribe", element: <Subscription /> },
-      { path: "cart", element: <Cart /> },
-      { path: "refund-policy", element: <RefundPolicy /> },
+      { index: true, element: <MobileHomeGate to="/app"><Home /></MobileHomeGate> },
+      { path: "products", element: <MobileHomeGate to="/app/shop"><CategoryListing /></MobileHomeGate> },
+      { path: "contact", element: <MobileHomeGate to="/app/help"><ContactUs /></MobileHomeGate> },
+      { path: "subscribe", element: <MobileHomeGate to="/app/plan"><Subscription /></MobileHomeGate> },
+      { path: "cart", element: <MobileHomeGate to="/app/cart"><Cart /></MobileHomeGate> },
+      { path: "refund-policy", element: <MobileHomeGate to="/app/help?tab=refunds"><RefundPolicy /></MobileHomeGate> },
       { path: "free-sample", element: <FreeSampleCampaign /> },
       
-      { path: "login", element: <Login /> },
-      { path: "register", element: <Register /> },
-      { path: "account", element: <MyAccount /> },
+      { path: "login", element: <MobileHomeGate to="/app/login"><Login /></MobileHomeGate> },
+      { path: "register", element: <MobileHomeGate to="/app/join"><Register /></MobileHomeGate> },
+      { path: "account", element: <MobileHomeGate to="/app/account"><MyAccount /></MobileHomeGate> },
       
       { path: "about-us", element: <AboutUs /> },
       { path: "our-farm", element: <OurFarm /> },
@@ -161,6 +162,9 @@ export const router = createBrowserRouter([
           { path: "plan/cancel", element: <RequireAccount><AppCancelPlan /></RequireAccount> },
           { path: "wallet", element: <AppWallet /> },
           { path: "account", element: <AppAccount /> },
+          { path: "help", element: <AppHelpRefunds /> },
+          { path: "refunds", element: <Navigate to="/app/help?tab=refunds" replace /> },
+          { path: "support", element: <Navigate to="/app/help" replace /> },
           { path: "start/address", element: <RequireAccount><AppAddress /></RequireAccount> },
           { path: "start/review", element: <RequireAccount><AppPlanReview /></RequireAccount> },
           { path: "start/done", element: <RequireAccount><AppDone /></RequireAccount> },

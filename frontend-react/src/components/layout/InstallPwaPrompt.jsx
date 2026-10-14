@@ -79,7 +79,7 @@ export default function InstallPwaPrompt() {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        className="fixed bottom-4 left-4 right-4 md:bottom-6 md:left-auto md:right-6 md:w-96 z-[9999] pointer-events-auto"
+        className="fixed bottom-24 left-4 right-4 md:bottom-6 md:left-auto md:right-6 md:w-96 z-[9999] pointer-events-auto"
       >
         <div className="bg-white/95 backdrop-blur-2xl border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.15)] rounded-2xl p-4 flex flex-col gap-3 relative">
           <button

@@ -113,7 +113,7 @@ const MobileHome = () => {
     { name: 'Ghee', image: '/img/products/cowghee.webp' },
     { name: 'Paneer', image: '/img/products/panner.webp' },
     { name: 'Curd', image: '/img/products/Dahi.webp' },
-    { name: 'Butter', image: '/img/categories/categoris1.webp' },
+    { name: 'Lassi', image: '/img/products/lassi.webp' },
   ];
 
   const features = [
@@ -138,17 +138,27 @@ const MobileHome = () => {
             <p className="text-[13px] text-gray-500 mt-1 font-medium">Fresh dairy delivered daily</p>
           </div>
           <div className="flex items-center space-x-3 mt-1">
-            <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100">
+            <button
+              type="button"
+              onClick={() => navigate('/account')}
+              aria-label="Account & notifications"
+              className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 cursor-pointer"
+            >
               <Bell className="text-[#0D47A1] w-5 h-5" />
-            </div>
-            <div className="relative w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100" onClick={() => navigate('/cart')}>
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/cart')}
+              aria-label="Shopping cart"
+              className="relative w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 cursor-pointer"
+            >
               <ShoppingCart className="text-[#0D47A1] w-5 h-5" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-[#D4AF37] border-2 border-white text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
                   {cartCount}
                 </span>
               )}
-            </div>
+            </button>
           </div>
         </div>
 
@@ -182,7 +192,7 @@ const MobileHome = () => {
               src={banner} 
               alt={`Special Offer ${index + 1}`} 
               className="w-full h-full object-cover flex-shrink-0 snap-start cursor-pointer" 
-              onClick={() => index === 0 ? navigate('/subscription') : navigate('/products')}
+              onClick={() => index === 0 ? navigate('/subscribe') : navigate('/products')}
             />
           ))}
         </div>
@@ -241,7 +251,8 @@ const MobileHome = () => {
             <p className="text-[13px] font-bold text-[#D4AF37] mb-1">Save 12% every month</p>
             <p className="text-[11px] text-gray-500 font-medium mb-3">Flexible delivery • Pause anytime</p>
             <button 
-              onClick={() => navigate('/subscription')}
+              type="button"
+              onClick={() => navigate('/subscribe')}
               className="bg-[#D4AF37] text-white text-[12px] font-bold px-4 py-2 rounded-full w-fit flex items-center shadow-md hover:opacity-90 cursor-pointer"
             >
               Start Subscription <span className="ml-1">→</span>
@@ -283,7 +294,9 @@ const MobileHome = () => {
 
                 <div className="flex flex-col ml-3 flex-grow h-full justify-between py-1">
                   <div>
-                    <h4 className="text-[14px] font-bold text-milquu-dark leading-tight line-clamp-1">{product.name}</h4>
+                    <Link to={`/product/${getProductSlug(product.name || '')}`}>
+                      <h4 className="text-[14px] font-bold text-milquu-dark leading-tight line-clamp-1">{product.name}</h4>
+                    </Link>
                     <span className="text-[11px] text-gray-500 font-medium mt-0.5 block">
                       {isOutOfStock ? 'Out of stock' : isMilk ? 'Pure & Farm Fresh' : 'Made from Bilona Method'}
                     </span>
@@ -328,6 +341,7 @@ const MobileHome = () => {
                       </span>
                     </div>
                     <button
+                      type="button"
                       onClick={(e) => !isOutOfStock && handleAddToCart(product, e)}
                       disabled={isOutOfStock}
                       className={`px-3 py-1.5 rounded-full border flex items-center justify-center font-bold text-[12px] transition-colors ${isOutOfStock ? 'border-gray-300 text-gray-400 bg-gray-50 cursor-not-allowed' : 'border-[#D4AF37] text-[#D4AF37] bg-[#D4AF37]/10 hover:bg-[#D4AF37] hover:text-white'}`}
@@ -362,7 +376,7 @@ const MobileHome = () => {
               const isMilk = isMilkProduct(product);
               return (
                 <div key={product._id || product.id} className="w-[200px] flex-shrink-0 bg-white rounded-[16px] p-2.5 shadow-[0_2px_8px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col justify-between relative">
-                  <div className="flex items-center">
+                  <Link to={`/product/${getProductSlug(product.name || '')}`} className="flex items-center">
                     <div className="w-[50px] h-[50px] flex justify-center items-center flex-shrink-0 p-1">
                       <img src={product.image} alt={product.name} className={`max-w-full max-h-full object-contain drop-shadow-sm ${isOutOfStock ? 'opacity-50' : ''}`} />
                     </div>
@@ -375,7 +389,7 @@ const MobileHome = () => {
                         )}
                       </div>
                     </div>
-                  </div>
+                  </Link>
                   {isMilk && !isOutOfStock && (
                     <div className="flex items-center justify-between gap-1.5 mt-2 pt-2 border-t border-gray-100">
                       <button
@@ -391,6 +405,17 @@ const MobileHome = () => {
                         className="flex-1 py-1 rounded-md text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white border border-emerald-200 transition-colors"
                       >
                         500ml ₹{Math.ceil(product.price / 2)}
+                      </button>
+                    </div>
+                  )}
+                  {!isMilk && !isOutOfStock && (
+                    <div className="flex items-center justify-end mt-2 pt-2 border-t border-gray-100">
+                      <button
+                        type="button"
+                        onClick={(e) => handleAddToCart(product, e)}
+                        className="w-full py-1 rounded-md text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 hover:bg-[#D4AF37] hover:text-white border border-[#D4AF37] transition-colors flex items-center justify-center"
+                      >
+                        <Plus className="w-3 h-3 mr-0.5" /> Add
                       </button>
                     </div>
                   )}
@@ -414,17 +439,17 @@ const MobileHome = () => {
             <span className="text-[10px] font-bold text-gray-400 mt-1">Shop</span>
             <div className="w-1 h-1 bg-transparent rounded-full mt-0.5"></div>
           </div>
-          <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/wallet')}>
+          <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/account?tab=wallet')}>
             <Wallet className="w-6 h-6 text-gray-400" />
             <span className="text-[10px] font-bold text-gray-400 mt-1">Wallet</span>
             <div className="w-1 h-1 bg-transparent rounded-full mt-0.5"></div>
           </div>
-          <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/subscription')}>
+          <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/subscribe')}>
             <CalendarCheck className="w-6 h-6 text-gray-400" />
             <span className="text-[10px] font-bold text-gray-400 mt-1">Subscribe</span>
             <div className="w-1 h-1 bg-transparent rounded-full mt-0.5"></div>
           </div>
-          <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/my-account')}>
+          <div className="flex flex-col items-center cursor-pointer" onClick={() => navigate('/account')}>
             <User className="w-6 h-6 text-gray-400" />
             <span className="text-[10px] font-bold text-gray-400 mt-1">Profile</span>
             <div className="w-1 h-1 bg-transparent rounded-full mt-0.5"></div>

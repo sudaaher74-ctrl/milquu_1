@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link, Navigate } from 'react-router-dom';
+import { useParams, Link, Navigate, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronRight, MapPin, MessageCircle, Snowflake } from 'lucide-react';
 import SEOHead from '../../components/seo/SEOHead';
 import { productSEOData, matchDbProduct } from '../../data/products-seo';
@@ -7,10 +7,13 @@ import { buildBreadcrumbSchema } from '../../data/schemas';
 import { SERVED_AREAS, LOCATION_PAGES } from '../../data/locations';
 import api from '../../utils/api.js';
 import { buildWhatsAppUrl } from '../../utils/whatsapp';
-import { trackViewItem, trackGenerateLead, trackContact } from '../../utils/analytics';
+import { trackViewItem, trackGenerateLead, trackContact, trackAddToCart } from '../../utils/analytics';
+import { useCart } from '../../context/CartContext';
 
 const ProductPage = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
   const product = productSEOData[slug];
 
   const [formData, setFormData] = useState({
@@ -78,6 +81,24 @@ const ProductPage = () => {
   if (!product) {
     return <Navigate to="/products" replace />;
   }
+
+  const handleOneTimeOrder = () => {
+    if (isOutOfStock) return;
+    const prodId = dbProduct?._id || product.slug;
+    const unitToUse = isMilk ? selectedUnit : (dbProduct?.unit || 'Standard');
+    const productToAdd = {
+      ...(dbProduct || {}),
+      _id: isMilk ? `${prodId}-${selectedUnit.replace(/\s+/g, '')}` : prodId,
+      id: isMilk ? `${prodId}-${selectedUnit.replace(/\s+/g, '')}` : prodId,
+      name: isMilk ? `${product.displayName} (${selectedUnit})` : product.displayName,
+      price: currentPrice,
+      unit: unitToUse,
+      image: dbProduct?.image || product.image,
+    };
+    addToCart(productToAdd);
+    trackAddToCart(productToAdd);
+    navigate('/cart');
+  };
 
   // The form used to show an alert() and discard the enquiry. It now hands the
   // enquiry to WhatsApp, the channel the business already answers on. Personal
@@ -322,9 +343,14 @@ const ProductPage = () => {
               <Link to="/subscribe" className={`flex-1 text-center py-4 rounded-2xl border border-gray-200 font-bold tracking-wide shadow-sm font-sans transition-all ${isOutOfStock ? 'text-gray-400 bg-gray-50 pointer-events-none' : 'text-milquu-dark hover:bg-white hover:border-milquu-gold hover:text-milquu-gold'}`}>
                 Subscribe Daily
               </Link>
-              <Link to="/login" className={`flex-1 text-center py-4 rounded-2xl border border-gray-200 font-bold tracking-wide shadow-sm font-sans transition-all ${isOutOfStock ? 'text-gray-400 bg-gray-50 pointer-events-none' : 'text-milquu-dark hover:bg-white hover:border-milquu-gold hover:text-milquu-gold'}`}>
+              <button
+                type="button"
+                onClick={handleOneTimeOrder}
+                disabled={isOutOfStock}
+                className={`flex-1 text-center py-4 rounded-2xl border border-gray-200 font-bold tracking-wide shadow-sm font-sans transition-all cursor-pointer ${isOutOfStock ? 'text-gray-400 bg-gray-50 pointer-events-none' : 'text-milquu-dark hover:bg-white hover:border-milquu-gold hover:text-milquu-gold'}`}
+              >
                 One-time Order
-              </Link>
+              </button>
             </div>
           </div>
 

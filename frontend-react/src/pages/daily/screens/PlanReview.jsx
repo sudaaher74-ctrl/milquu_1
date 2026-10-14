@@ -165,7 +165,7 @@ export default function PlanReview() {
               </div>
             )}
 
-            <Icon name="right" size={14} color="#94a3b8" />
+            <Icon name="next" size={14} color="#94a3b8" />
           </div>
         </div>
 

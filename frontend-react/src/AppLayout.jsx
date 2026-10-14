@@ -124,7 +124,7 @@ export default function AppLayout() {
       {!hideLayout && !isHome && <MobileNav />}
       {!hideLayout && <FloatingCartIsland />}
       {!hideLayout && <FloatingWhatsApp />}
-      <InstallPwaPrompt />
+      {!hideLayout && <InstallPwaPrompt />}
       {!hideLayout && <Footer />}
     </div>
   );

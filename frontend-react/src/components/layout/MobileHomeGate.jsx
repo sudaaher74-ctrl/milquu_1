@@ -28,7 +28,7 @@ const isPhoneViewport = () => {
  * bounces someone mid-session. `/?site=web` opts out entirely, which is how you
  * reach the marketing homepage from a phone.
  */
-export default function MobileHomeGate({ children }) {
+export default function MobileHomeGate({ to = '/app', children }) {
   const [params] = useSearchParams();
   const [isPhone] = useState(isPhoneViewport);
 
@@ -36,7 +36,10 @@ export default function MobileHomeGate({ children }) {
   // Redirecting them into /app would make Google index a private, noindex app
   // screen in place of the homepage, so they always get the public page.
   if (isPhone && params.get('site') !== 'web' && !isCrawler()) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to={to} replace />;
   }
   return children;
 }
+
+export const MobileGate = MobileHomeGate;
+

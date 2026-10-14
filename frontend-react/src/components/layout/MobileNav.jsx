@@ -16,25 +16,25 @@ const MobileNav = () => {
       id: 'home',
       label: 'Home',
       icon: Home,
-      route: '/'
+      route: '/app'
     },
     {
       id: 'products',
       label: 'Products',
       icon: Package,
-      route: '/products'
+      route: '/app/shop'
     },
     {
       id: 'subscription',
       label: 'Subscription',
       icon: Calendar,
-      route: '/subscribe'
+      route: '/app/plan'
     },
     {
       id: 'profile',
       label: 'Profile',
       icon: User,
-      route: '/account'
+      route: '/app/account'
     }
   ];
 
@@ -44,7 +44,7 @@ const MobileNav = () => {
     >
       <div className="bg-white shadow-[0_4px_20px_rgba(0,0,0,0.15)] rounded-full h-[60px] px-6 w-full max-w-[400px] flex justify-between items-center">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.route;
+          const isActive = location.pathname === item.route || (item.route === '/app' && location.pathname === '/');
           const Icon = item.icon;
           
           return (

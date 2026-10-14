@@ -7,12 +7,33 @@ export default function Cart() {
   const navigate = useNavigate();
   const {
     crate, cart, bumpCart, addToCart, tomorrowTotal, wallet, slotDef, upiDue,
-    itemRows, priceOf, suggested,
+    itemRows, priceOf, suggested, planActive,
   } = useDaily();
 
   /** Nudge for the first add-on that is not already in the crate or the cart. */
   const nudge = suggested.find((p) => !crate[p.id] && !cart[p.id]) ?? null;
-  const empty = itemRows(crate).length === 0 && itemRows(cart).length === 0;
+  const crateRows = itemRows(crate);
+  const cartRows = itemRows(cart);
+  const empty = crateRows.length === 0 && cartRows.length === 0;
+  const hasOneOffItems = cartRows.length > 0;
+
+  const handlePrimaryAction = () => {
+    if (hasOneOffItems) {
+      navigate('/app/checkout');
+    } else if (crateRows.length > 0 && !planActive) {
+      navigate('/app/start/review');
+    } else if (crateRows.length > 0 && planActive) {
+      navigate('/app/plan');
+    }
+  };
+
+  const primaryLabel = hasOneOffItems
+    ? 'Checkout'
+    : crateRows.length > 0 && !planActive
+      ? 'Review plan'
+      : crateRows.length > 0 && planActive
+        ? 'Manage plan'
+        : 'Checkout';
 
   return (
     <Screen>
@@ -31,20 +52,20 @@ export default function Cart() {
           </div>
         ) : (
           <div className="mq-card mq-card-list">
-            {itemRows(crate).map((row) => (
+            {crateRows.map((row) => (
               <div key={`plan-${row.key}`} className="mq-item">
                 <img src={row.img} alt="" className="mq-item-thumb" style={{ width: 36, height: 50 }} />
                 <div className="mq-item-body">
                   <span className="mq-item-name">{row.short} {row.unit} × {row.qty}</span>
                   <span style={{ fontSize: 13, color: 'var(--mq-sage-800)' }}>
-                    On your plan · ₹{rupees(priceOf(row.key))} each
+                    {planActive ? 'On your plan' : 'Draft plan'} · ₹{rupees(priceOf(row.key))} each
                   </span>
                 </div>
                 <span className="mq-item-price">₹{rupees(row.qty * priceOf(row.key))}</span>
               </div>
             ))}
 
-            {itemRows(cart).map((row) => (
+            {cartRows.map((row) => (
               <div key={`once-${row.key}`} className="mq-item">
                 <img src={row.img} alt="" className="mq-item-thumb" style={{ width: 36, height: 50 }} />
                 {/* The stepper already states the quantity, so the name doesn't. */}
@@ -112,9 +133,9 @@ export default function Cart() {
           className="mq-btn mq-btn-md"
           disabled={empty}
           style={empty ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
-          onClick={() => navigate('/app/checkout')}
+          onClick={handlePrimaryAction}
         >
-          Checkout
+          {primaryLabel}
         </button>
       </ActionBar>
     </Screen>

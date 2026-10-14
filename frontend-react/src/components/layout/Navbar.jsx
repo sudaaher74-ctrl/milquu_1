@@ -28,7 +28,7 @@ const Navbar = () => {
   const navLinks = [
     { name: t('nav.home', 'Home'), href: '/' },
     { name: t('nav.products', 'Products'), href: '/products' },
-    { name: t('nav.aboutUs', 'About Us'), href: '/#about' },
+    { name: t('nav.aboutUs', 'About Us'), href: '/about-us' },
     { name: t('nav.contact', 'Contact Us'), href: '/contact' },
     { name: t('nav.subscriptions', 'Subscriptions'), href: '/subscribe' },
   ];
@@ -42,7 +42,7 @@ const Navbar = () => {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${isHome ? 'hidden md:block' : 'block'} ${
+        className={`fixed top-0 left-0 right-0 z-[101] transition-all duration-300 ease-in-out ${isHome ? 'hidden md:block' : 'block'} ${
           isScrolled ? 'py-3 glass' : 'py-6 bg-transparent'
         }`}
       >
@@ -118,7 +118,7 @@ const Navbar = () => {
               <option value="hi">HI</option>
               <option value="mr">MR</option>
             </select>
-            <Link to="/cart" className="relative group flex items-center justify-center p-2">
+            <Link to="/app/cart" className="relative group flex items-center justify-center p-2">
               <ShoppingCart size={22} className="text-milquu-dark" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-milquu-gold text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center shadow-md">
@@ -143,12 +143,12 @@ const Navbar = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-40 bg-white/95 backdrop-blur-xl flex flex-col items-center justify-center space-y-8 md:hidden"
+            className="fixed inset-0 z-[100] bg-white/95 backdrop-blur-xl flex flex-col items-center justify-center space-y-8 md:hidden"
           >
             {navLinks.map((link) => (
               <Link
                 key={link.name}
-                to={link.href}
+                to={link.href === '/products' ? '/app/shop' : link.href === '/subscribe' ? '/app/plan' : link.href === '/contact' ? '/app/help' : link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-2xl font-serif text-milquu-dark hover:text-milquu-gold transition-colors"
               >
@@ -160,7 +160,7 @@ const Navbar = () => {
             
             {user ? (
               <Link
-                to="/account"
+                to="/app/account"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-2xl font-serif text-milquu-dark hover:text-milquu-gold transition-colors flex items-center"
               >
@@ -168,7 +168,7 @@ const Navbar = () => {
               </Link>
             ) : (
               <Link
-                to="/login"
+                to="/app/login"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="text-2xl font-serif text-milquu-dark hover:text-milquu-gold transition-colors"
               >
@@ -176,7 +176,7 @@ const Navbar = () => {
               </Link>
             )}
 
-            <Link to="/subscribe" onClick={() => setIsMobileMenuOpen(false)}>
+            <Link to="/app/plan" onClick={() => setIsMobileMenuOpen(false)}>
               <button className="mt-4 bg-milquu-gold text-white px-8 py-3 rounded-full font-sans text-lg font-semibold shadow-lg">
                 Subscribe Now
               </button>

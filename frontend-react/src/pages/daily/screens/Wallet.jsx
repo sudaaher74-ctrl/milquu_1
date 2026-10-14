@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Screen, TabBar, Icon } from '../ui';
 import { rupees } from '../catalogue';
 import { addDays, fmtDay } from '../dates';
@@ -12,6 +13,7 @@ const signOf = (t) => (t.type === 'credit' ? 1 : -1);
 const PRESETS = [500, 1000, 2000];
 
 export default function Wallet() {
+  const navigate = useNavigate();
   const { wallet, runwayDays, today, ledger, planActive, planDaily, user, refresh, flash } = useDaily();
   const runsOut = addDays(today, runwayDays);
 
@@ -142,6 +144,58 @@ export default function Wallet() {
             ))}
           </div>
         )}
+
+        {/* ── Refund & Withdrawal Banner ── */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '14px 16px',
+            borderRadius: 18,
+            background: '#faf3e1',
+            border: '1px solid #edd9af',
+            marginTop: 8,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 999,
+                background: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Icon name="shield-check" size={17} color="#785a15" />
+            </div>
+            <div>
+              <span style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#785a15' }}>
+                100% Refundable Balance
+              </span>
+              <span style={{ fontSize: 11, color: '#926a19' }}>
+                Unused funds can be withdrawn anytime
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="mq-btn-outline-gold"
+            style={{
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 700,
+              background: '#ffffff',
+            }}
+            onClick={() => navigate('/app/help?tab=refunds')}
+          >
+            Policy &amp; Help →
+          </button>
+        </div>
       </div>
 
       <div className="mq-fill" style={{ minHeight: 28 }} />

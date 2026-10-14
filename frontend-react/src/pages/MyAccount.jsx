@@ -1,15 +1,26 @@
 import { Helmet } from 'react-helmet-async';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LogOut, User, Package, Calendar, Settings, Play, Pause, XCircle, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../utils/api';
 
 const MyAccount = () => {
-  const { user, logout } = useAuth();
+  const { user, login, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'profile';
+  const [activeTab, setActiveTab] = useState(initialTab);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    name: user?.name || '',
+    phone: user?.phone || '',
+    line1: user?.deliveryAddress?.line1 || user?.address || '',
+    line2: user?.deliveryAddress?.line2 || '',
+    area: user?.deliveryAddress?.area || '',
+  });
   const [subscriptions, setSubscriptions] = useState([]);
   const [loadingSubs, setLoadingSubs] = useState(false);
 
@@ -25,6 +36,48 @@ const MyAccount = () => {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawData, setWithdrawData] = useState({ amount: '', method: 'UPI', upiId: '', accNo: '', ifsc: '', name: '' });
   const [loadingWithdraw, setLoadingWithdraw] = useState(false);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['profile', 'orders', 'wallet', 'subscriptions'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        name: user.name || '',
+        phone: user.phone || '',
+        line1: user.deliveryAddress?.line1 || user.address || '',
+        line2: user.deliveryAddress?.line2 || '',
+        area: user.deliveryAddress?.area || '',
+      });
+    }
+  }, [user]);
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    try {
+      const { data } = await api.put('/api/users/profile', {
+        name: profileForm.name,
+        phone: profileForm.phone,
+        deliveryAddress: {
+          ...(user?.deliveryAddress || {}),
+          line1: profileForm.line1,
+          line2: profileForm.line2,
+          area: profileForm.area,
+        },
+      });
+      login({ ...user, ...data });
+      setIsEditingProfile(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not update profile. Please try again.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -302,37 +355,121 @@ const MyAccount = () => {
               {activeTab === 'profile' && (
                 <div>
                   <h3 className="text-2xl font-bold font-serif text-gray-800 mb-6">Profile Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Full Name</label>
-                      <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-800 font-medium">
-                        {user?.name || 'Not provided'}
+                  {isEditingProfile ? (
+                    <form onSubmit={handleSaveProfile} className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Full Name</label>
+                          <input
+                            type="text"
+                            required
+                            value={profileForm.name}
+                            onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                            className="w-full bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-medium focus:outline-none focus:border-milquu-blue"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Email Address</label>
+                          <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-500 font-medium">
+                            {user?.email || 'Not provided'}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Phone Number</label>
+                          <input
+                            type="tel"
+                            value={profileForm.phone}
+                            onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                            className="w-full bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-medium focus:outline-none focus:border-milquu-blue"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Flat / House & Building</label>
+                          <input
+                            type="text"
+                            value={profileForm.line1}
+                            onChange={(e) => setProfileForm({ ...profileForm, line1: e.target.value })}
+                            placeholder="Flat / House No., Society"
+                            className="w-full bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-medium focus:outline-none focus:border-milquu-blue"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Street / Landmark</label>
+                          <input
+                            type="text"
+                            value={profileForm.line2}
+                            onChange={(e) => setProfileForm({ ...profileForm, line2: e.target.value })}
+                            placeholder="Street, Landmark"
+                            className="w-full bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-medium focus:outline-none focus:border-milquu-blue"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Delivery Area</label>
+                          <input
+                            type="text"
+                            value={profileForm.area}
+                            onChange={(e) => setProfileForm({ ...profileForm, area: e.target.value })}
+                            placeholder="e.g., Kharghar, Panvel"
+                            className="w-full bg-white px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-medium focus:outline-none focus:border-milquu-blue"
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Email Address</label>
-                      <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-800 font-medium">
-                        {user?.email || 'Not provided'}
+                      <div className="mt-8 flex justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingProfile(false)}
+                          className="bg-white border border-gray-200 text-gray-600 px-6 py-2.5 rounded-xl font-bold hover:bg-gray-50 shadow-sm"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={savingProfile}
+                          className="bg-milquu-blue text-white px-6 py-2.5 rounded-xl font-bold hover:bg-blue-700 shadow-sm disabled:opacity-50"
+                        >
+                          {savingProfile ? 'Saving…' : 'Save Changes'}
+                        </button>
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Phone Number</label>
-                      <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-800 font-medium">
-                        {user?.phone || 'Not provided'}
+                    </form>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Full Name</label>
+                          <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-800 font-medium">
+                            {user?.name || 'Not provided'}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Email Address</label>
+                          <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-800 font-medium">
+                            {user?.email || 'Not provided'}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Phone Number</label>
+                          <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-800 font-medium">
+                            {user?.phone || 'Not provided'}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-500 mb-1">Delivery Address</label>
+                          <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-800 font-medium">
+                            {[user?.deliveryAddress?.line1, user?.deliveryAddress?.line2, user?.deliveryAddress?.area].filter(Boolean).join(', ') || user?.address || 'Not provided'}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-500 mb-1">Delivery Address</label>
-                      <div className="bg-gray-50 px-4 py-3 rounded-xl border border-gray-100 text-gray-800 font-medium">
-                        {user?.address || 'Not provided'}
+                      <div className="mt-8 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingProfile(true)}
+                          className="bg-white border border-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-bold hover:bg-gray-50 shadow-sm flex items-center cursor-pointer"
+                        >
+                          <Settings size={16} className="mr-2" /> Edit Profile
+                        </button>
                       </div>
-                    </div>
-                  </div>
-                  <div className="mt-8 flex justify-end">
-                    <button className="bg-white border border-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-bold hover:bg-gray-50 shadow-sm flex items-center">
-                      <Settings size={16} className="mr-2" /> Edit Profile
-                    </button>
-                  </div>
+                    </>
+                  )}
                 </div>
               )}
 

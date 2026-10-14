@@ -53,10 +53,10 @@ const Footer = () => {
           <div>
             <h3 className="text-base font-serif font-semibold mb-4 text-white border-b border-white/20 pb-2 inline-block">Fresh Dairy</h3>
             <ul className="space-y-2.5 font-sans text-sm text-gray-300">
-              <li><Link to="/product/a2-gir-cow-milk" className="hover:text-milquu-gold transition-colors">A2 Gir Cow Milk</Link></li>
-              <li><Link to="/product/fresh-cow-milk" className="hover:text-milquu-gold transition-colors">Farm Fresh Cow Milk</Link></li>
-              <li><Link to="/product/buffalo-milk" className="hover:text-milquu-gold transition-colors">Pure Buffalo Milk</Link></li>
-              <li><Link to="/product/pure-desi-ghee" className="hover:text-milquu-gold transition-colors">Bilona Desi Ghee</Link></li>
+              <li><Link to="/product/farm-fresh-cow-milk" className="hover:text-milquu-gold transition-colors">A2 Gir Cow Milk</Link></li>
+              <li><Link to="/product/cow-milk-pouch" className="hover:text-milquu-gold transition-colors">Farm Fresh Cow Milk</Link></li>
+              <li><Link to="/product/pure-buffalo-milk" className="hover:text-milquu-gold transition-colors">Pure Buffalo Milk</Link></li>
+              <li><Link to="/product/desi-cow-ghee" className="hover:text-milquu-gold transition-colors">Bilona Desi Ghee</Link></li>
               <li><Link to="/product/fresh-paneer" className="hover:text-milquu-gold transition-colors">Fresh Malai Paneer</Link></li>
               <li><Link to="/products" className="text-milquu-gold hover:underline font-medium">View All Products &rarr;</Link></li>
             </ul>

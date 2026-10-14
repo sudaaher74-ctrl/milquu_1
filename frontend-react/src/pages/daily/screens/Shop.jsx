@@ -8,19 +8,16 @@ export default function Shop() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const initialCat = params.get('cat') || 'all';
+  const showSavedOnly = params.get('saved') === '1';
 
-  const { addToCart, cartCount, flash, productList } = useDaily();
+  const { addToCart, cartCount, productList, wishlist, toggleWishlist } = useDaily();
   const [cat, setCat] = useState(initialCat);
   const [query, setQuery] = useState('');
-  const [wishlist, setWishlist] = useState({});
+  const [savedFilter, setSavedFilter] = useState(showSavedOnly);
 
-  const toggleWishlist = (id, e) => {
+  const handleToggleWishlist = (id, e) => {
     e.stopPropagation();
-    setWishlist((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-    flash(!wishlist[id] ? 'Saved to your favourites' : 'Removed from favourites');
+    toggleWishlist(id);
   };
 
   const sourceProducts = (productList && productList.length > 0) ? productList : DEFAULT_POPULAR_PRODUCTS;
@@ -28,16 +25,17 @@ export default function Shop() {
   const filteredProducts = useMemo(() => {
     const q = query.trim().toLowerCase();
     return sourceProducts.filter((p) => {
+      if (savedFilter && !wishlist[p.id]) return false;
       if (cat !== 'all' && p.cat !== cat) return false;
       if (!q) return true;
       return `${p.name} ${p.unit || ''}`.toLowerCase().includes(q);
     });
-  }, [sourceProducts, cat, query]);
+  }, [sourceProducts, cat, query, savedFilter, wishlist]);
 
   return (
     <Screen>
       {/* Top Header with Cart icon and count */}
-      <MobileHeader rightIcon="cart" cartCount={cartCount > 0 ? cartCount : 1} />
+      <MobileHeader rightIcon="cart" cartCount={cartCount} />
 
       {/* Main Content */}
       <div style={{ padding: '14px 18px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -77,12 +75,15 @@ export default function Shop() {
         {/* ── Category Chips Filter ──────────────────────────────────── */}
         <div className="mq-cat-scroll">
           {CATEGORIES.map(([key, label]) => {
-            const isActive = cat === key;
+            const isActive = cat === key && !savedFilter;
             return (
               <button
                 key={key}
                 type="button"
-                onClick={() => setCat(key)}
+                onClick={() => {
+                  setSavedFilter(false);
+                  setCat(key);
+                }}
                 className={`mq-cat-item ${isActive ? 'mq-cat-item-active' : ''}`}
               >
                 <Icon
@@ -190,11 +191,15 @@ export default function Shop() {
                 margin: 0,
               }}
             >
-              Popular Products
+              {savedFilter ? 'Saved Items' : 'Popular Products'}
             </h3>
             <button
               type="button"
-              onClick={() => setCat('all')}
+              onClick={() => {
+                setSavedFilter(false);
+                setCat('all');
+                setQuery('');
+              }}
               style={{
                 background: 'transparent',
                 border: 0,
@@ -214,16 +219,21 @@ export default function Shop() {
 
           <div className="mq-product-grid">
             {filteredProducts.map((p) => {
-              const isFav = wishlist[p.id];
+              const isFav = Boolean(wishlist[p.id]);
               const stockLevel = parseInt(p.stock, 10);
               const isOutOfStock = Boolean(p.isOutOfStock) || Number.isNaN(stockLevel) || stockLevel <= 0;
               return (
-                <div key={p.id} className="mq-product-card">
+                <div
+                  key={p.id}
+                  className="mq-product-card"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/app/product/${p.id}`)}
+                >
                   {/* Favorite Heart Button */}
                   <button
                     type="button"
                     className="mq-product-fav"
-                    onClick={(e) => toggleWishlist(p.id, e)}
+                    onClick={(e) => handleToggleWishlist(p.id, e)}
                     aria-label="Add to favourites"
                   >
                     <Icon
@@ -290,7 +300,13 @@ export default function Shop() {
                   {isOutOfStock ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 'auto' }}>
                       <span className="mq-stock-pill">OUT OF STOCK</span>
-                      <button type="button" disabled className="mq-btn-soldout" style={{ width: '100%' }}>
+                      <button
+                        type="button"
+                        disabled
+                        className="mq-btn-soldout"
+                        style={{ width: '100%' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         Sold out
                       </button>
                     </div>
