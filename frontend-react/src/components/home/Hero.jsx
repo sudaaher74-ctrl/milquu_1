@@ -34,10 +34,12 @@ const Hero = () => {
               animate={{ y: [0, -15, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
             >
-              <img 
-                src="/img/hero/home2.webp" 
-                alt="MILQUU FRESH Premium Dairy" 
+              <img
+                src="/img/hero/home2.webp"
+                alt="MILQUU FRESH Premium Dairy"
                 className="w-full h-auto object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
+                fetchpriority="high"
+                decoding="async"
               />
             </motion.div>
           </motion.div>
