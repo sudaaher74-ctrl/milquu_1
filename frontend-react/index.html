@@ -21,11 +21,16 @@
     <meta name="apple-mobile-web-app-title" content="MilQuu">
     <link rel="apple-touch-icon" href="/pwa-192x192.png">
     <meta name="theme-color" content="#ffffff" />
-    
+
     <!-- Base fallback meta tags (overridden by react-helmet-async) -->
     <title>MilQuu Fresh – Premium Dairy Delivery Service</title>
     <meta name="description" content="Fresh milk delivery and quality-verified dairy products. Daily milk subscriptions delivered straight to your doorstep." />
-    
+
+    <!-- LCP image preload (desktop hero) -->
+    <link rel="preload" as="image" href="/img/hero/home2.webp" type="image/webp" fetchpriority="high">
+    <!-- LCP image preload (mobile hero banner) -->
+    <link rel="preload" as="image" href="/img/banners/subcription.png" fetchpriority="high" media="(max-width: 767px)">
+
     <!-- Google Fonts Preload -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

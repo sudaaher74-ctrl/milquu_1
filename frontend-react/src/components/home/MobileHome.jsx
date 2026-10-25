@@ -187,11 +187,13 @@ const MobileHome = () => {
           ref={bannerScrollRef}
         >
           {banners.map((banner, index) => (
-            <img 
+            <img
               key={index}
-              src={banner} 
-              alt={`Special Offer ${index + 1}`} 
-              className="w-full h-full object-cover flex-shrink-0 snap-start cursor-pointer" 
+              src={banner}
+              alt={`Special Offer ${index + 1}`}
+              className="w-full h-full object-cover flex-shrink-0 snap-start cursor-pointer"
+              fetchpriority={index === 0 ? "high" : undefined}
+              loading={index === 0 ? undefined : "lazy"}
               onClick={() => index === 0 ? navigate('/subscribe') : navigate('/products')}
             />
           ))}
