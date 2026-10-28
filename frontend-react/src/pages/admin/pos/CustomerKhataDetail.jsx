@@ -16,6 +16,7 @@ import {
   getDatesInRange 
 } from '../../../utils/khataPaymentConfig';
 import MilkInvoiceModal from './MilkInvoiceModal';
+import RecycleBinModal from './RecycleBinModal';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -93,6 +94,9 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedBillForInvoice, setSelectedBillForInvoice] = useState(null);
   const [invoiceDateRange, setInvoiceDateRange] = useState(null);
+
+  // Recycle Bin Modal State
+  const [showRecycleBinModal, setShowRecycleBinModal] = useState(false);
 
   const handleOpenInvoice = (bill = null) => {
     if (bill) {
@@ -799,6 +803,16 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
             >
               <FileText size={14} className="text-blue-600" />
               <span>Milk Bill PDF</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowRecycleBinModal(true)}
+              className="px-3 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 hover:border-amber-400 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+              title="Open Recycle Bin for this customer"
+            >
+              <Trash2 size={14} className="text-amber-600" />
+              <span>Recycle Bin</span>
             </button>
 
             {customer?.phone && stats.totalDue > 0 && (
@@ -2041,6 +2055,14 @@ export default function CustomerKhataDetail({ customerId: propCustomerId, onBack
           initialDateRange={invoiceDateRange}
         />
       )}
+
+      {/* ── MODAL: RECYCLE BIN ── */}
+      <RecycleBinModal
+        isOpen={showRecycleBinModal}
+        onClose={() => setShowRecycleBinModal(false)}
+        customerId={customerId}
+        onRestored={() => fetchCustomerDetails()}
+      />
 
     </div>
   );

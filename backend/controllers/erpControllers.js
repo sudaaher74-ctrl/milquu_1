@@ -9,6 +9,7 @@ import User from '../models/User.js';
 import Subscription from '../models/Subscription.js';
 import DeliveryStaff from '../models/DeliveryStaff.js';
 import KhataBill from '../models/KhataBill.js';
+import RecycleBin from '../models/RecycleBin.js';
 import crypto from 'crypto';
 import { exactCaseInsensitive, escapeRegex as escapeRegexText } from '../utils/regex.js';
 import { normalisePhone, isValidPhone } from '../utils/phone.js';
@@ -1037,6 +1038,47 @@ export const deleteOrder = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
+    // Save copy to RecycleBin for quick recovery
+    try {
+      const customerName = order.name || 'Customer';
+      const dateStr = order.notes?.match(/Date:\s*(\d{4}-\d{2}-\d{2})/i)?.[1] || 
+        (order.scheduledDeliveryDate ? new Date(order.scheduledDeliveryDate).toISOString().split('T')[0] : new Date(order.createdAt).toISOString().split('T')[0]);
+      let totalLitres = 0;
+      if (Array.isArray(order.orderItems)) {
+        for (const item of order.orderItems) {
+          const qty = Number(item.qty) || 0;
+          const u = (item.unit || '').toLowerCase();
+          const n = (item.name || '').toLowerCase();
+          if (u.includes('500') || n.includes('500')) {
+            totalLitres += qty * 0.5;
+          } else {
+            totalLitres += qty;
+          }
+        }
+      }
+
+      await RecycleBin.create({
+        itemType: 'Order',
+        originalId: order._id,
+        name: `Milk Entry: ${customerName} (${totalLitres || 1}L)`,
+        summary: `${totalLitres || 1}L • ₹${order.totalPrice || 0} • Date: ${dateStr}`,
+        data: order.toObject(),
+        metadata: {
+          customerName,
+          customerId: order.user || null,
+          date: dateStr,
+          amount: Number(order.totalPrice) || 0,
+          litres: totalLitres || 1,
+          billingCycle: order.billingCycle || ''
+        },
+        deletedBy: req.user?._id || null,
+        deletedByName: req.user?.name || 'Admin',
+        deletedAt: new Date()
+      });
+    } catch (binErr) {
+      console.warn('Failed to archive deleted order to RecycleBin:', binErr.message);
+    }
+
     if (order.khataBill) {
       try {
         const KhataBill = mongoose.model('KhataBill');
@@ -1049,7 +1091,7 @@ export const deleteOrder = async (req, res) => {
     }
 
     await Order.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Order deleted successfully' });
+    res.json({ message: 'Order moved to Recycle Bin successfully' });
   } catch (error) {
     console.error('Error deleting order:', error);
     res.status(500).json({ message: 'Failed to delete order', error: error.message });
@@ -2103,6 +2145,30 @@ export const deleteCreditBill = async (req, res) => {
     if (!bill) {
       return res.status(404).json({ message: 'Bill not found' });
     }
+
+    // Save copy to RecycleBin
+    try {
+      await RecycleBin.create({
+        itemType: 'KhataBill',
+        originalId: bill._id,
+        name: `Khata Bill: ${bill.billNumber} (${bill.customerName})`,
+        summary: `${bill.dateRangeStr || ''} • ${bill.totalLitres || 0}L • ₹${bill.totalAmount || 0}`,
+        data: bill.toObject(),
+        metadata: {
+          customerName: bill.customerName,
+          customerId: bill.user || null,
+          amount: Number(bill.totalAmount) || 0,
+          litres: Number(bill.totalLitres) || 0,
+          billingCycle: bill.billingCycle || ''
+        },
+        deletedBy: req.user?._id || null,
+        deletedByName: req.user?.name || 'Admin',
+        deletedAt: new Date()
+      });
+    } catch (binErr) {
+      console.warn('Failed to archive deleted bill to RecycleBin:', binErr.message);
+    }
+
     // Unlink orders
     await Order.updateMany({ khataBill: bill._id }, { $unset: { khataBill: '' } });
     await KhataBill.findByIdAndDelete(billId);
@@ -2114,7 +2180,7 @@ export const deleteCreditBill = async (req, res) => {
       summary: `Deleted bill ${bill.billNumber}`
     });
 
-    res.json({ message: 'Bill deleted successfully' });
+    res.json({ message: 'Bill moved to Recycle Bin successfully' });
   } catch (err) {
     res.status(500).json({ message: 'Failed to delete bill', error: err.message });
   }

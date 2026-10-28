@@ -114,6 +114,7 @@ const AdminLayout = () => {
       title: 'Team & Settings',
       items: [
         { name: 'Delivery Staff', path: '/admin/delivery-boys', icon: <Bike size={20} /> },
+        { name: 'Recycle Bin', path: '/admin/recycle-bin', icon: <Trash2 size={20} /> },
         { name: 'Settings', path: '/admin/settings', icon: <Settings size={20} /> },
       ]
     }

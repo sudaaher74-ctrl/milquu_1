@@ -24,6 +24,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import freeSampleRoutes from './routes/freeSampleRoutes.js';
 import checkoutRoutes from './routes/checkoutRoutes.js';
+import recycleBinRoutes from './routes/recycleBinRoutes.js';
 import { startScheduler } from './cron/scheduler.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
@@ -123,6 +124,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/erp', erpRoutes); // Mounted ERP routes
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/recycle-bin', recycleBinRoutes);
 
 // API Documentation Route (development only — don't expose API internals in production)
 if (process.env.NODE_ENV !== 'production') {

@@ -13,6 +13,7 @@ import DailyRegisterModal from './pos/DailyRegisterModal';
 import EditCustomerModal from './pos/EditCustomerModal';
 import MilkInvoiceModal from './pos/MilkInvoiceModal';
 import CustomerKhataDetail from './pos/CustomerKhataDetail';
+import RecycleBinModal from './pos/RecycleBinModal';
 import { DAIRY_KHATA_BANK_DETAILS } from '../../utils/khataPaymentConfig';
 import toast from '../../utils/toast';
 
@@ -117,6 +118,9 @@ const POS = () => {
   // Milk Invoice Bill Modal State
   const [selectedCustomerForInvoice, setSelectedCustomerForInvoice] = useState(null);
   const [showMilkInvoiceModal, setShowMilkInvoiceModal] = useState(false);
+
+  // Recycle Bin Modal State
+  const [showRecycleBinModal, setShowRecycleBinModal] = useState(false);
 
   // Manual / Custom Quantity Modal State
   const [qtyModalItem, setQtyModalItem] = useState(null);
@@ -818,6 +822,11 @@ const POS = () => {
       toast.error('Customer ID not found');
       return;
     }
+    const custName = cust.name || 'this customer';
+    const hasDues = cust.totalDue > 0 ? ` (Dues: ₹${cust.totalDue.toFixed(2)})` : '';
+    if (!window.confirm(`Are you sure you want to delete "${custName}"${hasDues}? This will delete their customer profile and unpaid credit bills.`)) {
+      return;
+    }
     try {
       await api.delete(`/api/admin/customers/${custId}`);
       toast.success(`Customer ${cust.name || ''} deleted successfully`);
@@ -954,6 +963,16 @@ const POS = () => {
           >
             <span>🥛</span>
             <span>Daily Milk Register</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowRecycleBinModal(true)}
+            className="px-3.5 py-2 bg-white border border-gray-200 hover:border-amber-400 text-gray-700 hover:text-amber-800 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs hover:bg-amber-50/50 transition-all cursor-pointer"
+            title="Open Recycle Bin (Trash)"
+          >
+            <Trash2 size={14} className="text-amber-600" />
+            <span>Recycle Bin</span>
           </button>
 
           {activeTab === 'credit' && (
@@ -1728,6 +1747,15 @@ const POS = () => {
         showInvoiceModal={showMilkInvoiceModal}
         setShowInvoiceModal={setShowMilkInvoiceModal}
         customer={selectedCustomerForInvoice}
+      />
+
+      <RecycleBinModal
+        isOpen={showRecycleBinModal}
+        onClose={() => setShowRecycleBinModal(false)}
+        onRestored={() => {
+          fetchCreditCustomers();
+          fetchCustomers();
+        }}
       />
     </div>
   );

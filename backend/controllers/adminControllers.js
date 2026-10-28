@@ -4,6 +4,7 @@ import Subscription from '../models/Subscription.js';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
 import WalletTransaction from '../models/WalletTransaction.js';
+import RecycleBin from '../models/RecycleBin.js';
 import generateToken from '../utils/generateToken.js';
 import { runSubscriptionEngine } from '../cron/subscriptionEngine.js';
 import { istDateKey, istStartOfDay, istTomorrow, istStartOfYear, istStartOfMonth, istMonthYear, IST_TIMEZONE } from '../utils/ist.js';
@@ -692,6 +693,32 @@ export const deleteCustomer = async (req, res) => {
 
     const customerName = customer.name;
 
+    // Fetch unpaid POS credit orders first so they can be backed up to RecycleBin
+    const unpaidOrders = await Order.find({ user: customer._id, orderSource: 'POS', isPaid: false }).lean();
+
+    // Archive customer and their unpaid orders into RecycleBin
+    try {
+      await RecycleBin.create({
+        itemType: 'Customer',
+        originalId: customer._id,
+        name: `Customer: ${customerName}`,
+        summary: `${customer.address || 'No address'} • Cycle: ${customer.billingCycle || '15 Days'} • ${unpaidOrders.length} active orders`,
+        data: customer.toObject(),
+        relatedData: unpaidOrders,
+        metadata: {
+          customerName,
+          customerId: customer._id,
+          amount: unpaidOrders.reduce((sum, o) => sum + (Number(o.totalPrice) || 0), 0),
+          billingCycle: customer.billingCycle || ''
+        },
+        deletedBy: req.user?._id || null,
+        deletedByName: req.user?.name || 'Admin',
+        deletedAt: new Date()
+      });
+    } catch (binErr) {
+      console.warn('Failed to archive deleted customer to RecycleBin:', binErr.message);
+    }
+
     // Delete or cancel any active subscriptions
     await Subscription.deleteMany({ user: customer._id });
 
@@ -710,10 +737,10 @@ export const deleteCustomer = async (req, res) => {
       action: 'customer.delete',
       entity: 'Customer',
       entityId: id,
-      summary: `Deleted customer ${customerName}`
+      summary: `Deleted customer ${customerName} (moved to Recycle Bin)`
     });
 
-    res.json({ message: `Customer ${customerName} deleted successfully` });
+    res.json({ message: `Customer ${customerName} moved to Recycle Bin successfully` });
   } catch (error) {
     res.status(500).json({ message: 'Failed to delete customer', error: error.message });
   }

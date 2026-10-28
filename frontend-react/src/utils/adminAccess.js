@@ -40,6 +40,7 @@ const PAGE_ACCESS = {
   '/admin/wastage': STAFF_ROLES,
   '/admin/notifications': STAFF_ROLES,
   '/admin/settings': STAFF_ROLES,
+  '/admin/recycle-bin': STAFF_ROLES,
 
   '/admin/customers': MANAGER_ROLES,
   '/admin/subscriptions': MANAGER_ROLES,

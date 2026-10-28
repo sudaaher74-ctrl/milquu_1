@@ -43,6 +43,7 @@ const SEOGenerator = lazy(() => import('./pages/admin/SEOGenerator'));
 const AdminLogin = lazy(() => import('./pages/admin/AdminLogin'));
 const TodayOrderList = lazy(() => import('./pages/admin/TodayOrderList'));
 const FreeSamples = lazy(() => import('./pages/admin/FreeSamples'));
+const RecycleBin = lazy(() => import('./pages/admin/RecycleBin'));
 
 // Chatbot Pages
 const AIChatDashboard = lazy(() => import('./pages/chatbot/AIChatDashboard'));
@@ -202,6 +203,7 @@ export const router = createBrowserRouter([
           { path: "free-samples", element: <FreeSamples /> },
           { path: "seo-tools", element: <SEOGenerator /> },
           { path: "today-orders", element: <TodayOrderList /> },
+          { path: "recycle-bin", element: <RecycleBin /> },
           { path: "notifications", element: <Notifications /> },
           { path: "settings", element: <Settings /> },
           { path: "*", element: <Navigate to="/admin" replace /> }
