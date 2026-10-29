@@ -1,5 +1,7 @@
 import { Suspense } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import { getAppPageTitle } from '../../data/app-page-titles';
 import { DailyProvider, useDaily } from './DailyContext';
 import { Toast } from './ui';
 import InstallPwaPrompt from '../../components/layout/InstallPwaPrompt';
@@ -42,8 +44,12 @@ function Loading() {
  * visitor can see what they are signing up for.
  */
 export default function DailyApp() {
+  const { pathname } = useLocation();
   return (
     <div className="mq-app">
+      <Helmet>
+        <title>{getAppPageTitle(pathname)}</title>
+      </Helmet>
       <DailyProvider>
         <Shell />
       </DailyProvider>

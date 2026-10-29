@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildSeoEntries } from '../src/data/seo-routes.js';
+import { appPageTitles } from '../src/data/app-page-titles.js';
 import { safeJsonLd, escapeHtml } from '../src/utils/seo.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -76,3 +77,13 @@ for (const entry of entries) {
 }
 
 console.log(`✅ SEO Prerender complete: ${entries.length} pages generated in dist/`);
+
+// App routes need distinct titles in the initial response as well as after
+// hydration. They stay outside the public SEO registry and sitemap.
+for (const [appPath, title] of Object.entries(appPageTitles)) {
+  const html = baseTemplate.replace(/<title>.*?<\/title>/i, `<title>${escapeHtml(title)}</title>`);
+  const targetDir = path.join(DIST_DIR, appPath.slice(1));
+  fs.mkdirSync(targetDir, { recursive: true });
+  fs.writeFileSync(path.join(targetDir, 'index.html'), html, 'utf-8');
+}
+console.log(`✅ App titles generated for ${Object.keys(appPageTitles).length} routes.`);
