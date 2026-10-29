@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async';
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, ShieldCheck, Clock, CreditCard, AlertCircle } from 'lucide-react';
@@ -8,8 +9,7 @@ const RefundPolicy = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  return (
-    <div className="bg-gray-50 min-h-screen py-12">
+  return (<>{<div className="bg-gray-50 min-h-screen py-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <Link to="/" className="inline-flex items-center text-gray-500 hover:text-milquu-blue transition mb-8 group">
@@ -116,8 +116,7 @@ const RefundPolicy = () => {
           </div>
         </motion.div>
       </div>
-    </div>
-  );
+    </div>}<Helmet><title>{"Refund Policy | MilQuu"}</title></Helmet></>);
 };
 
 export default RefundPolicy;
