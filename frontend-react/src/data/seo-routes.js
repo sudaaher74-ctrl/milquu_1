@@ -241,11 +241,11 @@ const staticEntries = () => [
   base({
     path: '/refund-policy',
     type: 'page',
-    title: 'Refund & Cancellation Policy | MilQuuFresh',
+    title: 'MilQuuFresh Refund & Cancellation Policy | Terms, Refunds & Wallet Withdrawals',
     description:
-      'Read the MilQuuFresh refund and cancellation policy for milk subscriptions and one-time dairy orders.',
+      'Read the MilQuuFresh refund and cancellation policy for milk subscriptions, one-time dairy orders, and wallet withdrawals.',
     h1: 'Refund & Cancellation Policy',
-    summary: 'How refunds and cancellations work at MilQuuFresh.',
+    summary: 'How refunds, cancellations, and wallet withdrawals work at MilQuuFresh.',
     lastmod: '2026-06-09',
     source: 'src/pages/RefundPolicy.jsx',
     links: [link('/', 'Home'), link('/contact', 'Contact us')],
