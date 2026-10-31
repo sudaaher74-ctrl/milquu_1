@@ -1,15 +1,17 @@
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 import { OAuth2Client } from 'google-auth-library';
 import Subscription from '../models/Subscription.js';
 import User from '../models/User.js';
 import Order from '../models/Order.js';
 import WalletTransaction from '../models/WalletTransaction.js';
 import RecycleBin from '../models/RecycleBin.js';
+import KhataBill from '../models/KhataBill.js';
 import generateToken from '../utils/generateToken.js';
 import { runSubscriptionEngine } from '../cron/subscriptionEngine.js';
 import { istDateKey, istStartOfDay, istTomorrow, istStartOfYear, istStartOfMonth, istMonthYear, IST_TIMEZONE } from '../utils/ist.js';
 import { normalisePhone } from '../utils/phone.js';
-import { escapeRegex } from '../utils/regex.js';
+import { exactCaseInsensitive, escapeRegex } from '../utils/regex.js';
 import { recordAudit } from '../utils/audit.js';
 
 const DEFAULT_GOOGLE_CLIENT_ID = '493263183371-900jeus48uso6k3fs997one5diooao35.apps.googleusercontent.com';
@@ -623,27 +625,164 @@ export const createCustomer = async (req, res) => {
 export const updateCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, email, address, billingCycle, isCreditCustomer, creditLimit, creditNotes } = req.body;
+    const { name, phone, email, address, billingCycle, isCreditCustomer, creditLimit, creditNotes, oldName } = req.body;
 
-    const customer = await User.findById(id);
-    if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
+    let customer = null;
+    const isExplicitGuest = id.startsWith('guest_');
+
+    if (!isExplicitGuest) {
+      try {
+        customer = await User.findById(id);
+      } catch {
+        customer = null;
+      }
     }
 
-    if (name) {
+    // If customer is not a registered User, handle as guest record
+    if (!customer) {
+      const guestIdentifier = id.startsWith('guest_') ? id.replace(/^guest_/, '') : id;
+      const priorName = (oldName || guestIdentifier).trim();
+
+      const normPhone = phone ? normalisePhone(phone) : undefined;
+      if (normPhone) {
+        customer = await User.findOne({ phone: normPhone });
+      }
+      if (!customer && name && name.trim()) {
+        customer = await User.findOne({
+          name: exactCaseInsensitive(name.trim())
+        });
+      }
+      if (!customer && priorName) {
+        customer = await User.findOne({
+          name: exactCaseInsensitive(priorName)
+        });
+      }
+
+      if (!customer) {
+        const hasCredit = Boolean(isCreditCustomer) || (billingCycle && billingCycle !== 'none');
+        customer = new User({
+          name: (name || guestIdentifier).trim(),
+          phone: normPhone || undefined,
+          email: (email && typeof email === 'string' && email.trim()) ? email.trim().toLowerCase() : undefined,
+          address: address?.trim() || '',
+          password: crypto.randomBytes(24).toString('hex'),
+          role: 'user',
+          billingCycle: billingCycle || (hasCredit ? '15 Days' : 'none'),
+          isCreditCustomer: hasCredit,
+          creditLimit: Number(creditLimit) || 0,
+          creditNotes: creditNotes?.trim() || ''
+        });
+        await customer.save();
+      } else {
+        if (!customer.password) {
+          customer.password = crypto.randomBytes(24).toString('hex');
+        }
+        if (name && name.trim()) customer.name = name.trim();
+        if (phone !== undefined) {
+          customer.phone = normPhone || undefined;
+        }
+        if (email !== undefined) {
+          customer.email = (email && typeof email === 'string' && email.trim()) ? email.trim().toLowerCase() : undefined;
+        }
+        if (address !== undefined) customer.address = address?.trim() || '';
+        if (billingCycle !== undefined) {
+          customer.billingCycle = billingCycle;
+          if (billingCycle && billingCycle !== 'none') customer.isCreditCustomer = true;
+        }
+        if (isCreditCustomer !== undefined) customer.isCreditCustomer = Boolean(isCreditCustomer);
+        if (creditLimit !== undefined) customer.creditLimit = Number(creditLimit) || 0;
+        if (creditNotes !== undefined) customer.creditNotes = creditNotes?.trim() || '';
+        await customer.save();
+      }
+
+      // Link all past orders from this guest record to the user account
+      const guestQueries = [
+        { name: guestIdentifier },
+        { phone: guestIdentifier }
+      ];
+      if (priorName && priorName !== guestIdentifier) {
+        guestQueries.push({ name: priorName });
+      }
+      if (mongoose.Types.ObjectId.isValid(guestIdentifier)) {
+        guestQueries.push({ _id: guestIdentifier });
+      }
+
+      const orderUpdateFields = {
+        user: customer._id,
+        name: customer.name
+      };
+      if (customer.phone) {
+        orderUpdateFields.phone = customer.phone;
+      }
+
+      await Order.updateMany(
+        {
+          orderSource: 'POS',
+          $or: guestQueries
+        },
+        {
+          $set: orderUpdateFields
+        }
+      );
+
+      // Link any Khata bills
+      await KhataBill.updateMany(
+        {
+          $or: [
+            { guestId: id },
+            { guestId: `guest_${guestIdentifier}` },
+            { customerName: priorName },
+            { customerName: guestIdentifier }
+          ]
+        },
+        {
+          $set: {
+            user: customer._id,
+            customerName: customer.name,
+            ...(customer.phone ? { customerPhone: customer.phone } : {})
+          },
+          $unset: { guestId: 1 }
+        }
+      );
+
+      await recordAudit(req, {
+        action: 'customer.update',
+        entity: 'Customer',
+        entityId: customer._id,
+        summary: `Promoted/Updated guest customer ${customer.name}`
+      });
+
+      return res.json(customer);
+    }
+
+    const oldCustomerName = customer.name;
+
+    if (!customer.password) {
+      customer.password = crypto.randomBytes(24).toString('hex');
+    }
+
+    if (name && name.trim()) {
       customer.name = name.trim();
-      // Keep POS order customer names in sync
-      await Order.updateMany({ user: customer._id }, { $set: { name: customer.name } });
     }
     if (phone !== undefined) {
       const normPhone = phone ? normalisePhone(phone) : undefined;
-      customer.phone = normPhone || undefined;
       if (normPhone) {
-        await Order.updateMany({ user: customer._id }, { $set: { phone: normPhone } });
+        const existing = await User.findOne({ phone: normPhone, _id: { $ne: customer._id } });
+        if (existing) {
+          return res.status(400).json({ message: 'A customer with this phone number already exists' });
+        }
       }
+      customer.phone = normPhone || undefined;
     }
     if (email !== undefined) {
-      customer.email = (email && typeof email === 'string' && email.trim()) ? email.trim().toLowerCase() : undefined;
+      const cleanEmail = (email && typeof email === 'string' && email.trim()) ? email.trim().toLowerCase() : undefined;
+      if (cleanEmail) {
+        const existing = await User.findOne({ email: cleanEmail, _id: { $ne: customer._id } });
+        if (existing) {
+          return res.status(400).json({ message: 'A customer with this email already exists' });
+        }
+      }
+      customer.email = cleanEmail || undefined;
     }
     if (address !== undefined) {
       customer.address = address?.trim() || '';
@@ -661,6 +800,38 @@ export const updateCustomer = async (req, res) => {
     const changed = ['name', 'phone', 'email', 'address', 'billingCycle', 'isCreditCustomer', 'creditLimit', 'creditNotes']
       .filter((field) => req.body[field] !== undefined);
     await customer.save();
+
+    // Keep all orders and Khata bills in sync with the updated name/phone
+    const orderSetFields = { name: customer.name };
+    if (customer.phone) {
+      orderSetFields.phone = customer.phone;
+    }
+    await Order.updateMany(
+      {
+        $or: [
+          { user: customer._id },
+          ...(oldCustomerName ? [{ orderSource: 'POS', user: null, name: oldCustomerName }] : [])
+        ]
+      },
+      { $set: { user: customer._id, ...orderSetFields } }
+    );
+
+    await KhataBill.updateMany(
+      {
+        $or: [
+          { user: customer._id },
+          ...(oldCustomerName ? [{ customerName: oldCustomerName }] : [])
+        ]
+      },
+      {
+        $set: {
+          user: customer._id,
+          customerName: customer.name,
+          ...(customer.phone ? { customerPhone: customer.phone } : {})
+        }
+      }
+    );
+
     if (changed.length) {
       await recordAudit(req, {
         action: 'customer.update',
@@ -682,9 +853,75 @@ export const updateCustomer = async (req, res) => {
 export const deleteCustomer = async (req, res) => {
   try {
     const { id } = req.params;
-    const customer = await User.findById(id);
+    let customer = null;
+    const isExplicitGuest = id.startsWith('guest_');
+
+    if (!isExplicitGuest) {
+      try {
+        customer = await User.findById(id);
+      } catch {
+        customer = null;
+      }
+    }
+
     if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
+      const guestIdentifier = id.startsWith('guest_') ? id.replace(/^guest_/, '') : id;
+      const guestQueries = [
+        { name: guestIdentifier },
+        { phone: guestIdentifier }
+      ];
+      if (mongoose.Types.ObjectId.isValid(guestIdentifier)) {
+        guestQueries.push({ _id: guestIdentifier });
+      }
+
+      const unpaidOrders = await Order.find({
+        orderSource: 'POS',
+        isPaid: false,
+        $or: guestQueries
+      }).lean();
+
+      try {
+        const dummyOriginalId = new mongoose.Types.ObjectId();
+        await RecycleBin.create({
+          itemType: 'Customer',
+          originalId: dummyOriginalId,
+          name: `Guest Customer: ${guestIdentifier}`,
+          summary: `Guest Customer • ${unpaidOrders.length} active orders`,
+          data: { guest: true, guestIdentifier, id },
+          relatedData: unpaidOrders,
+          metadata: {
+            customerName: guestIdentifier,
+            amount: unpaidOrders.reduce((sum, o) => sum + (Number(o.totalPrice) || 0), 0)
+          },
+          deletedBy: mongoose.Types.ObjectId.isValid(req.user?._id) ? req.user._id : undefined,
+          deletedByName: req.user?.name || 'Admin',
+          deletedAt: new Date()
+        });
+      } catch (binErr) {
+        console.warn('Failed to archive deleted guest customer to RecycleBin:', binErr.message);
+      }
+
+      await Order.deleteMany({
+        orderSource: 'POS',
+        isPaid: false,
+        $or: guestQueries
+      });
+
+      await KhataBill.deleteMany({
+        $or: [
+          { guestId: id },
+          { customerName: guestIdentifier }
+        ]
+      });
+
+      await recordAudit(req, {
+        action: 'customer.delete',
+        entity: 'Customer',
+        entityId: id,
+        summary: `Deleted guest customer ${guestIdentifier} and ${unpaidOrders.length} unpaid orders`
+      });
+
+      return res.json({ message: `Customer ${guestIdentifier} deleted successfully` });
     }
 
     if (customer.role === 'admin' || customer.role === 'manager' || customer.role === 'staff' || customer.role === 'superadmin') {
@@ -711,7 +948,7 @@ export const deleteCustomer = async (req, res) => {
           amount: unpaidOrders.reduce((sum, o) => sum + (Number(o.totalPrice) || 0), 0),
           billingCycle: customer.billingCycle || ''
         },
-        deletedBy: req.user?._id || null,
+        deletedBy: mongoose.Types.ObjectId.isValid(req.user?._id) ? req.user._id : undefined,
         deletedByName: req.user?.name || 'Admin',
         deletedAt: new Date()
       });
@@ -724,6 +961,9 @@ export const deleteCustomer = async (req, res) => {
 
     // Clean up unpaid POS credit orders so deleted customer doesn't leave ghost debt
     await Order.deleteMany({ user: customer._id, orderSource: 'POS', isPaid: false });
+
+    // Clean up Khata bills for this customer
+    await KhataBill.deleteMany({ user: customer._id });
 
     // For any historical paid orders, unlink from user account while keeping history
     await Order.updateMany(

@@ -21,6 +21,8 @@ vi.mock('../models/Order.js', () => {
   }
   MockOrder.find = vi.fn();
   MockOrder.findById = vi.fn();
+  MockOrder.updateMany = vi.fn().mockResolvedValue({});
+  MockOrder.deleteMany = vi.fn().mockResolvedValue({});
   return { default: MockOrder };
 });
 vi.mock('../models/Product.js');
@@ -31,6 +33,18 @@ vi.mock('../models/Procurement.js');
 vi.mock('../models/Wastage.js');
 vi.mock('../models/Subscription.js');
 vi.mock('../models/DeliveryStaff.js');
+vi.mock('../models/RecycleBin.js', () => ({
+  default: {
+    create: vi.fn().mockResolvedValue({})
+  }
+}));
+vi.mock('../models/KhataBill.js', () => {
+  const MockKhataBill = vi.fn();
+  MockKhataBill.find = vi.fn().mockResolvedValue([]);
+  MockKhataBill.updateMany = vi.fn().mockResolvedValue({});
+  MockKhataBill.deleteMany = vi.fn().mockResolvedValue({});
+  return { default: MockKhataBill };
+});
 
 vi.mock('../middleware/authMiddleware.js', async (importOriginal) => ({
   ...(await importOriginal()),
@@ -221,5 +235,75 @@ describe('Shop POS Credit & Billing System (10, 15, 30 Days)', () => {
     expect(res.body.name).toBe('Siddhesh Aher');
     expect(res.body.phone).toBe('9272594694');
     expect(savedInstance.email).toBeUndefined();
+  });
+
+  it('PUT /api/admin/customers/:id updates a guest customer name and promotes them to registered account', async () => {
+    User.findOne.mockResolvedValue(null);
+    let createdUser = null;
+    User.mockImplementation(function (data) {
+      const inst = {
+        ...data,
+        _id: 'cust_promoted_999',
+        save: vi.fn().mockImplementation(() => {
+          createdUser = inst;
+          return Promise.resolve(inst);
+        })
+      };
+      createdUser = inst;
+      return inst;
+    });
+
+    const res = await request(app)
+      .put('/api/admin/customers/guest_lakhani%20centrium%207th%20floor')
+      .send({
+        name: 'IMMUNITY INFRACONS PVT LTD',
+        address: 'lakhani centrium cbd belapur',
+        billingCycle: '15 Days',
+        oldName: 'lakhani centrium 7th floor'
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.name).toBe('IMMUNITY INFRACONS PVT LTD');
+    expect(res.body.address).toBe('lakhani centrium cbd belapur');
+    expect(Order.updateMany).toHaveBeenCalled();
+  });
+
+  it('DELETE /api/admin/customers/:id deletes a guest customer and cleans up unlinked orders', async () => {
+    Order.find.mockReturnValue({
+      lean: vi.fn().mockResolvedValue([{ _id: 'ord_guest_1', totalPrice: 500 }])
+    });
+
+    const res = await request(app)
+      .delete('/api/admin/customers/guest_lakhani%20centrium%207th%20floor');
+
+    expect(res.statusCode).toBe(200);
+    expect(Order.deleteMany).toHaveBeenCalled();
+  });
+
+  it('PUT /api/admin/customers/:id assigns password and updates customer if password was missing', async () => {
+    const custWithoutPassword = {
+      _id: '6ab907a384f63d909680aa47',
+      name: 'lakhani centrium 7th floor',
+      save: vi.fn().mockImplementation(function () {
+        if (!this.password) {
+          throw new Error('User validation failed: password: Path `password` is required.');
+        }
+        return Promise.resolve(this);
+      })
+    };
+    User.findById.mockResolvedValue(custWithoutPassword);
+
+    const res = await request(app)
+      .put('/api/admin/customers/6ab907a384f63d909680aa47')
+      .send({
+        name: 'IMMUNITY INFRACONS PVT LTD',
+        address: 'lakhani centrium cbd belapur',
+        billingCycle: '15 Days'
+      });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.name).toBe('IMMUNITY INFRACONS PVT LTD');
+    expect(custWithoutPassword.password).toBeDefined();
+    expect(custWithoutPassword.password.length).toBeGreaterThanOrEqual(8);
   });
 });

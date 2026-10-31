@@ -44,7 +44,8 @@ const EditCustomerModal = ({
     }
     handleSaveCustomerEdit({
       ...formData,
-      id: customer.customerId || customer.userId || customer._id
+      id: customer.customerId || customer.userId || customer._id,
+      oldName: customer.name
     });
   };
 

@@ -626,7 +626,20 @@ export const getExpenses = async (req, res) => {
 
 export const createExpense = async (req, res) => {
   try {
-    const expense = new Expense(req.body);
+    const data = { ...req.body };
+    if (!data.expenseId) {
+      data.expenseId = `EXP-${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+    if (!data.paidTo) {
+      data.paidTo = 'Shop Counter';
+    }
+    if (!data.paymentMethod) {
+      data.paymentMethod = 'Cash';
+    }
+    if (!data.date) {
+      data.date = new Date();
+    }
+    const expense = new Expense(data);
     const createdExpense = await expense.save();
     await recordAudit(req, {
       action: 'expense.create',
@@ -672,11 +685,189 @@ export const getWastages = async (req, res) => {
 
 export const createWastage = async (req, res) => {
   try {
-    const wastage = new Wastage(req.body);
+    const data = { ...req.body };
+    if (!data.wastageId) {
+      data.wastageId = `WST-${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+    if (!data.productName && (data.product || data.name)) {
+      data.productName = data.product || data.name;
+    }
+    if (!data.category) {
+      data.category = 'Dairy';
+    }
+    if (!data.unit) {
+      data.unit = 'Litre';
+    }
+    if (!data.reportedBy) {
+      data.reportedBy = req.user?.name || 'Staff';
+    }
+    if (!data.date) {
+      data.date = new Date();
+    }
+    const wastage = new Wastage(data);
     const createdWastage = await wastage.save();
+    await recordAudit(req, {
+      action: 'wastage.create',
+      entity: 'Wastage',
+      entityId: createdWastage._id,
+      summary: `Logged wastage of ${createdWastage.quantity} ${createdWastage.unit} ${createdWastage.productName} (loss: ₹${createdWastage.lossValue})`
+    });
     res.status(201).json(createdWastage);
   } catch (error) {
     res.status(400).json({ message: 'Invalid wastage data', error: error.message });
+  }
+};
+
+// --- POS DAYBOOK & CASH REGISTER SUMMARY ---
+export const getPOSDaybookSummary = async (req, res) => {
+  try {
+    const { date } = req.query;
+    let target = new Date();
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const [y, m, d] = date.split('-').map(Number);
+      target = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+    }
+    const start = istStartOfDay(target);
+    const end = istTomorrow(target);
+    const dateKey = istDateKey(target);
+
+    // 1. Direct POS orders collected on that day
+    const directOrders = await Order.find({
+      orderSource: 'POS',
+      isPaid: true,
+      $or: [
+        { paidAt: { $gte: start, $lt: end } },
+        { createdAt: { $gte: start, $lt: end } }
+      ]
+    }).populate('user', 'name phone').sort({ createdAt: -1 }).lean();
+
+    // 2. Khata bills settled on that day
+    const settledBills = await KhataBill.find({
+      settledAt: { $gte: start, $lt: end }
+    }).sort({ settledAt: -1 }).lean();
+
+    // Avoid double-counting orders if they were part of settledBills
+    const billOrderIds = new Set();
+    settledBills.forEach(b => (b.orders || []).forEach(id => billOrderIds.add(id.toString())));
+
+    const uniqueDirectOrders = directOrders.filter(o => !billOrderIds.has(o._id.toString()));
+
+    // Collections calculation
+    let cashCollected = 0;
+    let upiCollected = 0;
+    let cardCollected = 0;
+    let otherCollected = 0;
+
+    const collectionsList = [];
+
+    // From direct POS orders
+    for (const ord of uniqueDirectOrders) {
+      const amt = Number(ord.totalPrice) || 0;
+      const method = (ord.paymentMethod || 'Cash').toUpperCase();
+      if (method.includes('CASH')) cashCollected += amt;
+      else if (method.includes('UPI')) upiCollected += amt;
+      else if (method.includes('CARD')) cardCollected += amt;
+      else otherCollected += amt;
+
+      collectionsList.push({
+        _id: ord._id,
+        type: 'Counter Sale',
+        customerName: ord.name || ord.user?.name || 'Walk-in Customer',
+        phone: ord.phone || ord.user?.phone || '',
+        amount: amt,
+        paymentMethod: ord.paymentMethod || 'Cash',
+        time: ord.paidAt || ord.createdAt,
+        itemsCount: ord.orderItems?.length || 1,
+        itemsSummary: (ord.orderItems || []).map(i => `${i.qty}x ${i.name}`).join(', ')
+      });
+    }
+
+    // From Khata settlements
+    for (const b of settledBills) {
+      const amt = Number(b.paidAmount) || Number(b.totalAmount) || 0;
+      const method = (b.settledMethod || 'Cash').toUpperCase();
+      if (method.includes('CASH')) cashCollected += amt;
+      else if (method.includes('UPI')) upiCollected += amt;
+      else if (method.includes('CARD')) cardCollected += amt;
+      else otherCollected += amt;
+
+      collectionsList.push({
+        _id: b._id,
+        type: 'Khata Settlement',
+        customerName: b.customerName,
+        phone: b.customerPhone || '',
+        amount: amt,
+        paymentMethod: b.settledMethod || 'Cash',
+        time: b.settledAt,
+        billNumber: b.billNumber,
+        itemsSummary: `Khata Bill ${b.billNumber} (${b.dateRangeStr || ''})`
+      });
+    }
+
+    const totalCollected = cashCollected + upiCollected + cardCollected + otherCollected;
+
+    // 3. Shop / Counter Expenses on that day
+    const expenses = await Expense.find({
+      date: { $gte: start, $lt: end }
+    }).sort({ date: -1 }).lean();
+
+    let cashExpenses = 0;
+    let upiExpenses = 0;
+    let otherExpenses = 0;
+
+    for (const exp of expenses) {
+      const amt = Number(exp.amount) || 0;
+      const method = (exp.paymentMethod || 'Cash').toUpperCase();
+      if (method.includes('CASH')) cashExpenses += amt;
+      else if (method.includes('UPI')) upiExpenses += amt;
+      else otherExpenses += amt;
+    }
+    const totalExpenses = cashExpenses + upiExpenses + otherExpenses;
+
+    // 4. Wastage recorded on that day
+    const wastages = await Wastage.find({
+      date: { $gte: start, $lt: end }
+    }).sort({ date: -1 }).lean();
+
+    let totalWastageLoss = 0;
+    let totalWastageQty = 0;
+    for (const wst of wastages) {
+      totalWastageLoss += Number(wst.lossValue) || 0;
+      totalWastageQty += Number(wst.quantity) || 0;
+    }
+
+    // Net values
+    const netCashInDrawer = Math.max(0, cashCollected - cashExpenses);
+    const netTotal = totalCollected - totalExpenses - totalWastageLoss;
+
+    res.json({
+      date: dateKey,
+      summary: {
+        totalCollected: Math.round(totalCollected * 100) / 100,
+        cashCollected: Math.round(cashCollected * 100) / 100,
+        upiCollected: Math.round(upiCollected * 100) / 100,
+        cardCollected: Math.round(cardCollected * 100) / 100,
+        otherCollected: Math.round(otherCollected * 100) / 100,
+        totalExpenses: Math.round(totalExpenses * 100) / 100,
+        cashExpenses: Math.round(cashExpenses * 100) / 100,
+        upiExpenses: Math.round(upiExpenses * 100) / 100,
+        totalWastageLoss: Math.round(totalWastageLoss * 100) / 100,
+        totalWastageQty: Math.round(totalWastageQty * 100) / 100,
+        netCashInDrawer: Math.round(netCashInDrawer * 100) / 100,
+        netTotal: Math.round(netTotal * 100) / 100,
+        counts: {
+          collections: collectionsList.length,
+          expenses: expenses.length,
+          wastages: wastages.length
+        }
+      },
+      collections: collectionsList,
+      expenses,
+      wastages
+    });
+  } catch (error) {
+    console.error('Error fetching POS daybook summary:', error);
+    res.status(500).json({ message: 'Failed to fetch daybook summary', error: error.message });
   }
 };
 

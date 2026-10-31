@@ -756,16 +756,18 @@ const POS = () => {
   const handleUpdateCycleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedCustomerForEditCycle) return;
-    if (!selectedCustomerForEditCycle.userId) {
-      toast('This is a walk-in record without a registered customer account. Please add them as a regular customer first.');
+    const targetId = selectedCustomerForEditCycle.userId || selectedCustomerForEditCycle.customerId || selectedCustomerForEditCycle._id;
+    if (!targetId) {
+      toast.error('Customer ID missing');
       return;
     }
     setIsUpdatingCycle(true);
     try {
-      await api.put(`/api/admin/customers/${selectedCustomerForEditCycle.userId}`, {
+      await api.put(`/api/admin/customers/${encodeURIComponent(targetId)}`, {
         billingCycle: editCycleValue,
         isCreditCustomer: editCycleValue !== 'none',
-        creditLimit: Number(editCreditLimit) || 0
+        creditLimit: Number(editCreditLimit) || 0,
+        oldName: selectedCustomerForEditCycle.name
       });
       toast(`Customer billing cycle updated to ${editCycleValue}!`);
       setShowEditCycleModal(false);
@@ -794,14 +796,15 @@ const POS = () => {
     }
     setIsSavingCustomerEdit(true);
     try {
-      await api.put(`/api/admin/customers/${custId}`, {
+      await api.put(`/api/admin/customers/${encodeURIComponent(custId)}`, {
         name: formData.name,
         phone: formData.phone,
         address: formData.address,
         billingCycle: formData.billingCycle,
         isCreditCustomer: formData.billingCycle !== 'none',
         creditLimit: formData.creditLimit !== '' ? Number(formData.creditLimit) : 0,
-        creditNotes: formData.creditNotes
+        creditNotes: formData.creditNotes,
+        oldName: formData.oldName
       });
       toast.success('Customer details updated successfully!');
       setShowEditCustomerModal(false);
@@ -828,7 +831,7 @@ const POS = () => {
       return;
     }
     try {
-      await api.delete(`/api/admin/customers/${custId}`);
+      await api.delete(`/api/admin/customers/${encodeURIComponent(custId)}`);
       toast.success(`Customer ${cust.name || ''} deleted successfully`);
       setShowEditCustomerModal(false);
       fetchCreditCustomers();

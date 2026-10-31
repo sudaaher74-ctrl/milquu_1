@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { normalisePhone } from '../utils/phone.js';
 
 const userSchema = new mongoose.Schema({
@@ -46,6 +47,18 @@ const userSchema = new mongoose.Schema({
   creditNotes: { type: String }
 }, {
   timestamps: true
+});
+
+/**
+ * Ensure every user document has a password before Mongoose validation runs.
+ * Existing records from POS/guest orders or older migrations may lack a password;
+ * assigning a secure random password prevents "Path 'password' is required" validation errors
+ * on unrelated profile edits.
+ */
+userSchema.pre('validate', function () {
+  if (!this.password) {
+    this.password = crypto.randomBytes(24).toString('hex');
+  }
 });
 
 /**

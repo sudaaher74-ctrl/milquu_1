@@ -20,7 +20,8 @@ import {
   createCreditCustomerBill,
   settleCreditBill,
   getCreditCustomerBills,
-  deleteCreditBill
+  deleteCreditBill,
+  getPOSDaybookSummary
 } from '../controllers/erpControllers.js';
 import { getLiveTracking, assignStaffToArea } from '../controllers/adminPanelControllers.js';
 import { protect, managerUp, staffUp } from '../middleware/authMiddleware.js';
@@ -39,9 +40,12 @@ router.route('/purchases/:id').put(protect, managerUp, updatePurchase).delete(pr
 router.route('/vendors/summary').get(protect, managerUp, getVendorsSummary);
 router.route('/vendors/:supplierName/ledger').get(protect, managerUp, getVendorLedger);
 router.route('/vendors/payment').post(protect, managerUp, recordVendorPayment);
-router.route('/expenses').get(protect, managerUp, getExpenses).post(protect, managerUp, createExpense);
+router.route('/expenses').get(protect, staffUp, getExpenses).post(protect, staffUp, createExpense);
 router.route('/procurements').get(protect, managerUp, getProcurements).post(protect, managerUp, createProcurement);
 router.route('/wastages').get(protect, staffUp, getWastages).post(protect, staffUp, createWastage);
+
+// Shop POS Daybook (Collections, Expenses, Wastage & Cash Register)
+router.route('/pos/summary').get(protect, staffUp, getPOSDaybookSummary);
 
 // Orders. POS is the only creator here. It was public, which let anyone
 // create orders already marked paid, at any price, against any customer.
