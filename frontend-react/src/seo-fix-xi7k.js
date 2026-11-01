@@ -1,0 +1,1 @@
+export const SEO_FIX_XI7K = '[Website Audit] 42 pages have an issue (js render required) — Send the list of affected pages to your web developer so they can look at it.';
