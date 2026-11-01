@@ -37,10 +37,11 @@ export default function Cart() {
 
   return (
     <Screen>
+      <h1>Your Cart</h1>
       <TopBar title="Adding to tomorrow’s crate" to="/app/shop" />
 
       <div className="mq-body">
-        <h2>Tomorrow, {slotDef.label}</h2>
+        <h2>Your Cart</h2>
 
         {empty ? (
           <div className="mq-card mq-card-pad mq-col" style={{ gap: 10, alignItems: 'flex-start' }}>
