@@ -48,6 +48,7 @@ export default function Account() {
 
   return (
     <Screen>
+      <h1>Your Account</h1>
       {/* Top Header */}
       <MobileHeader rightIcon="bell" />
 
