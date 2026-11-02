@@ -1,9 +1,9 @@
+import { Helmet } from 'react-helmet-async';
 import React from 'react';
 import LocationLandingTemplate from '../../components/seo/LocationLandingTemplate';
 
 const FarmFreshMilkNerul = () => {
-  return (
-    <LocationLandingTemplate
+  return (<>{<LocationLandingTemplate
       locationName="Nerul"
       slug="farm-fresh-milk-nerul"
       title="Fresh Milk Delivery Nerul | Daily Subscription | MilQuu"
@@ -29,8 +29,7 @@ const FarmFreshMilkNerul = () => {
           </p>
         </>
       }
-    />
-  );
+    />}<Helmet><title>{"Farm Fresh Milk Delivery in Nerul, Navi Mumbai | MilQuu"}</title></Helmet></>);
 };
 
 export default FarmFreshMilkNerul;
