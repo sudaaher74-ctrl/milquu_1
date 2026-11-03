@@ -241,7 +241,7 @@ const staticEntries = () => [
   base({
     path: '/refund-policy',
     type: 'page',
-    title: 'Refund & Cancellation Policy | MilQuuFresh',
+    title: 'Refund and Cancellation Policy | MilQuuFresh Dairy',
     description:
       'Read the MilQuuFresh refund and cancellation policy for milk subscriptions and one-time dairy orders.',
     h1: 'Refund & Cancellation Policy',
