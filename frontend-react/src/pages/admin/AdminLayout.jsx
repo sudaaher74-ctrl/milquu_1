@@ -8,7 +8,7 @@ import {
   Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, 
   FileBarChart, Sparkles, Banknote, Gift, Landmark,
   PanelLeft, PanelLeftClose, CheckCircle2, RefreshCw,
-  Zap, ChevronRight
+  Wallet, ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { canAccess, getAdminSession, ROLE_LABELS } from '../../utils/adminAccess.js';
@@ -36,7 +36,6 @@ const AdminLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Signed-in admin session
   const session = getAdminSession();
   const role = session?.role || 'staff';
   const adminInfo = { name: session?.name || 'Admin', role: ROLE_LABELS[role] || role };
@@ -48,67 +47,58 @@ const AdminLayout = () => {
   const readAlerts = getReadAlerts();
   const unreadCount = buildAlerts(today, role).filter((a) => !readAlerts.has(a.id)).length;
 
-  // Redesigned 5 Core Operational Hubs
-  const navHubs = [
+  // Ultra-Clean 2-Wing Architecture:
+  // 1. Shop POS & Khata (Counter, Credit, Financier, Milk Procurement)
+  // 2. Website & Deliveries (Online, COD, Subscriptions, Riders)
+  const navSections = [
     {
-      title: 'Operations & Today',
-      hindi: 'आज का काम',
+      title: 'Command Center',
+      hindi: 'मुख्य डैशबोर्ड',
       items: [
-        { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={18} />, badge: null },
-        { name: "Today's Orders", path: '/admin/today-orders', icon: <ShoppingCart size={18} />, badge: null },
-        { name: 'Live Tracking', path: '/admin/deliveries', icon: <Truck size={18} />, badge: 'Live' },
-        { name: 'MilQuu AI', path: '/chatbot', icon: <Sparkles size={18} className="text-violet-500" />, badge: 'AI' },
+        { name: 'Unified Dashboard', path: '/admin', icon: <LayoutDashboard size={18} />, badge: 'All' },
+        { name: 'MilQuu AI Assistant', path: '/chatbot', icon: <Sparkles size={18} className="text-violet-500" />, badge: 'AI' }
       ]
     },
     {
-      title: 'Counter & Sales',
-      hindi: 'बिक्री व काउंटर',
+      title: '🏪 Shop POS & Khata',
+      hindi: 'काउंटर, उधारी व फाइनेंस',
       items: [
-        { name: 'Shop POS Counter', path: '/admin/pos', icon: <Store size={18} />, badge: 'Fast' },
-        { name: 'All Orders', path: '/admin/orders', icon: <ShoppingBag size={18} />, badge: null },
-        { name: 'Subscriptions', path: '/admin/subscriptions', icon: <CalendarDays size={18} />, badge: null },
-        { name: 'Free Samples', path: '/admin/free-samples', icon: <Gift size={18} />, badge: null },
+        { name: 'Shop POS Counter', path: '/admin/pos', icon: <Store size={18} className="text-emerald-600" />, badge: 'Counter' },
+        { name: 'Customer Credit (Khata)', path: '/admin/customers', icon: <Users size={18} className="text-amber-600" />, badge: 'उधारी' },
+        { name: 'Financier Khata', path: '/admin/financiers', icon: <Landmark size={18} className="text-indigo-600" />, badge: 'Finance' },
+        { name: 'Milk Procurement', path: '/admin/procurement', icon: <Droplets size={18} className="text-blue-500" />, badge: 'Milk' },
+        { name: 'Purchases & Vendors', path: '/admin/purchases', icon: <ShoppingCart size={18} />, badge: null }
       ]
     },
     {
-      title: 'Procurement & Stock',
-      hindi: 'दूध खरीद व स्टॉक',
+      title: '🌐 Website & Deliveries',
+      hindi: 'ऑनलाइन स्टोर व डिलीवरी',
       items: [
-        { name: 'Purchases & Vendors', path: '/admin/purchases', icon: <ShoppingCart size={18} />, badge: null },
-        { name: 'Milk Procurement', path: '/admin/procurement', icon: <Droplets size={18} className="text-blue-500" />, badge: null },
-        { name: 'Products Catalog', path: '/admin/products', icon: <Package size={18} />, badge: null },
-        { name: 'Inventory', path: '/admin/inventory', icon: <Boxes size={18} />, badge: null },
-        { name: 'Wastage', path: '/admin/wastage', icon: <Trash2 size={18} />, badge: null },
+        { name: 'Online Orders & COD', path: '/admin/orders', icon: <ShoppingBag size={18} className="text-blue-600" />, badge: 'COD' },
+        { name: 'Daily Subscriptions', path: '/admin/subscriptions', icon: <CalendarDays size={18} className="text-amber-600" />, badge: null },
+        { name: 'Delivery Boys & Fleet', path: '/admin/delivery-boys', icon: <Bike size={18} />, badge: 'Riders' },
+        { name: 'Live Route Tracking', path: '/admin/deliveries', icon: <Truck size={18} />, badge: 'Live' },
+        { name: "Today's Dispatch", path: '/admin/today-orders', icon: <CheckCircle2 size={18} className="text-emerald-600" />, badge: null }
       ]
     },
     {
-      title: 'Finance & Accounts',
-      hindi: 'हिसाब-किताब व खाता',
+      title: '📦 Stock & Accounts',
+      hindi: 'स्टॉक व हिसाब-किताब',
       items: [
-        { name: 'Financier Khata', path: '/admin/financiers', icon: <Landmark size={18} className="text-indigo-600" />, badge: 'New' },
-        { name: 'Revenue', path: '/admin/revenue', icon: <BarChart3 size={18} />, badge: null },
-        { name: 'Profit & Loss', path: '/admin/profit', icon: <TrendingUp size={18} />, badge: null },
+        { name: 'Products & Inventory', path: '/admin/products', icon: <Package size={18} />, badge: null },
+        { name: 'Revenue & Profit (P&L)', path: '/admin/revenue', icon: <BarChart3 size={18} />, badge: null },
         { name: 'Expenses', path: '/admin/expenses', icon: <Receipt size={18} />, badge: null },
-        { name: 'Customer Refunds', path: '/admin/refunds', icon: <Banknote size={18} />, badge: null },
-        { name: 'Financial Reports', path: '/admin/reports', icon: <FileBarChart size={18} />, badge: null },
-      ]
-    },
-    {
-      title: 'Customers & Fleet',
-      hindi: 'ग्राहक व टीम',
-      items: [
-        { name: 'Customers Directory', path: '/admin/customers', icon: <Users size={18} />, badge: null },
-        { name: 'Delivery Staff', path: '/admin/delivery-boys', icon: <Bike size={18} />, badge: null },
+        { name: 'Financial Reports', path: '/admin/reports', icon: <FileBarChart size={18} />, badge: null }
       ]
     }
   ]
-    .map((hub) => ({ ...hub, items: hub.items.filter((item) => canAccess(item.path, role)) }))
-    .filter((hub) => hub.items.length > 0);
+    .map((section) => ({ ...section, items: section.items.filter((item) => canAccess(item.path, role)) }))
+    .filter((section) => section.items.length > 0);
 
   const bottomUtilities = [
     { name: 'Alerts', path: '/admin/notifications', icon: <Bell size={18} />, count: unreadCount },
     { name: 'Recycle Bin', path: '/admin/recycle-bin', icon: <Trash2 size={18} /> },
-    { name: 'Settings', path: '/admin/settings', icon: <Settings size={18} /> },
+    { name: 'Settings', path: '/admin/settings', icon: <Settings size={18} /> }
   ].filter((item) => canAccess(item.path, role));
 
   const handleSearch = (e) => {
@@ -143,10 +133,10 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative text-slate-800">
+    <div className="flex h-screen bg-slate-50/70 overflow-hidden font-sans relative text-slate-800">
       <ToastHost />
 
-      {/* Mobile Drawer Backdrop */}
+      {/* Mobile Backdrop */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div 
@@ -172,14 +162,14 @@ const AdminLayout = () => {
         {/* Brand Header */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-slate-100 shrink-0">
           <Link to="/admin" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 bg-gradient-to-br from-emerald-600 to-blue-700 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
+            <div className="w-9 h-9 bg-gradient-to-br from-emerald-600 via-emerald-700 to-blue-700 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
               M
             </div>
             <div>
-              <span className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
-                MilQuu <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700">ERP</span>
+              <span className="text-base font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+                MilQuu <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800">ERP 2.0</span>
               </span>
-              <p className="text-[10px] text-slate-400 font-medium">Dairy Management 2.0</p>
+              <p className="text-[10px] text-slate-400 font-medium">Shop POS & Website Hub</p>
             </div>
           </Link>
 
@@ -192,16 +182,16 @@ const AdminLayout = () => {
           </button>
         </div>
 
-        {/* Scrollable Nav Hubs */}
+        {/* Scrollable Nav Sections */}
         <nav className="flex-1 overflow-y-auto p-3.5 space-y-4 hide-scrollbar">
-          {navHubs.map((hub) => (
-            <div key={hub.title} className="space-y-1">
+          {navSections.map((section) => (
+            <div key={section.title} className="space-y-1">
               <div className="flex items-center justify-between px-2.5 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                <span>{hub.title}</span>
-                <span className="text-[10px] text-slate-300 font-normal lowercase">{hub.hindi}</span>
+                <span>{section.title}</span>
+                <span className="text-[10px] text-slate-400 font-medium normal-case">{section.hindi}</span>
               </div>
 
-              {hub.items.map((item) => {
+              {section.items.map((item) => {
                 const isActive = item.path === '/admin' 
                   ? location.pathname === '/admin' 
                   : location.pathname.startsWith(item.path);
@@ -212,23 +202,26 @@ const AdminLayout = () => {
                     to={item.path}
                     end={item.path === '/admin'}
                     onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group relative ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group relative ${
                       isActive
-                        ? 'bg-emerald-50/80 text-emerald-800 font-bold border border-emerald-200/60 shadow-2xs'
-                        : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+                        ? 'bg-slate-900 text-white font-bold shadow-xs'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                     }`}
                   >
-                    <span className={`transition-colors ${isActive ? 'text-emerald-700' : 'text-slate-400 group-hover:text-slate-700'}`}>
+                    <span className={`transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-700'}`}>
                       {item.icon}
                     </span>
                     <span className="flex-1 truncate">{item.name}</span>
 
                     {item.badge && (
                       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
-                        item.badge === 'Live' ? 'bg-rose-100 text-rose-700 animate-pulse' :
-                        item.badge === 'New' ? 'bg-indigo-100 text-indigo-700' :
-                        item.badge === 'Fast' ? 'bg-amber-100 text-amber-800' :
-                        'bg-violet-100 text-violet-700'
+                        isActive
+                          ? 'bg-white/20 text-white'
+                          : item.badge === 'Live' ? 'bg-rose-100 text-rose-700 animate-pulse' :
+                            item.badge === 'Counter' ? 'bg-emerald-100 text-emerald-800' :
+                            item.badge === 'COD' ? 'bg-blue-100 text-blue-800' :
+                            item.badge === 'उधारी' ? 'bg-amber-100 text-amber-800' :
+                            'bg-slate-100 text-slate-600'
                       }`}>
                         {item.badge}
                       </span>
@@ -249,8 +242,8 @@ const AdminLayout = () => {
                 key={util.path}
                 to={util.path}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                  isActive ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/70' : 'text-slate-500 hover:bg-white hover:text-slate-800'
+                className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                  isActive ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/70 font-bold' : 'text-slate-500 hover:bg-white hover:text-slate-800'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
@@ -288,7 +281,7 @@ const AdminLayout = () => {
       {/* ========================================================================= */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
         {/* Top Header Bar */}
-        <header className="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-2xs flex items-center justify-between px-4 sm:px-6 z-30 shrink-0">
+        <header className="h-16 bg-white border-b border-slate-200/80 shadow-2xs flex items-center justify-between px-4 sm:px-6 z-30 shrink-0">
           <div className="flex items-center gap-3">
             <button 
               onClick={toggleSidebar} 
@@ -298,38 +291,37 @@ const AdminLayout = () => {
               <PanelLeft size={18} className={!sidebarOpen ? "text-emerald-700" : "text-slate-600"} />
             </button>
 
-            {/* Quick Action Dock */}
-            <div className="hidden lg:flex items-center gap-1.5 pl-2 border-l border-slate-200">
+            {/* Quick Channel Jumpers */}
+            <div className="hidden lg:flex items-center gap-2 pl-2 border-l border-slate-200">
               <Link
                 to="/admin/pos"
-                className="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
-                title="Open Shop POS"
+                className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                title="Shop POS Counter"
               >
                 <Store size={14} className="text-emerald-700" />
-                <span>+ POS Sale</span>
+                <span>🏪 Shop Counter</span>
               </Link>
               <Link
-                to="/admin/procurement"
-                className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
-                title="Record Milk Inflow"
+                to="/admin/orders"
+                className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                title="Website Orders & COD"
               >
-                <Droplets size={14} className="text-blue-600" />
-                <span>+ Milk Inflow</span>
+                <ShoppingBag size={14} className="text-blue-600" />
+                <span>🌐 Web & COD</span>
               </Link>
               <Link
                 to="/admin/financiers"
-                className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
-                title="Financier Khata & Settlements"
+                className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                title="Financier Khata"
               >
                 <Landmark size={14} className="text-indigo-600" />
-                <span>+ Financier</span>
+                <span>🏛️ Financier</span>
               </Link>
             </div>
           </div>
 
           {/* Right Header: Search, Connectivity, Profile */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Search Bar */}
             {canAccess('/admin/orders', role) && (
               <form onSubmit={handleSearch} className="relative hidden md:block">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -343,7 +335,6 @@ const AdminLayout = () => {
               </form>
             )}
 
-            {/* Sync Queue / Offline status */}
             {!isOnline && (
               <span className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
                 Offline
@@ -360,7 +351,6 @@ const AdminLayout = () => {
               </button>
             )}
 
-            {/* Alerts Bell */}
             <Link
               to="/admin/notifications"
               className="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
@@ -372,7 +362,6 @@ const AdminLayout = () => {
               )}
             </Link>
 
-            {/* Admin User Chip */}
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
               <div className="w-8 h-8 rounded-full bg-slate-800 text-white font-bold text-xs flex items-center justify-center">
                 {adminInfo.name.charAt(0).toUpperCase()}
@@ -390,7 +379,7 @@ const AdminLayout = () => {
           <Outlet />
         </div>
 
-        {/* Mobile On-the-Go Bottom Bar (Phone & Tablet Dairy Control) */}
+        {/* Mobile Sticky Bottom Bar (Simple & Intuitive) */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 h-14 bg-white/95 backdrop-blur-md border-t border-slate-200 flex items-center justify-around z-30 px-2 shadow-lg">
           <NavLink
             to="/admin"
@@ -400,7 +389,7 @@ const AdminLayout = () => {
             }`}
           >
             <LayoutDashboard size={18} />
-            <span>Today</span>
+            <span>Overview</span>
           </NavLink>
           <NavLink
             to="/admin/pos"
@@ -412,13 +401,13 @@ const AdminLayout = () => {
             <span>Shop POS</span>
           </NavLink>
           <NavLink
-            to="/admin/procurement"
+            to="/admin/orders"
             className={({ isActive }) => `flex flex-col items-center justify-center text-[10px] font-bold ${
               isActive ? 'text-emerald-700' : 'text-slate-500'
             }`}
           >
-            <Droplets size={18} />
-            <span>Milk</span>
+            <ShoppingBag size={18} />
+            <span>Web & COD</span>
           </NavLink>
           <NavLink
             to="/admin/financiers"
@@ -434,7 +423,7 @@ const AdminLayout = () => {
             className="flex flex-col items-center justify-center text-[10px] font-bold text-slate-500"
           >
             <Menu size={18} />
-            <span>More</span>
+            <span>Menu</span>
           </button>
         </div>
       </main>

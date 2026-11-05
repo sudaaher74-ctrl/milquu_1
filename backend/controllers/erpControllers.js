@@ -1395,11 +1395,69 @@ export const getDashboardAnalytics = async (req, res) => {
           },
           webRevenue: { 
             $sum: { $cond: [ { $ne: ["$orderSource", "POS"] }, "$totalPrice", 0 ] } 
+          },
+          shopOrderCount: {
+            $sum: { $cond: [ { $eq: ["$orderSource", "POS"] }, 1, 0 ] }
+          },
+          webOrderCount: {
+            $sum: { $cond: [ { $ne: ["$orderSource", "POS"] }, 1, 0 ] }
+          },
+          codRevenue: {
+            $sum: { 
+              $cond: [ 
+                { $and: [
+                  { $ne: ["$orderSource", "POS"] }, 
+                  { $regexMatch: { input: { $ifNull: ["$paymentMethod", ""] }, regex: /cash on delivery|cod/i } }
+                ]}, 
+                "$totalPrice", 
+                0 
+              ] 
+            }
+          },
+          codCount: {
+            $sum: { 
+              $cond: [ 
+                { $and: [
+                  { $ne: ["$orderSource", "POS"] }, 
+                  { $regexMatch: { input: { $ifNull: ["$paymentMethod", ""] }, regex: /cash on delivery|cod/i } }
+                ]}, 
+                1, 
+                0 
+              ] 
+            }
           }
       }}
     ]);
 
-    const orderStats = ordersPipeline[0] || { totalRevenue: 0, totalCogs: 0, grossProfit: 0, orderCount: 0 };
+    const orderStats = ordersPipeline[0] || { 
+      totalRevenue: 0, totalCogs: 0, grossProfit: 0, orderCount: 0,
+      shopRevenue: 0, webRevenue: 0, shopOrderCount: 0, webOrderCount: 0,
+      codRevenue: 0, codCount: 0
+    };
+
+    // Customer Credit Due (Shop POS Khata Unpaid)
+    const customerCreditAgg = await Order.aggregate([
+      { $match: { orderSource: 'POS', isPaid: false } },
+      { $group: { _id: null, totalDue: { $sum: '$totalPrice' } } }
+    ]);
+    const shopCreditDue = customerCreditAgg[0]?.totalDue || 0;
+
+    // Web COD Pending collection
+    const pendingCodAgg = await Order.aggregate([
+      { 
+        $match: { 
+          orderSource: { $ne: 'POS' }, 
+          isPaid: false,
+          paymentMethod: { $regex: /cash on delivery|cod/i }
+        } 
+      },
+      { $group: { _id: null, totalPending: { $sum: '$totalPrice' } } }
+    ]);
+    const webCodPending = pendingCodAgg[0]?.totalPending || 0;
+
+    // Financier Total Outstanding
+    const activeFinanciers = await Financier.find({ isActive: true }).select('currentOutstanding').lean();
+    const financierDue = activeFinanciers.reduce((sum, f) => sum + (f.currentOutstanding || 0), 0);
 
     const totalExpensePipeline = await Expense.aggregate([
       { $match: dateFilter },
@@ -1562,6 +1620,21 @@ export const getDashboardAnalytics = async (req, res) => {
       orders: orderStats.orderCount,
       shopRevenue: orderStats.shopRevenue,
       webRevenue: orderStats.webRevenue,
+      shopStats: {
+        revenue: orderStats.shopRevenue,
+        orderCount: orderStats.shopOrderCount,
+        customerCreditDue: shopCreditDue,
+        financierDue: financierDue,
+        netWorkingBuffer: shopCreditDue - financierDue
+      },
+      webStats: {
+        revenue: orderStats.webRevenue,
+        orderCount: orderStats.webOrderCount,
+        codRevenue: orderStats.codRevenue,
+        codPending: webCodPending,
+        activeSubscribers: activeSubscribers,
+        pendingDeliveries: pendingDeliveries
+      },
       activeCustomers,
       activeSubscribers,
       revenueData,
