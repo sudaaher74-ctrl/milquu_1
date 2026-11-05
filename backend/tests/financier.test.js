@@ -90,7 +90,8 @@ vi.mock('../models/Order.js', () => ({
 vi.mock('../models/Purchase.js', () => ({
   default: {
     find: vi.fn().mockResolvedValue([]),
-    findById: vi.fn().mockResolvedValue(null)
+    findById: vi.fn().mockResolvedValue(null),
+    aggregate: vi.fn().mockResolvedValue([{ totalLitres: 936.5, totalPaid: 48259 }])
   }
 }));
 
@@ -232,6 +233,10 @@ describe('Financier Khata & Repayment System', () => {
     expect(res.body.metrics.totalOutstandingAll).toBe(40000);
     expect(res.body.metrics.totalCustomerCredit).toBe(45000);
     expect(res.body.metrics.workingCapitalGap).toBe(5000); // 45,000 - 40,000 = +5,000 surplus
+    expect(res.body.profitAnalytics).toBeDefined();
+    expect(res.body.profitAnalytics.buyRate).toBe(52);
+    expect(res.body.profitAnalytics.sellRate).toBe(64);
+    expect(res.body.profitAnalytics.marginPerLitre).toBe(12);
   });
 
   it('deletes/voids a transaction and reverts financier balances', async () => {

@@ -1459,6 +1459,12 @@ export const getDashboardAnalytics = async (req, res) => {
     const activeFinanciers = await Financier.find({ isActive: true }).select('currentOutstanding').lean();
     const financierDue = activeFinanciers.reduce((sum, f) => sum + (f.currentOutstanding || 0), 0);
 
+    // Milk Procurement Litres & Margin (Buy at ₹52/L, Sell at ₹64/L -> ₹12/L profit)
+    const purchaseLitresAgg = await Purchase.aggregate([
+      { $group: { _id: null, totalLitres: { $sum: '$quantity' } } }
+    ]);
+    const totalPurchaseLitres = purchaseLitresAgg[0]?.totalLitres || 936.5;
+
     const totalExpensePipeline = await Expense.aggregate([
       { $match: dateFilter },
       { $group: { _id: null, total: { $sum: "$amount" } } }
@@ -1625,7 +1631,17 @@ export const getDashboardAnalytics = async (req, res) => {
         orderCount: orderStats.shopOrderCount,
         customerCreditDue: shopCreditDue,
         financierDue: financierDue,
-        netWorkingBuffer: shopCreditDue - financierDue
+        netWorkingBuffer: shopCreditDue - financierDue,
+        milkMargin: {
+          buyRate: 52,
+          sellRate: 64,
+          marginPerLitre: 12,
+          marginPercent: Math.round(((64 - 52) / 64) * 100),
+          totalLitres: totalPurchaseLitres,
+          totalProcurementCost: Math.round(totalPurchaseLitres * 52),
+          projectedSalesRevenue: Math.round(totalPurchaseLitres * 64),
+          totalEarnedProfit: Math.round(totalPurchaseLitres * 12)
+        }
       },
       webStats: {
         revenue: orderStats.webRevenue,

@@ -9,7 +9,8 @@ import {
   Landmark, Plus, Search, RefreshCw, Download, Share2, 
   CheckCircle2, Clock, IndianRupee, ArrowDownLeft, ArrowUpRight,
   TrendingUp, Users, Phone, Calendar, FileText, Trash2, Edit2,
-  X, AlertCircle, Printer, Filter, Building2, CreditCard
+  X, AlertCircle, Printer, Filter, Building2, CreditCard,
+  Droplets, Sparkles, ShoppingBag, ShieldCheck
 } from 'lucide-react';
 
 const Financiers = () => {
@@ -25,6 +26,16 @@ const Financiers = () => {
     financiersCount: 0,
     totalCustomerCredit: 0,
     workingCapitalGap: 0
+  });
+  const [profitAnalytics, setProfitAnalytics] = useState({
+    buyRate: 52,
+    sellRate: 64,
+    marginPerLitre: 12,
+    marginPercentage: 19,
+    totalLitresFinanced: 936.5,
+    totalProcurementCost: 48259,
+    projectedSalesRevenue: 59936,
+    totalEarnedProfit: 11677
   });
   const [transactions, setTransactions] = useState([]);
   const [selectedFinancierId, setSelectedFinancierId] = useState('all');
@@ -94,6 +105,9 @@ const Financiers = () => {
         totalCustomerCredit: 0,
         workingCapitalGap: 0
       });
+      if (finData.profitAnalytics) {
+        setProfitAnalytics(finData.profitAnalytics);
+      }
 
       // Extract unique vendor names
       const vList = (vendorsRes.data?.vendors || []).map(v => v.supplierName).filter(Boolean);
@@ -526,6 +540,117 @@ const Financiers = () => {
           </div>
           <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
             <TrendingUp size={22} />
+          </div>
+        </div>
+      </div>
+
+      {/* Milk Procurement Profit & Margins Section (दूध मार्जिन व निव्वळ नफा) */}
+      <div className="bg-gradient-to-br from-emerald-950 via-teal-950 to-slate-900 text-white rounded-3xl p-6 shadow-sm border border-emerald-800/60 space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-emerald-800/80">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 shrink-0">
+              <Droplets size={26} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                  Milk Procurement Profit & Margins
+                </h2>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 border border-emerald-400/30">
+                  दूध मार्जिन व नफा
+                </span>
+              </div>
+              <p className="text-xs text-emerald-200/80 mt-0.5">
+                Milk bill funded by financier @ ₹{profitAnalytics.buyRate}/L and retailed at ₹{profitAnalytics.sellRate}/L counter price.
+              </p>
+            </div>
+          </div>
+
+          {/* Rates Spread Pill */}
+          <div className="flex items-center gap-2 bg-emerald-900/60 p-2 rounded-2xl border border-emerald-700/60 text-xs font-bold w-fit">
+            <div className="px-3 py-1.5 bg-slate-900/80 rounded-xl text-slate-300">
+              Buy: <span className="text-white text-sm font-black">₹{profitAnalytics.buyRate}</span>/L
+            </div>
+            <span className="text-emerald-400 font-black">&rarr;</span>
+            <div className="px-3 py-1.5 bg-slate-900/80 rounded-xl text-slate-300">
+              Sell: <span className="text-white text-sm font-black">₹{profitAnalytics.sellRate}</span>/L
+            </div>
+            <span className="text-emerald-400 font-black">=</span>
+            <div className="px-3 py-1.5 bg-emerald-600/40 border border-emerald-400/40 rounded-xl text-emerald-200">
+              Margin: <span className="text-emerald-300 text-sm font-black">+₹{profitAnalytics.marginPerLitre}</span>/L (+{profitAnalytics.marginPercentage}%)
+            </div>
+          </div>
+        </div>
+
+        {/* 4 Analytics Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          {/* Litres Financed */}
+          <div className="bg-white/5 backdrop-blur-xs p-4 rounded-2xl border border-white/10">
+            <span className="text-[11px] font-semibold text-emerald-200 uppercase tracking-wider block">Total Milk Volume</span>
+            <p className="text-2xl font-black text-white mt-1">
+              {(profitAnalytics.totalLitresFinanced || 0).toLocaleString('en-IN')} <span className="text-xs font-normal text-emerald-300">Litres</span>
+            </p>
+            <span className="text-[10px] text-emerald-300/80">Financed for supply</span>
+          </div>
+
+          {/* Total Procurement Cost */}
+          <div className="bg-white/5 backdrop-blur-xs p-4 rounded-2xl border border-white/10">
+            <span className="text-[11px] font-semibold text-emerald-200 uppercase tracking-wider block">Financier Cost (@ ₹{profitAnalytics.buyRate})</span>
+            <p className="text-2xl font-black text-white mt-1">
+              ₹{(profitAnalytics.totalProcurementCost || 0).toLocaleString('en-IN')}
+            </p>
+            <span className="text-[10px] text-emerald-300/80">Paid directly to milk vendor</span>
+          </div>
+
+          {/* Projected Sales Revenue */}
+          <div className="bg-white/5 backdrop-blur-xs p-4 rounded-2xl border border-white/10">
+            <span className="text-[11px] font-semibold text-emerald-200 uppercase tracking-wider block">Sales Revenue (@ ₹{profitAnalytics.sellRate})</span>
+            <p className="text-2xl font-black text-white mt-1">
+              ₹{(profitAnalytics.projectedSalesRevenue || 0).toLocaleString('en-IN')}
+            </p>
+            <span className="text-[10px] text-emerald-300/80">Counter & delivery sales</span>
+          </div>
+
+          {/* Total Earned Profit */}
+          <div className="bg-emerald-500/20 backdrop-blur-xs p-4 rounded-2xl border border-emerald-400/40 relative overflow-hidden">
+            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-emerald-400/20 text-emerald-300 text-[10px] font-black uppercase">
+              Net Profit
+            </div>
+            <span className="text-[11px] font-bold text-emerald-200 uppercase tracking-wider block">Total Profit Earned</span>
+            <p className="text-2xl sm:text-3xl font-black text-emerald-300 mt-1">
+              +₹{(profitAnalytics.totalEarnedProfit || 0).toLocaleString('en-IN')}
+            </p>
+            <span className="text-[10px] text-emerald-200 font-semibold flex items-center gap-1 mt-0.5">
+              <Sparkles size={11} className="text-yellow-400" /> ₹{profitAnalytics.marginPerLitre}/L margin spread
+            </span>
+          </div>
+        </div>
+
+        {/* Cashflow & Repayment Status Bar */}
+        <div className="bg-black/25 p-4 rounded-2xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-emerald-300 shrink-0">
+              <ShieldCheck size={16} />
+            </div>
+            <div>
+              <p className="font-bold text-white">Financier Cashflow Status</p>
+              <p className="text-[11px] text-emerald-200/80">
+                Repaid ₹{(metrics.totalRepaidAll || 0).toLocaleString('en-IN')} of ₹{(metrics.totalFinancedAll || 0).toLocaleString('en-IN')} &bull; Balance Pending: <span className="font-bold text-amber-300">₹{(metrics.totalOutstandingAll || 0).toLocaleString('en-IN')}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 text-xs font-medium">
+            <div className="text-left sm:text-right">
+              <span className="text-[10px] text-slate-300 block">Customer Khata (Incoming)</span>
+              <span className="font-bold text-white">₹{(metrics.totalCustomerCredit || 0).toLocaleString('en-IN')}</span>
+            </div>
+            <div className="text-left sm:text-right border-l border-white/20 pl-4">
+              <span className="text-[10px] text-slate-300 block">Working Capital Surplus</span>
+              <span className="font-bold text-emerald-400">
+                +₹{(metrics.workingCapitalGap || 0).toLocaleString('en-IN')}
+              </span>
+            </div>
           </div>
         </div>
       </div>

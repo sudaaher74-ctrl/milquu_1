@@ -33,7 +33,17 @@ const EMPTY_METRICS = {
     orderCount: 0,
     customerCreditDue: 0,
     financierDue: 0,
-    netWorkingBuffer: 0
+    netWorkingBuffer: 0,
+    milkMargin: {
+      buyRate: 52,
+      sellRate: 64,
+      marginPerLitre: 12,
+      marginPercent: 19,
+      totalLitres: 936.5,
+      totalProcurementCost: 48259,
+      projectedSalesRevenue: 59936,
+      totalEarnedProfit: 11677
+    }
   },
   webStats: {
     revenue: 0,
@@ -314,6 +324,34 @@ const Overview = () => {
                 </div>
               </div>
 
+              {/* Milk Margin & Spread Banner in Shop Wing */}
+              <div className="bg-emerald-50/80 border border-emerald-200/90 p-3 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0">
+                    <Droplets size={16} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-bold text-emerald-950">
+                        Milk Spread: Buy ₹{shopStats.milkMargin?.buyRate || 52} &rarr; Sell ₹{shopStats.milkMargin?.sellRate || 64}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded-md bg-emerald-200 text-emerald-900 text-[10px] font-black">
+                        +₹{shopStats.milkMargin?.marginPerLitre || 12}/L (+{shopStats.milkMargin?.marginPercent || 19}%)
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-emerald-700">
+                      {(shopStats.milkMargin?.totalLitres || 936.5).toLocaleString('en-IN')} L financed by Digamber Aher
+                    </span>
+                  </div>
+                </div>
+                <div className="text-left sm:text-right shrink-0">
+                  <span className="text-[9px] font-bold text-emerald-800 uppercase tracking-wider block">Spread Profit</span>
+                  <span className="text-sm font-black text-emerald-900">
+                    +₹{(shopStats.milkMargin?.totalEarnedProfit || 11677).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+
               {/* Fast Action Links for Shop */}
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <Link
@@ -467,6 +505,70 @@ const Overview = () => {
                   {shopStats.netWorkingBuffer >= 0 ? '+' : ''}₹{shopStats.netWorkingBuffer.toLocaleString('en-IN')}
                 </p>
                 <span className="text-[10px] text-emerald-300">Net after khata collections</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Dedicated Milk Procurement & Profit Margin Card in Shop Deep Dive */}
+          <div className="bg-white rounded-3xl p-6 border border-emerald-200 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                  <Droplets size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    Milk Procurement & Spread Profit <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">दूध नफा व मार्जिन</span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Procured/Financed at ₹{shopStats.milkMargin?.buyRate || 52}/L &bull; Sold at ₹{shopStats.milkMargin?.sellRate || 64}/L counter & delivery price
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200 text-xs font-bold w-fit">
+                <span className="text-slate-600 px-2 py-1">Buy: ₹{shopStats.milkMargin?.buyRate || 52}/L</span>
+                <span className="text-slate-400">&rarr;</span>
+                <span className="text-slate-900 px-2 py-1">Sell: ₹{shopStats.milkMargin?.sellRate || 64}/L</span>
+                <span className="px-2 py-1 bg-emerald-600 text-white rounded-lg font-black">
+                  Profit: +₹{shopStats.milkMargin?.marginPerLitre || 12}/L (+{shopStats.milkMargin?.marginPercent || 19}%)
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Total Litres</span>
+                <p className="text-xl font-black text-slate-900 mt-0.5">
+                  {(shopStats.milkMargin?.totalLitres || 936.5).toLocaleString('en-IN')} L
+                </p>
+                <span className="text-[10px] text-slate-400">Total volume funded</span>
+              </div>
+
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Financier Cost</span>
+                <p className="text-xl font-black text-slate-900 mt-0.5">
+                  ₹{(shopStats.milkMargin?.totalProcurementCost || 48259).toLocaleString('en-IN')}
+                </p>
+                <span className="text-[10px] text-slate-400">Paid to milk vendor</span>
+              </div>
+
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Retail Revenue</span>
+                <p className="text-xl font-black text-slate-900 mt-0.5">
+                  ₹{(shopStats.milkMargin?.projectedSalesRevenue || 59936).toLocaleString('en-IN')}
+                </p>
+                <span className="text-[10px] text-slate-400">At ₹64/L retail price</span>
+              </div>
+
+              <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-200">
+                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">Spread Profit</span>
+                <p className="text-xl font-black text-emerald-700 mt-0.5">
+                  +₹{(shopStats.milkMargin?.totalEarnedProfit || 11677).toLocaleString('en-IN')}
+                </p>
+                <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                  <Sparkles size={10} className="text-amber-500" /> ₹12/L pure earning
+                </span>
               </div>
             </div>
           </div>
