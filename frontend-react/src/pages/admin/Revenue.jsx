@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import { motion } from 'framer-motion';
 import ExportButton from '../../components/admin/ExportButton';
+import { ChartGradients, GlassTooltip, GlowingDot } from '../../components/admin/charts/PremiumChart.jsx';
 
 // Mock Data
 const monthlyRevenueData = [];
@@ -123,47 +124,46 @@ const Revenue = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         
         {/* Revenue Trend Area Chart */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
+        <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-xs border border-slate-200/90 flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-milquu-dark">Revenue Trend (Overall)</h2>
+            <div>
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">Revenue Trajectory (Annual)</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Overall gross sales volume across all channels</p>
+            </div>
           </div>
           <div className="flex-1 min-h-[350px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyRevenueData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0D47A1" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#0D47A1" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={(val) => `₹${val/1000}k`} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} 
-                  formatter={(value) => `₹${value.toLocaleString()}`} 
-                />
+                <ChartGradients />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `₹${val/1000}k`} />
+                <Tooltip content={<GlassTooltip />} />
                 <Area 
                   type="monotone" 
                   dataKey={(d) => d.web + d.shop + d.sub} 
                   name="Total Revenue" 
-                  stroke="#0D47A1" 
+                  stroke="#2563eb" 
                   strokeWidth={3} 
                   fillOpacity={1} 
-                  fill="url(#colorTotal)" 
+                  fill="url(#sapphireGlow)" 
+                  activeDot={<GlowingDot stroke="#2563eb" />}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Revenue Sources Pie Chart */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
-          <h2 className="text-lg font-bold text-milquu-dark mb-2 flex items-center">
-            <PieChartIcon size={18} className="mr-2 text-milquu-blue" /> Revenue Sources
-          </h2>
-          <p className="text-sm text-gray-500 mb-6">Current Month Breakdown</p>
-          <div className="flex-1 min-h-[250px] flex items-center justify-center relative">
+        {/* Revenue Sources Donut Chart */}
+        <div className="bg-white p-6 rounded-3xl shadow-xs border border-slate-200/90 flex flex-col justify-between">
+          <div>
+            <h2 className="text-lg font-black text-slate-900 tracking-tight mb-0.5 flex items-center">
+              <PieChartIcon size={18} className="mr-2 text-blue-600" /> Revenue Sources
+            </h2>
+            <p className="text-xs text-slate-400 mb-4">Current Month Channel Share</p>
+          </div>
+
+          <div className="flex-1 min-h-[220px] flex items-center justify-center relative">
             {sourceData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -171,8 +171,8 @@ const Revenue = () => {
                     data={sourceData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={70}
-                    outerRadius={100}
+                    innerRadius={68}
+                    outerRadius={95}
                     paddingAngle={5}
                     dataKey="value"
                     stroke="none"
@@ -181,39 +181,39 @@ const Revenue = () => {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                  <Tooltip content={<GlassTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="text-gray-400 text-sm">No data for this month</div>
+              <div className="text-slate-400 text-xs">No data for this month</div>
             )}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-bold text-milquu-dark">₹{stats.revenueThisMonth.toLocaleString()}</span>
-              <span className="text-xs text-gray-500 uppercase font-semibold">Total</span>
+              <span className="text-xl font-black text-slate-900 font-mono">₹{stats.revenueThisMonth.toLocaleString()}</span>
+              <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total</span>
             </div>
           </div>
           
-          <div className="mt-4 space-y-3">
-            <div className="flex justify-between items-center text-sm">
+          <div className="mt-4 space-y-2.5 pt-3 border-t border-slate-100">
+            <div className="flex justify-between items-center text-xs">
               <div className="flex items-center">
-                <div className="w-3 h-3 rounded-full bg-[#2E7D32] mr-2"></div>
-                <span className="text-gray-600 font-medium">Subscriptions</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-[#059669] mr-2"></div>
+                <span className="text-slate-600 font-semibold">Subscriptions</span>
               </div>
-              <span className="font-bold text-milquu-dark">₹{(sourceData.find(s=>s.name==='Subscriptions')?.value || 0).toLocaleString()} ({stats.revenueThisMonth ? Math.round((sourceData.find(s=>s.name==='Subscriptions')?.value || 0) / stats.revenueThisMonth * 100) : 0}%)</span>
+              <span className="font-mono font-bold text-slate-900">₹{(sourceData.find(s=>s.name==='Subscriptions')?.value || 0).toLocaleString()} ({stats.revenueThisMonth ? Math.round((sourceData.find(s=>s.name==='Subscriptions')?.value || 0) / stats.revenueThisMonth * 100) : 0}%)</span>
             </div>
-            <div className="flex justify-between items-center text-sm">
+            <div className="flex justify-between items-center text-xs">
               <div className="flex items-center">
-                <div className="w-3 h-3 rounded-full bg-[#0D47A1] mr-2"></div>
-                <span className="text-gray-600 font-medium">Website Sales</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-[#2563eb] mr-2"></div>
+                <span className="text-slate-600 font-semibold">Website Sales</span>
               </div>
-              <span className="font-bold text-milquu-dark">₹{(sourceData.find(s=>s.name==='Website Sales')?.value || 0).toLocaleString()} ({stats.revenueThisMonth ? Math.round((sourceData.find(s=>s.name==='Website Sales')?.value || 0) / stats.revenueThisMonth * 100) : 0}%)</span>
+              <span className="font-mono font-bold text-slate-900">₹{(sourceData.find(s=>s.name==='Website Sales')?.value || 0).toLocaleString()} ({stats.revenueThisMonth ? Math.round((sourceData.find(s=>s.name==='Website Sales')?.value || 0) / stats.revenueThisMonth * 100) : 0}%)</span>
             </div>
-            <div className="flex justify-between items-center text-sm">
+            <div className="flex justify-between items-center text-xs">
               <div className="flex items-center">
-                <div className="w-3 h-3 rounded-full bg-[#D4AF37] mr-2"></div>
-                <span className="text-gray-600 font-medium">Shop POS</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-[#d97706] mr-2"></div>
+                <span className="text-slate-600 font-semibold">Shop POS</span>
               </div>
-              <span className="font-bold text-milquu-dark">₹{(sourceData.find(s=>s.name==='Shop POS')?.value || 0).toLocaleString()} ({stats.revenueThisMonth ? Math.round((sourceData.find(s=>s.name==='Shop POS')?.value || 0) / stats.revenueThisMonth * 100) : 0}%)</span>
+              <span className="font-mono font-bold text-slate-900">₹{(sourceData.find(s=>s.name==='Shop POS')?.value || 0).toLocaleString()} ({stats.revenueThisMonth ? Math.round((sourceData.find(s=>s.name==='Shop POS')?.value || 0) / stats.revenueThisMonth * 100) : 0}%)</span>
             </div>
           </div>
         </div>
@@ -221,25 +221,24 @@ const Revenue = () => {
       </div>
 
       {/* Revenue Comparison Bar Chart */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+      <div className="bg-white p-6 rounded-3xl shadow-xs border border-slate-200/90 mb-8">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-bold text-milquu-dark">Revenue Channel Comparison</h2>
+          <div>
+            <h2 className="text-lg font-black text-slate-900 tracking-tight">Revenue Channel Comparison</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Stack-ranked performance across POS, Website and Daily Subscriptions</p>
+          </div>
         </div>
         <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthlyRevenueData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={(val) => `₹${val/1000}k`} />
-              <Tooltip 
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} 
-                formatter={(value) => `₹${value.toLocaleString()}`} 
-                cursor={{fill: '#F3F4F6'}}
-              />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} dy={10} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `₹${val/1000}k`} />
+              <Tooltip content={<GlassTooltip />} />
               <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-              <Bar dataKey="sub" name="Subscriptions" stackId="a" fill="#2E7D32" radius={[0, 0, 0, 0]} barSize={30} />
-              <Bar dataKey="web" name="Website" stackId="a" fill="#0D47A1" radius={[0, 0, 0, 0]} barSize={30} />
-              <Bar dataKey="shop" name="Shop POS" stackId="a" fill="#D4AF37" radius={[4, 4, 0, 0]} barSize={30} />
+              <Bar dataKey="sub" name="Subscriptions" stackId="a" fill="#059669" radius={[0, 0, 0, 0]} barSize={26} />
+              <Bar dataKey="web" name="Website" stackId="a" fill="#2563eb" radius={[0, 0, 0, 0]} barSize={26} />
+              <Bar dataKey="shop" name="Shop POS" stackId="a" fill="#d97706" radius={[6, 6, 0, 0]} barSize={26} />
             </BarChart>
           </ResponsiveContainer>
         </div>

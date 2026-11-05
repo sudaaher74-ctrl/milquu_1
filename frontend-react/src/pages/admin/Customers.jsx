@@ -5,6 +5,7 @@ import { getAdminSession, isAdminRole } from '../../utils/adminAccess';
 import { Users, UserPlus, UserCheck, Star, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import ExportButton from '../../components/admin/ExportButton';
+import { ChartGradients, GlassTooltip, GlowingDot } from '../../components/admin/charts/PremiumChart.jsx';
 
 const PAGE_SIZE = 25;
 const rupees = (n) => `₹${Math.round(Number(n) || 0).toLocaleString('en-IN')}`;
@@ -123,53 +124,68 @@ const Customers = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-xs border border-slate-200/90">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-milquu-dark">New and returning customers</h2>
-            <span className="text-xs text-gray-500">Last 6 months</span>
+            <div>
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">New & Returning Customers</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Growth trajectory over the last 6 months</p>
+            </div>
+            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">Last 6 months</span>
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={growthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorNew" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2E7D32" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#2E7D32" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorReturning" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0D47A1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#0D47A1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
-                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} />
-                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }} />
-                <Area type="monotone" dataKey="returning" name="Returning" stroke="#0D47A1" strokeWidth={3} fillOpacity={1} fill="url(#colorReturning)" />
-                <Area type="monotone" dataKey="new" name="New" stroke="#2E7D32" strokeWidth={3} fillOpacity={1} fill="url(#colorNew)" />
+                <ChartGradients />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} dy={10} />
+                <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                <Tooltip content={<GlassTooltip unit="" />} />
+                <Area 
+                  type="monotone" 
+                  dataKey="returning" 
+                  name="Returning" 
+                  stroke="#2563eb" 
+                  strokeWidth={3} 
+                  fillOpacity={1} 
+                  fill="url(#sapphireGlow)" 
+                  activeDot={<GlowingDot stroke="#2563eb" />}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="new" 
+                  name="New Signups" 
+                  stroke="#059669" 
+                  strokeWidth={3} 
+                  fillOpacity={1} 
+                  fill="url(#emeraldGlow)" 
+                  activeDot={<GlowingDot stroke="#059669" />}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
-          <h2 className="text-lg font-bold text-milquu-dark mb-4">Plans by rhythm</h2>
-          <div className="flex-1 min-h-[200px]">
+        <div className="bg-white p-6 rounded-3xl shadow-xs border border-slate-200/90 flex flex-col justify-between">
+          <div>
+            <h2 className="text-lg font-black text-slate-900 tracking-tight mb-0.5">Plans by Rhythm</h2>
+            <p className="text-xs text-slate-400 mb-4">Subscription frequencies</p>
+          </div>
+          <div className="flex-1 min-h-[200px] relative flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={segmentData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                <Pie data={segmentData} innerRadius={62} outerRadius={86} paddingAngle={5} dataKey="value" stroke="none">
                   {segmentData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
                 </Pie>
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
+                <Tooltip content={<GlassTooltip unit="%" />} />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="grid grid-cols-2 gap-3 mt-4">
+          <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100">
             {segmentData.map((segment) => (
-              <div key={segment.name} className="flex items-center text-xs">
-                <span className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: segment.color }} />
-                <span className="text-gray-600 font-medium">{segment.name}</span>
-                <span className="ml-auto font-bold text-milquu-dark">{segment.value}%</span>
+              <div key={segment.name} className="flex items-center text-xs p-1.5 rounded-lg bg-slate-50 border border-slate-100/80">
+                <span className="w-2.5 h-2.5 rounded-full mr-2 shrink-0" style={{ backgroundColor: segment.color }} />
+                <span className="text-slate-600 font-medium truncate">{segment.name}</span>
+                <span className="ml-auto font-mono font-bold text-slate-900">{segment.value}%</span>
               </div>
             ))}
           </div>

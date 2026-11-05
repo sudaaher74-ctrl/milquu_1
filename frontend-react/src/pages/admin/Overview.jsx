@@ -6,15 +6,16 @@ import {
   CalendarDays, ShoppingBag, Truck, Store, Globe, 
   Landmark, Droplets, ArrowUpRight, ArrowRight, Clock,
   CheckCircle2, Wallet, AlertCircle, RefreshCw, Sparkles,
-  Receipt, Boxes, Bike, ArrowDownLeft, ShieldCheck, Layers
+  Receipt, Boxes, Bike, ArrowDownLeft, ShieldCheck, Layers, PieChart as PieChartIcon
 } from 'lucide-react';
 import ExportButton from '../../components/admin/ExportButton';
 import TodayPanel from '../../components/admin/TodayPanel';
 import { getAdminSession, isManagerRole } from '../../utils/adminAccess';
 import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  ComposedChart, Line
-} from 'recharts';
+  PremiumTrajectoryChart, 
+  PremiumDonutChart,
+  GlassTooltip 
+} from '../../components/admin/charts/PremiumChart.jsx';
 
 const DATE_RANGES = ['Today', 'Last 7 Days', 'Last 30 Days', 'This Month', 'This Year', 'All Time'];
 
@@ -72,6 +73,7 @@ const Overview = () => {
 
   // Channel Switcher: 'all' (Combined) | 'shop' (Shop POS & Khata) | 'web' (Website & COD)
   const [activeChannel, setActiveChannel] = useState('all');
+  const [rightWidgetTab, setRightWidgetTab] = useState('products');
   const [dateRange, setDateRange] = useState('This Month');
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState(EMPTY_METRICS);
@@ -639,83 +641,122 @@ const Overview = () => {
       <TodayPanel role={role} />
 
       {/* ========================================================================= */}
-      {/* 6. CHARTS & PERFORMANCE TRAJECTORY                                        */}
+      {/* 6. PREMIUM CHARTS & EXECUTIVE PERFORMANCE TRAJECTORY                       */}
       {/* ========================================================================= */}
       {showBusiness && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Revenue & Profit Chart */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between">
+          {/* Executive Multi-Tab Financial & Volume Chart */}
+          <PremiumTrajectoryChart 
+            data={metrics.revenueData || []} 
+            height={280} 
+          />
+
+          {/* Top Selling Products & Category Distribution Hub */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-xs space-y-4 flex flex-col justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Revenue & Profit Trajectory</h3>
-                <p className="text-xs text-slate-400">Comparing gross revenue with net profitability</p>
-              </div>
-              <div className="flex items-center gap-3 text-xs">
-                <span className="flex items-center gap-1 font-semibold text-blue-700">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span> Revenue
-                </span>
-                <span className="flex items-center gap-1 font-semibold text-emerald-700">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> Profit
-                </span>
-              </div>
-            </div>
-
-            <div className="h-[260px] w-full pt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={metrics.revenueData || []} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorRevSimp" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={(val) => `₹${val/1000}k`} />
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }} />
-                  <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#2563eb" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRevSimp)" />
-                  <Line type="monotone" dataKey="profit" name="Net Profit" stroke="#059669" strokeWidth={2.5} dot={{ r: 3 }} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Top Dairy Products */}
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900">Top Selling Products</h3>
-                <p className="text-xs text-slate-400">Most ordered fresh milk & dairy items</p>
-              </div>
-              <Link to="/admin/products" className="text-xs font-bold text-emerald-700 hover:underline">
-                All Products &rarr;
-              </Link>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              {metrics.topPerformers?.length > 0 ? (
-                metrics.topPerformers.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 font-bold text-xs flex items-center justify-center">
-                        #{idx + 1}
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-800">{item.name}</p>
-                        <p className="text-[10px] text-slate-400">Farm Fresh Direct</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold text-emerald-700 px-2.5 py-1 bg-emerald-50 rounded-lg">
-                      {item.volume} units
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div className="py-12 text-center text-slate-400 text-xs">
-                  No product sales data recorded yet.
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-black text-slate-900 tracking-tight">
+                    {rightWidgetTab === 'products' ? 'Top Selling Products' : 'Product Category Share'}
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    Leaderboard
+                  </span>
                 </div>
-              )}
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {rightWidgetTab === 'products' ? 'Most ordered farm-fresh milk & dairy items' : 'Gross profit breakdown by category'}
+                </p>
+              </div>
+
+              {/* Toggle Pills */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/70 text-xs font-bold">
+                <button
+                  onClick={() => setRightWidgetTab('products')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                    rightWidgetTab === 'products'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  🏆 Top Products
+                </button>
+                <button
+                  onClick={() => setRightWidgetTab('categories')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer whitespace-nowrap ${
+                    rightWidgetTab === 'categories'
+                      ? 'bg-slate-900 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  🥧 Categories
+                </button>
+              </div>
             </div>
+
+            {rightWidgetTab === 'products' ? (
+              <div className="space-y-2.5 flex-1 flex flex-col justify-center">
+                {metrics.topPerformers?.length > 0 ? (
+                  metrics.topPerformers.map((item, idx) => {
+                    const maxVol = Math.max(...metrics.topPerformers.map(p => p.volume || 1), 1);
+                    const pct = Math.round((item.volume / maxVol) * 100);
+                    return (
+                      <div key={idx} className="p-3 bg-slate-50/80 rounded-2xl border border-slate-100/90 hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2.5">
+                            <span className={`w-6 h-6 rounded-lg font-black text-xs flex items-center justify-center shrink-0 ${
+                              idx === 0 ? 'bg-amber-100 text-amber-800' :
+                              idx === 1 ? 'bg-slate-200 text-slate-700' :
+                              idx === 2 ? 'bg-orange-100 text-orange-800' :
+                              'bg-slate-100 text-slate-600'
+                            }`}>
+                              #{idx + 1}
+                            </span>
+                            <span className="text-xs font-bold text-slate-800 truncate max-w-[150px] sm:max-w-[200px]">
+                              {item.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-100">
+                              {item.volume} units
+                            </span>
+                          </div>
+                        </div>
+                        {/* Progress Bar */}
+                        <div className="w-full bg-slate-200/60 rounded-full h-1.5 overflow-hidden">
+                          <div 
+                            className="bg-emerald-600 h-full rounded-full transition-all duration-500" 
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="py-12 text-center text-slate-400 text-xs">
+                    No product sales data recorded yet.
+                  </div>
+                )}
+                <div className="pt-2 text-right">
+                  <Link to="/admin/products" className="text-xs font-bold text-emerald-700 hover:underline">
+                    View Complete Catalog &rarr;
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col justify-center">
+                {metrics.categoryProfitData?.length > 0 ? (
+                  <PremiumDonutChart 
+                    data={metrics.categoryProfitData} 
+                    title="Profit by Category" 
+                    totalLabel="Gross Profit" 
+                  />
+                ) : (
+                  <div className="py-12 text-center text-slate-400 text-xs">
+                    No category breakdown available yet.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

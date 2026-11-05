@@ -9,6 +9,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell, Legend
 } from 'recharts';
+import { ChartGradients, GlassTooltip, GlowingDot } from '../../components/admin/charts/PremiumChart.jsx';
 
 // Mock Data removed, deriving from state inside component
 
@@ -143,30 +144,49 @@ const ProfitAnalytics = () => {
         </div>
 
         {/* Profit Trend Chart */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="lg:col-span-2 bg-white p-6 rounded-3xl shadow-xs border border-slate-200/90">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-milquu-dark">Gross vs Net Profit Trend</h2>
+            <div>
+              <h2 className="text-lg font-black text-slate-900 tracking-tight">Gross vs Net Profit Trajectory</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Tracking margin retention over time</p>
+            </div>
+            <div className="flex items-center gap-3 text-xs font-semibold">
+              <span className="flex items-center gap-1.5 text-blue-700">
+                <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span> Gross Profit
+              </span>
+              <span className="flex items-center gap-1.5 text-emerald-700">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span> Net Profit
+              </span>
+            </div>
           </div>
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={profitTrendData} margin={{ top: 10, right: 0, left: -10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorGross" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0D47A1" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#0D47A1" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorNet" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2E7D32" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#2E7D32" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6B7280' }} tickFormatter={(val) => `₹${val/1000}k`} />
-                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }} formatter={(val) => `₹${val.toLocaleString()}`} />
-                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                <Area type="monotone" dataKey="gross" name="Gross Profit" stroke="#0D47A1" strokeWidth={2} fillOpacity={1} fill="url(#colorGross)" />
-                <Area type="monotone" dataKey="net" name="Net Profit" stroke="#2E7D32" strokeWidth={3} fillOpacity={1} fill="url(#colorNet)" />
+                <ChartGradients />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(val) => `₹${val/1000}k`} />
+                <Tooltip content={<GlassTooltip />} />
+                <Area 
+                  type="monotone" 
+                  dataKey="gross" 
+                  name="Gross Profit" 
+                  stroke="#2563eb" 
+                  strokeWidth={2.5} 
+                  fillOpacity={1} 
+                  fill="url(#sapphireGlow)" 
+                  activeDot={<GlowingDot stroke="#2563eb" />}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="net" 
+                  name="Net Profit" 
+                  stroke="#059669" 
+                  strokeWidth={3} 
+                  fillOpacity={1} 
+                  fill="url(#emeraldGlow)" 
+                  activeDot={<GlowingDot stroke="#059669" />}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -178,17 +198,20 @@ const ProfitAnalytics = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Profit by Category Pie */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-          <h2 className="text-lg font-bold text-milquu-dark mb-6">Profit By Category</h2>
-          <div className="h-[220px] flex items-center justify-center">
+        <div className="bg-white p-6 rounded-3xl shadow-xs border border-slate-200/90 flex flex-col justify-between">
+          <div>
+            <h2 className="text-lg font-black text-slate-900 tracking-tight mb-0.5">Profit By Category</h2>
+            <p className="text-xs text-slate-400 mb-4">Gross profit distribution</p>
+          </div>
+          <div className="h-[200px] flex items-center justify-center relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={categoryProfitData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
+                  innerRadius={62}
+                  outerRadius={86}
                   paddingAngle={5}
                   dataKey="value"
                   stroke="none"
@@ -197,18 +220,18 @@ const ProfitAnalytics = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                <Tooltip content={<GlassTooltip />} />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="space-y-3 mt-4">
+          <div className="space-y-2.5 mt-4 pt-3 border-t border-slate-100">
             {categoryProfitData.map((cat, i) => (
-              <div key={i} className="flex justify-between items-center text-sm">
+              <div key={i} className="flex justify-between items-center text-xs">
                 <div className="flex items-center">
-                  <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: cat.color }}></div>
-                  <span className="text-gray-600 font-medium">{cat.name}</span>
+                  <div className="w-2.5 h-2.5 rounded-full mr-2" style={{ backgroundColor: cat.color }}></div>
+                  <span className="text-slate-600 font-semibold">{cat.name}</span>
                 </div>
-                <span className="font-bold text-milquu-dark">₹{cat.value.toLocaleString()}</span>
+                <span className="font-mono font-bold text-slate-900">₹{cat.value.toLocaleString()}</span>
               </div>
             ))}
           </div>

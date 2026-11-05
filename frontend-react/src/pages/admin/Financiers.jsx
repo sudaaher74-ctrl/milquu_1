@@ -12,6 +12,7 @@ import {
   X, AlertCircle, Printer, Filter, Building2, CreditCard,
   Droplets, Sparkles, ShoppingBag, ShieldCheck
 } from 'lucide-react';
+import { PremiumFinancierCashflowChart } from '../../components/admin/charts/PremiumChart.jsx';
 
 const Financiers = () => {
   const business = useBusinessSettings();
@@ -654,6 +655,13 @@ const Financiers = () => {
           </div>
         </div>
       </div>
+
+      {/* Premium Financier Capital Inflow & Repayment Ledger Chart */}
+      <PremiumFinancierCashflowChart 
+        transactions={transactions} 
+        metrics={metrics} 
+        profitAnalytics={profitAnalytics} 
+      />
 
       {/* Financiers Selector Bar & Profile Info */}
       <div className="bg-white p-4 rounded-2xl shadow-xs border border-gray-100 space-y-3">

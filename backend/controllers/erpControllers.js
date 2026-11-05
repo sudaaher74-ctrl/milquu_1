@@ -1503,6 +1503,12 @@ export const getDashboardAnalytics = async (req, res) => {
         $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt", timezone: IST_TIMEZONE } },
           revenue: { $sum: { $multiply: ["$orderItems.price", "$orderItems.qty"] } },
+          shopRevenue: { 
+            $sum: { $cond: [{ $eq: ["$orderSource", "POS"] }, { $multiply: ["$orderItems.price", "$orderItems.qty"] }, 0] } 
+          },
+          webRevenue: { 
+            $sum: { $cond: [{ $ne: ["$orderSource", "POS"] }, { $multiply: ["$orderItems.price", "$orderItems.qty"] }, 0] } 
+          },
           grossProfit: { $sum: { $subtract: [
             { $multiply: ["$orderItems.price", "$orderItems.qty"] },
             { $ifNull: ["$orderItems.cogs", 0] } // already the line total
@@ -1524,7 +1530,10 @@ export const getDashboardAnalytics = async (req, res) => {
       const found = dailyRevenuePipeline.find(x => x._id === dateStr);
       revenueData.push({
         name: days[d.getUTCDay()],
+        date: dateStr,
         revenue: found ? found.revenue : 0,
+        shopRevenue: found ? (found.shopRevenue || 0) : 0,
+        webRevenue: found ? (found.webRevenue || 0) : 0,
         profit: found ? found.grossProfit : 0,
         salesVolume: found ? found.salesVolume : 0
       });
