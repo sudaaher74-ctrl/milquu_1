@@ -52,6 +52,7 @@ const PAGE_ACCESS = {
   '/admin/revenue': MANAGER_ROLES,
   '/admin/profit': MANAGER_ROLES,
   '/admin/expenses': MANAGER_ROLES,
+  '/admin/financiers': MANAGER_ROLES,
   '/admin/reports': MANAGER_ROLES,
   '/admin/seo-tools': MANAGER_ROLES,
   '/chatbot': MANAGER_ROLES,

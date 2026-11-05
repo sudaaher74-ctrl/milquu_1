@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import api from '../../utils/api.js';
-import { generateDeliveryReportPDF } from '../../utils/reportUtils.js';
 import { 
   LayoutDashboard, ShoppingBag, Users, LogOut, ArrowLeft, 
   Package, CalendarDays, Truck, BarChart3, Boxes, 
   Bell, Settings, Search, Plus, Menu, X, ChevronDown, Bike,
-  Briefcase, Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, FileBarChart, MessageCircle, Wand2, Mic, Volume2, Loader2, Sparkles, Banknote, Gift,
-  PanelLeft, PanelLeftClose, ShieldOff,
-  Download, WifiOff, Wifi, CheckCircle2, CloudUpload, RefreshCw
+  Store, ShoppingCart, Receipt, TrendingUp, Droplets, Trash2, 
+  FileBarChart, Sparkles, Banknote, Gift, Landmark,
+  PanelLeft, PanelLeftClose, CheckCircle2, RefreshCw,
+  Zap, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { canAccess, getAdminSession, ROLE_LABELS } from '../../utils/adminAccess.js';
@@ -20,11 +20,10 @@ import { useInstallPrompt, useNetworkStatus, useSyncQueue } from '../../utils/us
 
 const AdminLayout = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // PWA: install prompt, network status & offline sync queue
   const { canInstall, isInstalled, promptInstall } = useInstallPrompt();
   const { isOnline, wasOffline } = useNetworkStatus();
   const { pendingCount, isSyncing, triggerSync } = useSyncQueue(api, isOnline);
+  
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('adminSidebarOpen');
@@ -33,103 +32,84 @@ const AdminLayout = () => {
       return true;
     }
   });
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [isAIGenerating, setIsAIGenerating] = useState(false);
-  const [isAISpeaking, setIsAISpeaking] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+
   const location = useLocation();
   const navigate = useNavigate();
-  const synth = window.speechSynthesis;
 
-  // The signed-in employee, saved by the login page
+  // Signed-in admin session
   const session = getAdminSession();
   const role = session?.role || 'staff';
   const adminInfo = { name: session?.name || 'Admin', role: ROLE_LABELS[role] || role };
 
   const { today } = useToday();
   const [searchTerm, setSearchTerm] = useState('');
-  // Re-read the "read" set when alerts are marked read elsewhere
   const [, setReadTick] = useState(0);
   useEffect(() => eventBus.on('ALERTS_READ', () => setReadTick((t) => t + 1)), []);
   const readAlerts = getReadAlerts();
   const unreadCount = buildAlerts(today, role).filter((a) => !readAlerts.has(a.id)).length;
 
-  // Setup Speech Recognition
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = SpeechRecognition ? new SpeechRecognition() : null;
-  if (recognition) {
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
-  }
-
-  // Grouped by what the page is for; each role only sees what it can open.
-  const navSections = [
+  // Redesigned 5 Core Operational Hubs
+  const navHubs = [
     {
-      title: 'Today',
+      title: 'Operations & Today',
+      hindi: 'आज का काम',
       items: [
-        { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={20} /> },
-        { name: "Today's Orders", path: '/admin/today-orders', icon: <ShoppingCart size={20} /> },
-        { name: 'MilQuu AI', path: '/chatbot', icon: <Sparkles size={20} className="text-violet-500" /> },
-        { name: 'Live Tracking', path: '/admin/deliveries', icon: <Truck size={20} /> },
-        { name: 'Alerts', path: '/admin/notifications', icon: <Bell size={20} /> },
+        { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard size={18} />, badge: null },
+        { name: "Today's Orders", path: '/admin/today-orders', icon: <ShoppingCart size={18} />, badge: null },
+        { name: 'Live Tracking', path: '/admin/deliveries', icon: <Truck size={18} />, badge: 'Live' },
+        { name: 'MilQuu AI', path: '/chatbot', icon: <Sparkles size={18} className="text-violet-500" />, badge: 'AI' },
       ]
     },
     {
-      title: 'Sales',
+      title: 'Counter & Sales',
+      hindi: 'बिक्री व काउंटर',
       items: [
-        { name: 'Shop POS', path: '/admin/pos', icon: <Store size={20} /> },
-        { name: 'Orders', path: '/admin/orders', icon: <ShoppingBag size={20} /> },
-        { name: 'Subscriptions', path: '/admin/subscriptions', icon: <CalendarDays size={20} /> },
-        { name: 'Free Samples', path: '/admin/free-samples', icon: <Gift size={20} /> },
+        { name: 'Shop POS Counter', path: '/admin/pos', icon: <Store size={18} />, badge: 'Fast' },
+        { name: 'All Orders', path: '/admin/orders', icon: <ShoppingBag size={18} />, badge: null },
+        { name: 'Subscriptions', path: '/admin/subscriptions', icon: <CalendarDays size={18} />, badge: null },
+        { name: 'Free Samples', path: '/admin/free-samples', icon: <Gift size={18} />, badge: null },
       ]
     },
     {
-      title: 'Customers',
+      title: 'Procurement & Stock',
+      hindi: 'दूध खरीद व स्टॉक',
       items: [
-        { name: 'Customers', path: '/admin/customers', icon: <Users size={20} /> },
-        { name: 'Refunds', path: '/admin/refunds', icon: <Banknote size={20} /> },
+        { name: 'Purchases & Vendors', path: '/admin/purchases', icon: <ShoppingCart size={18} />, badge: null },
+        { name: 'Milk Procurement', path: '/admin/procurement', icon: <Droplets size={18} className="text-blue-500" />, badge: null },
+        { name: 'Products Catalog', path: '/admin/products', icon: <Package size={18} />, badge: null },
+        { name: 'Inventory', path: '/admin/inventory', icon: <Boxes size={18} />, badge: null },
+        { name: 'Wastage', path: '/admin/wastage', icon: <Trash2 size={18} />, badge: null },
       ]
     },
     {
-      title: 'Stock & Purchasing',
+      title: 'Finance & Accounts',
+      hindi: 'हिसाब-किताब व खाता',
       items: [
-        { name: 'Products', path: '/admin/products', icon: <Package size={20} /> },
-        { name: 'Inventory', path: '/admin/inventory', icon: <Boxes size={20} /> },
-        { name: 'Purchases', path: '/admin/purchases', icon: <ShoppingCart size={20} /> },
-        { name: 'Milk Procurement', path: '/admin/procurement', icon: <Droplets size={20} /> },
-        { name: 'Wastage', path: '/admin/wastage', icon: <Trash2 size={20} /> },
+        { name: 'Financier Khata', path: '/admin/financiers', icon: <Landmark size={18} className="text-indigo-600" />, badge: 'New' },
+        { name: 'Revenue', path: '/admin/revenue', icon: <BarChart3 size={18} />, badge: null },
+        { name: 'Profit & Loss', path: '/admin/profit', icon: <TrendingUp size={18} />, badge: null },
+        { name: 'Expenses', path: '/admin/expenses', icon: <Receipt size={18} />, badge: null },
+        { name: 'Customer Refunds', path: '/admin/refunds', icon: <Banknote size={18} />, badge: null },
+        { name: 'Financial Reports', path: '/admin/reports', icon: <FileBarChart size={18} />, badge: null },
       ]
     },
     {
-      title: 'Finance',
+      title: 'Customers & Fleet',
+      hindi: 'ग्राहक व टीम',
       items: [
-        { name: 'Revenue', path: '/admin/revenue', icon: <BarChart3 size={20} /> },
-        { name: 'Profit Analytics', path: '/admin/profit', icon: <TrendingUp size={20} /> },
-        { name: 'Expenses', path: '/admin/expenses', icon: <Receipt size={20} /> },
-        { name: 'Reports', path: '/admin/reports', icon: <FileBarChart size={20} /> },
-      ]
-    },
-    {
-      title: 'Team & Settings',
-      items: [
-        { name: 'Delivery Staff', path: '/admin/delivery-boys', icon: <Bike size={20} /> },
-        { name: 'Recycle Bin', path: '/admin/recycle-bin', icon: <Trash2 size={20} /> },
-        { name: 'Settings', path: '/admin/settings', icon: <Settings size={20} /> },
+        { name: 'Customers Directory', path: '/admin/customers', icon: <Users size={18} />, badge: null },
+        { name: 'Delivery Staff', path: '/admin/delivery-boys', icon: <Bike size={18} />, badge: null },
       ]
     }
   ]
-    .map((section) => ({ ...section, items: section.items.filter((item) => canAccess(item.path, role)) }))
-    .filter((section) => section.items.length > 0);
+    .map((hub) => ({ ...hub, items: hub.items.filter((item) => canAccess(item.path, role)) }))
+    .filter((hub) => hub.items.length > 0);
 
-  const pageAllowed = canAccess(location.pathname, role);
-
-  const quickAddLinks = [
-    { to: '/admin/products', label: 'Add Product', icon: <Package size={16} className="mr-2"/> },
-    { to: '/admin/pos', label: 'New POS Bill', icon: <Store size={16} className="mr-2"/> },
-    { to: '/admin/subscriptions', label: 'Create Subscription', icon: <CalendarDays size={16} className="mr-2"/> },
-    { to: '/admin/deliveries', label: 'Assign Delivery', icon: <Truck size={16} className="mr-2"/> },
-  ].filter((link) => canAccess(link.to, role));
+  const bottomUtilities = [
+    { name: 'Alerts', path: '/admin/notifications', icon: <Bell size={18} />, count: unreadCount },
+    { name: 'Recycle Bin', path: '/admin/recycle-bin', icon: <Trash2 size={18} /> },
+    { name: 'Settings', path: '/admin/settings', icon: <Settings size={18} /> },
+  ].filter((item) => canAccess(item.path, role));
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -162,27 +142,11 @@ const AdminLayout = () => {
     }
   };
 
-  useEffect(() => {
-    if (localStorage.getItem('enterpriseDarkMode') === 'true') {
-      document.documentElement.classList.add('dark-dashboard');
-    } else {
-      document.documentElement.classList.remove('dark-dashboard');
-    }
-    return () => {
-      document.documentElement.classList.remove('dark-dashboard');
-    };
-  }, []);
-
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden font-sans relative">
-      
-      {/* Ambient Background Orbs */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full blur-[120px] bg-milquu-gold/10 opacity-60"></div>
-        <div className="absolute bottom-0 right-0 w-[800px] h-[800px] rounded-full blur-[150px] bg-milquu-green/10 opacity-50"></div>
-      </div>
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans relative text-slate-800">
+      <ToastHost />
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile Drawer Backdrop */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div 
@@ -190,284 +154,289 @@ const AdminLayout = () => {
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
             onClick={toggleMobileMenu}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
+            className="fixed inset-0 bg-slate-900/60 z-40 lg:hidden backdrop-blur-sm"
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 bg-white/85 backdrop-blur-2xl border-r border-white/60 shadow-lg transform transition-all duration-300 ease-in-out lg:relative flex flex-col ${
+      {/* ========================================================================= */}
+      {/* SIDEBAR NAVIGATION                                                       */}
+      {/* ========================================================================= */}
+      <aside className={`fixed inset-y-0 left-0 z-50 bg-white border-r border-slate-200/80 shadow-xs flex flex-col transition-all duration-300 ease-in-out lg:relative ${
         mobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'
       } ${
         sidebarOpen 
-          ? 'lg:w-72 lg:opacity-100' 
+          ? 'lg:w-68 xl:w-72 lg:opacity-100' 
           : 'lg:w-0 lg:p-0 lg:overflow-hidden lg:border-r-0 lg:opacity-0 pointer-events-none lg:pointer-events-auto'
       }`}>
-        <div className="h-20 flex items-center justify-between px-6 border-b border-gray-100 shrink-0 whitespace-nowrap overflow-hidden">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-milquu-green to-milquu-blue rounded-xl flex items-center justify-center text-white font-serif font-bold text-xl shadow-md shrink-0">M</div>
-            <span className="text-xl font-serif font-bold text-milquu-dark tracking-tight">MilQuu Fresh</span>
-          </div>
-          {/* Mobile close */}
-          <button onClick={toggleMobileMenu} className="lg:hidden text-gray-500 hover:text-milquu-dark transition-colors">
-            <X size={24} />
-          </button>
-          {/* Desktop collapse button */}
+        {/* Brand Header */}
+        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-100 shrink-0">
+          <Link to="/admin" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 bg-gradient-to-br from-emerald-600 to-blue-700 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
+              M
+            </div>
+            <div>
+              <span className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
+                MilQuu <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700">ERP</span>
+              </span>
+              <p className="text-[10px] text-slate-400 font-medium">Dairy Management 2.0</p>
+            </div>
+          </Link>
+
           <button 
-            onClick={() => {
-              setSidebarOpen(false);
-              try { localStorage.setItem('adminSidebarOpen', 'false'); } catch (e) {}
-            }} 
-            className="hidden lg:flex p-1.5 rounded-lg text-gray-400 hover:text-milquu-dark hover:bg-gray-100 transition-colors"
-            title="Hide Sidebar"
+            onClick={toggleSidebar} 
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            title="Collapse Sidebar"
           >
-            <PanelLeftClose size={20} />
+            <PanelLeftClose size={18} />
           </button>
         </div>
-        
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1 hide-scrollbar">
-          {navSections.map((section) => (
-            <div key={section.title} className="mb-3">
-              <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5 px-3 mt-3">{section.title}</div>
-              {section.items.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.path === '/admin'}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center space-x-3 px-3 py-2.5 rounded-xl transition-all duration-300 group relative z-10 ${
+
+        {/* Scrollable Nav Hubs */}
+        <nav className="flex-1 overflow-y-auto p-3.5 space-y-4 hide-scrollbar">
+          {navHubs.map((hub) => (
+            <div key={hub.title} className="space-y-1">
+              <div className="flex items-center justify-between px-2.5 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <span>{hub.title}</span>
+                <span className="text-[10px] text-slate-300 font-normal lowercase">{hub.hindi}</span>
+              </div>
+
+              {hub.items.map((item) => {
+                const isActive = item.path === '/admin' 
+                  ? location.pathname === '/admin' 
+                  : location.pathname.startsWith(item.path);
+
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.path === '/admin'}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 group relative ${
                       isActive
-                        ? 'bg-milquu-blue/10 text-milquu-blue font-bold shadow-sm'
-                        : 'text-gray-500 hover:bg-white/60 hover:text-milquu-dark'
-                    }`
-                  }
-                >
-                  {React.cloneElement(item.icon, { className: location.pathname === item.path ? 'text-milquu-blue' : 'text-gray-400 group-hover:text-milquu-blue transition-colors' })}
-                  <span className="text-sm relative z-10 flex-1">{item.name}</span>
-                  {item.path === '/admin/notifications' && unreadCount > 0 && (
-                    <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center">{unreadCount}</span>
-                  )}
-                </NavLink>
-              ))}
+                        ? 'bg-emerald-50/80 text-emerald-800 font-bold border border-emerald-200/60 shadow-2xs'
+                        : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className={`transition-colors ${isActive ? 'text-emerald-700' : 'text-slate-400 group-hover:text-slate-700'}`}>
+                      {item.icon}
+                    </span>
+                    <span className="flex-1 truncate">{item.name}</span>
+
+                    {item.badge && (
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${
+                        item.badge === 'Live' ? 'bg-rose-100 text-rose-700 animate-pulse' :
+                        item.badge === 'New' ? 'bg-indigo-100 text-indigo-700' :
+                        item.badge === 'Fast' ? 'bg-amber-100 text-amber-800' :
+                        'bg-violet-100 text-violet-700'
+                      }`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </NavLink>
+                );
+              })}
             </div>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0 whitespace-nowrap overflow-hidden">
-          {/* PWA Install Button */}
-          {canInstall && (
-            <button
-              onClick={promptInstall}
-              className="w-full flex items-center space-x-3 px-3 py-3 text-sm text-milquu-blue hover:bg-blue-50 rounded-xl transition-all mb-1 font-medium group"
+        {/* Bottom Utility Bar */}
+        <div className="p-3 border-t border-slate-100 bg-slate-50/60 shrink-0 space-y-1">
+          {bottomUtilities.map((util) => {
+            const isActive = location.pathname.startsWith(util.path);
+            return (
+              <NavLink
+                key={util.path}
+                to={util.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                  isActive ? 'bg-white text-slate-900 shadow-2xs border border-slate-200/70' : 'text-slate-500 hover:bg-white hover:text-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className={isActive ? 'text-slate-800' : 'text-slate-400'}>{util.icon}</span>
+                  <span>{util.name}</span>
+                </div>
+                {util.count > 0 && (
+                  <span className="h-4 min-w-[16px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
+                    {util.count}
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
+
+          <div className="pt-2 flex items-center justify-between border-t border-slate-200/60 px-1">
+            <Link
+              to="/"
+              className="text-[11px] font-medium text-slate-500 hover:text-emerald-700 flex items-center gap-1"
             >
-              <Download size={18} className="group-hover:animate-bounce" />
-              <span>Install App</span>
+              <ArrowLeft size={12} /> Storefront
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 cursor-pointer"
+            >
+              <LogOut size={12} /> Logout
             </button>
-          )}
-          {isInstalled && (
-            <div className="flex items-center space-x-3 px-3 py-2 text-xs text-green-600 mb-1">
-              <CheckCircle2 size={14} />
-              <span>App installed</span>
-            </div>
-          )}
-          <NavLink to="/" className="flex items-center space-x-3 px-3 py-3 text-sm text-gray-500 hover:bg-white hover:text-milquu-dark hover:shadow-sm rounded-xl transition-all">
-            <ArrowLeft size={18} className="text-gray-400" />
-            <span>Back to Store</span>
-          </NavLink>
-          <button onClick={handleLogout} className="w-full flex items-center space-x-3 px-3 py-3 text-sm text-red-500 hover:bg-red-50 rounded-xl transition-all mt-1">
-            <LogOut size={18} />
-            <span>Logout Account</span>
-          </button>
+          </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* ========================================================================= */}
+      {/* MAIN VIEWPORT                                                             */}
+      {/* ========================================================================= */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        
-        {/* Top Header */}
-        <header className="h-20 bg-white/70 backdrop-blur-2xl border-b border-white/50 shadow-sm flex items-center justify-between px-4 sm:px-8 z-30 sticky top-0">
-          
-          <div className="flex items-center">
-            {/* Sidebar Toggle Button (Hide / Open on desktop, Drawer on mobile) */}
+        {/* Top Header Bar */}
+        <header className="h-16 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-2xs flex items-center justify-between px-4 sm:px-6 z-30 shrink-0">
+          <div className="flex items-center gap-3">
             <button 
               onClick={toggleSidebar} 
-              className="mr-3 p-2 text-gray-600 hover:text-milquu-blue hover:bg-white rounded-xl transition-all border border-gray-200/80 shadow-xs flex items-center gap-1.5 group cursor-pointer"
+              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all border border-slate-200/80 cursor-pointer"
               title={sidebarOpen ? "Hide Sidebar" : "Open Sidebar"}
             >
-              <PanelLeft size={20} className={!sidebarOpen ? "text-milquu-blue" : "text-gray-500 group-hover:text-milquu-blue"} />
-              <span className="hidden sm:inline text-xs font-semibold text-gray-600 group-hover:text-milquu-blue">
-                {sidebarOpen ? 'Hide Menu' : 'Open Menu'}
-              </span>
+              <PanelLeft size={18} className={!sidebarOpen ? "text-emerald-700" : "text-slate-600"} />
             </button>
-            
+
+            {/* Quick Action Dock */}
+            <div className="hidden lg:flex items-center gap-1.5 pl-2 border-l border-slate-200">
+              <Link
+                to="/admin/pos"
+                className="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                title="Open Shop POS"
+              >
+                <Store size={14} className="text-emerald-700" />
+                <span>+ POS Sale</span>
+              </Link>
+              <Link
+                to="/admin/procurement"
+                className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                title="Record Milk Inflow"
+              >
+                <Droplets size={14} className="text-blue-600" />
+                <span>+ Milk Inflow</span>
+              </Link>
+              <Link
+                to="/admin/financiers"
+                className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-xs font-bold flex items-center gap-1.5 transition-colors"
+                title="Financier Khata & Settlements"
+              >
+                <Landmark size={14} className="text-indigo-600" />
+                <span>+ Financier</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Right Header: Search, Connectivity, Profile */}
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* Search Bar */}
             {canAccess('/admin/orders', role) && (
-              <form onSubmit={handleSearch} role="search" className="hidden md:flex items-center bg-gray-100/80 rounded-full px-4 py-2 border border-transparent focus-within:border-milquu-blue/30 focus-within:bg-white focus-within:shadow-sm transition-all w-80">
-                <Search size={18} className="text-gray-400 mr-2" />
+              <form onSubmit={handleSearch} className="relative hidden md:block">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="search"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search orders by name, phone or ID…"
-                  aria-label="Search orders"
-                  className="bg-transparent border-none outline-none text-sm w-full font-sans text-gray-700 placeholder-gray-400"
+                  placeholder="Search orders, phone, ID..."
+                  className="pl-8 pr-3 py-1.5 text-xs bg-slate-100/80 border border-slate-200 rounded-xl focus:outline-none focus:bg-white focus:border-emerald-600 w-44 lg:w-56 transition-all"
                 />
               </form>
             )}
-          </div>
 
-          <div className="flex items-center space-x-3 sm:space-x-5">
-            {/* PWA Install — compact header button for when sidebar is collapsed */}
-            {canInstall && !sidebarOpen && (
-              <button
-                onClick={promptInstall}
-                className="hidden lg:flex items-center space-x-2 bg-gradient-to-r from-milquu-blue to-blue-600 text-white px-3.5 py-2 rounded-full text-sm font-medium hover:shadow-lg hover:scale-[1.02] transition-all"
-                title="Install MilQuu as desktop app"
-              >
-                <Download size={16} />
-                <span>Install</span>
-              </button>
+            {/* Sync Queue / Offline status */}
+            {!isOnline && (
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
+                Offline
+              </span>
             )}
-            {/* Quick Add */}
-            <div className="relative">
-              <button 
-                onClick={() => setQuickAddOpen(!quickAddOpen)}
-                className={`${quickAddLinks.length ? 'hidden sm:flex' : 'hidden'} items-center space-x-2 bg-milquu-dark text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors shadow-md`}
-              >
-                <Plus size={16} />
-                <span>Quick Add</span>
-                <ChevronDown size={14} className={`transition-transform ${quickAddOpen ? 'rotate-180' : ''}`} />
-              </button>
-              
-              <AnimatePresence>
-                {quickAddOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setQuickAddOpen(false)}></div>
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50 py-2"
-                    >
-                      {quickAddLinks.map((link) => (
-                        <Link key={link.to} to={link.to} onClick={() => setQuickAddOpen(false)} className="w-full text-left px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-milquu-blue transition-colors flex items-center">{link.icon} {link.label}</Link>
-                      ))}
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Sync Queue Badge */}
             {pendingCount > 0 && (
-              <button
+              <button 
                 onClick={triggerSync}
-                disabled={isSyncing || !isOnline}
-                className="relative p-2 text-amber-500 hover:text-amber-600 transition-colors rounded-full hover:bg-amber-50 disabled:opacity-50"
-                title={isSyncing ? 'Syncing…' : `${pendingCount} pending change${pendingCount > 1 ? 's' : ''} — click to sync`}
+                className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200"
+                title="Click to sync offline actions"
               >
-                <CloudUpload size={22} className={isSyncing ? 'animate-pulse' : ''} />
-                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-amber-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white flex items-center justify-center">
-                  {isSyncing ? <RefreshCw size={10} className="animate-spin" /> : pendingCount}
-                </span>
+                <RefreshCw size={11} className={isSyncing ? 'animate-spin' : ''} />
+                <span>{pendingCount} Pending</span>
               </button>
             )}
 
-            {/* MilQuu AI Shortcut */}
-            <Link
-              to="/chatbot"
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-500/10 to-indigo-500/10 text-violet-700 hover:from-violet-500/20 hover:to-indigo-500/20 border border-violet-200/60 text-xs font-semibold transition-all hover:scale-[1.02]"
-              title="Open MilQuu AI Assistant (Powered by Sarvam 105B)"
-            >
-              <Sparkles size={15} className="text-violet-600 animate-pulse" />
-              <span className="hidden md:inline">MilQuu AI</span>
-            </Link>
-
-            {/* Notification */}
+            {/* Alerts Bell */}
             <Link
               to="/admin/notifications"
-              className="relative p-2 text-gray-400 hover:text-milquu-blue transition-colors rounded-full hover:bg-blue-50"
-              aria-label={unreadCount ? `${unreadCount} unread alerts` : 'Alerts'}
-              title={unreadCount ? `${unreadCount} unread alerts` : 'No new alerts'}
+              className="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+              title="Alerts"
             >
-              <Bell size={22} />
+              <Bell size={18} />
               {unreadCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full ring-2 ring-white flex items-center justify-center">{unreadCount}</span>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500"></span>
               )}
             </Link>
 
-            {/* Profile */}
-            <div className="flex items-center space-x-3 pl-2 sm:pl-4 border-l border-gray-200">
-              <div className="w-9 h-9 rounded-full bg-milquu-blue/10 ring-2 ring-gray-100 flex items-center justify-center text-milquu-blue font-bold text-sm">
+            {/* Admin User Chip */}
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+              <div className="w-8 h-8 rounded-full bg-slate-800 text-white font-bold text-xs flex items-center justify-center">
                 {adminInfo.name.charAt(0).toUpperCase()}
               </div>
-              <div className="hidden lg:block">
-                <p className="text-sm font-bold text-milquu-dark leading-tight">{adminInfo.name}</p>
-                <p className="text-xs text-gray-500 capitalize">{adminInfo.role}</p>
+              <div className="hidden sm:block text-left">
+                <p className="text-xs font-bold text-slate-800 leading-tight">{adminInfo.name}</p>
+                <p className="text-[10px] text-slate-400 font-medium capitalize">{adminInfo.role}</p>
               </div>
             </div>
           </div>
         </header>
-        
-        {/* Offline / Reconnected / Syncing Banner */}
-        <AnimatePresence>
-          {!isOnline && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="bg-amber-50 border-b border-amber-200 overflow-hidden z-20"
-            >
-              <div className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-amber-800 font-medium">
-                <WifiOff size={16} className="shrink-0" />
-                <span>
-                  You're offline — showing cached data.
-                  {pendingCount > 0 && ` ${pendingCount} change${pendingCount > 1 ? 's' : ''} queued for sync.`}
-                </span>
-              </div>
-            </motion.div>
-          )}
-          {isOnline && isSyncing && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="bg-blue-50 border-b border-blue-200 overflow-hidden z-20"
-            >
-              <div className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-blue-800 font-medium">
-                <RefreshCw size={16} className="shrink-0 animate-spin" />
-                <span>Syncing {pendingCount} pending change{pendingCount > 1 ? 's' : ''}…</span>
-              </div>
-            </motion.div>
-          )}
-          {isOnline && wasOffline && !isSyncing && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="bg-green-50 border-b border-green-200 overflow-hidden z-20"
-            >
-              <div className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm text-green-800 font-medium">
-                <Wifi size={16} className="shrink-0" />
-                <span>Back online — all changes synced.</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
-          {pageAllowed ? <Outlet /> : (
-            <div className="max-w-lg mx-auto mt-16 bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-              <ShieldOff size={36} className="mx-auto text-gray-400 mb-3" />
-              <h1 className="text-xl font-bold text-milquu-dark mb-1">You don’t have access to this page</h1>
-              <p className="text-sm text-gray-500 mb-5">Your role ({adminInfo.role}) can’t open it. Ask an admin if you need it.</p>
-              <Link to="/admin" className="inline-block bg-milquu-dark text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800">Back to dashboard</Link>
-            </div>
-          )}
+        {/* Page Content Body */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50/50 pb-20 lg:pb-8">
+          <Outlet />
         </div>
-        <ToastHost />
+
+        {/* Mobile On-the-Go Bottom Bar (Phone & Tablet Dairy Control) */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 h-14 bg-white/95 backdrop-blur-md border-t border-slate-200 flex items-center justify-around z-30 px-2 shadow-lg">
+          <NavLink
+            to="/admin"
+            end
+            className={({ isActive }) => `flex flex-col items-center justify-center text-[10px] font-bold ${
+              isActive ? 'text-emerald-700' : 'text-slate-500'
+            }`}
+          >
+            <LayoutDashboard size={18} />
+            <span>Today</span>
+          </NavLink>
+          <NavLink
+            to="/admin/pos"
+            className={({ isActive }) => `flex flex-col items-center justify-center text-[10px] font-bold ${
+              isActive ? 'text-emerald-700' : 'text-slate-500'
+            }`}
+          >
+            <Store size={18} />
+            <span>Shop POS</span>
+          </NavLink>
+          <NavLink
+            to="/admin/procurement"
+            className={({ isActive }) => `flex flex-col items-center justify-center text-[10px] font-bold ${
+              isActive ? 'text-emerald-700' : 'text-slate-500'
+            }`}
+          >
+            <Droplets size={18} />
+            <span>Milk</span>
+          </NavLink>
+          <NavLink
+            to="/admin/financiers"
+            className={({ isActive }) => `flex flex-col items-center justify-center text-[10px] font-bold ${
+              isActive ? 'text-emerald-700' : 'text-slate-500'
+            }`}
+          >
+            <Landmark size={18} />
+            <span>Financier</span>
+          </NavLink>
+          <button
+            onClick={toggleMobileMenu}
+            className="flex flex-col items-center justify-center text-[10px] font-bold text-slate-500"
+          >
+            <Menu size={18} />
+            <span>More</span>
+          </button>
+        </div>
       </main>
     </div>
   );

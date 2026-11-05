@@ -10,6 +10,8 @@ import Subscription from '../models/Subscription.js';
 import DeliveryStaff from '../models/DeliveryStaff.js';
 import KhataBill from '../models/KhataBill.js';
 import RecycleBin from '../models/RecycleBin.js';
+import Financier from '../models/Financier.js';
+import FinancierTransaction from '../models/FinancierTransaction.js';
 import crypto from 'crypto';
 import { exactCaseInsensitive, escapeRegex as escapeRegexText } from '../utils/regex.js';
 import { normalisePhone, isValidPhone } from '../utils/phone.js';
@@ -276,7 +278,18 @@ export const deletePurchase = async (req, res) => {
 // --- VENDOR ACCOUNTING & LEDGER (KHATA) ---
 export const recordVendorPayment = async (req, res) => {
   try {
-    const { supplierName, supplierPhone = '', purchaseId, amount, paymentMode = 'Cash', reference = '', date = new Date(), notes = '' } = req.body;
+    const { 
+      supplierName, 
+      supplierPhone = '', 
+      purchaseId, 
+      amount, 
+      paymentMode = 'Cash', 
+      reference = '', 
+      date = new Date(), 
+      notes = '',
+      paidByFinancier = false,
+      financierId = null
+    } = req.body;
     
     if (!supplierName || !supplierName.trim()) {
       return res.status(400).json({ message: 'Supplier/Vendor name is required' });
@@ -349,6 +362,34 @@ export const recordVendorPayment = async (req, res) => {
       notes
     });
     await vendorPayment.save();
+
+    // If paid by financier, record in financier khata simultaneously
+    if (paidByFinancier && financierId) {
+      const fin = await Financier.findById(financierId);
+      if (fin) {
+        fin.totalFinanced = (fin.totalFinanced || 0) + payAmount;
+        fin.currentOutstanding = Math.max(0, (fin.totalFinanced || 0) - (fin.totalRepaid || 0));
+        await fin.save();
+
+        const fTxn = new FinancierTransaction({
+          transactionId: `FTX-${Date.now().toString().slice(-6)}`,
+          financier: fin._id,
+          financierName: fin.name,
+          type: 'FINANCED',
+          amount: payAmount,
+          date,
+          paymentMode: `Financier (${paymentMode})`,
+          reference: reference || paymentId,
+          linkedVendor: supplierName.trim(),
+          purchaseId: purchaseId || undefined,
+          vendorPaymentId: vendorPayment._id,
+          notes: `Vendor bill payment to ${supplierName.trim()} paid by financier ${fin.name}. ${notes || ''}`,
+          runningBalance: fin.currentOutstanding
+        });
+        await fTxn.save();
+      }
+    }
+
     await recordAudit(req, {
       action: 'vendor.payment',
       entity: 'Vendor',

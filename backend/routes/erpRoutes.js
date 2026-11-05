@@ -23,6 +23,16 @@ import {
   deleteCreditBill,
   getPOSDaybookSummary
 } from '../controllers/erpControllers.js';
+import {
+  getFinanciersSummary,
+  getFinancierById,
+  createFinancier,
+  updateFinancier,
+  deleteFinancier,
+  getFinancierLedger,
+  recordFinancierTransaction,
+  deleteFinancierTransaction
+} from '../controllers/financierControllers.js';
 import { getLiveTracking, assignStaffToArea } from '../controllers/adminPanelControllers.js';
 import { protect, managerUp, staffUp } from '../middleware/authMiddleware.js';
 import { validateRequest } from '../middleware/validateRequest.js';
@@ -62,6 +72,13 @@ router.route('/credit-customers/:id/bills').get(protect, staffUp, getCreditCusto
 router.route('/credit-customers/:id/settle').post(protect, staffUp, settleCreditCustomer);
 router.route('/credit-bills/:billId/settle').post(protect, staffUp, settleCreditBill);
 router.route('/credit-bills/:billId').delete(protect, staffUp, deleteCreditBill);
+
+// Financier Khata & Ledger (Financing for Milk Procurement & Settlements)
+router.route('/financiers').get(protect, managerUp, getFinanciersSummary).post(protect, managerUp, createFinancier);
+router.route('/financiers/transaction').post(protect, managerUp, recordFinancierTransaction);
+router.route('/financiers/transaction/:id').delete(protect, managerUp, deleteFinancierTransaction);
+router.route('/financiers/:id/ledger').get(protect, managerUp, getFinancierLedger);
+router.route('/financiers/:id').get(protect, managerUp, getFinancierById).put(protect, managerUp, updateFinancier).delete(protect, managerUp, deleteFinancier);
 
 router.get('/delivery-staff/live', protect, staffUp, getLiveTracking);
 router.route('/delivery-staff').get(protect, staffUp, getDeliveryStaff).post(protect, managerUp, createDeliveryStaff);

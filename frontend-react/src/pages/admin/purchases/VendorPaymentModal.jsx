@@ -1,8 +1,8 @@
-import { X } from 'lucide-react';
+import { X, Landmark } from 'lucide-react';
 
 // Extracted from Purchases.jsx. Receives the page state and
 // handlers it uses as props of the same name.
-const VendorPaymentModal = ({ currentVendorDue, existingSupplierNames, handleSavePayment, paymentFormData, setPaymentFormData, setShowPaymentModal, showPaymentModal }) => (
+const VendorPaymentModal = ({ currentVendorDue, existingSupplierNames, handleSavePayment, paymentFormData, setPaymentFormData, setShowPaymentModal, showPaymentModal, financiers = [] }) => (
   <>
     {/* ========================================================================= */}
     {/* MODAL 3: RECORD VENDOR PAYMENT                                           */}
@@ -111,6 +111,47 @@ const VendorPaymentModal = ({ currentVendorDue, existingSupplierNames, handleSav
                 className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-milquu-blue"
               />
             </div>
+
+            {financiers && financiers.length > 0 && (
+              <div className="bg-indigo-50/70 border border-indigo-200/80 rounded-xl p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="vendorPaidByFinancier"
+                    checked={paymentFormData.paidByFinancier || false}
+                    onChange={(e) => setPaymentFormData({ 
+                      ...paymentFormData, 
+                      paidByFinancier: e.target.checked,
+                      financierId: paymentFormData.financierId || financiers[0]?._id || ''
+                    })}
+                    className="rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <label htmlFor="vendorPaidByFinancier" className="text-xs font-bold text-indigo-900 cursor-pointer flex items-center gap-1">
+                    <Landmark size={13} className="text-indigo-600" /> Paid by Financier (फाइनेंसर ने भुगतान किया)
+                  </label>
+                </div>
+                {paymentFormData.paidByFinancier && (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-indigo-800 mb-1">Select Financier</label>
+                    <select
+                      value={paymentFormData.financierId || ''}
+                      onChange={(e) => setPaymentFormData({ ...paymentFormData, financierId: e.target.value })}
+                      className="w-full border border-indigo-200 bg-white rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-800 focus:outline-none focus:border-indigo-500"
+                    >
+                      <option value="">Select Financier</option>
+                      {financiers.map(f => (
+                        <option key={f._id} value={f._id}>
+                          {f.name} (Balance Due: ₹{f.currentOutstanding?.toLocaleString('en-IN')})
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-indigo-600 mt-1">
+                      This vendor bill will automatically be credited to the Financier's Khata as capital provided.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-end gap-2.5 pt-3">
               <button

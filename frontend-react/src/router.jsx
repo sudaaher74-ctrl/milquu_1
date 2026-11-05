@@ -35,6 +35,7 @@ const POS = lazy(() => import('./pages/admin/POS'));
 const CustomerKhataDetail = lazy(() => import('./pages/admin/pos/CustomerKhataDetail'));
 const Purchases = lazy(() => import('./pages/admin/Purchases'));
 const Expenses = lazy(() => import('./pages/admin/Expenses'));
+const Financiers = lazy(() => import('./pages/admin/Financiers'));
 const ProfitAnalytics = lazy(() => import('./pages/admin/ProfitAnalytics'));
 const Procurement = lazy(() => import('./pages/admin/Procurement'));
 const Wastage = lazy(() => import('./pages/admin/Wastage'));
@@ -196,6 +197,7 @@ export const router = createBrowserRouter([
           { path: "pos/customer/:id", element: <CustomerKhataDetail /> },
           { path: "purchases", element: <Purchases /> },
           { path: "expenses", element: <Expenses /> },
+          { path: "financiers", element: <Financiers /> },
           { path: "profit", element: <ProfitAnalytics /> },
           { path: "procurement", element: <Procurement /> },
           { path: "wastage", element: <Wastage /> },

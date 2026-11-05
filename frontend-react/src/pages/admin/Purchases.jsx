@@ -80,18 +80,22 @@ const Purchases = () => {
     paymentMode: 'Cash',
     reference: '',
     date: new Date().toISOString().split('T')[0],
-    notes: ''
+    notes: '',
+    paidByFinancier: false,
+    financierId: ''
   });
+  const [financiers, setFinanciers] = useState([]);
   const [currentVendorDue, setCurrentVendorDue] = useState(0);
 
   // Fetch all initial data
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [purchaseRes, productRes, vendorRes] = await Promise.all([
+      const [purchaseRes, productRes, vendorRes, finRes] = await Promise.all([
         api.get('/api/erp/purchases'),
         api.get('/api/products'),
-        api.get('/api/erp/vendors/summary')
+        api.get('/api/erp/vendors/summary'),
+        api.get('/api/erp/financiers').catch(() => ({ data: { financiers: [] } }))
       ]);
       setPurchaseData(purchaseRes.data || []);
       setProducts(productRes.data || []);
@@ -101,6 +105,7 @@ const Purchases = () => {
           setVendorSummaryMetrics(vendorRes.data.summary);
         }
       }
+      setFinanciers(finRes.data?.financiers || []);
     } catch (error) {
       console.error('Error fetching purchase & vendor data', error);
     } finally {
@@ -223,7 +228,9 @@ const Purchases = () => {
       paymentMode: 'Cash',
       reference: '',
       date: new Date().toISOString().split('T')[0],
-      notes: purchaseId ? 'Bill payment' : 'Vendor khata payment'
+      notes: purchaseId ? 'Bill payment' : 'Vendor khata payment',
+      paidByFinancier: false,
+      financierId: financiers[0]?._id || ''
     });
     setShowPaymentModal(true);
   };
@@ -853,6 +860,7 @@ const Purchases = () => {
         setPaymentFormData={setPaymentFormData}
         setShowPaymentModal={setShowPaymentModal}
         showPaymentModal={showPaymentModal}
+        financiers={financiers}
       />
 
       <PurchaseFormModal
