@@ -59,6 +59,11 @@ vi.mock('../models/FinancierTransaction.js', () => {
       return Promise.resolve(this);
     }
   }
+  MockTransaction.create = vi.fn().mockImplementation((doc) => {
+    const txn = new MockTransaction(doc);
+    savedTransactions.push(txn);
+    return Promise.resolve(txn);
+  });
   MockTransaction.find = vi.fn().mockImplementation(() => ({
     sort: () => ({
       limit: () => ({
@@ -89,17 +94,29 @@ vi.mock('../models/Order.js', () => ({
 
 vi.mock('../models/Purchase.js', () => ({
   default: {
-    find: vi.fn().mockResolvedValue([]),
+    find: vi.fn().mockImplementation(() => ({
+      sort: vi.fn().mockResolvedValue([])
+    })),
     findById: vi.fn().mockResolvedValue(null),
     aggregate: vi.fn().mockResolvedValue([{ totalLitres: 936.5, totalPaid: 48259 }])
   }
 }));
 
-vi.mock('../models/VendorPayment.js', () => ({
-  default: {
-    findByIdAndDelete: vi.fn().mockResolvedValue({})
+vi.mock('../models/VendorPayment.js', () => {
+  class MockVendorPayment {
+    constructor(doc) {
+      this._id = doc._id || `vp_${Date.now()}`;
+      Object.assign(this, doc);
+    }
+    save() {
+      return Promise.resolve(this);
+    }
   }
-}));
+  MockVendorPayment.create = vi.fn().mockImplementation((doc) => Promise.resolve(new MockVendorPayment(doc)));
+  MockVendorPayment.findByIdAndDelete = vi.fn().mockResolvedValue({});
+  MockVendorPayment.deleteMany = vi.fn().mockResolvedValue({});
+  return { default: MockVendorPayment };
+});
 
 vi.mock('../utils/audit.js', () => ({
   recordAudit: vi.fn().mockResolvedValue({})
@@ -265,6 +282,36 @@ describe('Financier Khata & Repayment System', () => {
     expect(res.body.financier.totalFinanced).toBe(20000); // 30,000 - 10,000
     expect(res.body.financier.currentOutstanding).toBe(10000); // 20,000 - 10,000
     expect(savedTransactions.length).toBe(0);
+  });
+
+  it('records vendor payment with paidByFinancier and automatically credits Financier', async () => {
+    const fin = new Financier({
+      _id: 'fin_1',
+      name: 'Digamber aher',
+      totalFinanced: 48000,
+      totalRepaid: 20000,
+      currentOutstanding: 28000
+    });
+    savedFinanciers.push(fin);
+
+    const res = await request(app)
+      .post('/api/erp/vendors/payment')
+      .send({
+        supplierName: 'vilas landge',
+        amount: 4419,
+        paymentMode: 'Cash',
+        notes: 'Milk settlement',
+        paidByFinancier: true,
+        financierId: 'fin_1'
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.payment.amount).toBe(4419);
+    expect(fin.totalFinanced).toBe(52419);
+    expect(fin.currentOutstanding).toBe(32419);
+    expect(savedTransactions.length).toBe(1);
+    expect(savedTransactions[0].type).toBe('FINANCED');
+    expect(savedTransactions[0].amount).toBe(4419);
   });
 });
 

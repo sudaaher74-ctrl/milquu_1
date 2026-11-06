@@ -54,9 +54,12 @@ const Purchases = () => {
     paidAmount: '',
     paymentMode: 'Cash',
     status: 'Pending',
-    notes: ''
+    notes: '',
+    paidByFinancier: true,
+    financierId: ''
   };
   const [formData, setFormData] = useState(emptyFormData);
+  const [purchaseSubmitting, setPurchaseSubmitting] = useState(false);
 
   // Modal 2: Printable Purchase Bill / Invoice
   const [selectedPurchaseForBill, setSelectedPurchaseForBill] = useState(null);
@@ -137,7 +140,11 @@ const Purchases = () => {
   // Open Add PO Modal
   const openAddModal = () => {
     setEditingId(null);
-    setFormData(emptyFormData);
+    setFormData({
+      ...emptyFormData,
+      paidByFinancier: financiers.length > 0,
+      financierId: financiers[0]?._id || ''
+    });
     setIsModalOpen(true);
   };
 
@@ -160,14 +167,16 @@ const Purchases = () => {
       paidAmount: purchase.paidAmount !== undefined ? purchase.paidAmount : (purchase.status === 'Paid' ? purchase.totalCost : 0),
       paymentMode: purchase.paymentMode || 'Cash',
       status: purchase.status || 'Pending',
-      notes: purchase.notes || ''
+      notes: purchase.notes || '',
+      paidByFinancier: purchase.paidByFinancier !== undefined ? purchase.paidByFinancier : (financiers.length > 0),
+      financierId: purchase.financierId || financiers[0]?._id || ''
     });
     setIsModalOpen(true);
   };
 
   // Delete Purchase
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this purchase order? This will also reverse its effect on inventory stock.')) return;
+    if (!window.confirm('Delete this purchase order? This will also reverse its effect on inventory stock and financier khata.')) return;
     try {
       await api.delete(`/api/erp/purchases/${id}`);
       fetchData();
@@ -180,13 +189,18 @@ const Purchases = () => {
   // Handle Save / Update Purchase
   const handleSavePurchase = async (e) => {
     e.preventDefault();
+    if (purchaseSubmitting) return;
     try {
+      setPurchaseSubmitting(true);
       const quantity = Number(formData.quantity) || 0;
       const rate = Number(formData.rate) || 0;
       const totalCost = quantity * rate;
       let paidAmount = Number(formData.paidAmount) || 0;
 
       if (formData.status === 'Paid' && paidAmount === 0) {
+        paidAmount = totalCost;
+      }
+      if (formData.paidByFinancier && paidAmount === 0 && formData.status === 'Paid') {
         paidAmount = totalCost;
       }
       const balanceAmount = Math.max(0, totalCost - paidAmount);
@@ -197,14 +211,18 @@ const Purchases = () => {
         rate,
         totalCost,
         paidAmount,
-        balanceAmount
+        balanceAmount,
+        paidByFinancier: !!formData.paidByFinancier,
+        financierId: formData.financierId || financiers[0]?._id || ''
       };
 
       if (editingId) {
         await api.put(`/api/erp/purchases/${editingId}`, payload);
+        toast.success('Purchase order updated successfully');
       } else {
         const poNumber = `PO-${Date.now().toString().slice(-6)}`;
         await api.post('/api/erp/purchases', { ...payload, poNumber });
+        toast.success(`Purchase order created${payload.paidByFinancier ? ' and listed in Financier Khata' : ''}!`);
       }
 
       setIsModalOpen(false);
@@ -214,6 +232,8 @@ const Purchases = () => {
     } catch (error) {
       console.error('Error saving purchase', error);
       toast.error('Failed to save purchase: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setPurchaseSubmitting(false);
     }
   };
 
@@ -638,7 +658,7 @@ const Purchases = () => {
   const spVal = Number(formData.sellingPrice) || 0;
   const marginPercentage = rateVal > 0 ? (((spVal - rateVal) / rateVal) * 100).toFixed(1) : 0;
   const computedTotalCost = (Number(formData.quantity) || 0) * rateVal;
-  const computedPaid = Number(formData.paidAmount) || 0;
+  const computedPaid = Number(formData.paidAmount) || (formData.status === 'Paid' ? computedTotalCost : 0);
   const computedBalance = Math.max(0, computedTotalCost - computedPaid);
 
   // Monthly Purchase Cost
@@ -883,6 +903,8 @@ const Purchases = () => {
         setEditingId={setEditingId}
         setFormData={setFormData}
         setIsModalOpen={setIsModalOpen}
+        financiers={financiers}
+        purchaseSubmitting={purchaseSubmitting}
       />
 
       {/* Embedded Print Stylesheet */}

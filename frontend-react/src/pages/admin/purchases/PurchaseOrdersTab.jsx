@@ -168,6 +168,11 @@ const PurchaseOrdersTab = ({ activeSuppliersCount, activeTab, filteredPurchases,
                           ) : (
                             <span className="block text-[11px] font-medium text-gray-400">Clear</span>
                           )}
+                          {(purchase.paidByFinancier || purchase.financierName) && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-1.5 py-0.5 rounded-md mt-1">
+                              🏦 {purchase.financierName || 'Financier'}
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4">
                           <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide inline-flex items-center gap-1 ${

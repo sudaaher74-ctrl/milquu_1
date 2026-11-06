@@ -16,6 +16,9 @@ const purchaseSchema = new mongoose.Schema({
   balanceAmount: { type: Number, default: 0 },
   status: { type: String, required: true, enum: ['Pending', 'Received', 'Paid', 'Partial'], default: 'Pending' },
   paymentMode: { type: String, default: 'Cash' },
+  paidByFinancier: { type: Boolean, default: false },
+  financierId: { type: mongoose.Schema.Types.ObjectId, ref: 'Financier', default: null },
+  financierName: { type: String, default: '' },
   notes: { type: String, default: '' },
   payments: [
     {

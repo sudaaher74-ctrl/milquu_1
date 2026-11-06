@@ -65,7 +65,9 @@ export const createPurchase = async (req, res) => {
       paidAmount,
       balanceAmount,
       status,
-      payments
+      payments,
+      paidByFinancier: purchaseData.paidByFinancier ?? false,
+      financierId: purchaseData.financierId || null
     });
 
     const createdPurchase = await purchase.save();
@@ -112,6 +114,11 @@ export const createPurchase = async (req, res) => {
               notes: `Milk purchase ${createdPurchase.poNumber} financed by ${fin.name}`,
               runningBalance: fin.currentOutstanding
             });
+
+            createdPurchase.paidByFinancier = true;
+            createdPurchase.financierId = fin._id;
+            createdPurchase.financierName = fin.name;
+            await createdPurchase.save();
           }
         }
       } catch (err) {
@@ -239,7 +246,7 @@ export const updatePurchase = async (req, res) => {
       });
 
       try {
-        await VendorPayment.create({
+        const vendorPayment = await VendorPayment.create({
           paymentId: `VP-${Date.now().toString().slice(-6)}`,
           supplierName: purchase.supplierName,
           supplierPhone: purchase.supplierPhone || '',
@@ -251,6 +258,40 @@ export const updatePurchase = async (req, res) => {
           date: purchaseData.date || new Date(),
           notes: `Payment for ${purchase.poNumber}`
         });
+
+        // Link to Financier if purchase was or is flagged as paidByFinancier
+        const shouldLinkFinancier = purchaseData.paidByFinancier === true || (purchaseData.paidByFinancier !== false && purchase.paidByFinancier);
+        if (shouldLinkFinancier) {
+          const finId = purchaseData.financierId || purchase.financierId;
+          const fin = finId 
+            ? await Financier.findById(finId) 
+            : await Financier.findOne({ isActive: true });
+          if (fin) {
+            fin.totalFinanced = (fin.totalFinanced || 0) + diff;
+            fin.currentOutstanding = Math.max(0, (fin.totalFinanced || 0) - (fin.totalRepaid || 0));
+            await fin.save();
+
+            await FinancierTransaction.create({
+              transactionId: `FTX-${Date.now().toString().slice(-6)}`,
+              financier: fin._id,
+              financierName: fin.name,
+              type: 'FINANCED',
+              amount: diff,
+              date: purchaseData.date || new Date(),
+              paymentMode: purchaseData.paymentMode || 'Cash',
+              reference: purchaseData.reference || `PO: ${purchase.poNumber}`,
+              linkedVendor: (purchase.supplierName || '').trim(),
+              purchaseId: purchase._id,
+              vendorPaymentId: vendorPayment._id,
+              notes: `Purchase ${purchase.poNumber} top-up financed by ${fin.name}`,
+              runningBalance: fin.currentOutstanding
+            });
+
+            purchase.paidByFinancier = true;
+            purchase.financierId = fin._id;
+            purchase.financierName = fin.name;
+          }
+        }
       } catch (err) {
         console.error('Failed to record vendor payment on update:', err);
       }
@@ -286,6 +327,22 @@ export const deletePurchase = async (req, res) => {
       recalcStockTotals(product);
       await product.save();
     }
+
+    // Reverse any FinancierTransactions tied to this purchase
+    const finTxs = await FinancierTransaction.find({ purchaseId: purchase._id });
+    for (const ftx of finTxs) {
+      const fin = await Financier.findById(ftx.financier);
+      if (fin) {
+        if (ftx.type === 'FINANCED') {
+          fin.totalFinanced = Math.max(0, (fin.totalFinanced || 0) - ftx.amount);
+        } else if (ftx.type === 'REPAYMENT') {
+          fin.totalRepaid = Math.max(0, (fin.totalRepaid || 0) - ftx.amount);
+        }
+        fin.currentOutstanding = Math.max(0, (fin.totalFinanced || 0) - (fin.totalRepaid || 0));
+        await fin.save();
+      }
+    }
+    await FinancierTransaction.deleteMany({ purchaseId: purchase._id });
 
     // Delete or unlink vendor payments tied specifically to this purchase
     await VendorPayment.deleteMany({ purchaseId: purchase._id });
