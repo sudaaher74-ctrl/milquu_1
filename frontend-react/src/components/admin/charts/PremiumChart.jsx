@@ -506,3 +506,4 @@ export const PremiumDonutChart = ({ data = [], title = 'Category Breakdown', tot
     </div>
   );
 };
+

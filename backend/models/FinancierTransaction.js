@@ -35,7 +35,6 @@ const financierTransactionSchema = new mongoose.Schema({
   },
   paymentMode: { 
     type: String, 
-    enum: ['UPI', 'Bank Transfer', 'Cash', 'Cheque', 'Other'],
     default: 'UPI' 
   },
   reference: { 

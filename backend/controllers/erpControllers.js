@@ -73,7 +73,7 @@ export const createPurchase = async (req, res) => {
     // Record VendorPayment entry if initial payment was made
     if (paidAmount > 0) {
       try {
-        await VendorPayment.create({
+        const vendorPayment = await VendorPayment.create({
           paymentId: `VP-${Date.now().toString().slice(-6)}`,
           supplierName: purchaseData.supplierName,
           supplierPhone: purchaseData.supplierPhone || '',
@@ -85,6 +85,35 @@ export const createPurchase = async (req, res) => {
           date: purchaseData.date || new Date(),
           notes: `Payment for ${createdPurchase.poNumber}`
         });
+
+        // Auto-link to Financier if paidByFinancier is true or defaulted for vendor procurement
+        const shouldLinkFinancier = purchaseData.paidByFinancier !== false;
+        if (shouldLinkFinancier) {
+          const fin = purchaseData.financierId 
+            ? await Financier.findById(purchaseData.financierId) 
+            : await Financier.findOne({ isActive: true });
+          if (fin) {
+            fin.totalFinanced = (fin.totalFinanced || 0) + paidAmount;
+            fin.currentOutstanding = Math.max(0, (fin.totalFinanced || 0) - (fin.totalRepaid || 0));
+            await fin.save();
+
+            await FinancierTransaction.create({
+              transactionId: `FTX-${Date.now().toString().slice(-6)}`,
+              financier: fin._id,
+              financierName: fin.name,
+              type: 'FINANCED',
+              amount: paidAmount,
+              date: purchaseData.date || new Date(),
+              paymentMode: purchaseData.paymentMode || 'Cash',
+              reference: purchaseData.reference || `PO: ${createdPurchase.poNumber}`,
+              linkedVendor: (purchaseData.supplierName || '').trim(),
+              purchaseId: createdPurchase._id,
+              vendorPaymentId: vendorPayment._id,
+              notes: `Milk purchase ${createdPurchase.poNumber} financed by ${fin.name}`,
+              runningBalance: fin.currentOutstanding
+            });
+          }
+        }
       } catch (err) {
         console.error('Failed to record initial vendor payment:', err);
       }
@@ -364,8 +393,10 @@ export const recordVendorPayment = async (req, res) => {
     await vendorPayment.save();
 
     // If paid by financier, record in financier khata simultaneously
-    if (paidByFinancier && financierId) {
-      const fin = await Financier.findById(financierId);
+    if (paidByFinancier) {
+      const fin = financierId 
+        ? await Financier.findById(financierId) 
+        : await Financier.findOne({ isActive: true });
       if (fin) {
         fin.totalFinanced = (fin.totalFinanced || 0) + payAmount;
         fin.currentOutstanding = Math.max(0, (fin.totalFinanced || 0) - (fin.totalRepaid || 0));
@@ -378,12 +409,12 @@ export const recordVendorPayment = async (req, res) => {
           type: 'FINANCED',
           amount: payAmount,
           date,
-          paymentMode: `Financier (${paymentMode})`,
+          paymentMode: paymentMode || 'Cash',
           reference: reference || paymentId,
           linkedVendor: supplierName.trim(),
           purchaseId: purchaseId || undefined,
           vendorPaymentId: vendorPayment._id,
-          notes: `Vendor bill payment to ${supplierName.trim()} paid by financier ${fin.name}. ${notes || ''}`,
+          notes: `Vendor bill payment to ${supplierName.trim()} paid by financier ${fin.name}. ${notes || ''}`.trim(),
           runningBalance: fin.currentOutstanding
         });
         await fTxn.save();

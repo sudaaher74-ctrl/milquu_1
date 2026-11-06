@@ -217,6 +217,8 @@ const Purchases = () => {
     }
   };
 
+  const [paymentSubmitting, setPaymentSubmitting] = useState(false);
+
   // Open Payment Modal
   const openRecordPaymentModal = (vendorName = '', phone = '', due = 0, purchaseId = '') => {
     setCurrentVendorDue(due);
@@ -229,7 +231,7 @@ const Purchases = () => {
       reference: '',
       date: new Date().toISOString().split('T')[0],
       notes: purchaseId ? 'Bill payment' : 'Vendor khata payment',
-      paidByFinancier: false,
+      paidByFinancier: financiers.length > 0,
       financierId: financiers[0]?._id || ''
     });
     setShowPaymentModal(true);
@@ -238,22 +240,26 @@ const Purchases = () => {
   // Save Vendor Payment
   const handleSavePayment = async (e) => {
     e.preventDefault();
+    if (paymentSubmitting) return;
     const payAmount = Number(paymentFormData.amount);
     if (!payAmount || payAmount <= 0) {
       toast('Please enter a valid payment amount greater than 0');
       return;
     }
     try {
+      setPaymentSubmitting(true);
       await api.post('/api/erp/vendors/payment', paymentFormData);
       setShowPaymentModal(false);
       await fetchData();
       if (showLedgerModal && selectedVendorForLedger) {
         await fetchVendorLedger(selectedVendorForLedger);
       }
-      toast(`Payment of ₹${payAmount.toLocaleString('en-IN')} recorded successfully!`);
+      toast.success(`Payment of ₹${payAmount.toLocaleString('en-IN')} recorded successfully!`);
     } catch (error) {
       console.error('Error recording payment', error);
       toast.error('Failed to record payment: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setPaymentSubmitting(false);
     }
   };
 
@@ -861,6 +867,7 @@ const Purchases = () => {
         setShowPaymentModal={setShowPaymentModal}
         showPaymentModal={showPaymentModal}
         financiers={financiers}
+        paymentSubmitting={paymentSubmitting}
       />
 
       <PurchaseFormModal

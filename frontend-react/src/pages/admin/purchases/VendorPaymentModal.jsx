@@ -2,7 +2,7 @@ import { X, Landmark } from 'lucide-react';
 
 // Extracted from Purchases.jsx. Receives the page state and
 // handlers it uses as props of the same name.
-const VendorPaymentModal = ({ currentVendorDue, existingSupplierNames, handleSavePayment, paymentFormData, setPaymentFormData, setShowPaymentModal, showPaymentModal, financiers = [] }) => (
+const VendorPaymentModal = ({ currentVendorDue, existingSupplierNames, handleSavePayment, paymentFormData, setPaymentFormData, setShowPaymentModal, showPaymentModal, financiers = [], paymentSubmitting = false }) => (
   <>
     {/* ========================================================================= */}
     {/* MODAL 3: RECORD VENDOR PAYMENT                                           */}
@@ -163,9 +163,10 @@ const VendorPaymentModal = ({ currentVendorDue, existingSupplierNames, handleSav
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-md cursor-pointer"
+                disabled={paymentSubmitting}
+                className="px-5 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
-                Confirm & Save Payment
+                {paymentSubmitting ? 'Saving...' : 'Confirm & Save Payment'}
               </button>
             </div>
           </form>
