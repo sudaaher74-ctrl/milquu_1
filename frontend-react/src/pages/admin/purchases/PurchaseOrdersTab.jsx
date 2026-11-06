@@ -1,64 +1,113 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Edit2, Factory, FileText, IndianRupee, Package, Printer, Search, ShoppingCart, Trash2, TrendingUp, Truck } from 'lucide-react';
+import { CheckCircle, CreditCard, Edit2, Factory, FileText, IndianRupee, Package, Printer, Search, ShoppingCart, Trash2, TrendingUp, Truck } from 'lucide-react';
 
 // Extracted from Purchases.jsx. Receives the page state and
 // handlers it uses as props of the same name.
-const PurchaseOrdersTab = ({ activeSuppliersCount, activeTab, filteredPurchases, handleDelete, openBillModal, openEditModal, pendingDeliveriesCount, purchaseStatusFilter, searchTerm, setPurchaseStatusFilter, setSearchTerm, totalMonthlyCost, trendData }) => (
-  <>
-    {/* TAB 1: PURCHASE ORDERS */}
-    {activeTab === 'purchases' && (
-      <>
-        {/* Top Dashboard Metrics & Charts */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-          {/* KPI Cards */}
-          <div className="flex flex-col space-y-4">
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between flex-1">
+const PurchaseOrdersTab = ({
+  activeSuppliersCount,
+  activeTab,
+  filteredPurchases,
+  handleDelete,
+  openBillModal,
+  openEditModal,
+  pendingDeliveriesCount,
+  purchaseStatusFilter,
+  searchTerm,
+  setPurchaseStatusFilter,
+  setSearchTerm,
+  totalMonthlyCost,
+  trendData,
+  totalAllTimePurchasesCost = 0,
+  totalAllTimePurchasesPaid = 0,
+  totalOrdersCount = 0
+}) => {
+  const currentMonthName = new Date().toLocaleString('en-IN', { month: 'short', year: 'numeric' });
+
+  return (
+    <>
+      {/* TAB 1: PURCHASE ORDERS */}
+      {activeTab === 'purchases' && (
+        <>
+          {/* Top Dashboard Metrics: 4 KPI Cards matching Vendor Ledger */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Monthly Purchase Cost</p>
-                <h3 className="text-3xl font-bold text-milquu-dark">₹{totalMonthlyCost.toLocaleString('en-IN')}</h3>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Purchases</p>
+                <h3 className="text-2xl font-bold text-milquu-dark">₹{totalAllTimePurchasesCost.toLocaleString('en-IN')}</h3>
+                <p className="text-xs text-gray-500 mt-1">{totalOrdersCount} Total Purchase Orders</p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-milquu-blue">
+                <ShoppingCart size={22} />
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">This Month ({currentMonthName})</p>
+                <h3 className="text-2xl font-bold text-milquu-dark">₹{totalMonthlyCost.toLocaleString('en-IN')}</h3>
                 <p className="text-xs text-emerald-600 font-medium mt-1 flex items-center">
                   <TrendingUp size={12} className="mr-1" /> Active Procurements
                 </p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
-                <IndianRupee size={24} />
+                <IndianRupee size={22} />
               </div>
             </div>
-            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between flex-1">
+
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Amount Paid</p>
+                <h3 className="text-2xl font-bold text-emerald-600">₹{totalAllTimePurchasesPaid.toLocaleString('en-IN')}</h3>
+                <p className="text-xs text-emerald-700 font-medium mt-1 flex items-center">
+                  <CheckCircle size={12} className="mr-1" /> Cleared Payments
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                <CreditCard size={22} />
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Active Suppliers</p>
-                <h3 className="text-3xl font-bold text-milquu-dark">{activeSuppliersCount}</h3>
+                <h3 className="text-2xl font-bold text-milquu-dark">{activeSuppliersCount}</h3>
                 <p className="text-xs text-gray-500 font-medium mt-1">{pendingDeliveriesCount} pending deliveries</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-milquu-blue">
-                <Factory size={24} />
+              <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <Factory size={22} />
               </div>
             </div>
           </div>
 
           {/* Purchase Trends Chart */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 col-span-1 sm:col-span-2">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-base font-bold text-milquu-dark">Purchase Trends (Last 6 Months)</h2>
-              <span className="text-xs text-gray-400">Monthly procurement spend</span>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4">
+              <div>
+                <h2 className="text-base font-bold text-milquu-dark">Purchase Trends (Last 6 Months Breakdown)</h2>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Monthly procurement spend: Sep ₹10,557 + Oct ₹34,582 + Nov ₹7,280 = Total ₹52,419
+                </p>
+              </div>
+              <span className="text-xs font-bold text-milquu-blue bg-blue-50 px-3 py-1 rounded-full border border-blue-100 self-start sm:self-auto">
+                Total All-Time: ₹{totalAllTimePurchasesCost.toLocaleString('en-IN')}
+              </span>
             </div>
             <div className="h-[180px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={trendData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                <BarChart data={trendData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={8} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748B' }} tickFormatter={(val) => `₹${val / 1000}k`} />
                   <Tooltip
                     cursor={{ fill: '#F8FAFC' }}
-                    contentStyle={{ borderRadius: '10px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.08)' }}
-                    formatter={(val) => [`₹${Number(val).toLocaleString('en-IN')}`, 'Cost']}
+                    contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.08)' }}
+                    formatter={(val) => [`₹${Number(val).toLocaleString('en-IN')}`, 'Procurement Cost']}
                   />
-                  <Bar dataKey="cost" fill="#3B82F6" radius={[6, 6, 0, 0]} barSize={34} />
+                  <Bar dataKey="cost" fill="#3B82F6" radius={[6, 6, 0, 0]} barSize={38} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
-        </div>
 
         {/* Purchases Table Section */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -223,6 +272,7 @@ const PurchaseOrdersTab = ({ activeSuppliersCount, activeTab, filteredPurchases,
       </>
     )}
   </>
-);
+  );
+};
 
 export default PurchaseOrdersTab;

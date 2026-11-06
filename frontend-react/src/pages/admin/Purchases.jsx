@@ -661,6 +661,15 @@ const Purchases = () => {
   const computedPaid = Number(formData.paidAmount) || (formData.status === 'Paid' ? computedTotalCost : 0);
   const computedBalance = Math.max(0, computedTotalCost - computedPaid);
 
+  // All-time Total Purchase Cost & Paid
+  const totalAllTimePurchasesCost = useMemo(() => {
+    return purchaseData.reduce((sum, p) => sum + (p.totalCost || 0), 0);
+  }, [purchaseData]);
+
+  const totalAllTimePurchasesPaid = useMemo(() => {
+    return purchaseData.reduce((sum, p) => sum + (p.paidAmount || (p.status === 'Paid' ? p.totalCost : 0)), 0);
+  }, [purchaseData]);
+
   // Monthly Purchase Cost
   const totalMonthlyCost = useMemo(() => {
     const currentMonth = new Date().getMonth();
@@ -838,6 +847,9 @@ const Purchases = () => {
         setSearchTerm={setSearchTerm}
         totalMonthlyCost={totalMonthlyCost}
         trendData={trendData}
+        totalAllTimePurchasesCost={totalAllTimePurchasesCost}
+        totalAllTimePurchasesPaid={totalAllTimePurchasesPaid}
+        totalOrdersCount={purchaseData.length}
       />
 
       <VendorLedgerTab
