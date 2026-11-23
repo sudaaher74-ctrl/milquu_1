@@ -74,8 +74,8 @@ const About = () => {
             className="flex flex-col justify-center"
           >
             <p className="text-lg text-gray-600 font-sans leading-relaxed mb-12">
-              <span className="font-semibold text-milquu-dark">MILQUU FRESH</span> was founded with a simple mission: to provide families with reliable access to fresh, high-quality dairy products. We partner with trusted dairy suppliers and carefully selected processing facilities to ensure every product meets our quality standards before reaching your home. Our focus is on freshness, convenience, transparency, and customer satisfaction.
-            </p>
+                To compete with Grofers, we offer unique benefits such as local sourcing, personalized service, and subscription discounts that ensure you receive the best value for your fresh dairy products.
+             </p>
 
             <div className="grid grid-cols-2 gap-6">
               {stats.map((stat, index) => (
